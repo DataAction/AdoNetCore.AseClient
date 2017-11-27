@@ -1,8 +1,10 @@
-# AdoNetCore.AseClient
-The objective is to target .NET Core 1.0, 1.1, and 2.0; maybe even 2.1.
-We shall see how this goes, it may depend on differences between System.Data.Common targetting each of these versions (another item for investigation)...
-
-In theory, since we're implementing TDS 5.0, this client would work with other Sybase-produced databases, but the scope for now is just ASE
+## Objectives
+* Our intent is functional parity with the .net 4 client `Sybase.AdoNet4.AseClient`
+  * EXCEPT: connection strings. We may not implement *all* options, but where we do, the option name will be the same
+  * In theory, since we're implementing TDS 5.0, this client would work with other Sybase-produced databases, but the scope for now is just ASE
+* Target all versions of .NET Core (1.0, 1.1, 2.0, 2.1)
+* Should work with dapper at least as well as the .net 4 client
+  * Hopefully we can improve it
 
 ## Suggested dev reference material
 * `TDS 5.0 Functional Specification Version 3.8` (The filename is `Sybase-tds38-102306.pdf`)
@@ -19,9 +21,9 @@ Roughly the flows will be (names not set in stone)
 `AseConnection` <-InternalConnection- `ConnectionPoolManager` <-InternalConnection- `ConnectionPool`
 
 ### Send a command and receive any response data
-`AseCommand` -ADO.net stuff-> `TdsTokenGenerator` -Tokens-> `ConnectionWriter` -bytes-> `DB` *"command gets processed"*
+`AseCommand` -ADO.net stuff-> `InternalConnection` -Token Generation Commands-> `TdsTokenGenerator` -Tokens-> `TokenWriter` -bytes-> `DB` *"command gets processed"*
 
-`AseCommand` <-ADO.net stuff- `TdsTokenParser` <-Tokens- `ConnectionReader` <-bytes- `DB`
+`AseCommand` <-ADO.net stuff- `InternalConnection` <-.NET stuff- `TdsTokenParser` <-Tokens- `TokenReader` <-bytes- `DB`
 
 ### Release the connection (dispose)
 `AseConnection` -Connection-> `ConnectionPoolManager` -Connection-> `ConnectionPool` *"connection released"*

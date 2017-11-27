@@ -1,7 +1,16 @@
 ﻿using System;
+// ReSharper disable InconsistentNaming
 
 namespace AdoNetCore.AseClient.Enum
 {
+    /// <summary>
+    /// Refer: TDS Token List
+    /// Tokens are the lifeblood of the TDS request/response.
+    /// A token represents a chunk of information, like a SQL statement, a parameter list, or a cursor declaration.
+    /// A token type (byte) comes before each chunk, so we know how to read the next bytes.
+    /// 
+    /// Note: some token types are mentioned in the spec as not yet implemented, and others as obsolete.
+    /// </summary>
     public enum TokenType : byte
     {
         [Obsolete]

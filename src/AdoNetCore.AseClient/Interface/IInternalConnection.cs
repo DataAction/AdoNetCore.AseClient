@@ -1,6 +1,8 @@
-﻿namespace AdoNetCore.AseClient.Interface
+﻿using System;
+
+namespace AdoNetCore.AseClient.Interface
 {
-    public interface IInternalConnection
+    public interface IInternalConnection : IDisposable
     {
         void ChangeDatabase(string databaseName);
         string Database { get; }

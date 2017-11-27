@@ -8,8 +8,9 @@
 
 ## Suggested dev reference material
 * `TDS 5.0 Functional Specification Version 3.8` (The filename is `Sybase-tds38-102306.pdf`)
-  * If you can find a newer version of the spec to use, let its existence be known.
-* `jTDS` - Java implementation of TDS (5.0, 7.0+)
+  * This spec is fairly complete, but it's got a few ??? entries -- if you can find a newer version of the spec to use, let its existence be known.
+* `Sybase.AdoNet4.AseClient` wireshark packet captures
+* `jTDS` if the above isn't informative enough (credit to them for figuring this out)
 
 ## Flows/design
 

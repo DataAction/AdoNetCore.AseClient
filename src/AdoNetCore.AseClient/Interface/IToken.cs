@@ -1,0 +1,15 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using AdoNetCore.AseClient.Enum;
+
+namespace AdoNetCore.AseClient.Interface
+{
+    public interface IToken
+    {
+        TokenType Type { get; }
+        void Write(Stream stream, Encoding enc);
+        void Read(Stream stream, Encoding enc, IToken previous);
+    }
+}

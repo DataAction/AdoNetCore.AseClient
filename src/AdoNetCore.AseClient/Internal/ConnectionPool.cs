@@ -75,11 +75,26 @@ namespace AdoNetCore.AseClient.Internal
             return connection;
         }
 
+        public void Release(IInternalConnection connection)
+        {
+            if (!_parameters.Pooling)
+            {
+                connection?.Dispose();
+                return;
+            }
+
+            lock (_mutex)
+            {
+                var item = _connections.First(i => i.Connection == connection);
+                item.Available = true;
+            }
+        }
+
         private InternalConnection InitialiseNewConnection()
         {
             var socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
             socket.Connect(Endpoint);
-            var connection = new InternalConnection(_parameters, socket, new TokenGenerator(), new TokenParser(), new TokenWriter(socket), new TokenReader(socket));
+            var connection = new InternalConnection(_parameters, socket, new TokenParser());
             connection.Connect();
             return connection;
         }
@@ -109,6 +124,5 @@ namespace AdoNetCore.AseClient.Internal
             dnsTask.Wait();
             return dnsTask.Result.AddressList.First();
         }
-
     }
 }

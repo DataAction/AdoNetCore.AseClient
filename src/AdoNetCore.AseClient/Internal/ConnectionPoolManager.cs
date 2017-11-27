@@ -16,7 +16,11 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void Release(string connectionString, IInternalConnection connection)
         {
-            
+            if (_pools.TryGetValue(connectionString, out var pool))
+            {
+                pool.Release(connection);
+            }
+            else { throw new ArgumentException("No connection pool exists for that connection string");}
         }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
+using AdoNetCore.AseClient.Packet;
 using AdoNetCore.AseClient.Token;
 
 namespace AdoNetCore.AseClient.Internal
@@ -11,16 +14,15 @@ namespace AdoNetCore.AseClient.Internal
     {
         private readonly ConnectionParameters _parameters;
         private readonly ISocket _socket;
-        private readonly ITokenParser _tokenParse;
+        private readonly int _headerSize = 8;
+        private readonly Encoding _encoding = Encoding.ASCII;
 
-        private int _packetSize = 512;
-        private int _headerSize = 8;
-
-        public InternalConnection(ConnectionParameters parameters, ISocket socket, ITokenParser tokenParse)
+        private int _packetSize = 512; //512's the default but the server can send a new packet size if it so desires
+        
+        public InternalConnection(ConnectionParameters parameters, ISocket socket)
         {
             _parameters = parameters;
             _socket = socket;
-            _tokenParse = tokenParse;
         }
 
         public void Connect()
@@ -28,75 +30,50 @@ namespace AdoNetCore.AseClient.Internal
             //socket is established already
             //login
             var loginPacket = new LoginPacket(_parameters.ClientHostName, _parameters.Username, _parameters.Password, _parameters.ProcessId, _parameters.ApplicationName, _parameters.Server, "us_english", _parameters.Charset, "ADO.NET", _packetSize, new CapabilityToken());
+            _socket.SendPacket(loginPacket, _packetSize, _headerSize, _encoding);
+            var tokens = _socket.ReceiveTokens(_packetSize, _headerSize, _encoding);
 
-            using (var ms = new MemoryStream())
+            var loginAck = tokens.OfType<LoginAckToken>().FirstOrDefault();
+
+            if (loginAck == null || loginAck.Status == LoginAckToken.LoginStatus.TDS_LOG_FAIL)
             {
-                loginPacket.Write(ms, Encoding.ASCII);
-                ms.Seek(0, SeekOrigin.Begin);
-
-                while (ms.Position < ms.Length)
-                {
-                    //split into chunks and send over the wire
-                    var buffer = new byte[_packetSize];
-                    var template = loginPacket.HeaderTemplate;
-                    Array.Copy(template, buffer, template.Length);
-                    var copied = ms.Read(buffer, template.Length, buffer.Length - template.Length);
-                    var chunkLength = template.Length + copied;
-                    buffer[1] = (byte)(ms.Position >= ms.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE); //todo: set other statuses?
-                    buffer[2] = (byte)(chunkLength >> 8);
-                    buffer[3] = (byte)chunkLength;
-
-                    if (chunkLength == _packetSize)
-                    {
-                        _socket.Send(buffer);
-                    }
-                    else
-                    {
-                        var temp = new byte[chunkLength];
-                        Array.Copy(buffer, temp, chunkLength);
-                        _socket.Send(temp);
-                    }
-                }
+                throw new InvalidOperationException("No login ack found");
             }
 
-            using (var ms = new MemoryStream())
+            if (loginAck.Status == LoginAckToken.LoginStatus.TDS_LOG_NEGOTIATE)
             {
-                var buffer = new byte[_packetSize];
-                var received = _socket.Receive(buffer);
-                BufferType type = BufferType.TDS_BUF_NONE;
-                while (received > 0)
+                Console.WriteLine($"Login negotiation required");
+            }
+
+            Console.WriteLine($"Login success");
+
+            ProcessResponseTokens(tokens);
+        }
+
+        /// <summary>
+        /// Process tokens to find any relevant to the connection (environmental notifications)
+        /// </summary>
+        private void ProcessResponseTokens(IEnumerable<IToken> tokens)
+        {
+            foreach (var change in tokens
+                .Where(t => t.Type == TokenType.TDS_ENVCHANGE)
+                .Cast<EnvironmentChangeToken>()
+                .SelectMany(t => t.Changes))
+            {
+                Console.WriteLine($"Environment value change. {change.Type}: {change.OldValue} -> {change.NewValue}");
+                switch (change.Type)
                 {
-                    if (type == BufferType.TDS_BUF_NONE)
-                    {
-                        type = (BufferType) buffer[0];
-                    }
-
-                    if (received > _headerSize)
-                    {
-                        ms.Write(buffer, _headerSize, received - _headerSize);
-                    }
-
-                    //todo: fix this, we may need to read the header to determine how many bytes left
-                    if (received < _packetSize)
-                    {
-                        received = 0;
-                    }
-                    else
-                    {
-                        received = _socket.Receive(buffer);
-                    }
+                    case EnvironmentChangeToken.ChangeType.TDS_ENV_DB:
+                        Database = change.NewValue;
+                        break;
+                    case EnvironmentChangeToken.ChangeType.TDS_ENV_PACKSIZE:
+                        //todo: confirm this doesn't break anything
+                        if (int.TryParse(change.NewValue, out int newPackSize))
+                        {
+                            _packetSize = newPackSize;
+                        }
+                        break;
                 }
-
-                ms.Seek(0, SeekOrigin.Begin);
-                Console.WriteLine(HexDump.Dump(ms.ToArray()));
-
-                _tokenParse.Parse(ms, Encoding.ASCII);
-                //we may not actually care what kind of BufferType we get back
-                /*if (type == BufferType.TDS_BUF_RESPONSE)
-                {
-                    var response = new ResponsePacket();
-                    //response.Read(ms, Encoding.ASCII);
-                }*/
             }
         }
 

@@ -22,16 +22,16 @@ namespace AdoNetCore.AseClient.Internal
             while (stream.Position < stream.Length)
             {
                 var tokenType = (TokenType)stream.ReadByte();
-                Console.WriteLine($"Hit token type {tokenType}");
 
-                if (readers.ContainsKey(tokenType))
+                if (Readers.ContainsKey(tokenType))
                 {
-                    var t = readers[tokenType](stream, enc, previous);
+                    var t = Readers[tokenType](stream, enc, previous);
                     previous = t;
                     yield return t;
                 }
                 else
                 {
+                    Console.WriteLine($"Hit unknown token type {tokenType}");
                     var t = new CatchAllToken(tokenType);
                     t.Read(stream, enc, previous);
                     previous = t;
@@ -41,9 +41,11 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private static Dictionary<TokenType, Func<Stream, Encoding, IToken, IToken>> readers = new Dictionary<TokenType, Func<Stream, Encoding, IToken, IToken>>
+        private static readonly Dictionary<TokenType, Func<Stream, Encoding, IToken, IToken>> Readers = new Dictionary<TokenType, Func<Stream, Encoding, IToken, IToken>>
         {
-            //{TokenType.TDS_ENVCHANGE, EnvironmentChangeToken.Create}
+            {TokenType.TDS_ENVCHANGE, EnvironmentChangeToken.Create},
+            {TokenType.TDS_EED, EedToken.Create },
+            {TokenType.TDS_LOGINACK, LoginAckToken.Create }
         };
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -13,8 +14,8 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void WriteShort(this Stream stream, short value)
         {
-            stream.WriteByte((byte)value);
-            stream.WriteByte((byte)(value >> 8));
+            //todo: as long as BitConverter.IsLittleEndian, this'll work. revisit to support bigendian too?
+            stream.Write(BitConverter.GetBytes(value));
         }
 
         public static void WriteRepeatedBytes(this Stream stream, byte value, int repeat)
@@ -24,9 +25,52 @@ namespace AdoNetCore.AseClient.Internal
 
         public static short ReadShort(this Stream stream)
         {
-            var loByte = (byte) stream.ReadByte();
-            var hiByte = (byte) stream.ReadByte();
-            return (short) (loByte | (hiByte << 8));
+            var buf = new byte[2];
+            stream.Read(buf, 0, 2);
+            return BitConverter.ToInt16(buf, 0);
+        }
+        public static ushort ReadUShort(this Stream stream)
+        {
+            var buf = new byte[2];
+            stream.Read(buf, 0, 2);
+            return BitConverter.ToUInt16(buf, 0);
+        }
+
+        public static int ReadInt(this Stream stream)
+        {
+            var buf = new byte[4];
+            stream.Read(buf, 0, 4);
+            return BitConverter.ToInt32(buf, 0);
+        }
+        public static uint ReadUInt(this Stream stream)
+        {
+            var buf = new byte[4];
+            stream.Read(buf, 0, 4);
+            return BitConverter.ToUInt32(buf, 0);
+        }
+        
+        public static string ReadByteLengthPrefixedString(this Stream stream, Encoding enc)
+        {
+            var length = stream.ReadByte();
+            return stream.ReadString(length, enc);
+        }
+
+        public static string ReadShortLengthPrefixedString(this Stream stream, Encoding enc)
+        {
+            var length = stream.ReadUShort();
+            return stream.ReadString(length, enc);
+        }
+
+        private static string ReadString(this Stream stream, int length, Encoding enc)
+        {
+            if (length == 0)
+            {
+                return string.Empty;
+            }
+
+            var buf = new byte[length];
+            stream.Read(buf, 0, length);
+            return enc.GetString(buf);
         }
 
         /// <summary>

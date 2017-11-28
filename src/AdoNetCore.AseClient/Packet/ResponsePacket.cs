@@ -4,7 +4,7 @@ using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 
-namespace AdoNetCore.AseClient.Internal
+namespace AdoNetCore.AseClient.Packet
 {
     public class ResponsePacket : IPacket
     {
@@ -20,11 +20,5 @@ namespace AdoNetCore.AseClient.Internal
             var tokenType = (TokenType)stream.ReadByte();
             Console.WriteLine($"Receive token {tokenType}");
         }
-
-        public byte[] HeaderTemplate => new byte[]
-        {
-            (byte)Type, 0, 0, 0,
-            0, 0, 0, 0
-        };
     }
 }

@@ -2,9 +2,10 @@
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
+using AdoNetCore.AseClient.Internal;
 using AdoNetCore.AseClient.Token;
 
-namespace AdoNetCore.AseClient.Internal
+namespace AdoNetCore.AseClient.Packet
 {
     public class LoginPacket : IPacket
     {
@@ -123,11 +124,5 @@ namespace AdoNetCore.AseClient.Internal
         {
             throw new System.NotImplementedException();
         }
-
-        public byte[] HeaderTemplate => new byte[]
-        {
-            (byte)Type, 0, 0, 0,
-            0, 0, 0, 0
-        };
     }
 }

@@ -13,6 +13,10 @@ namespace AdoNetCore.AseClient.Enum
     public enum BufferType : byte
     {
         /// <summary>
+        /// None
+        /// </summary>
+        TDS_BUF_NONE = 0,
+        /// <summary>
         /// The buffer contains a language command. TDS does not specify the syntax of the language command.
         /// </summary>
         [Obsolete]
@@ -29,7 +33,6 @@ namespace AdoNetCore.AseClient.Enum
         /// <summary>
         /// The buffer contains the response to a command.
         /// </summary>
-        [Obsolete]
         TDS_BUF_RESPONSE = 4,
         /// <summary>
         /// The buffer contains raw unformatted data.

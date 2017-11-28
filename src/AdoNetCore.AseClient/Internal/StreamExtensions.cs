@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient.Internal
             stream.Write(bytes, 0, bytes.Length);
         }
 
-        public static void Write(this Stream stream, short value)
+        public static void WriteShort(this Stream stream, short value)
         {
             stream.WriteByte((byte)value);
             stream.WriteByte((byte)(value >> 8));
@@ -20,6 +20,13 @@ namespace AdoNetCore.AseClient.Internal
         public static void WriteRepeatedBytes(this Stream stream, byte value, int repeat)
         {
             stream.Write(Enumerable.Repeat(value, repeat).ToArray());
+        }
+
+        public static short ReadShort(this Stream stream)
+        {
+            var loByte = (byte) stream.ReadByte();
+            var hiByte = (byte) stream.ReadByte();
+            return (short) (loByte | (hiByte << 8));
         }
 
         /// <summary>

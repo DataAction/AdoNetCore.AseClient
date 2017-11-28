@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿// ReSharper disable InconsistentNaming
 namespace AdoNetCore.AseClient.Enum
 {
     public enum LInt2 : byte
@@ -65,14 +62,6 @@ namespace AdoNetCore.AseClient.Enum
         TDS_LSERVER = 0x01,
         TDS_LREMUSER = 0x02,
         TDS_LINTERNAL_RPC = 0x04
-    }
-
-    public enum MaxLength : int
-    {
-        TDS_MAXNAME = 30,
-        TDS_RPLEN = 253,
-        TDS_PROGNLEN = 10,
-        TDS_VERSIZE = 4
     }
 
     public enum LNoShort : byte

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 using AdoNetCore.AseClient.Token;
 using NUnit.Framework;
@@ -60,7 +61,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var adoNet4Packet = "44 45 53 2d 50 43 30 4b 46 55 53 48 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0c 55 53 45 52 4e 41 4d 45 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 50 41 53 53 57 4f 52 44 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 39 33 36 30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 03 01 06 0a 09 01 00 00 00 00 00 00 00 00 00 00 41 50 50 4e 41 4d 45 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 50 41 53 53 57 4f 52 44 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0a 05 00 00 00 41 44 4f 2e 4e 45 54 00 00 00 07 0f 07 00 0d 00 0d 11 75 73 5f 65 6e 67 6c 69 73 68 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0a 01 00 00 00 00 08 00 00 00 00 00 00 00 00 69 73 6f 5f 31 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 05 01 35 31 32 00 00 00 03 00 00 00 00 e2 20 00 01 0e 01 ef ff 69 b7 fd ff af 65 41 ff ff ff d6 02 0e 00 00 00 00 00 88 40 00 01 02 48 00 00 00";
             using (var ms = new MemoryStream())
             {
-                new LoginPacket("DES-PC0KFUSH", "USERNAME", "PASSWORD", "9360", "APPNAME", "", "us_english", "iso_1", "ADO.NET", new CapabilityToken()).Write(ms, Encoding.ASCII);
+                new LoginPacket("DES-PC0KFUSH", "USERNAME", "PASSWORD", "9360", "APPNAME", "", "us_english", "iso_1", "ADO.NET", 512, new CapabilityToken()).Write(ms, Encoding.ASCII);
 
                 ms.Seek(0, SeekOrigin.Begin);
 
@@ -72,6 +73,69 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
                 Assert.AreEqual(adoNet4Packet, ours);
             }
+        }
+
+        /// <summary>
+        /// Mock socket
+        /// </summary>
+        private class ExpectedChunksSocket : ISocket
+        {
+            private readonly string[] _expected;
+            private int _position;
+
+            public ExpectedChunksSocket(params string[] expected)
+            {
+                _expected = expected;
+            }
+
+            public void Dispose()
+            {
+            }
+
+            public int Send(byte[] buffer)
+            {
+                Console.WriteLine(HexDump.Dump(buffer));
+
+                var data = string.Join(" ", buffer.Select(i => $"{i:x2}"));
+
+                Assert.AreEqual(_expected[_position], data);
+
+                _position++;
+
+                return 0;
+            }
+
+            public int Receive(byte[] buffer)
+            {
+                return 0;
+            }
+
+            public void SendPacket(IPacket packet, int packetSize, int headerSize, Encoding enc)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IToken[] ReceiveTokens(int packetSize, int headerSize, Encoding enc)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void AssertAllChunksReceived()
+            {
+                Assert.IsTrue(_position == _expected.Length, "Not all chunks read");
+            }
+        }
+
+        [Test]
+        public void Matches_AdoNet4_Output_Chunked()
+        {
+            var socket = new ExpectedChunksSocket(
+                "02 00 02 00 00 00 00 00 44 45 53 2d 50 43 30 4b 46 55 53 48 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0c 55 53 45 52 4e 41 4d 45 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 50 41 53 53 57 4f 52 44 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 39 33 36 30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 03 01 06 0a 09 01 00 00 00 00 00 00 00 00 00 00 41 50 50 4e 41 4d 45 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 50 41 53 53 57 4f 52 44 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0a 05 00 00 00 41 44 4f 2e 4e 45 54 00 00 00 07 0f 07 00 0d 00 0d 11 75 73 5f 65 6e 67 6c 69 73 68 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+                "02 01 00 6b 00 00 00 00 00 00 00 00 00 00 0a 01 00 00 00 00 08 00 00 00 00 00 00 00 00 69 73 6f 5f 31 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 05 01 35 31 32 00 00 00 03 00 00 00 00 e2 20 00 01 0e 01 ef ff 69 b7 fd ff af 65 41 ff ff ff d6 02 0e 00 00 00 00 00 88 40 00 01 02 48 00 00 00");
+
+            var conn = new InternalConnection(ConnectionParameters.Parse("Uid=USERNAME;Pwd=PASSWORD;Database=DATABASE;Pooling=false;Charset=iso_1;Application Name=APPNAME;ProcessId=9360"), socket, new TokenParser());
+            conn.Connect();
+            socket.AssertAllChunksReceived();
         }
     }
 }

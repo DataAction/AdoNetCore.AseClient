@@ -20,7 +20,9 @@ namespace AdoNetCore.AseClient.Internal
             {"Charset", (p, v) => { p.Charset= v; } },
             {"Pooling", (p, v) => { p.Pooling = Convert.ToBoolean(v); } },
             {"ApplicationName", (p, v) => { p.ApplicationName = v; } },
+            {"Application Name", (p, v) => { p.ApplicationName = v; } },
             {"ClientHostName", (p, v) => { p.ClientHostName = v; } },
+            {"ProcessId", (p, v) => { p.ProcessId = v; } },
         };
 
         public static ConnectionParameters Parse(string connectionString)

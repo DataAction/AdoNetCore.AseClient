@@ -34,9 +34,9 @@ namespace AdoNetCore.AseClient.Internal
         public LSetLang LSetLang { get; set; } = LSetLang.TDS_NOTIFY;
         public LSetCharset LSetCharset { get; set; } = LSetCharset.TDS_NOTIFY;
 
-        public int PacketSize { get; set; } = 512;
+        public int PacketSize { get; set; }
 
-        public LoginPacket(string hostname, string username, string password, string processId, string applicationName, string serverName, string language, string charset, string clientLibrary, CapabilityToken capability)
+        public LoginPacket(string hostname, string username, string password, string processId, string applicationName, string serverName, string language, string charset, string clientLibrary, int packetSize, CapabilityToken capability)
         {
             Capability = capability;
             Hostname = hostname ?? string.Empty;
@@ -48,6 +48,7 @@ namespace AdoNetCore.AseClient.Internal
             Language = language ?? string.Empty;
             Charset = charset ?? string.Empty;
             ClientLibrary = clientLibrary ?? string.Empty;
+            PacketSize = packetSize;
         }
 
         private int TDS_MAXNAME = 30;
@@ -71,7 +72,7 @@ namespace AdoNetCore.AseClient.Internal
                 (byte) LFlt,
                 (byte) LDt,
                 (byte) LUseDb.TRUE, //lusedb
-                (byte) LUseDb.FALSE, //ldmpld
+                (byte) LDmpLd.FALSE, //ldmpld
                 (byte) LInterfaceSpare,
                 (byte) LType,
                 0, 0, 0, 0, //lbufsize
@@ -90,7 +91,7 @@ namespace AdoNetCore.AseClient.Internal
             stream.WritePaddedString(ClientLibrary, TDS_PROGNLEN, enc);
             stream.Write(new byte[] { 0x0f, 0x07, 0x00, 0x0d }); //lprogvers //doesn't matter what this value is really
 
-            stream.Write(new byte[]
+            stream.Write(new []
             {
                 (byte) LNoShort,
                 (byte) LFlt4,
@@ -122,5 +123,11 @@ namespace AdoNetCore.AseClient.Internal
         {
             throw new System.NotImplementedException();
         }
+
+        public byte[] HeaderTemplate => new byte[]
+        {
+            (byte)Type, 0, 0, 0,
+            0, 0, 0, 0
+        };
     }
 }

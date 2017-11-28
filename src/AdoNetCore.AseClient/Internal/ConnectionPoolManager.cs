@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
@@ -20,7 +18,10 @@ namespace AdoNetCore.AseClient.Internal
             {
                 pool.Release(connection);
             }
-            else { throw new ArgumentException("No connection pool exists for that connection string");}
+            else
+            {
+                throw new ArgumentException("No connection pool exists for that connection string");
+            }
         }
     }
 }

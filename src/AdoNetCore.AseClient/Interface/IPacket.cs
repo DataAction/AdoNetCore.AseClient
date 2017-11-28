@@ -9,5 +9,6 @@ namespace AdoNetCore.AseClient.Interface
         BufferType Type { get; }
         void Write(Stream stream, Encoding enc);
         void Read(Stream stream, Encoding enc);
+        byte[] HeaderTemplate { get; }
     }
 }

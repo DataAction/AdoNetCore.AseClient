@@ -94,7 +94,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             var socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
             socket.Connect(Endpoint);
-            var connection = new InternalConnection(_parameters, socket, new TokenParser());
+            var connection = new InternalConnection(_parameters, new RegularSocket(socket), new TokenParser());
             connection.Connect();
             return connection;
         }

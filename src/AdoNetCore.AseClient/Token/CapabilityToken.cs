@@ -15,7 +15,7 @@ namespace AdoNetCore.AseClient.Token
         public void Write(Stream stream, Encoding enc)
         {
             stream.WriteByte((byte)Type);
-            stream.Write((short)_capabilityBytes.Length);
+            stream.WriteShort((short)_capabilityBytes.Length);
             stream.Write(_capabilityBytes);
         }
 

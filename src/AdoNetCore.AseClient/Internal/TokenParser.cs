@@ -25,6 +25,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (Readers.ContainsKey(tokenType))
                 {
+                    Console.WriteLine($"Hit known token type {tokenType}");
                     var t = Readers[tokenType](stream, enc, previous);
                     previous = t;
                     yield return t;
@@ -47,7 +48,10 @@ namespace AdoNetCore.AseClient.Internal
             {TokenType.TDS_LOGINACK, LoginAckToken.Create },
             {TokenType.TDS_DONE, DoneToken.Create },
             {TokenType.TDS_CAPABILITY, CapabilityToken.Create },
-            {TokenType.TDS_RETURNSTATUS, ReturnStatusToken.Create }
+            {TokenType.TDS_RETURNSTATUS, ReturnStatusToken.Create },
+            {TokenType.TDS_DONEINPROC, DoneInProcToken.Create },
+            {TokenType.TDS_DONEPROC, DoneProcToken.Create },
+            {TokenType.TDS_ROWFMT2, RowFormatToken.Create },
         };
     }
 }

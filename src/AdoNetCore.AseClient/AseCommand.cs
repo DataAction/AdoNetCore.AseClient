@@ -6,19 +6,19 @@ namespace AdoNetCore.AseClient
     public sealed class AseCommand : IDbCommand
     {
         private readonly AseConnection _connection;
-        private readonly AseDataParameterCollection _parameters;
+        internal readonly AseDataParameterCollection AseParameters;
 
         public AseCommand(AseConnection connection)
         {
             _connection = connection;
-            _parameters = new AseDataParameterCollection();
+            AseParameters = new AseDataParameterCollection();
         }
 
         public void Dispose() { }
 
         public void Cancel()
         {
-            throw new NotImplementedException();
+            //todo: implement
         }
 
         public IDbDataParameter CreateParameter()
@@ -59,10 +59,12 @@ namespace AdoNetCore.AseClient
 
         public IDbConnection Connection { get; set; }
 
-        public IDataParameterCollection Parameters => _parameters;
+        public IDataParameterCollection Parameters => AseParameters;
 
         public IDbTransaction Transaction { get; set; }
 
         public UpdateRowSource UpdatedRowSource { get; set; }
+
+        internal bool HasSendableParameters => AseParameters?.HasSendableParameters ?? false;
     }
 }

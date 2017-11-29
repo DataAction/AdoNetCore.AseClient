@@ -135,10 +135,7 @@ namespace AdoNetCore.AseClient
             get { throw new NotImplementedException(); }
         }
 
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
+        public void Dispose() { }
 
         public void Close()
         {
@@ -152,12 +149,14 @@ namespace AdoNetCore.AseClient
 
         public bool NextResult()
         {
-            throw new NotImplementedException();
+            //todo: implement
+            return false;
         }
 
         public bool Read()
         {
-            throw new NotImplementedException();
+            //todo: implement
+            return false;
         }
 
         public int Depth { get; }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
 using AdoNetCore.AseClient.Packet;
@@ -163,9 +162,9 @@ namespace AdoNetCore.AseClient.Internal
                 ? BuildRpcToken(command)
                 : BuildLanguageToken(command);
 
-            if (command.Parameters?.Count > 0)
+            if (command.HasSendableParameters)
             {
-                return new[] { commandToken }.Concat(BuildParameterTokens(command));
+                return new[] { commandToken }.Concat(BuildParameterTokens(command.AseParameters));
             }
 
             return new[] { commandToken };
@@ -176,7 +175,7 @@ namespace AdoNetCore.AseClient.Internal
             return new LanguageToken
             {
                 CommandText = command.CommandText,
-                HasParameters = command.Parameters?.Count > 0
+                HasParameters = command.HasSendableParameters
             };
         }
 
@@ -185,14 +184,38 @@ namespace AdoNetCore.AseClient.Internal
             return new DbRpcToken
             {
                 ProcedureName = command.CommandText,
-                HasParameters = command.Parameters?.Count > 0
+                HasParameters = command.HasSendableParameters
             };
         }
 
-        private IEnumerable<IToken> BuildParameterTokens(AseCommand command)
+        private IToken[] BuildParameterTokens(AseDataParameterCollection parameters)
         {
-            //todo: implement
-            return new IToken[0];
+            //format tokens first
+            var formatToken = new ParameterFormatToken
+            {
+                Parameters = parameters.SendableParameters.Select(p => new ParameterFormatToken.Parameter
+                {
+                    Name = p.ParameterName,
+                    DataType = TypeMap.GetTdsDataType(p.DbType),
+                    IsOutput = p.Direction == ParameterDirection.InputOutput || p.Direction == ParameterDirection.Output,
+                    IsNullable = p.IsNullable
+                }).ToArray()
+            };
+
+            var parametersToken = new ParametersToken
+            {
+                Parameters = parameters.SendableParameters.Select(p => new ParametersToken.Parameter
+                {
+                    Type = TypeMap.GetTdsDataType(p.DbType),
+                    Value = p.Value
+                }).ToArray()
+            };
+            
+            return new IToken[]
+            {
+                formatToken,
+                parametersToken
+            };
         }
 
         public void Dispose()

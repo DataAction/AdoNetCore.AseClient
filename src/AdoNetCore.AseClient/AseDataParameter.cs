@@ -14,5 +14,7 @@ namespace AdoNetCore.AseClient
         public byte Precision { get; set; }
         public byte Scale { get; set; }
         public int Size { get; set; }
+
+        internal bool CanSendOverTheWire => Direction != ParameterDirection.ReturnValue;
     }
 }

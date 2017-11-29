@@ -6,13 +6,19 @@ namespace AdoNetCore.AseClient.Internal
     internal class ReadablePartialStream : Stream
     {
         private readonly Stream _inner;
-        private readonly int _length;
-        private int _position;
+        private readonly uint _length;
+        private uint _position;
+
+        public ReadablePartialStream(Stream inner, uint length)
+        {
+            _inner = inner;
+            _length = length;
+        }
 
         public ReadablePartialStream(Stream inner, int length)
         {
             _inner = inner;
-            _length = length;
+            _length = Convert.ToUInt32(length);
         }
 
         public override void Flush()
@@ -24,7 +30,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             if ((_length - _position) >= count)
             {
-                _position += count;
+                _position += Convert.ToUInt32(count);
                 var bytesRead = _inner.Read(buffer, offset, count);
                 if (bytesRead < count)
                 {

@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 
 namespace AdoNetCore.AseClient
 {
     public sealed class AseDataParameterCollection : List<AseDataParameter>, IDataParameterCollection
     {
+        internal bool HasSendableParameters => this.Any(p => p.CanSendOverTheWire);
+        internal IEnumerable<AseDataParameter> SendableParameters => this.Where(p => p.CanSendOverTheWire);
+       
         public bool Contains(string parameterName)
         {
             return IndexOf(parameterName) >= 0;

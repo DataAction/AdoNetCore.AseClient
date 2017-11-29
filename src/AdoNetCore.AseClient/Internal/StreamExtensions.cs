@@ -60,6 +60,14 @@ namespace AdoNetCore.AseClient.Internal
             stream.WriteByte((byte)password.Length);
             stream.WritePaddedString(password, maxLength, enc, 2); //add two bytes to the appended length value to account for the above two bytes
         }
+
+        public static void WriteBytePrefixedString(this Stream stream, string value, Encoding enc)
+        {
+            var bytes = enc.GetBytes(value);
+            var len = (byte) bytes.Length;
+            stream.WriteByte(len);
+            stream.Write(bytes, 0, len);
+        }
     }
 
     internal static class StreamReadExtensions

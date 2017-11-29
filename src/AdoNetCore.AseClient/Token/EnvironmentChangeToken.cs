@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -27,6 +28,26 @@ namespace AdoNetCore.AseClient.Token
             public ChangeType Type { get; set; }
             public string NewValue { get; set; }
             public string OldValue { get; set; }
+
+            public byte[] GetBytes(Encoding enc)
+            {
+                var oldValue = enc.GetBytes(OldValue);
+                var newValue = enc.GetBytes(NewValue);
+
+                var response = new byte[3 + oldValue.Length + newValue.Length];
+
+                return new[]
+                {
+                    (byte) Type,
+                    (byte) newValue.Length
+                }
+                .Concat(newValue)
+                .Concat(new[]
+                    {
+                        (byte) oldValue.Length
+                    })
+                .Concat(oldValue).ToArray();
+            }
         }
 
         public EnvironmentChange[] Changes { get; set; }
@@ -40,7 +61,15 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, Encoding enc)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Write {Type}");
+            stream.WriteByte((byte)Type);
+
+            var changeBytes = Changes
+                .SelectMany(c => c.GetBytes(enc))
+                .ToArray();
+            var length = (short) changeBytes.Length;
+            stream.WriteShort(length);
+            stream.Write(changeBytes, 0, length);
         }
 
         public void Read(Stream stream, Encoding enc, IToken previous)

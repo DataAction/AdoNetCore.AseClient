@@ -104,7 +104,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);
-                Console.WriteLine(HexDump.Dump(ms.ToArray()));
+                //Console.WriteLine(HexDump.Dump(ms.ToArray()));
 
                 return _parser.Parse(ms, Encoding.ASCII);
             }

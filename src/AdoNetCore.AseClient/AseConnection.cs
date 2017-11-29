@@ -5,9 +5,10 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
-    public class AseConnection : IDbConnection
+    public sealed class AseConnection : IDbConnection
     {
         private IInternalConnection _internal;
+
 
         public AseConnection(string connectionString)
         {
@@ -69,5 +70,7 @@ namespace AdoNetCore.AseClient
         public string Database => _internal.Database;
 
         public ConnectionState State { get; private set; }
+
+        internal IInternalConnection InternalConnection => _internal;
     }
 }

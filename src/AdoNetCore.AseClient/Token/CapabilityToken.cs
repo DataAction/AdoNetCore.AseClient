@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -8,12 +9,12 @@ namespace AdoNetCore.AseClient.Token
 {
     public class CapabilityToken : IToken
     {
-        private byte TDS_CAP_REQUEST = 1;
-        private byte TDS_CAP_RESPONSE = 2;
-
+        //todo: create fields to represent capabilities
         public TokenType Type => TokenType.TDS_CAPABILITY;
+
         public void Write(Stream stream, Encoding enc)
         {
+            Console.WriteLine($"Write {Type}");
             stream.WriteByte((byte)Type);
             stream.WriteShort((short)_capabilityBytes.Length);
             stream.Write(_capabilityBytes);
@@ -21,7 +22,9 @@ namespace AdoNetCore.AseClient.Token
 
         public void Read(Stream stream, Encoding enc, IToken previous)
         {
-            throw new System.NotImplementedException();
+            var remainingLength = stream.ReadUShort();
+            var capabilityBytes = new byte[remainingLength];
+            stream.Read(capabilityBytes, 0, remainingLength);
         }
 
         //from .net 4 client
@@ -31,5 +34,12 @@ namespace AdoNetCore.AseClient.Token
             //cap response
             0x02, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x40, 0x00, 0x01, 0x02, 0x48, 0x00, 0x00, 0x00
         };
+
+        public static CapabilityToken Create(Stream stream, Encoding enc, IToken previous)
+        {
+            var t = new CapabilityToken();
+            t.Read(stream, enc, previous);
+            return t;
+        }
     }
 }

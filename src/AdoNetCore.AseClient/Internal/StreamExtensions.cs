@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public static class StreamExtensions
+    public static class StreamWriteExtensions
     {
         public static void Write(this Stream stream, byte[] bytes)
         {
@@ -23,54 +23,14 @@ namespace AdoNetCore.AseClient.Internal
             stream.Write(Enumerable.Repeat(value, repeat).ToArray());
         }
 
-        public static short ReadShort(this Stream stream)
+        public static void WriteInt(this Stream stream, int value)
         {
-            var buf = new byte[2];
-            stream.Read(buf, 0, 2);
-            return BitConverter.ToInt16(buf, 0);
-        }
-        public static ushort ReadUShort(this Stream stream)
-        {
-            var buf = new byte[2];
-            stream.Read(buf, 0, 2);
-            return BitConverter.ToUInt16(buf, 0);
+            stream.Write(BitConverter.GetBytes(value));
         }
 
-        public static int ReadInt(this Stream stream)
+        public static void WriteUInt(this Stream stream, uint value)
         {
-            var buf = new byte[4];
-            stream.Read(buf, 0, 4);
-            return BitConverter.ToInt32(buf, 0);
-        }
-        public static uint ReadUInt(this Stream stream)
-        {
-            var buf = new byte[4];
-            stream.Read(buf, 0, 4);
-            return BitConverter.ToUInt32(buf, 0);
-        }
-        
-        public static string ReadByteLengthPrefixedString(this Stream stream, Encoding enc)
-        {
-            var length = stream.ReadByte();
-            return stream.ReadString(length, enc);
-        }
-
-        public static string ReadShortLengthPrefixedString(this Stream stream, Encoding enc)
-        {
-            var length = stream.ReadUShort();
-            return stream.ReadString(length, enc);
-        }
-
-        private static string ReadString(this Stream stream, int length, Encoding enc)
-        {
-            if (length == 0)
-            {
-                return string.Empty;
-            }
-
-            var buf = new byte[length];
-            stream.Read(buf, 0, length);
-            return enc.GetString(buf);
+            stream.Write(BitConverter.GetBytes(value));
         }
 
         /// <summary>
@@ -98,6 +58,60 @@ namespace AdoNetCore.AseClient.Internal
             stream.WriteByte(0); //
             stream.WriteByte((byte)password.Length);
             stream.WritePaddedString(password, maxLength, enc, 2); //add two bytes to the appended length value to account for the above two bytes
+        }
+    }
+
+    public static class StreamReadExtensions
+    {
+        public static short ReadShort(this Stream stream)
+        {
+            var buf = new byte[2];
+            stream.Read(buf, 0, 2);
+            return BitConverter.ToInt16(buf, 0);
+        }
+        public static ushort ReadUShort(this Stream stream)
+        {
+            var buf = new byte[2];
+            stream.Read(buf, 0, 2);
+            return BitConverter.ToUInt16(buf, 0);
+        }
+
+        public static int ReadInt(this Stream stream)
+        {
+            var buf = new byte[4];
+            stream.Read(buf, 0, 4);
+            return BitConverter.ToInt32(buf, 0);
+        }
+
+        public static uint ReadUInt(this Stream stream)
+        {
+            var buf = new byte[4];
+            stream.Read(buf, 0, 4);
+            return BitConverter.ToUInt32(buf, 0);
+        }
+
+        public static string ReadByteLengthPrefixedString(this Stream stream, Encoding enc)
+        {
+            var length = stream.ReadByte();
+            return stream.ReadString(length, enc);
+        }
+
+        public static string ReadShortLengthPrefixedString(this Stream stream, Encoding enc)
+        {
+            var length = stream.ReadUShort();
+            return stream.ReadString(length, enc);
+        }
+
+        public static string ReadString(this Stream stream, int length, Encoding enc)
+        {
+            if (length == 0)
+            {
+                return string.Empty;
+            }
+
+            var buf = new byte[length];
+            stream.Read(buf, 0, length);
+            return enc.GetString(buf);
         }
     }
 }

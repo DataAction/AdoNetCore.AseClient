@@ -21,6 +21,11 @@ namespace AdoNetCore.AseClient.Token
 
         public TokenType Type => TokenType.TDS_EED;
 
+        public EedStatus Status { get; set; }
+        public TranState TransactionStatus { get; set; }
+        public string Message { get; set; }
+        public int Severity { get; set; }
+
         public void Write(Stream stream, Encoding enc)
         {
             throw new NotImplementedException();
@@ -33,18 +38,16 @@ namespace AdoNetCore.AseClient.Token
             var ts = new ReadablePartialStream(stream, remainingLength);
             var messageNumber = ts.ReadUInt();
             var state = ts.ReadByte();
-            var severity = ts.ReadByte();
+            Severity = ts.ReadByte();
             var sqlStateLen = ts.ReadByte();
             var sqlState = new byte[sqlStateLen];
             ts.Read(sqlState, 0, sqlStateLen);
-            var status = (EedStatus) ts.ReadByte();
-            var tranState = (TranState) ts.ReadUShort();
-            var msg = ts.ReadShortLengthPrefixedString(enc);
+            Status = (EedStatus) ts.ReadByte();
+            TransactionStatus = (TranState) ts.ReadUShort();
+            Message = ts.ReadShortLengthPrefixedString(enc);
             var serverName = ts.ReadByteLengthPrefixedString(enc);
             var procName = ts.ReadByteLengthPrefixedString(enc);
             var lineNum = ts.ReadUShort();
-
-            Console.WriteLine($"{Type} [{severity}]: {msg}");
         }
 
         public static EedToken Create(Stream stream, Encoding enc, IToken previous)

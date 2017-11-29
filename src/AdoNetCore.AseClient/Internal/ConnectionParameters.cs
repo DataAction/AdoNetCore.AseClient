@@ -14,6 +14,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             {"Data Source", (p, v) => { /*todo: need to parse Data Source values that contain the port*/p.Server = v; } },
             {"Port", (p, v) => { p.Port = Convert.ToInt32(v); } },
+            {"Db", (p, v) => { p.Database = v; } },
             {"Database", (p, v) => { p.Database = v; } },
             {"Uid", (p, v) => { p.Username = v; } },
             {"Pwd", (p, v) => { p.Password = v; } },

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -60,6 +61,7 @@ namespace AdoNetCore.AseClient.Packet
         public BufferType Type => BufferType.TDS_BUF_LOGIN;
         public void Write(Stream stream, Encoding enc)
         {
+            Console.WriteLine($"Write {Type}");
             stream.WritePaddedString(Hostname, TDS_MAXNAME, enc); //lhostname
             stream.WritePaddedString(Username, TDS_MAXNAME, enc); //lussername
             stream.WritePaddedString(Password, TDS_MAXNAME, enc); //lpw
@@ -92,7 +94,7 @@ namespace AdoNetCore.AseClient.Packet
             stream.WritePaddedString(ClientLibrary, TDS_PROGNLEN, enc);
             stream.Write(new byte[] { 0x0f, 0x07, 0x00, 0x0d }); //lprogvers //doesn't matter what this value is really
 
-            stream.Write(new []
+            stream.Write(new[]
             {
                 (byte) LNoShort,
                 (byte) LFlt4,
@@ -118,11 +120,6 @@ namespace AdoNetCore.AseClient.Packet
             });
 
             Capability.Write(stream, enc);
-        }
-
-        public void Read(Stream stream, Encoding enc)
-        {
-            throw new System.NotImplementedException();
         }
     }
 }

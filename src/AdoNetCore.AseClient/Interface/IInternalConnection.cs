@@ -6,6 +6,7 @@ namespace AdoNetCore.AseClient.Interface
     {
         void ChangeDatabase(string databaseName);
         string Database { get; }
-        //todo: add things related to command/query execution
+
+        int ExecuteNonQuery(AseCommand command);
     }
 }

@@ -3,7 +3,7 @@ using System.Data;
 
 namespace AdoNetCore.AseClient
 {
-    public class AseCommand : IDbCommand
+    public sealed class AseCommand : IDbCommand
     {
         private readonly AseConnection _connection;
 
@@ -12,10 +12,7 @@ namespace AdoNetCore.AseClient
             _connection = connection;
         }
 
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
+        public void Dispose() { }
 
         public void Cancel()
         {
@@ -29,7 +26,7 @@ namespace AdoNetCore.AseClient
 
         public int ExecuteNonQuery()
         {
-            throw new NotImplementedException();
+            return _connection.InternalConnection.ExecuteNonQuery(this);
         }
 
         public IDataReader ExecuteReader()
@@ -52,45 +49,18 @@ namespace AdoNetCore.AseClient
             throw new NotImplementedException();
         }
 
-        public string CommandText
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
-        }
+        public string CommandText { get; set; }
 
-        public int CommandTimeout
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
-        }
+        public int CommandTimeout { get; set; }
 
-        public CommandType CommandType
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
-        }
+        public CommandType CommandType { get; set; }
 
-        public IDbConnection Connection
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
-        }
+        public IDbConnection Connection { get; set; }
 
-        public IDataParameterCollection Parameters
-        {
-            get { throw new NotImplementedException(); }
-        }
+        public IDataParameterCollection Parameters { get; }
 
-        public IDbTransaction Transaction
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
-        }
+        public IDbTransaction Transaction { get; set; }
 
-        public UpdateRowSource UpdatedRowSource
-        {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
-        }
+        public UpdateRowSource UpdatedRowSource { get; set; }
     }
 }

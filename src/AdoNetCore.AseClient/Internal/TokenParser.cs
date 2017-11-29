@@ -36,7 +36,6 @@ namespace AdoNetCore.AseClient.Internal
                     t.Read(stream, enc, previous);
                     previous = t;
                     yield return t;
-                    //throw new InvalidOperationException($"Unexpected token type {tokenType}");
                 }
             }
         }
@@ -45,7 +44,9 @@ namespace AdoNetCore.AseClient.Internal
         {
             {TokenType.TDS_ENVCHANGE, EnvironmentChangeToken.Create},
             {TokenType.TDS_EED, EedToken.Create },
-            {TokenType.TDS_LOGINACK, LoginAckToken.Create }
+            {TokenType.TDS_LOGINACK, LoginAckToken.Create },
+            {TokenType.TDS_DONE, DoneToken.Create },
+            {TokenType.TDS_CAPABILITY, CapabilityToken.Create }
         };
     }
 }

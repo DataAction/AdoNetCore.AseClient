@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -7,26 +6,18 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
-    public class LoginTests
+    public class ChangeDatabaseTests
     {
         private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
 
         [Test]
-        public void Login_Success()
+        public void ChangeDatabase_Success()
         {
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
                 connection.Open();
-                Assert.IsTrue(connection.State == ConnectionState.Open, "Connection state should be Open after calling Open()");
-            }
-        }
-
-        [Test]
-        public void Login_Failure()
-        {
-            using (var connection = new AseConnection(_connectionStrings["badpass"]))
-            {
-                Assert.Throws<AseException>(() => connection.Open());
+                connection.ChangeDatabase("tempdb");
+                connection.ChangeDatabase("master");
             }
         }
     }

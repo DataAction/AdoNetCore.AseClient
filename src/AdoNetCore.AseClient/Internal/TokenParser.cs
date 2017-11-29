@@ -46,7 +46,8 @@ namespace AdoNetCore.AseClient.Internal
             {TokenType.TDS_EED, EedToken.Create },
             {TokenType.TDS_LOGINACK, LoginAckToken.Create },
             {TokenType.TDS_DONE, DoneToken.Create },
-            {TokenType.TDS_CAPABILITY, CapabilityToken.Create }
+            {TokenType.TDS_CAPABILITY, CapabilityToken.Create },
+            {TokenType.TDS_RETURNSTATUS, ReturnStatusToken.Create }
         };
     }
 }

@@ -63,13 +63,16 @@ namespace AdoNetCore.AseClient.Internal
                 new CapabilityToken()));
 
             var ackHandler = new LoginTokenHandler();
+            var messageHandler = new MessageTokenHandler();
 
             ReceiveTokens(new ITokenHandler[]
             {
                 ackHandler,
                 new EnvChangeTokenHandler(_environment),
-                new MessageTokenHandler(),
+                messageHandler,
             });
+
+            messageHandler.AssertNoErrors();
 
             if (!ackHandler.ReceivedAck)
             {
@@ -96,11 +99,15 @@ namespace AdoNetCore.AseClient.Internal
                 }
             }));
 
+            var messageHandler = new MessageTokenHandler();
+
             ReceiveTokens(new ITokenHandler[]
             {
                 new EnvChangeTokenHandler(_environment),
-                new MessageTokenHandler(),
+                messageHandler
             });
+
+            messageHandler.AssertNoErrors();
         }
 
         public string Database
@@ -114,13 +121,16 @@ namespace AdoNetCore.AseClient.Internal
             SendPacket(new NormalPacket(BuildCommandTokens(command)));
 
             var doneHandler = new DoneTokenHandler();
+            var messageHandler = new MessageTokenHandler();
 
             ReceiveTokens(new ITokenHandler[]
             {
                 new EnvChangeTokenHandler(_environment),
-                new MessageTokenHandler(),
+                messageHandler,
                 doneHandler
             });
+
+            messageHandler.AssertNoErrors();
 
             return doneHandler.RowsAffected;
         }
@@ -129,11 +139,15 @@ namespace AdoNetCore.AseClient.Internal
         {
             SendPacket(new NormalPacket(BuildCommandTokens(command)));
 
+            var messageHandler = new MessageTokenHandler();
+
             ReceiveTokens(new ITokenHandler[]
             {
                 new EnvChangeTokenHandler(_environment),
-                new MessageTokenHandler()
+                messageHandler
             });
+
+            messageHandler.AssertNoErrors();
 
             return new AseDataReader(new IToken[0]);
         }
@@ -145,9 +159,9 @@ namespace AdoNetCore.AseClient.Internal
                 throw new NotImplementedException($"{command.CommandType} is not implemented");
             }
 
-            var commandToken = command.CommandType == CommandType.Text
-                ? BuildLanguageToken(command)
-                : BuildRpcToken(command);
+            var commandToken = command.CommandType == CommandType.StoredProcedure
+                ? BuildRpcToken(command)
+                : BuildLanguageToken(command);
 
             if (command.Parameters?.Count > 0)
             {

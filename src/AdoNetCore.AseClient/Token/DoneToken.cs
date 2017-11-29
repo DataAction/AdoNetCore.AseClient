@@ -65,14 +65,14 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             Status = (DoneStatus) stream.ReadUShort();
             TransactionState = (TranState) stream.ReadUShort();
             Count = stream.ReadInt();
         }
 
-        public static DoneToken Create(Stream stream, Encoding enc, IToken previous)
+        public static DoneToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new DoneToken();
             t.Read(stream, enc, previous);

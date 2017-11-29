@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace AdoNetCore.AseClient.Internal
@@ -80,6 +81,12 @@ namespace AdoNetCore.AseClient.Internal
         {
             get { return _position; }
             set { throw new InvalidOperationException(); }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            Debug.Assert(_position == Length, "Readable Partial Stream was not fully consumed");
         }
     }
 }

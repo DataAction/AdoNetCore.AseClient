@@ -40,7 +40,7 @@ namespace AdoNetCore.AseClient.Token
                 : DbRpcOptions.TDS_RPC_UNUSED));
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             throw new NotImplementedException();
         }

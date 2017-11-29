@@ -19,12 +19,12 @@ namespace AdoNetCore.AseClient.Token
             stream.WriteInt(Status);
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             Status = stream.ReadInt();
         }
 
-        public static ReturnStatusToken Create(Stream stream, Encoding enc, IToken previous)
+        public static ReturnStatusToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new ReturnStatusToken();
             t.Read(stream, enc, previous);

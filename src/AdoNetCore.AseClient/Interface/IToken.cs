@@ -8,6 +8,6 @@ namespace AdoNetCore.AseClient.Interface
     {
         TokenType Type { get; }
         void Write(Stream stream, Encoding enc);
-        void Read(Stream stream, Encoding enc, IToken previous);
+        void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken);
     }
 }

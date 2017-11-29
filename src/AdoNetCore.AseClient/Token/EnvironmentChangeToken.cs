@@ -72,7 +72,7 @@ namespace AdoNetCore.AseClient.Token
             stream.Write(changeBytes, 0, length);
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             var remainingLength = stream.ReadShort();
             var ts = new ReadablePartialStream(stream, remainingLength);
@@ -93,7 +93,7 @@ namespace AdoNetCore.AseClient.Token
             Changes = changes.ToArray();
         }
 
-        public static EnvironmentChangeToken Create(Stream stream, Encoding enc, IToken previous)
+        public static EnvironmentChangeToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new EnvironmentChangeToken();
             t.Read(stream, enc, previous);

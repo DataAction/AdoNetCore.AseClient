@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient.Internal
 
         private IEnumerable<IToken> ParseInternal(Stream stream, Encoding enc)
         {
-            IToken previous = null;
+            IFormatToken previousFormatToken = null;
             while (stream.Position < stream.Length)
             {
                 var tokenType = (TokenType)stream.ReadByte();
@@ -26,22 +26,27 @@ namespace AdoNetCore.AseClient.Internal
                 if (Readers.ContainsKey(tokenType))
                 {
                     Console.WriteLine($"Hit known token type {tokenType}");
-                    var t = Readers[tokenType](stream, enc, previous);
-                    previous = t;
+                    var t = Readers[tokenType](stream, enc, previousFormatToken);
+
+                    if (t is IFormatToken token)
+                    {
+                        Console.WriteLine($"**Set new format token**");
+                        previousFormatToken = token;
+                    }
+
                     yield return t;
                 }
                 else
                 {
                     Console.WriteLine($"Hit unknown token type {tokenType}");
                     var t = new CatchAllToken(tokenType);
-                    t.Read(stream, enc, previous);
-                    previous = t;
+                    t.Read(stream, enc, previousFormatToken);
                     yield return t;
                 }
             }
         }
 
-        private static readonly Dictionary<TokenType, Func<Stream, Encoding, IToken, IToken>> Readers = new Dictionary<TokenType, Func<Stream, Encoding, IToken, IToken>>
+        private static readonly Dictionary<TokenType, Func<Stream, Encoding, IFormatToken, IToken>> Readers = new Dictionary<TokenType, Func<Stream, Encoding, IFormatToken, IToken>>
         {
             {TokenType.TDS_ENVCHANGE, EnvironmentChangeToken.Create},
             {TokenType.TDS_EED, EedToken.Create },
@@ -51,7 +56,8 @@ namespace AdoNetCore.AseClient.Internal
             {TokenType.TDS_RETURNSTATUS, ReturnStatusToken.Create },
             {TokenType.TDS_DONEINPROC, DoneInProcToken.Create },
             {TokenType.TDS_DONEPROC, DoneProcToken.Create },
-            {TokenType.TDS_ROWFMT2, RowFormatToken.Create },
+            {TokenType.TDS_ROWFMT2, RowFormat2Token.Create },
+            {TokenType.TDS_CONTROL, ControlToken.Create }
         };
     }
 }

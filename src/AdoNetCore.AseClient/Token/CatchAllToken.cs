@@ -21,7 +21,7 @@ namespace AdoNetCore.AseClient.Token
 
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             //var remainingLength = stream.ReadShort();
             var remainingLength = CalculateRemainingLength(Type, stream);

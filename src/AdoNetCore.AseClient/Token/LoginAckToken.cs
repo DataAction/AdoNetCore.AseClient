@@ -42,7 +42,7 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             var remainingLength = stream.ReadUShort();
             var ts = new ReadablePartialStream(stream, remainingLength);
@@ -59,7 +59,7 @@ namespace AdoNetCore.AseClient.Token
             ProgramVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}.{versionBuffer[3]}";
         }
 
-        public static LoginAckToken Create(Stream stream, Encoding enc, IToken previous)
+        public static LoginAckToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new LoginAckToken();
             t.Read(stream, enc, previous);

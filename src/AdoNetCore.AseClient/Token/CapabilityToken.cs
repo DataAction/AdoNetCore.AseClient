@@ -20,7 +20,7 @@ namespace AdoNetCore.AseClient.Token
             stream.Write(_capabilityBytes);
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             var remainingLength = stream.ReadUShort();
             var capabilityBytes = new byte[remainingLength];
@@ -35,7 +35,7 @@ namespace AdoNetCore.AseClient.Token
             0x02, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x40, 0x00, 0x01, 0x02, 0x48, 0x00, 0x00, 0x00
         };
 
-        public static CapabilityToken Create(Stream stream, Encoding enc, IToken previous)
+        public static CapabilityToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new CapabilityToken();
             t.Read(stream, enc, previous);

@@ -31,7 +31,7 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             var remainingLength = stream.ReadUShort();
 
@@ -50,7 +50,7 @@ namespace AdoNetCore.AseClient.Token
             var lineNum = ts.ReadUShort();
         }
 
-        public static EedToken Create(Stream stream, Encoding enc, IToken previous)
+        public static EedToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new EedToken();
             t.Read(stream, enc, previous);

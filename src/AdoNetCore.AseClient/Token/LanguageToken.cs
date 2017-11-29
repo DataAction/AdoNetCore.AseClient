@@ -24,7 +24,7 @@ namespace AdoNetCore.AseClient.Token
             stream.Write(commandText, 0, commandText.Length);
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             var remainingLength = stream.ReadInt();
             var status = stream.ReadByte();

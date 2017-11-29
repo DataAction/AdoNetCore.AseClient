@@ -10,7 +10,7 @@ namespace AdoNetCore.AseClient.Token
     internal class DoneInProcToken : DoneProcCommonToken, IToken
     {
         public TokenType Type => TokenType.TDS_DONEINPROC;
-        public static DoneInProcToken Create(Stream stream, Encoding enc, IToken previous)
+        public static DoneInProcToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new DoneInProcToken();
             t.Read(stream, enc, previous);
@@ -22,7 +22,7 @@ namespace AdoNetCore.AseClient.Token
     {
         public TokenType Type => TokenType.TDS_DONEPROC;
 
-        public static DoneProcToken Create(Stream stream, Encoding enc, IToken previous)
+        public static DoneProcToken Create(Stream stream, Encoding enc, IFormatToken previous)
         {
             var t = new DoneProcToken();
             t.Read(stream, enc, previous);
@@ -71,7 +71,7 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             Status = (DoneProcStatus)stream.ReadUShort();
             TransactionState = (TranState)stream.ReadUShort();

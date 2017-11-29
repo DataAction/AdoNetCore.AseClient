@@ -106,7 +106,7 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public void Read(Stream stream, Encoding enc, IToken previous)
+        public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             throw new NotImplementedException();
         }

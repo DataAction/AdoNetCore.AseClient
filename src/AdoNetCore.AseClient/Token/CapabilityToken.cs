@@ -7,7 +7,7 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
-    public class CapabilityToken : IToken
+    internal class CapabilityToken : IToken
     {
         //todo: create fields to represent capabilities
         public TokenType Type => TokenType.TDS_CAPABILITY;

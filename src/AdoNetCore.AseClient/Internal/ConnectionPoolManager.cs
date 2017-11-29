@@ -4,7 +4,7 @@ using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class ConnectionPoolManager
+    internal class ConnectionPoolManager
     {
         private static readonly ConcurrentDictionary<string, ConnectionPool> _pools = new ConcurrentDictionary<string, ConnectionPool>(StringComparer.OrdinalIgnoreCase);
         public static IInternalConnection Reserve(string connectionString)

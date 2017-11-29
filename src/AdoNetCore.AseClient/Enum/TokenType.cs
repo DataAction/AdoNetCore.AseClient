@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient.Enum
     /// 
     /// Note: some token types are mentioned in the spec as not yet implemented, and others as obsolete.
     /// </summary>
-    public enum TokenType : byte
+    internal enum TokenType : byte
     {
         [Obsolete]
         TDS_ALTCONTROL = 0xAF,

@@ -9,7 +9,7 @@ using AdoNetCore.AseClient.Token;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class TokenParser : ITokenParser
+    internal class TokenParser : ITokenParser
     {
         public IToken[] Parse(Stream stream, Encoding enc)
         {

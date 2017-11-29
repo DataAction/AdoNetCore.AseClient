@@ -7,7 +7,7 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
-    public class LanguageToken : IToken
+    internal class LanguageToken : IToken
     {
         public TokenType Type => TokenType.TDS_LANGUAGE;
 

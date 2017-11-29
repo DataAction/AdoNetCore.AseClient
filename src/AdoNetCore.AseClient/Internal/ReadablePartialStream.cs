@@ -3,7 +3,7 @@ using System.IO;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class ReadablePartialStream : Stream
+    internal class ReadablePartialStream : Stream
     {
         private readonly Stream _inner;
         private readonly int _length;

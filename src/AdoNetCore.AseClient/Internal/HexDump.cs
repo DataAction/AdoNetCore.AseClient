@@ -3,7 +3,7 @@ using System.Text;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class HexDump
+    internal class HexDump
     {
         public static string Dump(byte[] bytes, int bytesPerLine = 16)
         {

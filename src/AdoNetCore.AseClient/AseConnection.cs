@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Data;
+using System.Runtime.CompilerServices;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
+
+[assembly: InternalsVisibleTo("AdoNetCore.AseClient.Tests")]
 
 namespace AdoNetCore.AseClient
 {
@@ -71,6 +74,16 @@ namespace AdoNetCore.AseClient
 
         public ConnectionState State { get; private set; }
 
-        internal IInternalConnection InternalConnection => _internal;
+        internal IInternalConnection InternalConnection
+        {
+            get
+            {
+                if (State != ConnectionState.Open || _internal == null)
+                {
+                    throw new InvalidOperationException("Cannot execute on a connection which is not open");
+                }
+                return _internal;
+            }
+        }
     }
 }

@@ -50,10 +50,11 @@ end";
 
         [TestCase(1000, 20, "pooled")]
         [TestCase(5000, 20, "pooled")]
-        //[TestCase(1000, 20, "nonpooled")] //note: if you run a nonpooled test too frequenly, you'll consume all the free ports (which exist in the range ~1000-5000) windows normally makes available
+        //note: if you run a nonpooled test too frequenly,
+        //you'll consume all the free ports windows normally makes available (port range ~1000-5000)
+        //[TestCase(1000, 20, "nonpooled")]
         public void MultiThreaded_Echo_Procedure_ShouldExecute_WithoutCrosstalk(int threads, int parallelism, string csName)
         {
-
             var connectionString = _connectionStrings[csName];
             ExecuteProcedure(connectionString);
             var sw = Stopwatch.StartNew();

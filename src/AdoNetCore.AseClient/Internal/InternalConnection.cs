@@ -1,19 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
 using System.Text;
 using AdoNetCore.AseClient.Interface;
+using AdoNetCore.AseClient.Internal.Handler;
 using AdoNetCore.AseClient.Packet;
 using AdoNetCore.AseClient.Token;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class InternalConnection : IInternalConnection
+    internal class InternalConnection : IInternalConnection
     {
         private readonly ConnectionParameters _parameters;
         private readonly ISocket _socket;
-        private readonly int _headerSize = 8;
-        private readonly Encoding _encoding = Encoding.ASCII;
-
-        private int _packetSize = 512; //512's the default but the server can send a new packet size if it so desires
+        private readonly DbEnvironment _environment = new DbEnvironment();
 
         public InternalConnection(ConnectionParameters parameters, ISocket socket)
         {
@@ -25,18 +26,21 @@ namespace AdoNetCore.AseClient.Internal
         {
             Console.WriteLine();
             Console.WriteLine("==========  Send packet   ==========");
-            _socket.SendPacket(packet, _packetSize, _headerSize, _encoding);
+            _socket.SendPacket(packet, _environment);
         }
 
-        private void ReceiveTokens(Action<IToken>[] handlers)
+        private void ReceiveTokens(ITokenHandler[] handlers)
         {
             Console.WriteLine();
             Console.WriteLine("========== Receive Tokens ==========");
-            foreach (var token in _socket.ReceiveTokens(_packetSize, _headerSize, _encoding))
+            foreach (var token in _socket.ReceiveTokens(_environment))
             {
                 foreach (var handler in handlers)
                 {
-                    handler(token);
+                    if (handler.CanHandle(token.Type))
+                    {
+                        handler.Handle(token);
+                    }
                 }
             }
         }
@@ -55,103 +59,25 @@ namespace AdoNetCore.AseClient.Internal
                 "us_english",
                 _parameters.Charset,
                 "ADO.NET",
-                _packetSize,
+                _environment.PacketSize,
                 new CapabilityToken()));
 
-            ReceiveTokens(new Action<IToken>[]
+            var ackHandler = new LoginTokenHandler();
+
+            ReceiveTokens(new ITokenHandler[]
             {
-                ProcessLoginAckToken,
-                ProcessEnvChangeToken,
-                ProcessEedToken
+                ackHandler,
+                new EnvChangeTokenHandler(_environment),
+                new MessageTokenHandler(),
             });
 
-            if (!_loginTokenReceived)
+            if (!ackHandler.ReceivedAck)
             {
                 throw new InvalidOperationException("No login ack found");
             }
 
             ChangeDatabase(_parameters.Database);
         }
-
-        private bool _loginTokenReceived;
-        private void ProcessLoginAckToken(IToken token)
-        {
-            switch (token)
-            {
-                case LoginAckToken t:
-                    _loginTokenReceived = true;
-                    if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_FAIL)
-                    {
-                        throw new AseException("Login failed.");
-                    }
-
-                    if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_NEGOTIATE)
-                    {
-                        Console.WriteLine($"Login negotiation required");
-                    }
-
-                    if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
-                    {
-                        Console.WriteLine($"Login success");
-                    }
-                    break;
-                default:
-                    return;
-            }
-        }
-
-        private void ProcessEnvChangeToken(IToken token)
-        {
-            switch (token)
-            {
-                case EnvironmentChangeToken t:
-                    foreach (var change in t.Changes)
-                    {
-                        Console.WriteLine($"{t.Type}: {change.Type} - {change.OldValue} -> {change.NewValue}");
-                        switch (change.Type)
-                        {
-                            case EnvironmentChangeToken.ChangeType.TDS_ENV_DB:
-                                Database = change.NewValue;
-                                break;
-                            case EnvironmentChangeToken.ChangeType.TDS_ENV_PACKSIZE:
-                                //todo: confirm this doesn't break anything
-                                if (int.TryParse(change.NewValue, out int newPackSize))
-                                {
-                                    _packetSize = newPackSize;
-                                }
-                                break;
-                        }
-                    }
-                    break;
-                default:
-                    return;
-            }
-        }
-
-        private void ProcessEedToken(IToken token)
-        {
-            switch (token)
-            {
-                case EedToken t:
-                    var msgType = t.Severity > 10
-                        ? "ERROR"
-                        : "INFO ";
-
-                    var formatted = $"{msgType} [{t.Severity}]: {t.Message}";
-                    if (formatted.EndsWith("\n"))
-                    {
-                        Console.Write(formatted);
-                    }
-                    else
-                    {
-                        Console.WriteLine(formatted);
-                    }
-                    break;
-                default:
-                    return;
-            }
-        }
-
 
         public void ChangeDatabase(string databaseName)
         {
@@ -161,52 +87,98 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             //turns out, you can't issue an env change token to change the database, it responds saying it doesn't know how to process such a token
-            SendPacket(new NormalPacket(new LanguageToken
+            SendPacket(new NormalPacket(new IToken[]
             {
-                HasParameters = false,
-                CommandText = $"USE {databaseName}"
+                new LanguageToken
+                {
+                    HasParameters = false,
+                    CommandText = $"USE {databaseName}"
+                }
             }));
 
-            ReceiveTokens(new Action<IToken>[]
+            ReceiveTokens(new ITokenHandler[]
             {
-                ProcessEnvChangeToken,
-                ProcessEedToken
+                new EnvChangeTokenHandler(_environment),
+                new MessageTokenHandler(),
             });
         }
 
-        public string Database { get; private set; }
+        public string Database
+        {
+            get => _environment.Database;
+            private set => _environment.Database = value;
+        }
+
         public int ExecuteNonQuery(AseCommand command)
         {
-            SendPacket(new NormalPacket(new LanguageToken
+            SendPacket(new NormalPacket(BuildCommandTokens(command)));
+
+            var doneHandler = new DoneTokenHandler();
+
+            ReceiveTokens(new ITokenHandler[]
+            {
+                new EnvChangeTokenHandler(_environment),
+                new MessageTokenHandler(),
+                doneHandler
+            });
+
+            return doneHandler.RowsAffected;
+        }
+
+        public AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command)
+        {
+            SendPacket(new NormalPacket(BuildCommandTokens(command)));
+
+            ReceiveTokens(new ITokenHandler[]
+            {
+                new EnvChangeTokenHandler(_environment),
+                new MessageTokenHandler()
+            });
+
+            return new AseDataReader(new IToken[0]);
+        }
+
+        private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
+        {
+            if (command.CommandType == CommandType.TableDirect)
+            {
+                throw new NotImplementedException($"{command.CommandType} is not implemented");
+            }
+
+            var commandToken = command.CommandType == CommandType.Text
+                ? BuildLanguageToken(command)
+                : BuildRpcToken(command);
+
+            if (command.Parameters?.Count > 0)
+            {
+                return new[] { commandToken }.Concat(BuildParameterTokens(command));
+            }
+
+            return new[] { commandToken };
+        }
+
+        private IToken BuildLanguageToken(AseCommand command)
+        {
+            return new LanguageToken
             {
                 CommandText = command.CommandText,
                 HasParameters = command.Parameters?.Count > 0
-            }));
-
-            rowsAffected = 0;
-
-            ReceiveTokens(new Action<IToken>[]
-            {
-                ProcessEnvChangeToken,
-                ProcessEedToken,
-                ProcessDoneToken
-            });
-
-            return rowsAffected;
+            };
         }
 
-        private int rowsAffected;
-        public void ProcessDoneToken(IToken token)
+        private IToken BuildRpcToken(AseCommand command)
         {
-            switch (token)
+            return new DbRpcToken
             {
-                case DoneToken t:
-                    Console.WriteLine($"{t.Type}: {t.Status}");
-                    rowsAffected = t.Count;
-                    break;
-                default:
-                    return;
-            }
+                ProcedureName = command.CommandText,
+                HasParameters = command.Parameters?.Count > 0
+            };
+        }
+
+        private IEnumerable<IToken> BuildParameterTokens(AseCommand command)
+        {
+            //todo: implement
+            return new IToken[0];
         }
 
         public void Dispose()

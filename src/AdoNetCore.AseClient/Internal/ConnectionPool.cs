@@ -7,7 +7,7 @@ using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class ConnectionPool
+    internal class ConnectionPool
     {
         private class PoolItem
         {

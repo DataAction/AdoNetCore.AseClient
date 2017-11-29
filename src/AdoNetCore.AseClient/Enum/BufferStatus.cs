@@ -4,7 +4,7 @@
 namespace AdoNetCore.AseClient.Enum
 {
     [Flags]
-    public enum BufferStatus : byte
+    internal enum BufferStatus : byte
     {
         /// <summary>
         /// No Status

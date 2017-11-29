@@ -1,49 +1,49 @@
 ﻿// ReSharper disable InconsistentNaming
 namespace AdoNetCore.AseClient.Enum
 {
-    public enum LInt2 : byte
+    internal enum LInt2 : byte
     {
         TDS_INT2_LSB_HI = 2,
         TDS_INT2_LSB_LO = 3,
     }
-    public enum LInt4 : byte
+    internal enum LInt4 : byte
     {
 
         TDS_INT4_LSB_HI = 0,
         TDS_INT4_LSB_LO = 1,
     }
-    public enum LChar : byte
+    internal enum LChar : byte
     {
         TDS_CHAR_ASCII = 6,
         TDS_CHAR_EBCDIC = 7,
     }
-    public enum LFlt : byte
+    internal enum LFlt : byte
     {
         TDS_FLT_IEEE_HI = 4,
         TDS_FLT_VAXD = 5,
         TDS_FLT_IEEE_LO = 10,
         TDS_FLT_ND5000 = 11,
     }
-    public enum LDt : byte
+    internal enum LDt : byte
     {
         TDS_TWO_I4_LSB_HI = 8,
         TDS_TWO_I4_LSB_LO = 9,
 
     }
 
-    public enum LUseDb : byte
+    internal enum LUseDb : byte
     {
         TRUE = 1,
         FALSE = 0
     }
 
-    public enum LDmpLd : byte
+    internal enum LDmpLd : byte
     {
         TRUE = 1,
         FALSE = 0
     }
 
-    public enum LInterfaceSpare : byte
+    internal enum LInterfaceSpare : byte
     {
         TDS_LDEFSQL = 0,
         TDS_LXSQL = 1,
@@ -56,7 +56,7 @@ namespace AdoNetCore.AseClient.Enum
         TDS_LOG_SECSESS_ACK = 0x08
     }
 
-    public enum LType : byte
+    internal enum LType : byte
     {
         TDS_NONE = 0x00, //added for our own use
         TDS_LSERVER = 0x01,
@@ -64,13 +64,13 @@ namespace AdoNetCore.AseClient.Enum
         TDS_LINTERNAL_RPC = 0x04
     }
 
-    public enum LNoShort : byte
+    internal enum LNoShort : byte
     {
         TDS_CVT_SHORT = 1,
         TDS_NOCVT_SHORT = 0
     }
 
-    public enum LFlt4 : byte
+    internal enum LFlt4 : byte
     {
         TDS_FLT4_IEEE_HI = (12),
         TDS_FLT4_IEEE_LO = (13),
@@ -78,19 +78,19 @@ namespace AdoNetCore.AseClient.Enum
         TDS_FLT4_ND50004 = (15)
     }
 
-    public enum LDate4 : byte
+    internal enum LDate4 : byte
     {
         TDS_TWO_I2_LSB_HI = (16),
         TDS_TWO_I2_LSB_LO = (17)
     }
 
-    public enum LSetLang : byte
+    internal enum LSetLang : byte
     {
         TDS_NOTIFY = (1),
         TDS_NO_NOTIFY = (0)
     }
 
-    public enum LSecLogin : byte
+    internal enum LSecLogin : byte
     {
         TDS_SEC_LOG_ENCRYPT = (0x01),
         TDS_SEC_LOG_CHALLENGE = (0x02),
@@ -100,12 +100,12 @@ namespace AdoNetCore.AseClient.Enum
         TDS_SEC_LOG_ENCRYPT2 = (0x20)
     }
 
-    public enum LSecBulk : byte
+    internal enum LSecBulk : byte
     {
         TDS_SEC_BULK_LABELED = (0x01)
     }
 
-    public enum LHaLogin : byte
+    internal enum LHaLogin : byte
     {
         TDS_HA_LOG_SESSION = (0x01),
         TDS_HA_LOG_RESUME = (0x02),
@@ -114,7 +114,7 @@ namespace AdoNetCore.AseClient.Enum
         TDS_HA_LOG_MIGRATE = (0x10)
     }
 
-    public enum LSetCharset : byte
+    internal enum LSetCharset : byte
     {
         TDS_NOTIFY = (1),
         TDS_NO_NOTIFY = (0)

@@ -10,7 +10,7 @@ namespace AdoNetCore.AseClient.Enum
     /// Most are obsolete in TDS 5.0, so to start we will [Obsolete] most of them.
     /// As we implement the protocol, if we need to remove the [Obsolete], we will.
     /// </summary>
-    public enum BufferType : byte
+    internal enum BufferType : byte
     {
         /// <summary>
         /// None

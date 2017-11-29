@@ -7,7 +7,7 @@ using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class RegularSocket : ISocket
+    internal class RegularSocket : ISocket
     {
         private readonly Socket _inner;
         private readonly ITokenParser _parser;
@@ -40,7 +40,7 @@ namespace AdoNetCore.AseClient.Internal
             0, 0, 0, 0
         };
 
-        public void SendPacket(IPacket packet, int packetSize, int headerSize, Encoding enc)
+        public void SendPacket(IPacket packet, DbEnvironment env)
         {
             using (var ms = new MemoryStream())
             {
@@ -50,7 +50,7 @@ namespace AdoNetCore.AseClient.Internal
                 while (ms.Position < ms.Length)
                 {
                     //split into chunks and send over the wire
-                    var buffer = new byte[packetSize];
+                    var buffer = new byte[env.PacketSize];
                     var template = HeaderTemplate(packet.Type);
                     Array.Copy(template, buffer, template.Length);
                     var copied = ms.Read(buffer, template.Length, buffer.Length - template.Length);
@@ -59,7 +59,7 @@ namespace AdoNetCore.AseClient.Internal
                     buffer[2] = (byte)(chunkLength >> 8);
                     buffer[3] = (byte)chunkLength;
 
-                    if (chunkLength == packetSize)
+                    if (chunkLength == env.PacketSize)
                     {
                         _inner.Send(buffer);
                     }
@@ -73,11 +73,11 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public IToken[] ReceiveTokens(int packetSize, int headerSize, Encoding enc)
+        public IToken[] ReceiveTokens(DbEnvironment env)
         {
             using (var ms = new MemoryStream())
             {
-                var buffer = new byte[packetSize];
+                var buffer = new byte[env.PacketSize];
                 var received = _inner.Receive(buffer);
                 BufferType type = BufferType.TDS_BUF_NONE;
                 while (received > 0)
@@ -87,13 +87,13 @@ namespace AdoNetCore.AseClient.Internal
                         type = (BufferType)buffer[0];
                     }
 
-                    if (received > headerSize)
+                    if (received > env.HeaderSize)
                     {
-                        ms.Write(buffer, headerSize, received - headerSize);
+                        ms.Write(buffer, env.HeaderSize, received - env.HeaderSize);
                     }
 
                     //todo: fix this, we may need to read the header to determine how many bytes left
-                    if (received < packetSize)
+                    if (received < env.PacketSize)
                     {
                         received = 0;
                     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
@@ -6,20 +7,21 @@ using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Packet
 {
-    public class NormalPacket : IPacket
+    internal class NormalPacket : IPacket
     {
-        public IToken[] Tokens { get; set; }
+        private readonly IEnumerable<IToken> _tokens;
+
         public BufferType Type => BufferType.TDS_BUF_NORMAL;
 
-        public NormalPacket(params IToken[] tokens)
+        public NormalPacket(IEnumerable<IToken> tokens)
         {
-            Tokens = tokens;
+            _tokens = tokens;
         }
 
         public void Write(Stream stream, Encoding enc)
         {
             Console.WriteLine($"Write {Type}");
-            foreach (var token in Tokens)
+            foreach (var token in _tokens)
             {
                 token.Write(stream, enc);
             }

@@ -9,7 +9,7 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
-    public class EnvironmentChangeToken : IToken
+    internal class EnvironmentChangeToken : IToken
     {
         public enum ChangeType : byte
         {

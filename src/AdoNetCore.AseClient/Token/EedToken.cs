@@ -7,7 +7,7 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
-    public class EedToken : IToken
+    internal class EedToken : IToken
     {
         public enum EedStatus
         {

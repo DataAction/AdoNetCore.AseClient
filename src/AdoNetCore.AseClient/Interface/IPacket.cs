@@ -4,7 +4,7 @@ using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Interface
 {
-    public interface IPacket
+    internal interface IPacket
     {
         BufferType Type { get; }
         /// <summary>

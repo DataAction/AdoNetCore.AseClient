@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public class ConnectionParameters
+    internal class ConnectionParameters
     {
         //Cache the current process details, expensive call
         private static readonly Process CurrentProcess = Process.GetCurrentProcess();

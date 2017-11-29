@@ -7,7 +7,7 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
-    public class DoneToken : IToken
+    internal class DoneToken : IToken
     {
         [Flags]
         public enum DoneStatus : ushort

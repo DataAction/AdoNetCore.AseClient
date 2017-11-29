@@ -3,7 +3,7 @@
 
 namespace AdoNetCore.AseClient.Enum
 {
-    public enum TranState : short
+    internal enum TranState : short
     {
         /// <summary>
         /// Not currently in a transaction

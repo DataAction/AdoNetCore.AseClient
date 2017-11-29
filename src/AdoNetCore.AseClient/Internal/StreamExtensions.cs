@@ -2,10 +2,11 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    public static class StreamWriteExtensions
+    internal static class StreamWriteExtensions
     {
         public static void Write(this Stream stream, byte[] bytes)
         {
@@ -61,7 +62,7 @@ namespace AdoNetCore.AseClient.Internal
         }
     }
 
-    public static class StreamReadExtensions
+    internal static class StreamReadExtensions
     {
         public static short ReadShort(this Stream stream)
         {
@@ -88,6 +89,13 @@ namespace AdoNetCore.AseClient.Internal
             var buf = new byte[4];
             stream.Read(buf, 0, 4);
             return BitConverter.ToUInt32(buf, 0);
+        }
+
+        public static ulong ReadULong(this Stream stream)
+        {
+            var buf = new byte[8];
+            stream.Read(buf, 0, 8);
+            return BitConverter.ToUInt64(buf, 0);
         }
 
         public static string ReadByteLengthPrefixedString(this Stream stream, Encoding enc)

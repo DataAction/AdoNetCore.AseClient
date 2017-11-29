@@ -6,10 +6,12 @@ namespace AdoNetCore.AseClient
     public sealed class AseCommand : IDbCommand
     {
         private readonly AseConnection _connection;
+        private readonly AseDataParameterCollection _parameters;
 
         public AseCommand(AseConnection connection)
         {
             _connection = connection;
+            _parameters = new AseDataParameterCollection();
         }
 
         public void Dispose() { }
@@ -21,7 +23,7 @@ namespace AdoNetCore.AseClient
 
         public IDbDataParameter CreateParameter()
         {
-            throw new NotImplementedException();
+            return new AseDataParameter();
         }
 
         public int ExecuteNonQuery()
@@ -31,12 +33,12 @@ namespace AdoNetCore.AseClient
 
         public IDataReader ExecuteReader()
         {
-            throw new NotImplementedException();
+            return ExecuteReader(CommandBehavior.Default);
         }
 
         public IDataReader ExecuteReader(CommandBehavior behavior)
         {
-            throw new NotImplementedException();
+            return _connection.InternalConnection.ExecuteReader(behavior, this);
         }
 
         public object ExecuteScalar()
@@ -57,7 +59,7 @@ namespace AdoNetCore.AseClient
 
         public IDbConnection Connection { get; set; }
 
-        public IDataParameterCollection Parameters { get; }
+        public IDataParameterCollection Parameters => _parameters;
 
         public IDbTransaction Transaction { get; set; }
 

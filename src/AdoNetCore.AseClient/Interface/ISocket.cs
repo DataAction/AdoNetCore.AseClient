@@ -1,16 +1,16 @@
 ﻿using System;
-using System.Text;
+using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Interface
 {
-    public interface ISocket : IDisposable
+    internal interface ISocket : IDisposable
     {
         int Send(byte[] buffer);
 
         int Receive(byte[] buffer);
 
-        void SendPacket(IPacket packet, int packetSize, int headerSize, Encoding enc);
+        void SendPacket(IPacket packet, DbEnvironment env);
 
-        IToken[] ReceiveTokens(int packetSize, int headerSize, Encoding enc);
+        IToken[] ReceiveTokens(DbEnvironment env);
     }
 }

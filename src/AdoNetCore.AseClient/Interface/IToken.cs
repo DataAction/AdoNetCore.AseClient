@@ -4,7 +4,7 @@ using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Interface
 {
-    public interface IToken
+    internal interface IToken
     {
         TokenType Type { get; }
         void Write(Stream stream, Encoding enc);

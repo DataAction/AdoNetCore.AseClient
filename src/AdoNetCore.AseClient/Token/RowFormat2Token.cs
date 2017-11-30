@@ -28,36 +28,7 @@ namespace AdoNetCore.AseClient.Token
 
                 for (var i = 0; i < columnCount; i++)
                 {
-                    var format = new FormatItem
-                    {
-                        ColumnLabel = ts.ReadByteLengthPrefixedString(enc),
-                        CatalogName = ts.ReadByteLengthPrefixedString(enc),
-                        SchemaName = ts.ReadByteLengthPrefixedString(enc),
-                        TableName = ts.ReadByteLengthPrefixedString(enc),
-                        ColumnName = ts.ReadByteLengthPrefixedString(enc),
-                        RowStatus = (RowStatus) ts.ReadUInt(),
-                        UserType = ts.ReadInt(),
-                        DataType = (TdsDataType) ts.ReadByte(),
-                    };
-
-                    int? length = null;
-
-                    switch (format.DataType)
-                    {
-                        case TdsDataType.TDS_INT4:
-                            break;
-                        case TdsDataType.TDS_INTN:
-                            format.Length = ts.ReadByte();
-                            break;
-                        default:
-                            throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
-                    }
-
-                    format.LocaleInfo = ts.ReadByteLengthPrefixedString(enc);
-
-                    Console.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo})");
-
-                    formats.Add(format);
+                    formats.Add(FormatItem.ReadForRow(ts, enc, Type));
                 }
 
                 Formats = formats.ToArray();

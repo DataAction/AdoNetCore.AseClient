@@ -5,7 +5,7 @@
 namespace AdoNetCore.AseClient.Enum
 {
     [Flags]
-    public enum RowStatus : byte
+    public enum RowFormatItemStatus : byte
     {
         /// <summary>
         /// This is a hidden column.

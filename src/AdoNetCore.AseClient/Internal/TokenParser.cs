@@ -58,8 +58,8 @@ namespace AdoNetCore.AseClient.Internal
             {TokenType.TDS_ROWFMT2, RowFormat2Token.Create },
             {TokenType.TDS_CONTROL, ControlToken.Create },
             {TokenType.TDS_ROW, RowToken.Create },
-            //{TokenType.TDS_COLINFO2, ColumnInfo2Token.Create },
-            //{TokenType.TDS_PARAMFMT, ParameterFormatToken.Create },
+            {TokenType.TDS_PARAMFMT, ParameterFormatToken.Create },
+            {TokenType.TDS_PARAMFMT2, ParameterFormat2Token.Create },
             //{TokenType.TDS_PARAMS, ParametersToken.Create }
         };
     }

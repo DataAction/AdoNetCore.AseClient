@@ -1,4 +1,7 @@
-﻿using AdoNetCore.AseClient.Enum;
+﻿using System;
+using System.IO;
+using System.Text;
+using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -9,7 +12,7 @@ namespace AdoNetCore.AseClient.Internal
         public string SchemaName { get; set; }
         public string TableName { get; set; }
         public string ColumnName { get; set; }
-        public RowStatus RowStatus { get; set; }
+        public RowFormatItemStatus RowStatus { get; set; }
         public int UserType { get; set; }
         public TdsDataType DataType { get; set; }
         public int? Length { get; set; }
@@ -30,5 +33,65 @@ namespace AdoNetCore.AseClient.Internal
         /// Relates to TDS_BLOB
         /// </summary>
         public string ClassId { get; set; }
+
+        public static FormatItem ReadForRow(Stream stream, Encoding enc, TokenType srcTokenType)
+        {
+            //todo make use of srcTokenType
+            var format = new FormatItem
+            {
+                ColumnLabel = stream.ReadByteLengthPrefixedString(enc),
+                CatalogName = stream.ReadByteLengthPrefixedString(enc),
+                SchemaName = stream.ReadByteLengthPrefixedString(enc),
+                TableName = stream.ReadByteLengthPrefixedString(enc),
+                ColumnName = stream.ReadByteLengthPrefixedString(enc),
+                RowStatus = (RowFormatItemStatus) (srcTokenType == TokenType.TDS_ROWFMT
+                    ? (uint) stream.ReadByte()
+                    : stream.ReadUInt())
+            };
+
+            ReadTypeInfo(format, stream, enc);
+
+            Console.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo})");
+
+            return format;
+        }
+
+        public static FormatItem ReadForParameter(Stream stream, Encoding enc, TokenType srcTokenType)
+        {
+            var format = new FormatItem
+            {
+                ParameterName = stream.ReadByteLengthPrefixedString(enc),
+            };
+            var status = srcTokenType == TokenType.TDS_PARAMFMT
+                ? (uint)stream.ReadByte()
+                : stream.ReadUInt();
+            ReadTypeInfo(format, stream, enc);
+
+            Console.WriteLine($"  <- {format.ParameterName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType})");
+
+            return format;
+        }
+
+        private static void ReadTypeInfo(FormatItem format, Stream stream, Encoding enc)
+        {
+            format.UserType = stream.ReadInt();
+            format.DataType = (TdsDataType)stream.ReadByte();
+
+            switch (format.DataType)
+            {
+                case TdsDataType.TDS_INT4:
+                    break;
+                case TdsDataType.TDS_INTN:
+                    format.Length = stream.ReadByte();
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
+            }
+
+            format.LocaleInfo = stream.ReadByteLengthPrefixedString(enc);
+            //ClassId stuff?
+        }
+
+
     }
 }

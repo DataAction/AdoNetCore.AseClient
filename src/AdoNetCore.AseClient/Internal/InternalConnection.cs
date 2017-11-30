@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
 using AdoNetCore.AseClient.Packet;
@@ -191,17 +192,17 @@ namespace AdoNetCore.AseClient.Internal
         private IToken[] BuildParameterTokens(AseDataParameterCollection parameters)
         {
             //format tokens first
-            var formatToken = new ParameterFormatToken
+            var formatToken = new ParameterFormat2Token
             {
-                Parameters = parameters.SendableParameters.Select(p => new ParameterFormatToken.Parameter
+                Formats = parameters.SendableParameters.Select(p => new FormatItem
                 {
-                    Name = p.ParameterName,
+                    ParameterName = p.ParameterName,
                     DataType = TypeMap.GetTdsDataType(p.DbType),
-                    IsOutput = p.Direction == ParameterDirection.InputOutput || p.Direction == ParameterDirection.Output,
+                    IsOutput = p.IsOutput,
                     IsNullable = p.IsNullable
                 }).ToArray()
             };
-
+            
             var parametersToken = new ParametersToken
             {
                 Parameters = parameters.SendableParameters.Select(p => new ParametersToken.Parameter

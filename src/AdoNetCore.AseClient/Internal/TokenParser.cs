@@ -25,7 +25,6 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (Readers.ContainsKey(tokenType))
                 {
-                    Console.WriteLine($"Hit known token type {tokenType}");
                     var t = Readers[tokenType](stream, enc, previousFormatToken);
 
                     if (t is IFormatToken token)
@@ -38,7 +37,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 else
                 {
-                    Console.WriteLine($"Hit unknown token type {tokenType}");
+                    Console.WriteLine($"!!! Hit unknown token type {tokenType} !!!");
                     var t = new CatchAllToken(tokenType);
                     t.Read(stream, enc, previousFormatToken);
                     yield return t;
@@ -57,7 +56,11 @@ namespace AdoNetCore.AseClient.Internal
             {TokenType.TDS_DONEINPROC, DoneInProcToken.Create },
             {TokenType.TDS_DONEPROC, DoneProcToken.Create },
             {TokenType.TDS_ROWFMT2, RowFormat2Token.Create },
-            {TokenType.TDS_CONTROL, ControlToken.Create }
+            {TokenType.TDS_CONTROL, ControlToken.Create },
+            {TokenType.TDS_ROW, RowToken.Create },
+            //{TokenType.TDS_COLINFO2, ColumnInfo2Token.Create },
+            //{TokenType.TDS_PARAMFMT, ParameterFormatToken.Create },
+            //{TokenType.TDS_PARAMS, ParametersToken.Create }
         };
     }
 }

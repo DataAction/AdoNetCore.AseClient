@@ -45,17 +45,19 @@ namespace AdoNetCore.AseClient.Token
         public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             var remainingLength = stream.ReadUShort();
-            var ts = new ReadablePartialStream(stream, remainingLength);
+            byte[] versionBuffer;
+            using (var ts = new ReadablePartialStream(stream, remainingLength))
+            {
+                Status = (LoginStatus)ts.ReadByte();
 
-            Status = (LoginStatus)ts.ReadByte();
+                versionBuffer = new byte[4];
+                ts.Read(versionBuffer, 0, 4);
+                TdsVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}.{versionBuffer[3]}";
 
-            var versionBuffer = new byte[4];
-            ts.Read(versionBuffer, 0, 4);
-            TdsVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}.{versionBuffer[3]}";
+                ProgramName = ts.ReadByteLengthPrefixedString(enc);
 
-            ProgramName = ts.ReadByteLengthPrefixedString(enc);
-
-            ts.Read(versionBuffer, 0, 4);
+                ts.Read(versionBuffer, 0, 4);
+            }
             ProgramVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}.{versionBuffer[3]}";
         }
 

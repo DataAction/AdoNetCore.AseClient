@@ -35,19 +35,21 @@ namespace AdoNetCore.AseClient.Token
         {
             var remainingLength = stream.ReadUShort();
 
-            var ts = new ReadablePartialStream(stream, remainingLength);
-            var messageNumber = ts.ReadUInt();
-            var state = ts.ReadByte();
-            Severity = ts.ReadByte();
-            var sqlStateLen = ts.ReadByte();
-            var sqlState = new byte[sqlStateLen];
-            ts.Read(sqlState, 0, sqlStateLen);
-            Status = (EedStatus) ts.ReadByte();
-            TransactionStatus = (TranState) ts.ReadUShort();
-            Message = ts.ReadShortLengthPrefixedString(enc);
-            var serverName = ts.ReadByteLengthPrefixedString(enc);
-            var procName = ts.ReadByteLengthPrefixedString(enc);
-            var lineNum = ts.ReadUShort();
+            using (var ts = new ReadablePartialStream(stream, remainingLength))
+            {
+                var messageNumber = ts.ReadUInt();
+                var state = ts.ReadByte();
+                Severity = ts.ReadByte();
+                var sqlStateLen = ts.ReadByte();
+                var sqlState = new byte[sqlStateLen];
+                ts.Read(sqlState, 0, sqlStateLen);
+                Status = (EedStatus) ts.ReadByte();
+                TransactionStatus = (TranState) ts.ReadUShort();
+                Message = ts.ReadShortLengthPrefixedString(enc);
+                var serverName = ts.ReadByteLengthPrefixedString(enc);
+                var procName = ts.ReadByteLengthPrefixedString(enc);
+                var lineNum = ts.ReadUShort();
+            }
         }
 
         public static EedToken Create(Stream stream, Encoding enc, IFormatToken previous)

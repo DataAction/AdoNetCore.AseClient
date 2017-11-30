@@ -61,12 +61,14 @@ namespace AdoNetCore.AseClient.Internal
 
                     if (chunkLength == env.PacketSize)
                     {
+                        //Console.WriteLine(HexDump.Dump(buffer));
                         _inner.Send(buffer);
                     }
                     else
                     {
                         var temp = new byte[chunkLength];
                         Array.Copy(buffer, temp, chunkLength);
+                        //Console.WriteLine(HexDump.Dump(temp));
                         _inner.Send(temp);
                     }
                 }

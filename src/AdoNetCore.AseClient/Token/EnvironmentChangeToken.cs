@@ -67,7 +67,7 @@ namespace AdoNetCore.AseClient.Token
             var changeBytes = Changes
                 .SelectMany(c => c.GetBytes(enc))
                 .ToArray();
-            var length = (short) changeBytes.Length;
+            var length = (short)changeBytes.Length;
             stream.WriteShort(length);
             stream.Write(changeBytes, 0, length);
         }
@@ -75,22 +75,22 @@ namespace AdoNetCore.AseClient.Token
         public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             var remainingLength = stream.ReadShort();
-            var ts = new ReadablePartialStream(stream, remainingLength);
-
-            var changes = new List<EnvironmentChange>();
-
-            while (ts.Position < ts.Length)
+            using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
-                var change = new EnvironmentChange
-                {
-                    Type = (ChangeType)ts.ReadByte(),
-                    NewValue = ts.ReadByteLengthPrefixedString(enc),
-                    OldValue = ts.ReadByteLengthPrefixedString(enc)
-                };
-                changes.Add(change);
-            }
+                var changes = new List<EnvironmentChange>();
 
-            Changes = changes.ToArray();
+                while (ts.Position < ts.Length)
+                {
+                    var change = new EnvironmentChange
+                    {
+                        Type = (ChangeType)ts.ReadByte(),
+                        NewValue = ts.ReadByteLengthPrefixedString(enc),
+                        OldValue = ts.ReadByteLengthPrefixedString(enc)
+                    };
+                    changes.Add(change);
+                }
+                Changes = changes.ToArray();
+            }
         }
 
         public static EnvironmentChangeToken Create(Stream stream, Encoding enc, IFormatToken previous)

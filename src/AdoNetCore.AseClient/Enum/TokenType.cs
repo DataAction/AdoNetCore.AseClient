@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Enum
         [Obsolete]
         TDS_COLFMTOLD = 0x2A,
         TDS_COLINFO = 0xA5,
-        TDS_COLINFO2 = 0x20,
+        //TDS_COLINFO2 = 0x20, //what the... why would 0x20 be reused?
         [Obsolete]
         TDS_COLNAME = 0xA0,
         TDS_CONTROL = 0xAE,

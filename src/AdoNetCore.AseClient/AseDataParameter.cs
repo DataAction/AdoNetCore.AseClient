@@ -16,5 +16,6 @@ namespace AdoNetCore.AseClient
         public int Size { get; set; }
 
         internal bool CanSendOverTheWire => Direction != ParameterDirection.ReturnValue;
+        internal bool IsOutput => Direction == ParameterDirection.InputOutput || Direction == ParameterDirection.Output;
     }
 }

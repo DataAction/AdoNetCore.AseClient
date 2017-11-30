@@ -17,6 +17,15 @@ namespace AdoNetCore.AseClient.Internal
         public int? Scale { get; set; }
         public string LocaleInfo { get; set; }
 
+        private string _parameterName { get; set; }
+        public string ParameterName
+        {
+            get => _parameterName;
+            set => _parameterName = value == null || value.StartsWith("@") ? value : $"@{value}";
+        }
+        public bool IsNullable { get; set; }
+        public bool IsOutput { get; set; }
+
         /// <summary>
         /// Relates to TDS_BLOB
         /// </summary>

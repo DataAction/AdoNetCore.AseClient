@@ -4,10 +4,17 @@ namespace AdoNetCore.AseClient
 {
     public sealed class AseDataParameter : IDbDataParameter
     {
+        private string _parameterName;
         public DbType DbType { get; set; }
         public ParameterDirection Direction { get; set; }
         public bool IsNullable { get; }
-        public string ParameterName { get; set; }
+
+        public string ParameterName
+        {
+            get => _parameterName;
+            set => _parameterName = value == null || value.StartsWith("@") ? value : $"@{value}";
+        }
+
         public string SourceColumn { get; set; }
         public DataRowVersion SourceVersion { get; set; }
         public object Value { get; set; }

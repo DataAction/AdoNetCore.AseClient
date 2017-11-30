@@ -127,7 +127,8 @@ namespace AdoNetCore.AseClient.Internal
             {
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
-                doneHandler
+                new ResponseParameterTokenHandler(command.AseParameters),
+                doneHandler,
             });
 
             messageHandler.AssertNoErrors();
@@ -140,16 +141,19 @@ namespace AdoNetCore.AseClient.Internal
             SendPacket(new NormalPacket(BuildCommandTokens(command)));
 
             var messageHandler = new MessageTokenHandler();
+            var dataReaderHandler = new DataReaderTokenHandler();
 
             ReceiveTokens(new ITokenHandler[]
             {
                 new EnvChangeTokenHandler(_environment),
-                messageHandler
+                messageHandler,
+                dataReaderHandler,
+                new ResponseParameterTokenHandler(command.AseParameters),
             });
 
             messageHandler.AssertNoErrors();
 
-            return new AseDataReader(new IToken[0]);
+            return new AseDataReader(dataReaderHandler.Results().ToArray());
         }
 
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
@@ -191,31 +195,36 @@ namespace AdoNetCore.AseClient.Internal
 
         private IToken[] BuildParameterTokens(AseDataParameterCollection parameters)
         {
-            //format tokens first
-            var formatToken = new ParameterFormat2Token
+            var formatItems = new List<FormatItem>();
+            var parameterItems = new List<ParametersToken.Parameter>();
+
+            foreach (var parameter in parameters.SendableParameters)
             {
-                Formats = parameters.SendableParameters.Select(p => new FormatItem
+                var formatItem = new FormatItem
                 {
-                    ParameterName = p.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(p.DbType),
-                    IsOutput = p.IsOutput,
-                    IsNullable = p.IsNullable
-                }).ToArray()
-            };
-            
-            var parametersToken = new ParametersToken
-            {
-                Parameters = parameters.SendableParameters.Select(p => new ParametersToken.Parameter
+                    ParameterName = parameter.ParameterName,
+                    DataType = TypeMap.GetTdsDataType(parameter.DbType),
+                    IsOutput = parameter.IsOutput,
+                    IsNullable = parameter.IsNullable
+                };
+                formatItems.Add(formatItem);
+                parameterItems.Add(new ParametersToken.Parameter
                 {
-                    Type = TypeMap.GetTdsDataType(p.DbType),
-                    Value = p.Value
-                }).ToArray()
-            };
-            
+                    Format = formatItem,
+                    Value = parameter.Value
+                });
+            }
+
             return new IToken[]
             {
-                formatToken,
-                parametersToken
+                new ParameterFormat2Token
+                {
+                    Formats = formatItems.ToArray()
+                },
+                new ParametersToken
+                {
+                    Parameters = parameterItems.ToArray()
+                }
             };
         }
 

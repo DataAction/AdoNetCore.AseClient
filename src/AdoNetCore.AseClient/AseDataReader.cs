@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Data;
-using AdoNetCore.AseClient.Interface;
+using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
-    public class AseDataReader : IDataReader
+    public sealed class AseDataReader : IDataReader
     {
-        private readonly IToken[] _tokens;
+        //todo: needs unit tests, feels a bit flimsy
+        private readonly TableResult[] _results;
+        private int _currentResult = -1;
+        private int _currentRow = -1;
 
-        internal AseDataReader(IToken[] tokens)
+        internal AseDataReader(TableResult[] results)
         {
-            _tokens = tokens;
+            _results = results;
+            NextResult();
         }
 
         public bool GetBoolean(int i)
@@ -63,10 +67,7 @@ namespace AdoNetCore.AseClient
             throw new NotImplementedException();
         }
 
-        public Type GetFieldType(int i)
-        {
-            throw new NotImplementedException();
-        }
+        public Type GetFieldType(int i) => typeof(object);
 
         public float GetFloat(int i)
         {
@@ -95,12 +96,31 @@ namespace AdoNetCore.AseClient
 
         public string GetName(int i)
         {
-            throw new NotImplementedException();
+            if (_currentResult >= 0
+                && _currentResult < _results.Length
+                && i < _results[_currentResult].Formats.Length)
+            {
+                return _results[_currentResult].Formats[i].ColumnName;
+            }
+
+            throw new ArgumentException();
         }
 
         public int GetOrdinal(string name)
         {
-            throw new NotImplementedException();
+            if (_currentResult >= 0 && _currentResult < _results.Length)
+            {
+                var formats = _results[_currentResult].Formats;
+                for (var i = 0; i < formats.Length; i++)
+                {
+                    if (string.Equals(formats[i].ColumnName, name))
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            throw new ArgumentException();
         }
 
         public string GetString(int i)
@@ -110,7 +130,17 @@ namespace AdoNetCore.AseClient
 
         public object GetValue(int i)
         {
-            throw new NotImplementedException();
+            if (_currentResult >= 0
+                && _currentResult < _results.Length
+                && _currentRow >= 0
+                && _currentRow < _results[_currentResult].Rows.Count
+                && i >= 0
+                && i < _results[_currentResult].Rows[_currentRow].Items.Length)
+            {
+                return _results[_currentResult].Rows[_currentRow].Items[i];
+            }
+
+            throw new ArgumentException();
         }
 
         public int GetValues(object[] values)
@@ -123,18 +153,14 @@ namespace AdoNetCore.AseClient
             throw new NotImplementedException();
         }
 
-        public int FieldCount { get; }
+        public int FieldCount => _currentResult >= 0 && _currentResult < _results.Length
+            ? _results[_currentResult].Formats.Length
+            : 0;
 
-        object IDataRecord.this[int i]
-        {
-            get { throw new NotImplementedException(); }
-        }
+        object IDataRecord.this[int i] => GetValue(i);
 
-        object IDataRecord.this[string name]
-        {
-            get { throw new NotImplementedException(); }
-        }
-
+        object IDataRecord.this[string name] => GetValue(GetOrdinal(name));
+        
         public void Dispose() { }
 
         public void Close()
@@ -149,18 +175,40 @@ namespace AdoNetCore.AseClient
 
         public bool NextResult()
         {
-            //todo: implement
-            return false;
+            _currentResult++;
+
+            if (_results.Length > _currentResult)
+            {
+                _currentRow = -1;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public bool Read()
         {
-            //todo: implement
+            if (_currentResult < 0)
+            {
+                return false;
+            }
+
+            _currentRow++;
+
+            if (_results[_currentResult].Rows.Count > _currentRow)
+            {
+                return true;
+            }
+
             return false;
         }
 
-        public int Depth { get; }
-        public bool IsClosed { get; }
-        public int RecordsAffected { get; }
+        public int Depth => 0;
+        public bool IsClosed => _currentResult >= _results.Length;
+        public int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
+            ? _results[_currentResult].Rows.Count
+            : 0;
     }
 }

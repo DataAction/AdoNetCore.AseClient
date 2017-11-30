@@ -62,9 +62,12 @@ namespace AdoNetCore.AseClient.Internal
             {
                 ParameterName = stream.ReadByteLengthPrefixedString(enc),
             };
-            var status = srcTokenType == TokenType.TDS_PARAMFMT
+            var status = (ParameterFormatItemStatus) (srcTokenType == TokenType.TDS_PARAMFMT
                 ? (uint)stream.ReadByte()
-                : stream.ReadUInt();
+                : stream.ReadUInt());
+            format.IsOutput = status.HasFlag(ParameterFormatItemStatus.TDS_PARAM_RETURN);
+            format.IsNullable = status.HasFlag(ParameterFormatItemStatus.TDS_PARAM_NULLALLOWED);
+
             ReadTypeInfo(format, stream, enc);
 
             Console.WriteLine($"  <- {format.ParameterName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType})");

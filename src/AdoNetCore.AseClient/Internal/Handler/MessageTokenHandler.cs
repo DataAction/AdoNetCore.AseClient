@@ -51,7 +51,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
             if (_errorTokens.Count > 0)
             {
                 var mostSevere = _errorTokens.OrderByDescending(t => t.Severity).First();
-                throw new AseException($"[{mostSevere.Severity}] {mostSevere.Message}");
+                throw new AseException($"[{mostSevere.Severity}] {mostSevere.Message}", (int)mostSevere.MessageNumber);
             }
         }
     }

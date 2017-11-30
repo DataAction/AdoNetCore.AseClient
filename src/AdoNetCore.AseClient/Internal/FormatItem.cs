@@ -82,7 +82,10 @@ namespace AdoNetCore.AseClient.Internal
 
             switch (format.DataType)
             {
+                case TdsDataType.TDS_INT1:
+                case TdsDataType.TDS_INT2:
                 case TdsDataType.TDS_INT4:
+                case TdsDataType.TDS_INT8:
                     break;
                 case TdsDataType.TDS_INTN:
                     format.Length = stream.ReadByte();

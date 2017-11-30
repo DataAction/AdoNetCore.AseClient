@@ -1,8 +1,8 @@
 ## Objectives
 * Our intent is functional parity with the .net 4 client `Sybase.AdoNet4.AseClient`
   * EXCEPT: connection strings. We may not implement *all* options, but where we do, the option name will be the same
-  * In theory, since we're implementing TDS 5.0, this client would work with other Sybase-produced databases, but the scope for now is just ASE
-* Target all versions of .NET Core (1.0, 1.1, 2.0, 2.1)
+  * In theory, since we're implementing TDS 5.0, this client might work with other Sybase-produced databases, but the scope for now is just ASE
+* Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)
 * Should work with dapper at least as well as the .net 4 client
   * Hopefully we can improve it
 
@@ -13,7 +13,6 @@
 * `jTDS` if the above isn't informative enough (credit to them for figuring this out)
 
 ## Flows/design
-
 Roughly the flows will be (names not set in stone)
 
 ### Open a connection
@@ -22,9 +21,9 @@ Roughly the flows will be (names not set in stone)
 `AseConnection` <-InternalConnection- `ConnectionPoolManager` <-InternalConnection- `ConnectionPool`
 
 ### Send a command and receive any response data
-`AseCommand` -ADO.net stuff-> `InternalConnection` -Token Generation Commands-> `TdsTokenGenerator` -Tokens-> `TokenWriter` -bytes-> `DB` *"command gets processed"*
+`AseCommand` -ADO.net stuff-> `InternalConnection` -Tokens-> `MemoryStream` -bytes-> `PacketChunkerSocket` *"command gets processed"*
 
-`AseCommand` <-ADO.net stuff- `InternalConnection` <-.NET stuff- `TdsTokenParser` <-Tokens- `TokenReader` <-bytes- `DB`
+`AseCommand` <-ADO.net stuff- `InternalConnection` <-Tokens- `MemoryStream` <-bytes- `PacketChunkerSocket`
 
 ### Release the connection (dispose)
 `AseConnection` -Connection-> `ConnectionPoolManager` -Connection-> `ConnectionPool` *"connection released"*
@@ -41,3 +40,5 @@ In general, for reasons of unit-testing, please create and implement interfaces.
   * Login / capability negotiation
   * Simple sql command call (`create procedure ...`)
   * Stored procedure call (`TDS_DBRPC`)
+  * Simple queries (`select 1 as x...` with different types)
+  * More advanced queries and procedure calls (i.e. with more parameters/types)

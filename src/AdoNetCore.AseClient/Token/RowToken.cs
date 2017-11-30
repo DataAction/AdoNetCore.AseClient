@@ -14,7 +14,7 @@ namespace AdoNetCore.AseClient.Token
     internal class RowToken : IToken
     {
         public TokenType Type => TokenType.TDS_ROW;
-        public object[] DataItems { get; set; }
+        public object[] Values { get; set; }
 
         public void Write(Stream stream, Encoding enc)
         {
@@ -24,28 +24,12 @@ namespace AdoNetCore.AseClient.Token
         public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)
         {
             Console.WriteLine($"<- {Type}");
-            var dataItems = new List<object>();
+            var values = new List<object>();
             foreach (var format in previousFormatToken.Formats)
             {
-                //read length, can be 0 (for fixed-length types), 1 or 4 bytes (type dependent)
-                switch (format.DataType)
-                {
-                    case TdsDataType.TDS_INTN:
-                        var length = stream.ReadByte();
-                        if (length == 4)
-                        {
-                            dataItems.Add(stream.ReadInt());
-                        }
-                        else
-                        {
-                            dataItems.Add(null);
-                        }
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Unsupported data type {format.DataType}");
-                }
+                values.Add(ValueReader.Read(stream, format));
             }
-            DataItems = dataItems.ToArray();
+            Values = values.ToArray();
         }
 
         public static RowToken Create(Stream stream, Encoding enc, IFormatToken previousFormatToken)

@@ -17,32 +17,6 @@ namespace AdoNetCore.AseClient.Token
         {
             public FormatItem Format { get; set; }
             public object Value { get; set; }
-
-            public void Write(Stream stream)
-            {
-                Console.WriteLine($"  -> {Format.DataType}: {Value}");
-                switch (Format.DataType)
-                {
-                    case TdsDataType.TDS_INT4:
-                        stream.WriteInt((int)Value);
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Unsupported data type {Format.DataType}");
-                }
-            }
-
-            public void Read(Stream stream)
-            {
-                switch (Format.DataType)
-                {
-                    case TdsDataType.TDS_INT4:
-                        Value = stream.ReadInt();
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Unsupported data type {Format.DataType}");
-                }
-                Console.WriteLine($"  <- {Format.DataType}: {Value}");
-            }
         }
 
         public TokenType Type => TokenType.TDS_PARAMS;
@@ -55,7 +29,7 @@ namespace AdoNetCore.AseClient.Token
             stream.WriteByte((byte)Type);
             foreach (var parameter in Parameters)
             {
-                parameter.Write(stream);
+                ValueWriter.Write(parameter.Value, stream, parameter.Format);
             }
         }
 
@@ -66,9 +40,9 @@ namespace AdoNetCore.AseClient.Token
             {
                 var p = new Parameter
                 {
-                    Format = format
+                    Format = format,
+                    Value = ValueReader.Read(stream, format)
                 };
-                p.Read(stream);
                 parameters.Add(p);
             }
             Parameters = parameters.ToArray();

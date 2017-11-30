@@ -35,7 +35,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     case RowToken row:
                         current?.Rows.Add(new RowResult
                         {
-                            Items = row.DataItems
+                            Items = row.Values
                         });
                         break;
                 }

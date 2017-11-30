@@ -24,7 +24,13 @@ namespace AdoNetCore.AseClient.Token
         public EedStatus Status { get; set; }
         public TranState TransactionStatus { get; set; }
         public string Message { get; set; }
+        public uint MessageNumber { get; set; }
         public int Severity { get; set; }
+        public string ServerName { get; set; }
+        public string ProcedureName { get; set; }
+        public int LineNumber { get; set; }
+        public int State { get; set; }
+        public byte[] SqlState { get; set; }
 
         public void Write(Stream stream, Encoding enc)
         {
@@ -37,18 +43,18 @@ namespace AdoNetCore.AseClient.Token
 
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
-                var messageNumber = ts.ReadUInt();
-                var state = ts.ReadByte();
+                MessageNumber = ts.ReadUInt();
+                State = ts.ReadByte();
                 Severity = ts.ReadByte();
                 var sqlStateLen = ts.ReadByte();
-                var sqlState = new byte[sqlStateLen];
-                ts.Read(sqlState, 0, sqlStateLen);
-                Status = (EedStatus) ts.ReadByte();
-                TransactionStatus = (TranState) ts.ReadUShort();
+                SqlState = new byte[sqlStateLen];
+                ts.Read(SqlState, 0, sqlStateLen);
+                Status = (EedStatus)ts.ReadByte();
+                TransactionStatus = (TranState)ts.ReadUShort();
                 Message = ts.ReadShortLengthPrefixedString(enc);
-                var serverName = ts.ReadByteLengthPrefixedString(enc);
-                var procName = ts.ReadByteLengthPrefixedString(enc);
-                var lineNum = ts.ReadUShort();
+                ServerName = ts.ReadByteLengthPrefixedString(enc);
+                ProcedureName = ts.ReadByteLengthPrefixedString(enc);
+                LineNumber = ts.ReadUShort();
             }
         }
 

@@ -34,6 +34,16 @@ namespace AdoNetCore.AseClient.Internal
             stream.Write(BitConverter.GetBytes(value));
         }
 
+        public static void WriteLong(this Stream stream, long value)
+        {
+            stream.Write(BitConverter.GetBytes(value));
+        }
+
+        public static void WriteULong(this Stream stream, ulong value)
+        {
+            stream.Write(BitConverter.GetBytes(value));
+        }
+
         /// <summary>
         /// Encode and write-out the string, up to the maximum length. Pad any remaining bytes. Append string length byte.
         /// If lengthModifier is supplied, it will be added to the appended length value.
@@ -97,6 +107,13 @@ namespace AdoNetCore.AseClient.Internal
             var buf = new byte[4];
             stream.Read(buf, 0, 4);
             return BitConverter.ToUInt32(buf, 0);
+        }
+
+        public static long ReadLong(this Stream stream)
+        {
+            var buf = new byte[8];
+            stream.Read(buf, 0, 8);
+            return BitConverter.ToInt64(buf, 0);
         }
 
         public static ulong ReadULong(this Stream stream)

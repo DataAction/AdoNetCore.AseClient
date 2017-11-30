@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient
             ErrorCode = errorCode;
         }
 #if NETCOREAPP2_0
-        protected AseException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+        private AseException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 #endif
     }
 }

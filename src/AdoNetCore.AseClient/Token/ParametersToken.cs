@@ -29,7 +29,7 @@ namespace AdoNetCore.AseClient.Token
             stream.WriteByte((byte)Type);
             foreach (var parameter in Parameters)
             {
-                ValueWriter.Write(parameter.Value, stream, parameter.Format);
+                ValueWriter.Write(parameter.Value, stream, parameter.Format, enc);
             }
         }
 
@@ -41,7 +41,7 @@ namespace AdoNetCore.AseClient.Token
                 var p = new Parameter
                 {
                     Format = format,
-                    Value = ValueReader.Read(stream, format)
+                    Value = ValueReader.Read(stream, format, enc)
                 };
                 parameters.Add(p);
             }

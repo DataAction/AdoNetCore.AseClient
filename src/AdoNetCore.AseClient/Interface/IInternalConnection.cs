@@ -11,5 +11,6 @@ namespace AdoNetCore.AseClient.Interface
         int ExecuteNonQuery(AseCommand command);
 
         AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command);
+        object ExecuteScalar(AseCommand command);
     }
 }

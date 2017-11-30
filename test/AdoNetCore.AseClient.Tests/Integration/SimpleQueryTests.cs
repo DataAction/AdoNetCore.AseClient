@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Dapper;
@@ -43,6 +44,17 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 Assert.IsNull(row.Short);
                 Assert.IsNull(row.Int);
                 Assert.IsNull(row.Long);
+            }
+        }
+
+        [Test]
+        public void SelectString_ShouldWork()
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                var expected = Guid.NewGuid().ToString();
+                Assert.AreEqual(expected, connection.ExecuteScalar<string>($"select '{expected}'"));
+                Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @sExpected", new { sExpected = expected }));
             }
         }
     }

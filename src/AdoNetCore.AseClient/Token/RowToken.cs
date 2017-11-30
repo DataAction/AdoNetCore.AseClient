@@ -27,7 +27,7 @@ namespace AdoNetCore.AseClient.Token
             var values = new List<object>();
             foreach (var format in previousFormatToken.Formats)
             {
-                values.Add(ValueReader.Read(stream, format));
+                values.Add(ValueReader.Read(stream, format, enc));
             }
             Values = values.ToArray();
         }

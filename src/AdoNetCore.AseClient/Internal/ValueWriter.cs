@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Text;
 using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueWriter
     {
-        public static void Write(object value, Stream stream, FormatItem format)
+        public static void Write(object value, Stream stream, FormatItem format, Encoding enc)
         {
             switch (format.DataType)
             {
@@ -46,6 +47,12 @@ namespace AdoNetCore.AseClient.Internal
                             stream.WriteByte(0);
                             break;
                     }
+                    break;
+                case TdsDataType.TDS_VARCHAR:
+                    stream.WriteBytePrefixedString((string)value, enc);
+                    break;
+                case TdsDataType.TDS_LONGCHAR:
+                    stream.WriteIntPrefixedString((string)value, enc);
                     break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");

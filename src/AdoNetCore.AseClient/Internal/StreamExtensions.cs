@@ -78,6 +78,14 @@ namespace AdoNetCore.AseClient.Internal
             stream.WriteByte(len);
             stream.Write(bytes, 0, len);
         }
+
+        public static void WriteIntPrefixedString(this Stream stream, string value, Encoding enc)
+        {
+            var bytes = enc.GetBytes(value);
+            var len = bytes.Length;
+            stream.WriteInt(len);
+            stream.Write(bytes, 0, len);
+        }
     }
 
     internal static class StreamReadExtensions
@@ -123,6 +131,11 @@ namespace AdoNetCore.AseClient.Internal
             return BitConverter.ToUInt64(buf, 0);
         }
 
+        public static string ReadNullableByteLengthPrefixedString(this Stream stream, Encoding enc)
+        {
+            var length = stream.ReadByte();
+            return stream.ReadNullableString(length, enc);
+        }
         public static string ReadByteLengthPrefixedString(this Stream stream, Encoding enc)
         {
             var length = stream.ReadByte();
@@ -135,6 +148,17 @@ namespace AdoNetCore.AseClient.Internal
             return stream.ReadString(length, enc);
         }
 
+        public static string ReadNullableString(this Stream stream, int length, Encoding enc)
+        {
+            if (length == 0)
+            {
+                return null;
+            }
+
+            var buf = new byte[length];
+            stream.Read(buf, 0, length);
+            return enc.GetString(buf);
+        }
         public static string ReadString(this Stream stream, int length, Encoding enc)
         {
             if (length == 0)

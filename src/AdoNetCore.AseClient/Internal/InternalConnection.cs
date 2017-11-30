@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
 using AdoNetCore.AseClient.Packet;
@@ -156,6 +155,19 @@ namespace AdoNetCore.AseClient.Internal
             return new AseDataReader(dataReaderHandler.Results().ToArray());
         }
 
+        public object ExecuteScalar(AseCommand command)
+        {
+            using (var reader = (IDataReader) ExecuteReader(CommandBehavior.Default, command))
+            {
+                if (reader.Read())
+                {
+                    return reader[0];
+                }
+            }
+
+            return null;
+        }
+
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
         {
             if (command.CommandType == CommandType.TableDirect)
@@ -200,12 +212,14 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var parameter in parameters.SendableParameters)
             {
+                var length = TypeMap.GetLength(parameter.DbType, parameter.Value);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(parameter.DbType),
+                    DataType = TypeMap.GetTdsDataType(parameter.DbType, length),
                     IsOutput = parameter.IsOutput,
-                    IsNullable = parameter.IsNullable
+                    IsNullable = parameter.IsNullable,
+                    Length = length
                 };
                 formatItems.Add(formatItem);
                 parameterItems.Add(new ParametersToken.Parameter

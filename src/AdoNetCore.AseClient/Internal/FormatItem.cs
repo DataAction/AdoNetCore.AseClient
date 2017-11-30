@@ -90,6 +90,10 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_INTN:
                     format.Length = stream.ReadByte();
                     break;
+                case TdsDataType.TDS_CHAR:
+                case TdsDataType.TDS_VARCHAR:
+                    format.Length = stream.ReadByte();
+                    break;
                 default:
                     throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
             }
@@ -127,11 +131,20 @@ namespace AdoNetCore.AseClient.Internal
 
             switch (DataType)
             {
+                case TdsDataType.TDS_INT1:
+                case TdsDataType.TDS_INT2:
                 case TdsDataType.TDS_INT4:
+                case TdsDataType.TDS_INT8:
                     //int4 is fixed-length so don't write anything
                     break;
+                case TdsDataType.TDS_VARCHAR:
+                    stream.WriteByte((byte)(Length ?? 0));
+                    break;
+                case TdsDataType.TDS_LONGCHAR:
+                    stream.WriteUInt((uint)(Length ?? 0));
+                    break;
                 default:
-                    throw new InvalidOperationException($"{DataType} not yet supported");
+                    throw new NotSupportedException($"{DataType} not yet supported");
             }
 
             //locale

@@ -43,7 +43,7 @@ namespace AdoNetCore.AseClient
 
         public object ExecuteScalar()
         {
-            throw new NotImplementedException();
+            return _connection.InternalConnection.ExecuteScalar(this);
         }
 
         public void Prepare()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
@@ -25,7 +26,22 @@ namespace AdoNetCore.AseClient.Token
                     case TdsDataType.TDS_INT4:
                         stream.WriteInt((int)Value);
                         break;
+                    default:
+                        throw new InvalidOperationException($"Unsupported data type {Type}");
                 }
+            }
+
+            public void Read(Stream stream)
+            {
+                switch (Type)
+                {
+                    case TdsDataType.TDS_INT4:
+                        Value = stream.ReadInt();
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Unsupported data type {Type}");
+                }
+                Console.WriteLine($"  <- {Type}: {Value}");
             }
         }
 
@@ -45,7 +61,24 @@ namespace AdoNetCore.AseClient.Token
 
         public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
-            throw new NotImplementedException();
+            var parameters = new List<Parameter>();
+            foreach(var format in previous.Formats)
+            {
+                var p = new Parameter
+                {
+                    Type = format.DataType
+                };
+                p.Read(stream);
+                parameters.Add(p);
+            }
+            Parameters = parameters.ToArray();
+        }
+
+        public static ParametersToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        {
+            var t = new ParametersToken();
+            t.Read(stream, enc, previous);
+            return t;
         }
     }
 }

@@ -30,7 +30,7 @@ namespace AdoNetCore.AseClient.Token
             {
                 foreach (var format in Formats)
                 {
-                    WriteFormatItem(format, ms, enc);
+                    format.WriteForParameter(ms, enc, Type);
                 }
                 ms.Seek(0, SeekOrigin.Begin);
                 var formatBytes = ms.ToArray();
@@ -48,46 +48,6 @@ namespace AdoNetCore.AseClient.Token
                 stream.WriteShort(paramCount);
                 stream.Write(formatBytes, 0, formatBytes.Length);
             }
-        }
-
-        private void WriteFormatItem(FormatItem item, Stream stream, Encoding enc)
-        {
-            Console.WriteLine($"  -> {item.ParameterName}: {item.DataType}");
-            if (string.IsNullOrWhiteSpace(item.ParameterName) || string.Equals("@", item.ParameterName))
-            {
-                stream.WriteByte(0);
-            }
-            else
-            {
-                stream.WriteBytePrefixedString(item.ParameterName, enc);
-            }
-
-            var nullableStatus = item.IsNullable ? ParameterFormatItemStatus.TDS_PARAM_NULLALLOWED : 0x00;
-            var outputStatus = item.IsOutput ? ParameterFormatItemStatus.TDS_PARAM_RETURN : 0x00;
-            var status = nullableStatus | outputStatus;
-            if (Type == TokenType.TDS_PARAMFMT)
-            {
-                stream.WriteByte((byte) status);
-            }
-            else
-            {
-                stream.WriteUInt((uint) status);
-            }
-
-            stream.WriteInt(0); //we don't currently do anything with user types
-            stream.WriteByte((byte)item.DataType);
-
-            switch (item.DataType)
-            {
-                case TdsDataType.TDS_INT4:
-                    //int4 is fixed-length so don't write anything
-                    break;
-                default:
-                    throw new InvalidOperationException($"{item.DataType} not yet supported");
-            }
-
-            //locale
-            stream.WriteByte(0);
         }
 
         public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)

@@ -92,6 +92,44 @@ namespace AdoNetCore.AseClient.Internal
             //ClassId stuff?
         }
 
+        public void WriteForParameter(Stream stream, Encoding enc, TokenType srcTokenType)
+        {
+            Console.WriteLine($"  -> {ParameterName}: {DataType}");
+            if (string.IsNullOrWhiteSpace(ParameterName) || string.Equals("@", ParameterName))
+            {
+                stream.WriteByte(0);
+            }
+            else
+            {
+                stream.WriteBytePrefixedString(ParameterName, enc);
+            }
 
+            var nullableStatus = IsNullable ? ParameterFormatItemStatus.TDS_PARAM_NULLALLOWED : 0x00;
+            var outputStatus = IsOutput ? ParameterFormatItemStatus.TDS_PARAM_RETURN : 0x00;
+            var status = nullableStatus | outputStatus;
+            if (srcTokenType == TokenType.TDS_PARAMFMT)
+            {
+                stream.WriteByte((byte)status);
+            }
+            else
+            {
+                stream.WriteUInt((uint)status);
+            }
+
+            stream.WriteInt(0); //we don't currently do anything with user types
+            stream.WriteByte((byte)DataType);
+
+            switch (DataType)
+            {
+                case TdsDataType.TDS_INT4:
+                    //int4 is fixed-length so don't write anything
+                    break;
+                default:
+                    throw new InvalidOperationException($"{DataType} not yet supported");
+            }
+
+            //locale
+            stream.WriteByte(0);
+        }
     }
 }

@@ -18,10 +18,17 @@ namespace AdoNetCore.AseClient.Internal
 
         public static int? GetLength(DbType dbType, object value)
         {
+            if (value == DBNull.Value)
+            {
+                return null;
+            }
+
             switch (dbType)
             {
                 case DbType.String:
                     return ((string)value).Length;
+                case DbType.Binary:
+                    return ((byte[]) value).Length;
                 default:
                     return null;
             }
@@ -29,11 +36,6 @@ namespace AdoNetCore.AseClient.Internal
 
         public static TdsDataType GetTdsDataType(DbType dbType, int? length)
         {
-            if (!DbToTdsMap.ContainsKey(dbType))
-            {
-                throw new InvalidOperationException($"Unsupported data type {dbType}");
-            }
-
             length = length ?? 0;
 
             switch (dbType)
@@ -42,7 +44,15 @@ namespace AdoNetCore.AseClient.Internal
                     return length <= 255
                         ? TdsDataType.TDS_VARCHAR
                         : TdsDataType.TDS_LONGCHAR;
+                case DbType.Binary:
+                    return length <= 255
+                        ? TdsDataType.TDS_VARBINARY
+                        : TdsDataType.TDS_LONGBINARY;
                 default:
+                    if (!DbToTdsMap.ContainsKey(dbType))
+                    {
+                        throw new InvalidOperationException($"Unsupported data type {dbType}");
+                    }
                     return DbToTdsMap[dbType];
             }
         }

@@ -74,17 +74,49 @@ namespace AdoNetCore.AseClient.Internal
         public static void WriteBytePrefixedString(this Stream stream, string value, Encoding enc)
         {
             var bytes = enc.GetBytes(value);
-            var len = (byte) bytes.Length;
-            stream.WriteByte(len);
-            stream.Write(bytes, 0, len);
+            stream.WriteBytePrefixedByteArray(bytes);
         }
 
         public static void WriteIntPrefixedString(this Stream stream, string value, Encoding enc)
         {
             var bytes = enc.GetBytes(value);
-            var len = bytes.Length;
+            stream.WriteIntPrefixedByteArray(bytes);
+        }
+
+        public static void WriteBytePrefixedByteArray(this Stream stream, byte[] value)
+        {
+            var len = (byte) value.Length;
+            stream.WriteByte(len);
+            stream.Write(value, 0, len);
+        }
+
+        public static void WriteIntPrefixedByteArray(this Stream stream, byte[] value)
+        {
+            var len = value.Length;
             stream.WriteInt(len);
-            stream.Write(bytes, 0, len);
+            stream.Write(value, 0, len);
+        }
+
+        public static bool TryWriteBytePrefixedNull(this Stream stream, object value)
+        {
+            if (value == DBNull.Value)
+            {
+                stream.WriteByte(0);
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool TryWriteIntPrefixedNull(this Stream stream, object value)
+        {
+            if (value == DBNull.Value)
+            {
+                stream.WriteInt(0);
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -134,8 +166,24 @@ namespace AdoNetCore.AseClient.Internal
         public static string ReadNullableByteLengthPrefixedString(this Stream stream, Encoding enc)
         {
             var length = stream.ReadByte();
-            return stream.ReadNullableString(length, enc);
+            if (length == 0)
+            {
+                return null;
+            }
+
+            return stream.ReadString(length, enc);
         }
+        public static string ReadNullableIntLengthPrefixedString(this Stream stream, Encoding enc)
+        {
+            var length = stream.ReadInt();
+            if (length == 0)
+            {
+                return null;
+            }
+
+            return stream.ReadString(length, enc);
+        }
+
         public static string ReadByteLengthPrefixedString(this Stream stream, Encoding enc)
         {
             var length = stream.ReadByte();
@@ -148,17 +196,6 @@ namespace AdoNetCore.AseClient.Internal
             return stream.ReadString(length, enc);
         }
 
-        public static string ReadNullableString(this Stream stream, int length, Encoding enc)
-        {
-            if (length == 0)
-            {
-                return null;
-            }
-
-            var buf = new byte[length];
-            stream.Read(buf, 0, length);
-            return enc.GetString(buf);
-        }
         public static string ReadString(this Stream stream, int length, Encoding enc)
         {
             if (length == 0)
@@ -169,6 +206,42 @@ namespace AdoNetCore.AseClient.Internal
             var buf = new byte[length];
             stream.Read(buf, 0, length);
             return enc.GetString(buf);
+        }
+
+        public static byte[] ReadNullableByteLengthPrefixedByteArray(this Stream stream)
+        {
+            var length = stream.ReadByte();
+
+            if (length == 0)
+            {
+                return null;
+            }
+
+            return stream.ReadByteArray(length);
+        }
+
+        public static byte[] ReadNullableIntLengthPrefixedByteArray(this Stream stream)
+        {
+            var length = stream.ReadInt();
+
+            if (length == 0)
+            {
+                return null;
+            }
+
+            return stream.ReadByteArray(length);
+        }
+        
+        public static byte[] ReadByteArray(this Stream stream, int length)
+        {
+            if (length == 0)
+            {
+                return new byte[0];
+            }
+
+            var buf = new byte[length];
+            stream.Read(buf, 0, length);
+            return buf;
         }
     }
 }

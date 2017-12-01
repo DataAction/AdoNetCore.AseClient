@@ -72,6 +72,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
             } while (!wait.WaitOne(ReserveWaitPeriodMs));
 
+            connection?.ChangeDatabase(_parameters.Database);
             return connection;
         }
 

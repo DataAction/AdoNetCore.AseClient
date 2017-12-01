@@ -49,10 +49,28 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_VARCHAR:
-                    stream.WriteBytePrefixedString((string)value, enc);
+                    if (!stream.TryWriteBytePrefixedNull(value))
+                    {
+                        stream.WriteBytePrefixedString((string)value, enc);
+                    }
                     break;
                 case TdsDataType.TDS_LONGCHAR:
-                    stream.WriteIntPrefixedString((string)value, enc);
+                    if (!stream.TryWriteIntPrefixedNull(value))
+                    {
+                        stream.WriteIntPrefixedString((string)value, enc);
+                    }
+                    break;
+                case TdsDataType.TDS_VARBINARY:
+                    if (!stream.TryWriteBytePrefixedNull(value))
+                    {
+                        stream.WriteBytePrefixedByteArray((byte[])value);
+                    }
+                    break;
+                case TdsDataType.TDS_LONGBINARY:
+                    if (!stream.TryWriteIntPrefixedNull(value))
+                    {
+                        stream.WriteIntPrefixedByteArray((byte[])value);
+                    }
                     break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");

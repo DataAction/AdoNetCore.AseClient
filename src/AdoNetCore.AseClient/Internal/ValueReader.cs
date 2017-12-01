@@ -31,6 +31,13 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_CHAR:
                 case TdsDataType.TDS_VARCHAR:
                     return stream.ReadNullableByteLengthPrefixedString(enc);
+                case TdsDataType.TDS_BINARY:
+                case TdsDataType.TDS_VARBINARY:
+                    return stream.ReadNullableByteLengthPrefixedByteArray();
+                case TdsDataType.TDS_LONGCHAR:
+                    return stream.ReadNullableIntLengthPrefixedString(enc);
+                case TdsDataType.TDS_LONGBINARY:
+                    return stream.ReadNullableIntLengthPrefixedByteArray();
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

@@ -98,6 +98,11 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_LONGBINARY:
                     format.Length = stream.ReadInt();
                     break;
+                case TdsDataType.TDS_DECN:
+                    format.Length = stream.ReadByte();
+                    format.Precision = stream.ReadByte();
+                    format.Scale = stream.ReadByte();
+                    break;
                 default:
                     throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
             }

@@ -212,14 +212,16 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var length = TypeMap.GetLength(parameter.DbType, parameter.Value);
+                var length = TypeMap.GetLength(parameter.DbType, parameter.Value, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(parameter.DbType, length),
+                    DataType = TypeMap.GetTdsDataType(parameter.DbType, parameter.Value, length),
                     IsOutput = parameter.IsOutput,
                     IsNullable = parameter.IsNullable,
-                    Length = length
+                    Length = length,
+                    Precision = TypeMap.GetPrecision(parameter.DbType, parameter.Value),
+                    Scale = TypeMap.GetScale(parameter.DbType, parameter.Value)
                 };
                 formatItems.Add(formatItem);
                 parameterItems.Add(new ParametersToken.Parameter

@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 
@@ -25,7 +27,7 @@ namespace AdoNetCore.AseClient.Internal
                         case 1: return (byte) stream.ReadByte();
                         case 2: return stream.ReadShort();
                         case 4: return stream.ReadInt();
-                        case 8: return (byte) stream.ReadLong();
+                        case 8: return stream.ReadLong();
                     }
                     break;
                 case TdsDataType.TDS_CHAR:
@@ -38,6 +40,17 @@ namespace AdoNetCore.AseClient.Internal
                     return stream.ReadNullableIntLengthPrefixedString(enc);
                 case TdsDataType.TDS_LONGBINARY:
                     return stream.ReadNullableIntLengthPrefixedByteArray();
+                case TdsDataType.TDS_DECN:
+                    var length = stream.ReadByte();
+                    if (length == 0)
+                    {
+                        return null;
+                    }
+                    var buf = new byte[length];
+                    stream.Read(buf, 0, length);
+                    var bytestring = string.Join(" ", buf.Select(x => x.ToString("x2")));
+                    Console.WriteLine($"l:{length}, p:{format.Precision}, s:{format.Scale}: {bytestring}");
+                    return 0m;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

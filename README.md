@@ -35,42 +35,42 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 | ------------- |:-------------:| 
 | `AlternateServers` | <span>X</span> |
 | `ApplicationName` | <span>&#10003;</span> |
-| `BufferCacheSize` | <span>X</span> |
+| `BufferCacheSize` | <span>TODO</span> |
 | `Charset` | <span>&#10003;</span> |
 | `ClientHostName` | <span>&#10003;</span> |
 | `ClientHostProc` | <span>&#10003;</span> |
-| `CodePageType` | <span>X</span> |
-| `Connection Lifetime` | <span>X</span> |
-| `ConnectionIdleTimeout` | <span>X</span> |
-| `CumulativeRecordCount` | <span>X</span> |
+| `CodePageType` | <span>TODO</span> |
+| `Connection Lifetime` | <span>TODO</span> |
+| `ConnectionIdleTimeout` | <span>TODO</span> |
+| `CumulativeRecordCount` | <span>TODO</span> |
 | `Database` | <span>&#10003;</span> |
 | `Data Source` | <span>&#10003;</span> |
 | `DistributedTransactionProtocol` | <span>X</span> |
-| `DSURL` | <span>X</span> |
-| `EnableBulkLoad` | <span>X</span> |
-| `EnableServerPacketSize` | <span>X</span> |
+| `DSURL` | <span>TODO</span> |
+| `EnableBulkLoad` | <span>?</span> |
+| `EnableServerPacketSize` | <span>TODO</span> |
 | `Encryption` | <span>X</span> |
-| `EncryptPassword` | <span>X</span> |
+| `EncryptPassword` | <span>?</span> |
 | `Enlist` | <span>X</span> |
-| `FetchArraySize` | <span>X</span> |
+| `FetchArraySize` | <span>TODO</span> |
 | `HASession` | <span>X</span> |
-| `LoginTimeOut` | <span>X</span> |
+| `LoginTimeOut` | <span>TODO</span> |
 | `Max Pool Size` | <span>&#10003;</span> |
 | `Min Pool Size` | <span>&#10003;</span> |
-| `PacketSize` | <span>X</span> |
-| `Ping Server` | <span>X</span> |
+| `PacketSize` | <span>TODO</span> |
+| `Ping Server` | <span>TODO</span> |
 | `Pooling` | <span>&#10003;</span> |
 | `Port` | <span>&#10003;</span> |
 | `Pwd` | <span>&#10003;</span> |
-| `RestrictMaximum PacketSize` | <span>X</span> |
+| `RestrictMaximum PacketSize` | <span>TODO</span> |
 | `Secondary Data Source` | <span>X</span> |
 | `Secondary Server Port` | <span>X</span> |
-| `TextSize` | <span>X</span> |
+| `TextSize` | <span>TODO</span> |
 | `TightlyCoupledTransaction` | <span>X</span> |
 | `TrustedFile` | <span>X</span> |
 | `Uid` | <span>&#10003;</span> |
-| `UseAseDecimal` | <span>X</span> |
-| `UseCursor` | <span>X</span> |
+| `UseAseDecimal` | <span>TODO</span> |
+| `UseCursor` | <span>?</span> |
 
 ## Flows/design
 Roughly the flows will be (names not set in stone):
@@ -80,37 +80,10 @@ Roughly the flows will be (names not set in stone):
 
 `AseConnection` <-InternalConnection- `ConnectionPoolManager` <-InternalConnection- `ConnectionPool`
 
-A database connection can be opened in several ways.
-
-With explicit reference to our library types:
+A database connection can be opened as follows:
 ```C#
 using(var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;")) 
 {
-    connection.Open();
-    
-    // use the connection...
-}
-```
-
-Or agnostically:
-```XML
-<?xml version="1.0"?>
-<configuration>
-  <connectionStrings>
-    <add name="foo" providerName="AdoNetCore.AseClient" connectionString="Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;"/>
-  </connectionStrings>
-</configuration>
-```
-
-```C#
-var connectionStringSettings = ConfigurationManager.ConnectionStrings["foo"];
-
-var factory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
-
-using(var connection = factory.CreateConnection()) 
-{
-    connection.ConnectionString = connectionStringSettings.ConnectionString;
-    
     connection.Open();
     
     // use the connection...
@@ -139,3 +112,14 @@ In general, for reasons of unit-testing, please create and implement interfaces.
   * Stored procedure call (`TDS_DBRPC`)
   * Simple queries (`select 1 as x...` with different types)
   * More advanced queries and procedure calls (i.e. with more parameters/types)
+  
+## Design points
+SqlClient conventions
+* SqlParameter vs AseDataParameter?
+* SqlException has an Errors collection containing SqlError objects. It is derived from DbException.
+* SqlDbType - we have no equivalent...
+* We should avoid depending on Linq.
+* Discuss the use of explicit interfaces as a general design principal.
+* In general worth comparing each type for equivalence with the SqlClient for best practice.
+* In general worth comparing each type for equivalence with the old AseClient for completeness of a drop in replacement.
+* Async support would be sick.

@@ -30,10 +30,9 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 
 ## Connection strings
 [connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. We aim to use identical connection string syntax to the SAP client, however our support for the various properties will be limited. Our support is as follows:
-| Property        | Support  |
-| ------------- |:-------------:| 
-| col 3 is      | right-aligned |
 
+| Property      | Support       |
+| ------------- |:-------------:| 
 | `AlternateServers` | <span>X</span> |
 | `ApplicationName` | <span>&#10003;</span> |
 | `BufferCacheSize` | <span>X</span> |

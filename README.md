@@ -1,4 +1,4 @@
-# AdoNetCore.AseClient - a .NET Core DB Provider for SAP ASE 15+
+# AdoNetCore.AseClient - a .NET Core DB Provider for SAP ASE
 
 Let's face it, accessing SAP (formerly Sybase) ASE from ADO.NET isn't great. The current .NET 4 version of the vendor's AseClient driver is a .NET Framework managed wrapper around SAP's unmanged [OLE DB provider](https://en.wikipedia.org/wiki/OLE_DB_provider) and is dependent upon [COM](https://en.wikipedia.org/wiki/Component_Object_Model). OLE DB and COM are Windows-only technologies and will never be available to .NET Core. 
 
@@ -18,8 +18,6 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
 * Performance equivalent to or better than that of `Sybase.AdoNet4.AseClient` provided by SAP. This should be possible as we are eliminating the COM and OLE DB layers from this driver.
 * Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)
 * Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the .NET 4 client
-* There is an exception to the parity intent, **connection strings**: We may not implement *all* existing options, as some may not be relevant to our client
-  * When we do implement a connection string option, the option name will be the same as the existing name
 
 ## Note:
 In theory, since we're implementing TDS 5.0, this client might work with other Sybase-produced databases, but the scope for now is just ASE.
@@ -30,12 +28,58 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 * `Sybase.AdoNet4.AseClient` wireshark packet captures
 * `jTDS` if the above isn't informative enough (credit to them for figuring this out)
 
+## Connection strings
+[connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. We aim to use identical connection string syntax to the SAP client, however our support for the various properties will be limited. Our support is as follows:
+* `AlternateServers` - not supported.
+* `ApplicationName` - supported.
+* `BufferCacheSize` - not supported.
+* `Charset` - supported.
+* `ClientHostName` - supported.
+* `ClientHostProc` - supported.
+* `CodePageType` - not supported.
+* `Connection Lifetime` - not supported.
+* `ConnectionIdleTimeout` - not supported.
+* `CumulativeRecordCount` - not supported.
+* `Database` - supported.
+* `Data Source` - supported.
+* `DistributedTransactionProtocol` - not supported.
+* `DSURL` - not supported.
+* `EnableBulkLoad` - not supported.
+* `EnableServerPacketSize` - not supported.
+* `Encryption` - not supported.
+* `EncryptPassword` - not supported.
+* `Enlist` - not supported.
+* `FetchArraySize` - not supported.
+* `HASession` - not supported.
+* `LoginTimeOut` - not supported.
+* `Max Pool Size` - supported.
+* `Min Pool Size` - supported.
+* `PacketSize` - not supported.
+* `Ping Server` - not supported.
+* `Pooling` - supported.
+* `Port` - supported.
+* `Pwd` - supported.
+* `RestrictMaximum PacketSize` - not supported.
+* `Secondary Data Source` - not supported.
+* `Secondary Server Port` - not supported.
+* `TextSize` - not supported.
+* `TightlyCoupledTransaction` - not supported.
+* `TrustedFile` - not supported.
+* `Uid` - supported.
+* `UseAseDecimal` - not supported.
+* `UseCursor` - not supported.
+
 ## Flows/design
 Roughly the flows will be (names not set in stone):
 
 ### Open a connection
 `AseConnection` -Connection Request-> `ConnectionPoolManager` -Request-> `ConnectionPool` *"existing connection is grabbed, or new connection is created"*
-
+```C#
+using(var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;")) 
+{
+    // use the connection...
+}
+```
 `AseConnection` <-InternalConnection- `ConnectionPoolManager` <-InternalConnection- `ConnectionPool`
 
 ### Send a command and receive any response data

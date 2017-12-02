@@ -8,13 +8,13 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
 
 ## Objectives
 * Functional parity (eventually) with the `Sybase.AdoNet4.AseClient` provided by SAP. The following types will be supported:
-** AseClientFactory	- TODO
-** AseCommand - in progress
-** AseConnection - in progress
-** AseDataParameter - in progress
-** AseDataParameterCollection - in progress
-** AseDataReader - in progress
-** AseException - in progress
+    * AseClientFactory	- TODO
+    * AseCommand - in progress
+    * AseConnection - in progress
+    * AseDataParameter - in progress
+    * AseDataParameterCollection - in progress
+    * AseDataReader - in progress
+    * AseException - in progress
 * Performance equivalent to or better than that of `Sybase.AdoNet4.AseClient` provided by SAP. This should be possible as we are eliminating the COM and OLE DB layers from this driver.
 * Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)
 * Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the .NET 4 client

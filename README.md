@@ -30,57 +30,93 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 
 ## Connection strings
 [connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. We aim to use identical connection string syntax to the SAP client, however our support for the various properties will be limited. Our support is as follows:
-* `AlternateServers` - not supported.
-* `ApplicationName` - supported.
-* `BufferCacheSize` - not supported.
-* `Charset` - supported.
-* `ClientHostName` - supported.
-* `ClientHostProc` - supported.
-* `CodePageType` - not supported.
-* `Connection Lifetime` - not supported.
-* `ConnectionIdleTimeout` - not supported.
-* `CumulativeRecordCount` - not supported.
-* `Database` - supported.
-* `Data Source` - supported.
-* `DistributedTransactionProtocol` - not supported.
-* `DSURL` - not supported.
-* `EnableBulkLoad` - not supported.
-* `EnableServerPacketSize` - not supported.
-* `Encryption` - not supported.
-* `EncryptPassword` - not supported.
-* `Enlist` - not supported.
-* `FetchArraySize` - not supported.
-* `HASession` - not supported.
-* `LoginTimeOut` - not supported.
-* `Max Pool Size` - supported.
-* `Min Pool Size` - supported.
-* `PacketSize` - not supported.
-* `Ping Server` - not supported.
-* `Pooling` - supported.
-* `Port` - supported.
-* `Pwd` - supported.
-* `RestrictMaximum PacketSize` - not supported.
-* `Secondary Data Source` - not supported.
-* `Secondary Server Port` - not supported.
-* `TextSize` - not supported.
-* `TightlyCoupledTransaction` - not supported.
-* `TrustedFile` - not supported.
-* `Uid` - supported.
-* `UseAseDecimal` - not supported.
-* `UseCursor` - not supported.
+| Property        | Support  |
+| ------------- |:-------------:| 
+| col 3 is      | right-aligned |
+
+| `AlternateServers` | <span>X</span> |
+| `ApplicationName` | <span>&#10003;</span> |
+| `BufferCacheSize` | <span>X</span> |
+| `Charset` | <span>&#10003;</span> |
+| `ClientHostName` | <span>&#10003;</span> |
+| `ClientHostProc` | <span>&#10003;</span> |
+| `CodePageType` | <span>X</span> |
+| `Connection Lifetime` | <span>X</span> |
+| `ConnectionIdleTimeout` | <span>X</span> |
+| `CumulativeRecordCount` | <span>X</span> |
+| `Database` | <span>&#10003;</span> |
+| `Data Source` | <span>&#10003;</span> |
+| `DistributedTransactionProtocol` | <span>X</span> |
+| `DSURL` | <span>X</span> |
+| `EnableBulkLoad` | <span>X</span> |
+| `EnableServerPacketSize` | <span>X</span> |
+| `Encryption` | <span>X</span> |
+| `EncryptPassword` | <span>X</span> |
+| `Enlist` | <span>X</span> |
+| `FetchArraySize` | <span>X</span> |
+| `HASession` | <span>X</span> |
+| `LoginTimeOut` | <span>X</span> |
+| `Max Pool Size` | <span>&#10003;</span> |
+| `Min Pool Size` | <span>&#10003;</span> |
+| `PacketSize` | <span>X</span> |
+| `Ping Server` | <span>X</span> |
+| `Pooling` | <span>&#10003;</span> |
+| `Port` | <span>&#10003;</span> |
+| `Pwd` | <span>&#10003;</span> |
+| `RestrictMaximum PacketSize` | <span>X</span> |
+| `Secondary Data Source` | <span>X</span> |
+| `Secondary Server Port` | <span>X</span> |
+| `TextSize` | <span>X</span> |
+| `TightlyCoupledTransaction` | <span>X</span> |
+| `TrustedFile` | <span>X</span> |
+| `Uid` | <span>&#10003;</span> |
+| `UseAseDecimal` | <span>X</span> |
+| `UseCursor` | <span>X</span> |
 
 ## Flows/design
 Roughly the flows will be (names not set in stone):
 
 ### Open a connection
 `AseConnection` -Connection Request-> `ConnectionPoolManager` -Request-> `ConnectionPool` *"existing connection is grabbed, or new connection is created"*
+
+`AseConnection` <-InternalConnection- `ConnectionPoolManager` <-InternalConnection- `ConnectionPool`
+
+A database connection can be opened in several ways.
+
+With explicit reference to our library types:
 ```C#
 using(var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;")) 
 {
+    connection.Open();
+    
     // use the connection...
 }
 ```
-`AseConnection` <-InternalConnection- `ConnectionPoolManager` <-InternalConnection- `ConnectionPool`
+
+Or agnostically:
+```XML
+<?xml version="1.0"?>
+<configuration>
+  <connectionStrings>
+    <add name="foo" providerName="AdoNetCore.AseClient" connectionString="Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;"/>
+  </connectionStrings>
+</configuration>
+```
+
+```C#
+var connectionStringSettings = ConfigurationManager.ConnectionStrings["foo"];
+
+var factory = DbProviderFactories.GetFactory(connectionStringSettings.ProviderName);
+
+using(var connection = factory.CreateConnection()) 
+{
+    connection.ConnectionString = connectionStringSettings.ConnectionString;
+    
+    connection.Open();
+    
+    // use the connection...
+}
+```
 
 ### Send a command and receive any response data
 `AseCommand` -ADO.net stuff-> `InternalConnection` -Tokens-> `MemoryStream` -bytes-> `PacketChunkerSocket` *"command gets processed"*

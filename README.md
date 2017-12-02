@@ -1,8 +1,23 @@
+# AdoNetCore.AseClient - a .NET Core DB Provider for SAP ASE 15+
+
+Let's face it, accessing SAP (formerly Sybase) ASE from ADO.NET isn't great. The current .NET 4 version of the vendor's AseClient driver is a .NET Framework managed wrapper around SAP's unmanged `OLE DB provider` (https://en.wikipedia.org/wiki/OLE_DB_provider) and is dependent upon `COM` (https://en.wikipedia.org/wiki/Component_Object_Model). OLE DB and COM are Windows-only technologies and will never be available to .NET Core. 
+
+Under the hood, ASE (and Microsoft Sql Server for that matter) use an application layer protocol called `Tabular Data Stream` (https://en.wikipedia.org/wiki/Tabular_Data_Stream) to transfer data between the database server and the client application. ASE uses TDS 5.0.
+
+This project provides a .NET Core native implementation of the TDS 5.0 protocol via an ADO.NET DB Provider, making SAP ASE accessible from .NET Core applications hosted on Windows, Linux, Docker and also serverless platforms like `AWS Lambda` (https://aws.amazon.com/lambda/).
+
 ## Objectives
-* Functional parity (eventually) with the .net 4 client `Sybase.AdoNet4.AseClient`, and to perform not too badly
-* **Or** to obsolete this project in lieu of an equivalent or better vendor-provided client.
+* Functional parity (eventually) with the `Sybase.AdoNet4.AseClient` provided by SAP. The following types will be supported:
+** AseClientFactory	- TODO
+** AseCommand - in progress
+** AseConnection - in progress
+** AseDataParameter - in progress
+** AseDataParameterCollection - in progress
+** AseDataReader - in progress
+** AseException - in progress
+* Performance equivalent to or better than that of `Sybase.AdoNet4.AseClient` provided by SAP. This should be possible as we are eliminating the COM and OLE DB layers from this driver.
 * Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)
-* Should work with dapper at least as well as the .net 4 client
+* Should work with `Dapper` (https://github.com/StackExchange/Dapper) at least as well as the .NET 4 client
 * There is an exception to the parity intent, **connection strings**: We may not implement *all* existing options, as some may not be relevant to our client
   * When we do implement a connection string option, the option name will be the same as the existing name
 

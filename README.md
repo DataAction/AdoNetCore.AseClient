@@ -1,6 +1,6 @@
 # AdoNetCore.AseClient - a .NET Core DB Provider for SAP ASE
 
-Let's face it, accessing SAP (formerly Sybase) ASE from ADO.NET isn't great. The current .NET 4 version of the vendor's AseClient driver is a .NET Framework managed wrapper around SAP's unmanged [OLE DB provider](https://en.wikipedia.org/wiki/OLE_DB_provider) and is dependent upon [COM](https://en.wikipedia.org/wiki/Component_Object_Model). OLE DB and COM are Windows-only technologies and will never be available to .NET Core. 
+Let's face it, accessing SAP (formerly Sybase) ASE from ADO.NET isn't great. The current .NET 4 version of the vendor's AseClient driver is a .NET Framework managed wrapper around SAP's unmanged [ADO DB provider](https://en.wikipedia.org/wiki/ActiveX_Data_Objects) and is dependent upon [COM](https://en.wikipedia.org/wiki/Component_Object_Model). COM is a Windows-only technology and will never be available to .NET Core.
 
 Under the hood, ASE (and Microsoft Sql Server for that matter) use an application layer protocol called [Tabular Data Stream](https://en.wikipedia.org/wiki/Tabular_Data_Stream) to transfer data between the database server and the client application. ASE uses TDS 5.0.
 
@@ -55,8 +55,8 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 | `FetchArraySize` | <span>TODO</span> |
 | `HASession` | <span>X</span> |
 | `LoginTimeOut` | <span>TODO</span> |
-| `Max Pool Size` | <span>&#10003;</span> |
-| `Min Pool Size` | <span>&#10003;</span> |
+| `Max Pool Size` | <span>TODO</span> |
+| `Min Pool Size` | <span>TODO</span> |
 | `PacketSize` | <span>TODO</span> |
 | `Ping Server` | <span>TODO</span> |
 | `Pooling` | <span>&#10003;</span> |

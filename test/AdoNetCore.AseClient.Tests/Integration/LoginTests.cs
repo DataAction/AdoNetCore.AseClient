@@ -29,5 +29,38 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 Assert.Throws<AseException>(() => connection.Open());
             }
         }
+
+        public void ConnectionSample()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+            using(var connection = new AseConnection(connectionString)) 
+            {
+                connection.Open();
+                
+                // use the connection...
+            }
+        }
+
+        
+        public void CommandSample()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+            using(var connection = new AseConnection(connectionString)) 
+            {
+                connection.Open();
+                
+                using(var command = connection.CreateCommand()) 
+                {
+                    command.CommandText = "SELECT FirstName, LastName FROM Customer";
+                    
+                    using(var reader = command.ExecuteReader())
+                    {
+                        // Get the results.
+                    }
+                }
+            }
+        }
     }
 }

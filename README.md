@@ -82,7 +82,9 @@ Roughly the flows will be (names not set in stone):
 
 A database connection can be opened as follows:
 ```C#
-using(var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;")) 
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+using(var connection = new AseConnection(connectionString)) 
 {
     connection.Open();
     
@@ -94,6 +96,31 @@ using(var connection = new AseConnection("Data Source=myASEserver;Port=5000;Data
 `AseCommand` -ADO.net stuff-> `InternalConnection` -Tokens-> `MemoryStream` -bytes-> `PacketChunkerSocket` *"command gets processed"*
 
 `AseCommand` <-ADO.net stuff- `InternalConnection` <-Tokens- `MemoryStream` <-bytes- `PacketChunkerSocket`
+
+A command can be executed in several different ways.
+
+Retrieve multiple records using ADO.NET:
+```C#
+using(var command = connection.CreateCommand()) 
+{
+    command.CommandText = "SELECT FirstName, LastName FROM Customer";
+    
+    using(var reader = command.ExecuteReader())
+    {
+        // Get the results.
+    }
+}
+```
+
+Update a single records using ADO.NET:
+```C#
+using(var command = connection.CreateCommand()) 
+{
+    command.CommandText = "INSERT INTO Customer (FirstName, LastName) VALUES ('Fred', 'Flintstone')";
+    
+    var recordsModified = command.ExecuteNonQuery();
+}
+```
 
 ### Release the connection (dispose)
 `AseConnection` -Connection-> `ConnectionPoolManager` -Connection-> `ConnectionPool` *"connection released"*

@@ -299,9 +299,9 @@ l:10, p:20, s:2: 01 00 00 00 00 00 00 00 00 64
 l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
 */
             yield return new TestCaseData("-1", -1m);
-//so, first byte = negative sign
-//interpret remaining bytes as int thing
-//divide the result by 10^s
+            //so, first byte = negative sign
+            //interpret remaining bytes as int thing
+            //divide the result by 10^s
         }
 
         [TestCaseSource(nameof(SelectDecimal_Parameter_ShouldWork_Cases))]
@@ -403,8 +403,91 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         {
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
-                Assert.AreEqual(expected, connection.ExecuteScalar<bool>("select @expected", new {expected}));
+                Assert.AreEqual(expected, connection.ExecuteScalar<bool>("select @expected", new { expected }));
             }
+        }
+
+        [TestCaseSource(nameof(SelectDateTime_Literal_ShouldWork_Cases))]
+        public void SelectDateTime_Literal_ShouldWork(string input, DateTime expected)
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<DateTime>($"select convert(datetime, {input})"));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectDateTime_Literal_ShouldWork_Cases()
+        {
+            //46 2e ff ff 00 00 00 00; p1: -53690, p2: 0
+            yield return new TestCaseData("'1753-01-01 00:00:00'", new DateTime(1753, 1, 1, 0, 0, 0));
+            //46 2e ff ff d4 80 8b 01; p1: -53690, p2: 25919700
+            yield return new TestCaseData("'1753-01-01 23:59:59'", new DateTime(1753, 1, 1, 23, 59, 59));
+            //46 2e ff ff ff 81 8b 01; p1: -53690, p2: 25919999
+            yield return new TestCaseData("'1753-01-01 23:59:59.997'", new DateTime(1753, 1, 1, 23, 59, 59, 997));
+            //b2 2f ff ff 00 00 00 00; p1: -53326, p2: 0
+            yield return new TestCaseData("'1753-12-31 00:00:00'", new DateTime(1753, 12, 31, 0, 0, 0));
+            //b2 2f ff ff d4 80 8b 01; p1: -53326, p2: 25919700
+            yield return new TestCaseData("'1753-12-31 23:59:59'", new DateTime(1753, 12, 31, 23, 59, 59));
+            //b2 2f ff ff ff 81 8b 01; p1: -53326, p2: 25919999
+            yield return new TestCaseData("'1753-12-31 23:59:59.997'", new DateTime(1753, 12, 31, 23, 59, 59, 997));
+
+            //00 00 00 00 00 00 00 00; p1: 0, p2: 0
+            yield return new TestCaseData("'1900-01-01 00:00:00'", new DateTime(1900, 1, 1, 0, 0, 0));
+            //00 00 00 00 d4 80 8b 01; p1: 0, p2: 25919700
+            yield return new TestCaseData("'1900-01-01 23:59:59'", new DateTime(1900, 1, 1, 23, 59, 59));
+            yield return new TestCaseData("'1900-01-01 23:59:59.997'", new DateTime(1900, 1, 1, 23, 59, 59, 997));
+            //6c 01 00 00 00 00 00 00; p1: 364, p2: 0
+            yield return new TestCaseData("'1900-12-31 00:00:00'", new DateTime(1900, 12, 31, 0, 0, 0));
+            //6c 01 00 00 d4 80 8b 01; p1: 364, p2: 25919700
+            yield return new TestCaseData("'1900-12-31 23:59:59'", new DateTime(1900, 12, 31, 23, 59, 59));
+            yield return new TestCaseData("'1900-12-31 23:59:59.997'", new DateTime(1900, 12, 31, 23, 59, 59, 997));
+
+            //13 23 2d 00 00 00 00 00; p1: 2958099, p2: 0
+            //https://www.wolframalpha.com/input/?i=2958099+days+before+9999-01-01 = 1900-01-01
+            yield return new TestCaseData("'9999-01-01 00:00:00'", new DateTime(9999, 01, 01, 0, 0, 0));
+            //13 23 2d 00 d4 80 8b 01; p1: 2958099, p2: 25919700
+            yield return new TestCaseData("'9999-01-01 23:59:59'", new DateTime(9999, 01, 01, 23, 59, 59));
+            yield return new TestCaseData("'9999-01-01 23:59:59.997'", new DateTime(9999, 01, 01, 23, 59, 59, 997));
+            //7f 24 2d 00 00 00 00 00; p1: 2958463, p2: 0
+            yield return new TestCaseData("'9999-12-31 00:00:00'", new DateTime(9999, 12, 31, 0, 0, 0));
+            //7f 24 2d 00 d4 80 8b 01; p1: 2958463, p2: 25919700
+            yield return new TestCaseData("'9999-12-31 23:59:59'", new DateTime(9999, 12, 31, 23, 59, 59));
+            yield return new TestCaseData("'9999-12-31 23:59:59.997'", new DateTime(9999, 12, 31, 23, 59, 59, 997));
+        }
+
+        [TestCaseSource(nameof(SelectDateTime_Parameter_ShouldWork_Cases))]
+        public void SelectDateTime_Parameter_ShouldWork(DateTime expected)
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<DateTime>("select @expected", new { expected }));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectDateTime_Parameter_ShouldWork_Cases()
+        {
+            {
+                var now = DateTime.Now;
+                yield return new TestCaseData(new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, now.Millisecond));
+            }
+            yield return new TestCaseData(new DateTime(1753, 1, 1, 0, 0, 0));
+            //yield return new TestCaseData(new DateTime(1753, 1, 1, 23, 59, 59));
+            yield return new TestCaseData(new DateTime(1753, 1, 1, 23, 59, 59, 997));
+            yield return new TestCaseData(new DateTime(1753, 12, 31, 0, 0, 0));
+            //yield return new TestCaseData(new DateTime(1753, 12, 31, 23, 59, 59));
+            yield return new TestCaseData(new DateTime(1753, 12, 31, 23, 59, 59, 997));
+            yield return new TestCaseData(new DateTime(1900, 1, 1, 0, 0, 0));
+            //yield return new TestCaseData(new DateTime(1900, 1, 1, 23, 59, 59));
+            yield return new TestCaseData(new DateTime(1900, 1, 1, 23, 59, 59, 997));
+            yield return new TestCaseData(new DateTime(1900, 12, 31, 0, 0, 0));
+            //yield return new TestCaseData(new DateTime(1900, 12, 31, 23, 59, 59));
+            yield return new TestCaseData(new DateTime(1900, 12, 31, 23, 59, 59, 997));
+            yield return new TestCaseData(new DateTime(9999, 01, 01, 0, 0, 0));
+            //yield return new TestCaseData(new DateTime(9999, 01, 01, 23, 59, 59));
+            yield return new TestCaseData(new DateTime(9999, 01, 01, 23, 59, 59, 997));
+            yield return new TestCaseData(new DateTime(9999, 12, 31, 0, 0, 0));
+            //yield return new TestCaseData(new DateTime(9999, 12, 31, 23, 59, 59));
+            yield return new TestCaseData(new DateTime(9999, 12, 31, 23, 59, 59, 997));
         }
     }
 }

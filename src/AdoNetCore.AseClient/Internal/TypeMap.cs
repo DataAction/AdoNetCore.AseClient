@@ -21,6 +21,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Decimal, (value, length) => TdsDataType.TDS_DECN },
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4 },
             {DbType.Double, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8 },
+            {DbType.DateTime, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME }
         };
         
         public static int? GetLength(DbType dbType, object value, Encoding enc)

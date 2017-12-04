@@ -8,12 +8,15 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueWriter
     {
+        private static readonly double SqlTicksPerMillisecond = 0.3;
+        private static DateTime SqlDateTimeEpoch = new DateTime(1900, 1, 1);
+
         public static void Write(object value, Stream stream, FormatItem format, Encoding enc)
         {
             switch (format.DataType)
             {
                 case TdsDataType.TDS_BIT:
-                    stream.WriteBool((bool) value);
+                    stream.WriteBool((bool)value);
                     break;
                 case TdsDataType.TDS_INT1:
                     stream.WriteByte((byte)value);
@@ -53,10 +56,10 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_FLT4:
-                    stream.WriteFloat((float) value);
+                    stream.WriteFloat((float)value);
                     break;
                 case TdsDataType.TDS_FLT8:
-                    stream.WriteDouble((double) value);
+                    stream.WriteDouble((double)value);
                     break;
                 case TdsDataType.TDS_FLTN:
                     switch (value)
@@ -102,11 +105,11 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DECN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        var sqlDecimal = (SqlDecimal) (decimal) value;
+                        var sqlDecimal = (SqlDecimal)(decimal)value;
                         stream.WriteByte(17);
-                        stream.WriteByte(sqlDecimal.IsPositive ? (byte) 0 : (byte) 1);
+                        stream.WriteByte(sqlDecimal.IsPositive ? (byte)0 : (byte)1);
                         var data = sqlDecimal.BinData;
-                        data = new []
+                        data = new[]
                         {
                             data[15], data[14], data[13], data[12],
                             data[11], data[10], data[9], data[8],
@@ -115,6 +118,14 @@ namespace AdoNetCore.AseClient.Internal
                         };
                         stream.Write(data, 0, 16);
                     }
+                    break;
+                case TdsDataType.TDS_DATETIME:
+                    var dt = (DateTime)value;
+                    var days = (int)(dt - SqlDateTimeEpoch).TotalDays;
+                    var sqlTicks = (int)((dt.TimeOfDay - SqlDateTimeEpoch.TimeOfDay).TotalMilliseconds * SqlTicksPerMillisecond);
+                    Console.WriteLine($"  -> {dt}: {days}, {sqlTicks}");
+                    stream.WriteInt(days);
+                    stream.WriteInt(sqlTicks);
                     break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");

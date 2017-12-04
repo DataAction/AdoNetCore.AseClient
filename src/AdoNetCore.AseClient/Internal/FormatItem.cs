@@ -89,6 +89,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_FLT4:
                 case TdsDataType.TDS_FLT8:
                 case TdsDataType.TDS_BIT:
+                case TdsDataType.TDS_DATETIME:
                     break;
                 case TdsDataType.TDS_INTN:
                 case TdsDataType.TDS_CHAR:
@@ -106,6 +107,9 @@ namespace AdoNetCore.AseClient.Internal
                     format.Length = stream.ReadByte();
                     format.Precision = (byte)stream.ReadByte();
                     format.Scale = (byte)stream.ReadByte();
+                    break;
+                case TdsDataType.TDS_DATETIMEN:
+                    format.Length = stream.ReadByte();
                     break;
                 default:
                     throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
@@ -152,6 +156,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_INT8:
                 case TdsDataType.TDS_FLT4:
                 case TdsDataType.TDS_FLT8:
+                case TdsDataType.TDS_DATETIME:
                     break;
                 case TdsDataType.TDS_VARCHAR:
                 case TdsDataType.TDS_VARBINARY:

@@ -304,5 +304,19 @@ namespace AdoNetCore.AseClient.Internal
             var sqlTicks = stream.ReadInt();
             return SqlDateTimeEpoch.AddDays(days).AddMilliseconds(sqlTicks / SqlTicksPerMillisecond);
         }
+
+        public static DateTime ReadShortPartDateTime(this Stream stream)
+        {
+            var buf = new byte[4];
+            stream.Read(buf, 0, 4);
+
+            var text = string.Join(" ", buf.Select(b => b.ToString("x2")));
+            var p1 = BitConverter.ToUInt16(buf, 0);
+            var p2 = BitConverter.ToUInt16(buf, 2);
+
+            Console.WriteLine($"ReadShortPartDateTime: 0x {text}, p1: {p1}, p2: {p2}");
+
+            return SqlDateTimeEpoch.AddDays(p1).AddMinutes(p2);
+        }
     }
 }

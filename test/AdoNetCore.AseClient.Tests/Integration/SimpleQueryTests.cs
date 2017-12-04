@@ -475,10 +475,8 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             {
                 var now = DateTime.Now;
                 var expected = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, now.Kind);
-                Console.WriteLine($"{now}");
                 Assert.AreEqual(expected, connection.ExecuteScalar<DateTime?>("select @expected", new { expected }));
             }
-
         }
 
         public static IEnumerable<TestCaseData> SelectDateTime_Parameter_ShouldWork_Cases()
@@ -515,27 +513,31 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
 
         public static IEnumerable<TestCaseData> SelectSmallDateTime_Literal_ShouldWork_Cases()
         {
-            //
+            //00 00 00 00, p1: 0, p2: 0
             yield return new TestCaseData("'1900-01-01 00:00:00'", new DateTime(1900, 1, 1, 0, 0, 0));
-            //
-            yield return new TestCaseData("'1900-01-01 23:59:59'", new DateTime(1900, 1, 1, 23, 59, 59));
-            yield return new TestCaseData("'1900-01-01 23:59:59.997'", new DateTime(1900, 1, 1, 23, 59, 59, 997));
-            //
+            //00 00 9f 05, p1: 0, p2: 1439
+            yield return new TestCaseData("'1900-01-01 23:59:00'", new DateTime(1900, 1, 1, 23, 59, 00));
+            //6c 01 00 00, p1: 364, p2: 0
             yield return new TestCaseData("'1900-12-31 00:00:00'", new DateTime(1900, 12, 31, 0, 0, 0));
-            //
-            yield return new TestCaseData("'1900-12-31 23:59:59'", new DateTime(1900, 12, 31, 23, 59, 59));
-            yield return new TestCaseData("'1900-12-31 23:59:59.997'", new DateTime(1900, 12, 31, 23, 59, 59, 997));
+            //6c 01 9f 05, p1: 364, p2: 1439
+            yield return new TestCaseData("'1900-12-31 23:59:00'", new DateTime(1900, 12, 31, 23, 59, 00));
+            
+            //ff ff 00 00, p1: 65535, p2: 0
+            yield return new TestCaseData("'2079-06-06 00:00:00'", new DateTime(2079, 06, 06, 0, 0, 0));
+            //ff ff 9f 05, p1: 65535, p2: 1439
+            yield return new TestCaseData("'2079-06-06 23:59:00'", new DateTime(2079, 06, 06, 23, 59, 00));
+            //[ushort:days since 1900-01-01][ushort:minutes since 00:00]
+        }
 
-            //
-            yield return new TestCaseData("'9999-01-01 00:00:00'", new DateTime(9999, 01, 01, 0, 0, 0));
-            //
-            yield return new TestCaseData("'9999-01-01 23:59:59'", new DateTime(9999, 01, 01, 23, 59, 59));
-            yield return new TestCaseData("'9999-01-01 23:59:59.997'", new DateTime(9999, 01, 01, 23, 59, 59, 997));
-            //
-            yield return new TestCaseData("'9999-12-31 00:00:00'", new DateTime(9999, 12, 31, 0, 0, 0));
-            //
-            yield return new TestCaseData("'9999-12-31 23:59:59'", new DateTime(9999, 12, 31, 23, 59, 59));
-            yield return new TestCaseData("'9999-12-31 23:59:59.997'", new DateTime(9999, 12, 31, 23, 59, 59, 997));
+        [Test]
+        public void SelectSmallDateTime_Parameter_Now_ShouldWork()
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                var now = DateTime.Now;
+                var expected = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);
+                Assert.AreEqual(expected, connection.ExecuteScalar<DateTime?>("select convert(smalldatetime, @expected)", new { expected }));
+            }
         }
     }
 }

@@ -83,11 +83,13 @@ namespace AdoNetCore.AseClient.Internal
                     }
                 case TdsDataType.TDS_DATETIME:
                     return stream.ReadIntPartDateTime();
+                case TdsDataType.TDS_SHORTDATE:
+                    return stream.ReadShortPartDateTime();
                 case TdsDataType.TDS_DATETIMEN:
                     switch (stream.ReadByte())
                     {
                         case 4:
-                            break;
+                            return stream.ReadShortPartDateTime();
                         case 8:
                             return stream.ReadIntPartDateTime();
                     }

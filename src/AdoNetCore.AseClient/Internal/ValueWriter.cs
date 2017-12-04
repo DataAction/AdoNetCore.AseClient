@@ -8,9 +8,6 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueWriter
     {
-        private static readonly double SqlTicksPerMillisecond = 0.3;
-        private static DateTime SqlDateTimeEpoch = new DateTime(1900, 1, 1);
-
         public static void Write(object value, Stream stream, FormatItem format, Encoding enc)
         {
             switch (format.DataType)
@@ -49,7 +46,7 @@ namespace AdoNetCore.AseClient.Internal
                             stream.WriteByte(8);
                             stream.WriteLong(l);
                             break;
-                        case null:
+                        //case null:
                         default:
                             stream.WriteByte(0);
                             break;
@@ -120,12 +117,13 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_DATETIME:
-                    var dt = (DateTime)value;
-                    var days = (int)(dt - SqlDateTimeEpoch).TotalDays;
-                    var sqlTicks = (int)((dt.TimeOfDay - SqlDateTimeEpoch.TimeOfDay).TotalMilliseconds * SqlTicksPerMillisecond);
-                    Console.WriteLine($"  -> {dt}: {days}, {sqlTicks}");
-                    stream.WriteInt(days);
-                    stream.WriteInt(sqlTicks);
+                    stream.WriteIntPartDateTime((DateTime)value);
+                    break;
+                case TdsDataType.TDS_DATETIMEN:
+                    if (!stream.TryWriteBytePrefixedNull(value))
+                    {
+                        stream.WriteIntPartDateTime((DateTime)value);
+                    }
                     break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");

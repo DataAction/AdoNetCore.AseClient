@@ -9,8 +9,6 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueReader
     {
-        private static readonly double SqlTicksPerMillisecond = 0.3;
-
         public static object Read(Stream stream, FormatItem format, Encoding enc)
         {
             switch (format.DataType)
@@ -84,26 +82,14 @@ namespace AdoNetCore.AseClient.Internal
                         return (decimal)new SqlDecimal(format.Precision ?? 0, format.Scale ?? 0, isPositive, bits);
                     }
                 case TdsDataType.TDS_DATETIME:
-                    {
-                        //var buffer = new byte[8];
-                        //stream.Read(buffer, 0, 8);
-                        //var hex = string.Join(" ", buffer.Select(b => b.ToString("x2")));
-                        //var p1 = BitConverter.ToInt32(buffer, 0);
-                        //var p2 = BitConverter.ToInt32(buffer, 4);
-                        //Console.WriteLine($"Date: b: {hex}; p1: {p1}, p2: {p2}");
-                        var days = stream.ReadInt();
-                        var sqlTicks = stream.ReadInt();
-                        return new DateTime(1900, 01, 01).AddDays(days).AddMilliseconds(sqlTicks / SqlTicksPerMillisecond);
-                    }
+                    return stream.ReadIntPartDateTime();
                 case TdsDataType.TDS_DATETIMEN:
                     switch (stream.ReadByte())
                     {
                         case 4:
                             break;
                         case 8:
-                            var days = stream.ReadInt();
-                            var sqlTicks = stream.ReadInt();
-                            return new DateTime(1900, 01, 01).AddDays(days).AddMilliseconds(sqlTicks / SqlTicksPerMillisecond);
+                            return stream.ReadIntPartDateTime();
                     }
                     break;
                 default:

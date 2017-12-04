@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -132,6 +131,24 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             return false;
+        }
+
+        private static readonly double SqlTicksPerMillisecond = 0.3;
+        private static readonly DateTime SqlDateTimeEpoch = new DateTime(1900, 1, 1);
+        //Refer: corefx SqlDateTime.FromTimeSpan
+        public static void WriteIntPartDateTime(this Stream stream, DateTime value)
+        {
+            var span = value - SqlDateTimeEpoch;
+            var day = span.Days;
+            var ticks = span.Ticks - day * TimeSpan.TicksPerDay;
+            if (ticks < 0L)
+            {
+                day--;
+                ticks += TimeSpan.TicksPerDay;
+            }
+            var time = (int)((double)ticks / TimeSpan.TicksPerMillisecond * SqlTicksPerMillisecond + 0.5);
+            stream.WriteInt(day);
+            stream.WriteInt(time);
         }
     }
 
@@ -276,6 +293,16 @@ namespace AdoNetCore.AseClient.Internal
             var buf = new byte[length];
             stream.Read(buf, 0, length);
             return buf;
+        }
+
+        private static readonly double SqlTicksPerMillisecond = 0.3;
+        private static readonly DateTime SqlDateTimeEpoch = new DateTime(1900, 1, 1);
+
+        public static DateTime ReadIntPartDateTime(this Stream stream)
+        {
+            var days = stream.ReadInt();
+            var sqlTicks = stream.ReadInt();
+            return SqlDateTimeEpoch.AddDays(days).AddMilliseconds(sqlTicks / SqlTicksPerMillisecond);
         }
     }
 }

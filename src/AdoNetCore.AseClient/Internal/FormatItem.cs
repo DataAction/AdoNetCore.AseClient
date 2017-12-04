@@ -174,6 +174,9 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteByte(Precision ?? 1);
                     stream.WriteByte(Scale ?? 0);
                     break;
+                case TdsDataType.TDS_DATETIMEN:
+                    stream.WriteByte(8);
+                    break;
                 default:
                     throw new NotSupportedException($"{DataType} not yet supported");
             }

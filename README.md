@@ -78,7 +78,7 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 | `TDS_BINARY` | <span>&#10003;</span> |
 | `TDS_BIT` | <span>&#10003;</span> |
 | `TDS_CHAR` | <span>&#10003;</span> |
-| `TDS_DATETIME` | <span>TODO</span> |
+| `TDS_DATETIME` | <span>&#10003;</span> |
 | `TDS_DATE` | <span>TODO</span> |
 | `TDS_DATEN` | <span>TODO</span> |
 | `TDS_SHORTDATE` | <span>TODO</span> |

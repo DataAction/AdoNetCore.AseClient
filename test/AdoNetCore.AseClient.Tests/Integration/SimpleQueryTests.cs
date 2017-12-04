@@ -386,5 +386,25 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
                 Assert.AreEqual(expected, connection.ExecuteScalar<double?>("select @expected", new { expected }));
             }
         }
+
+        [Test]
+        public void SelectBool_Literal_ShouldWork()
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                Assert.AreEqual(true, connection.ExecuteScalar<bool>("select convert(bit, 1)"));
+                Assert.AreEqual(false, connection.ExecuteScalar<bool>("select convert(bit, 0)"));
+            }
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SelectBool_Parameter_ShouldWork(bool expected)
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<bool>("select @expected", new {expected}));
+            }
+        }
     }
 }

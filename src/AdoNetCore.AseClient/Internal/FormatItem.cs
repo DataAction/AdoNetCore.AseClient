@@ -88,6 +88,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_INT8:
                 case TdsDataType.TDS_FLT4:
                 case TdsDataType.TDS_FLT8:
+                case TdsDataType.TDS_BIT:
                     break;
                 case TdsDataType.TDS_INTN:
                 case TdsDataType.TDS_CHAR:
@@ -144,6 +145,7 @@ namespace AdoNetCore.AseClient.Internal
             switch (DataType)
             {
                 //fixed-length types
+                case TdsDataType.TDS_BIT:
                 case TdsDataType.TDS_INT1:
                 case TdsDataType.TDS_INT2:
                 case TdsDataType.TDS_INT4:

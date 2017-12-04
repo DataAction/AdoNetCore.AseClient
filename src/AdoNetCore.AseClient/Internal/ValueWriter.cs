@@ -12,6 +12,9 @@ namespace AdoNetCore.AseClient.Internal
         {
             switch (format.DataType)
             {
+                case TdsDataType.TDS_BIT:
+                    stream.WriteBool((bool) value);
+                    break;
                 case TdsDataType.TDS_INT1:
                     stream.WriteByte((byte)value);
                     break;

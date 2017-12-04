@@ -13,6 +13,11 @@ namespace AdoNetCore.AseClient.Internal
             stream.Write(bytes, 0, bytes.Length);
         }
 
+        public static void WriteBool(this Stream stream, bool value)
+        {
+            stream.WriteByte((byte)(value ? 1 : 0));
+        }
+
         public static void WriteShort(this Stream stream, short value)
         {
             //todo: as long as BitConverter.IsLittleEndian, this'll work. revisit to support bigendian too?
@@ -132,6 +137,11 @@ namespace AdoNetCore.AseClient.Internal
 
     internal static class StreamReadExtensions
     {
+        public static bool ReadBool(this Stream stream)
+        {
+            return stream.ReadByte() != 0;
+        }
+
         public static short ReadShort(this Stream stream)
         {
             var buf = new byte[2];

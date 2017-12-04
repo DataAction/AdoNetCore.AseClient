@@ -13,6 +13,8 @@ namespace AdoNetCore.AseClient.Internal
         {
             switch (format.DataType)
             {
+                case TdsDataType.TDS_BIT:
+                    return stream.ReadBool();
                 case TdsDataType.TDS_INT1:
                     return (byte)stream.ReadByte();
                 case TdsDataType.TDS_INT2:

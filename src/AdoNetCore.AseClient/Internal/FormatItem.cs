@@ -16,8 +16,8 @@ namespace AdoNetCore.AseClient.Internal
         public int UserType { get; set; }
         public TdsDataType DataType { get; set; }
         public int? Length { get; set; }
-        public int? Precision { get; set; }
-        public int? Scale { get; set; }
+        public byte? Precision { get; set; }
+        public byte? Scale { get; set; }
         public string LocaleInfo { get; set; }
 
         private string _parameterName { get; set; }
@@ -100,8 +100,8 @@ namespace AdoNetCore.AseClient.Internal
                     break;
                 case TdsDataType.TDS_DECN:
                     format.Length = stream.ReadByte();
-                    format.Precision = stream.ReadByte();
-                    format.Scale = stream.ReadByte();
+                    format.Precision = (byte)stream.ReadByte();
+                    format.Scale = (byte)stream.ReadByte();
                     break;
                 default:
                     throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
@@ -148,11 +148,18 @@ namespace AdoNetCore.AseClient.Internal
                     break;
                 case TdsDataType.TDS_VARCHAR:
                 case TdsDataType.TDS_VARBINARY:
+                case TdsDataType.TDS_BINARY:
+                case TdsDataType.TDS_INTN:
                     stream.WriteByte((byte)(Length ?? 0));
                     break;
                 case TdsDataType.TDS_LONGCHAR:
                 case TdsDataType.TDS_LONGBINARY:
                     stream.WriteUInt((uint)(Length ?? 0));
+                    break;
+                case TdsDataType.TDS_DECN:
+                    stream.WriteByte((byte)(Length ?? 1));
+                    stream.WriteByte(Precision ?? 1);
+                    stream.WriteByte(Scale ?? 0);
                     break;
                 default:
                     throw new NotSupportedException($"{DataType} not yet supported");

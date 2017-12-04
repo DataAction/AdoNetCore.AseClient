@@ -219,10 +219,16 @@ namespace AdoNetCore.AseClient.Internal
                     DataType = TypeMap.GetTdsDataType(parameter.DbType, parameter.Value, length),
                     IsOutput = parameter.IsOutput,
                     IsNullable = parameter.IsNullable,
-                    Length = length,
-                    Precision = TypeMap.GetPrecision(parameter.DbType, parameter.Value),
-                    Scale = TypeMap.GetScale(parameter.DbType, parameter.Value)
+                    Length = length
                 };
+
+                if (parameter.DbType == DbType.Decimal && parameter.Value is decimal)
+                {
+                    var sqlDecimal = (SqlDecimal) (decimal) parameter.Value;
+                    formatItem.Precision = sqlDecimal.Precision;
+                    formatItem.Scale = sqlDecimal.Scale;
+                }
+
                 formatItems.Add(formatItem);
                 parameterItems.Add(new ParametersToken.Parameter
                 {

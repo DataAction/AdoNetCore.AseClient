@@ -14,7 +14,7 @@ namespace AdoNetCore.AseClient.Internal
             switch (format.DataType)
             {
                 case TdsDataType.TDS_INT1:
-                    return (byte) stream.ReadByte();
+                    return (byte)stream.ReadByte();
                 case TdsDataType.TDS_INT2:
                     return stream.ReadShort();
                 case TdsDataType.TDS_INT4:
@@ -24,7 +24,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_INTN:
                     switch (stream.ReadByte())
                     {
-                        case 1: return (byte) stream.ReadByte();
+                        case 1: return (byte)stream.ReadByte();
                         case 2: return stream.ReadShort();
                         case 4: return stream.ReadInt();
                         case 8: return stream.ReadLong();
@@ -46,11 +46,26 @@ namespace AdoNetCore.AseClient.Internal
                     {
                         return null;
                     }
-                    var buf = new byte[length];
-                    stream.Read(buf, 0, length);
-                    var bytestring = string.Join(" ", buf.Select(x => x.ToString("x2")));
-                    Console.WriteLine($"l:{length}, p:{format.Precision}, s:{format.Scale}: {bytestring}");
-                    return 0m;
+                    var isPositive = stream.ReadByte() == 0;
+                    var buffer = new byte[]
+                    {
+                        0, 0, 0, 0,
+                        0, 0, 0, 0,
+                        0, 0, 0, 0,
+                        0, 0, 0, 0
+                    };
+                    var remainingLength = length - 1;
+                    stream.Read(buffer, 16 - remainingLength, remainingLength);
+                    buffer = buffer.Reverse().ToArray();
+                    var bits = new[]
+                    {
+                        BitConverter.ToInt32(buffer, 0),
+                        BitConverter.ToInt32(buffer, 4),
+                        BitConverter.ToInt32(buffer, 8),
+                        BitConverter.ToInt32(buffer, 12)
+                    };
+
+                    return (decimal)new SqlDecimal(format.Precision ?? 0, format.Scale ?? 0, isPositive, bits);
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

@@ -234,11 +234,34 @@ namespace AdoNetCore.AseClient.Tests.Integration
         }
 
         [TestCaseSource(nameof(SelectDecimal_Literal_ShouldWork_Cases))]
-        public void SelectDecimal_Literal_ShouldWork(string literal, decimal expected)
+        public void SelectDecimal_Literal_ShouldWork(string literal, int precision, int scale, decimal? expected)
         {
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
-                Assert.AreEqual(expected, connection.ExecuteScalar<decimal>($@"select
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>($@"select convert(decimal({precision},{scale}), {literal})"));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectDecimal_Literal_ShouldWork_Cases()
+        {
+            yield return new TestCaseData("null", 10, 0, null);
+            yield return new TestCaseData("0", 10, 0, 0m);
+            yield return new TestCaseData("1.1", 2, 1, 1.1m);
+            yield return new TestCaseData("-1.1", 2, 1, -1.1m);
+            yield return new TestCaseData("1.0123456789", 11, 10, 1.0123456789m);
+            yield return new TestCaseData("-1.0123456789", 11, 10, -1.0123456789m);
+            yield return new TestCaseData("987654321.0123456789", 19, 10, 987654321.0123456789m);
+            yield return new TestCaseData("-987654321.0123456789", 19, 10, -987654321.0123456789m);
+            yield return new TestCaseData("32109876543210.0123456789", 24, 10, 32109876543210.0123456789m);
+            yield return new TestCaseData("-32109876543210.0123456789", 24, 10, -32109876543210.0123456789m);
+        }
+
+        [TestCaseSource(nameof(SelectDecimal_Literal_Simple_ShouldWork_Cases))]
+        public void SelectDecimal_Literal_Simple_ShouldWork(string literal, decimal? expected)
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>($@"select
   convert(decimal(10,0), {literal}),
   convert(decimal(10,1), {literal}),
   convert(decimal(10,2), {literal}),
@@ -251,8 +274,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
-        public static IEnumerable<TestCaseData> SelectDecimal_Literal_ShouldWork_Cases()
+        public static IEnumerable<TestCaseData> SelectDecimal_Literal_Simple_ShouldWork_Cases()
         {
+            yield return new TestCaseData("null", null);
             /*
 l:6, p:10, s:0: 00 00 00 00 00 01 = 1/1
 l:6, p:10, s:1: 00 00 00 00 00 0a = 10/10
@@ -285,17 +309,22 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         {
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
-                Assert.AreEqual(expected, connection.ExecuteScalar<decimal>("select @expected", new { expected }));
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>("select @expected", new { expected }));
             }
         }
 
         public static IEnumerable<TestCaseData> SelectDecimal_Parameter_ShouldWork_Cases()
         {
-            yield return new TestCaseData(0.0m);
-            yield return new TestCaseData(0.1m);
-            yield return new TestCaseData(-0.1m);
-            yield return new TestCaseData(999999999999.999999m);
-            yield return new TestCaseData(-999999999999.999999m);
+            yield return new TestCaseData(null);
+            yield return new TestCaseData(0m);
+            yield return new TestCaseData(1.1m);
+            yield return new TestCaseData(-1.1m);
+            yield return new TestCaseData(1.0123456789m);
+            yield return new TestCaseData(-1.0123456789m);
+            yield return new TestCaseData(987654321.0123456789m);
+            yield return new TestCaseData(-987654321.0123456789m);
+            yield return new TestCaseData(32109876543210.0123456789m);
+            yield return new TestCaseData(-32109876543210.0123456789m);
         }
 
         [TestCase(0.0f)]

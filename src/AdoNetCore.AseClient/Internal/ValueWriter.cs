@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
@@ -43,6 +44,28 @@ namespace AdoNetCore.AseClient.Internal
                             stream.WriteLong(l);
                             break;
                         case null:
+                        default:
+                            stream.WriteByte(0);
+                            break;
+                    }
+                    break;
+                case TdsDataType.TDS_FLT4:
+                    stream.WriteFloat((float) value);
+                    break;
+                case TdsDataType.TDS_FLT8:
+                    stream.WriteDouble((double) value);
+                    break;
+                case TdsDataType.TDS_FLTN:
+                    switch (value)
+                    {
+                        case float f:
+                            stream.WriteByte(4);
+                            stream.WriteFloat(f);
+                            break;
+                        case double d:
+                            stream.WriteByte(8);
+                            stream.WriteDouble(d);
+                            break;
                         default:
                             stream.WriteByte(0);
                             break;

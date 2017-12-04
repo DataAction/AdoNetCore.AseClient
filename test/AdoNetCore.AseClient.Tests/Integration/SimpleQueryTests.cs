@@ -327,25 +327,63 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(-32109876543210.0123456789m);
         }
 
-        [TestCase(0.0f)]
-        [TestCase(1.25f)]
-        [TestCase(-1.25f)]
-        public void SelectFloat_Parameter_Shouldwork(float expected)
+        [TestCase("null", null)]
+        [TestCase("0", 0.0f)]
+        [TestCase("1.25", 1.25f)]
+        [TestCase("-1.25", -1.25f)]
+        [TestCase("123456789.5", 123456789.5f)]
+        [TestCase("-123456789.5", -123456789.5f)]
+        public void SelectFloat_Literal_Shouldwork(string input, float? expected)
         {
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
-                Assert.AreEqual(expected, connection.ExecuteScalar<float>("select @expected", new { expected }));
+                Assert.AreEqual(expected, connection.ExecuteScalar<float?>($"select convert(float, {input})"));
             }
         }
 
-        [TestCase(0.0d)]
-        [TestCase(1.25d)]
-        [TestCase(-1.25d)]
-        public void SelectDouble_Parameter_Shouldwork(double expected)
+        [TestCase(null)]
+        [TestCase(0.0f)]
+        [TestCase(1.25f)]
+        [TestCase(-1.25f)]
+        [TestCase(123456789.5f)]
+        [TestCase(-123456789.5f)]
+        public void SelectFloat_Parameter_Shouldwork(float? expected)
         {
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
-                Assert.AreEqual(expected, connection.ExecuteScalar<float>("select @expected", new { expected }));
+                Assert.AreEqual(expected, connection.ExecuteScalar<float?>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCase("null", null)]
+        [TestCase("0.0", 0.0d)]
+        [TestCase("1.25", 1.25d)]
+        [TestCase("-1.25", -1.25d)]
+        [TestCase("123456789.5", 123456789.5d)]
+        [TestCase("-123456789.5", -123456789.5d)]
+        [TestCase("123456789.1", 123456789.1d)]
+        [TestCase("-123456789.1", -123456789.1d)]
+        public void SelectDouble_Literal_Shouldwork(string input, double? expected)
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<double?>($"select convert(double precision, {input})"));
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase(0.0d)]
+        [TestCase(1.25d)]
+        [TestCase(-1.25d)]
+        [TestCase(123456789.5d)]
+        [TestCase(-123456789.5d)]
+        [TestCase(123456789.1d)]
+        [TestCase(-123456789.1d)]
+        public void SelectDouble_Parameter_Shouldwork(double? expected)
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<double?>("select @expected", new { expected }));
             }
         }
     }

@@ -30,6 +30,17 @@ namespace AdoNetCore.AseClient.Internal
                         case 8: return stream.ReadLong();
                     }
                     break;
+                case TdsDataType.TDS_FLT4:
+                    return stream.ReadFloat();
+                case TdsDataType.TDS_FLT8:
+                    return stream.ReadDouble();
+                case TdsDataType.TDS_FLTN:
+                    switch (stream.ReadByte())
+                    {
+                        case 4: return stream.ReadFloat();
+                        case 8: return stream.ReadDouble();
+                    }
+                    break;
                 case TdsDataType.TDS_CHAR:
                 case TdsDataType.TDS_VARCHAR:
                     return stream.ReadNullableByteLengthPrefixedString(enc);

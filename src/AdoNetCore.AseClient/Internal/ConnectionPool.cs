@@ -25,9 +25,9 @@ namespace AdoNetCore.AseClient.Internal
 
         private readonly List<PoolItem> _connections = new List<PoolItem>(MaxPooledConnections);
 
-        public ConnectionPool(string connectionString)
+        public ConnectionPool(ConnectionParameters parameters)
         {
-            _parameters = ConnectionParameters.Parse(connectionString);
+            _parameters = parameters;
         }
 
         public IInternalConnection Reserve()

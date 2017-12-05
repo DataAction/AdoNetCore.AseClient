@@ -14,6 +14,7 @@ namespace AdoNetCore.AseClient
     public sealed class AseConnection : IDbConnection
     {
         private IInternalConnection _internal;
+        private ConnectionParameters _parameters;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AseConnection" /> class.
@@ -189,7 +190,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Changes the current database for an open <see cref="AseConnection" />.
         /// </summary>
-        /// <param name="database">The name of the database to use instead of the current database.</param>
+        /// <param name="databaseName">The name of the database to use instead of the current database.</param>
         /// <remarks>
         /// The value supplied in the <i>database</i> parameter must be a valid database name. The <i>database</i> parameter 
         /// cannot contain a null value, an empty string, or a string with only blank characters.
@@ -206,7 +207,7 @@ namespace AdoNetCore.AseClient
                 return;
             }
 
-            ConnectionPoolManager.Release(ConnectionString, _internal);
+            ConnectionPoolManager.Release(_parameters, _internal);
             _internal = null;
             State = ConnectionState.Closed;
         }
@@ -245,7 +246,7 @@ namespace AdoNetCore.AseClient
 
             State = ConnectionState.Connecting;
 
-            _internal = ConnectionPoolManager.Reserve(ConnectionString);
+            _internal = ConnectionPoolManager.Reserve(_parameters);
 
             State = ConnectionState.Open;
         }
@@ -254,7 +255,11 @@ namespace AdoNetCore.AseClient
         /// Gets or sets the string used to open a connection to an ASE database.
         /// </summary>
         // TODO - expand docs.
-        public string ConnectionString { get; set; }
+        public string ConnectionString
+        {
+            get => _parameters.ConnectionString;
+            set => _parameters = ConnectionParameters.Parse(value);
+        }
 
         /// <summary>
         /// Gets the time to wait while trying to establish a connection before terminating the attempt and generating an error.

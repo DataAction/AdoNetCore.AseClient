@@ -28,7 +28,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public static ConnectionParameters Parse(string connectionString)
         {
-            var parameters = new ConnectionParameters();
+            var parameters = new ConnectionParameters(connectionString);
             
             //todo: this implementation may be too naiive - how do we handle for values which contain ';' or '=' ?
             foreach (var item in connectionString.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries))
@@ -43,6 +43,24 @@ namespace AdoNetCore.AseClient.Internal
             parameters.Validate();
 
             return parameters;
+        }
+
+        public string ConnectionString { get; }
+
+        public string Server { get; private set; }
+        public int Port { get; private set; } = 5000;
+        public string Database{ get; private set; }
+        public string Username { get; private set; }
+        public string Password{ get; private set; }
+        public string ProcessId { get; private set; } = CurrentProcess.Id.ToString();
+        public string ApplicationName { get; private set; } = CurrentProcess.ProcessName;
+        public string ClientHostName { get; private set; } = Environment.MachineName;
+        public string Charset { get; private set; } = "iso_1";
+        public bool Pooling { get; private set; } = true;
+
+        private ConnectionParameters(string connectionString)
+        {
+            ConnectionString = connectionString;
         }
 
         private void Validate()
@@ -62,16 +80,5 @@ namespace AdoNetCore.AseClient.Internal
                 throw new ArgumentException("Uid not specified");
             }
         }
-
-        public string Server { get; private set; }
-        public int Port { get; private set; } = 5000;
-        public string Database{ get; private set; }
-        public string Username { get; private set; }
-        public string Password{ get; private set; }
-        public string ProcessId { get; private set; } = CurrentProcess.Id.ToString();
-        public string ApplicationName { get; private set; } = CurrentProcess.ProcessName;
-        public string ClientHostName { get; private set; } = Environment.MachineName;
-        public string Charset { get; private set; } = "iso_1";
-        public bool Pooling { get; private set; } = true;
     }
 }

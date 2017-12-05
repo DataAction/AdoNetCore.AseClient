@@ -33,44 +33,44 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 
 | Property      | Support       |
 | ------------- |:-------------:| 
-| `AlternateServers` | <span>X</span> |
-| `ApplicationName` | <span>&#10003;</span> |
-| `BufferCacheSize` | <span>TODO</span> |
-| `Charset` | <span>&#10003;</span> |
-| `ClientHostName` | <span>&#10003;</span> |
-| `ClientHostProc` | <span>&#10003;</span> |
-| `CodePageType` | <span>TODO</span> |
-| `Connection Lifetime` | <span>TODO</span> |
-| `ConnectionIdleTimeout` | <span>TODO</span> |
-| `CumulativeRecordCount` | <span>TODO</span> |
-| `Database` | <span>&#10003;</span> |
-| `Data Source` | <span>&#10003;</span> |
-| `DistributedTransactionProtocol` | <span>X</span> |
-| `DSURL` | <span>TODO</span> |
-| `EnableBulkLoad` | <span>?</span> |
-| `EnableServerPacketSize` | <span>TODO</span> |
-| `Encryption` | <span>X</span> |
-| `EncryptPassword` | <span>?</span> |
-| `Enlist` | <span>X</span> |
-| `FetchArraySize` | <span>TODO</span> |
-| `HASession` | <span>X</span> |
-| `LoginTimeOut` | <span>TODO</span> |
-| `Max Pool Size` | <span>TODO</span> |
-| `Min Pool Size` | <span>TODO</span> |
-| `PacketSize` | <span>TODO</span> |
-| `Ping Server` | <span>TODO</span> |
-| `Pooling` | <span>&#10003;</span> |
-| `Port` | <span>&#10003;</span> |
-| `Pwd` | <span>&#10003;</span> |
-| `RestrictMaximum PacketSize` | <span>TODO</span> |
-| `Secondary Data Source` | <span>X</span> |
-| `Secondary Server Port` | <span>X</span> |
-| `TextSize` | <span>TODO</span> |
-| `TightlyCoupledTransaction` | <span>X</span> |
-| `TrustedFile` | <span>X</span> |
-| `Uid` | <span>&#10003;</span> |
-| `UseAseDecimal` | <span>TODO</span> |
-| `UseCursor` | <span>?</span> |
+| `AlternateServers` | X |
+| `ApplicationName` | &#10003; |
+| `BufferCacheSize` | TODO |
+| `Charset` | &#10003; |
+| `ClientHostName` | &#10003; |
+| `ClientHostProc` | &#10003; |
+| `CodePageType` | TODO |
+| `Connection Lifetime` | TODO |
+| `ConnectionIdleTimeout` | TODO |
+| `CumulativeRecordCount` | TODO |
+| `Database` | &#10003; |
+| `Data Source` | &#10003; |
+| `DistributedTransactionProtocol` | X |
+| `DSURL` | TODO |
+| `EnableBulkLoad` | ? |
+| `EnableServerPacketSize` | TODO |
+| `Encryption` | X |
+| `EncryptPassword` | ? |
+| `Enlist` | X |
+| `FetchArraySize` | TODO |
+| `HASession` | X |
+| `LoginTimeOut` | TODO |
+| `Max Pool Size` | TODO |
+| `Min Pool Size` | TODO |
+| `PacketSize` | TODO |
+| `Ping Server` | TODO |
+| `Pooling` | &#10003; |
+| `Port` | &#10003; |
+| `Pwd` | &#10003; |
+| `RestrictMaximum PacketSize` | TODO |
+| `Secondary Data Source` | X |
+| `Secondary Server Port` | X |
+| `TextSize` | TODO |
+| `TightlyCoupledTransaction` | X |
+| `TrustedFile` | X |
+| `Uid` | &#10003; |
+| `UseAseDecimal` | TODO |
+| `UseCursor` | ? |
 
 ## Supported types
 This is the list of types that ASE can emit.
@@ -80,46 +80,46 @@ For transmission of data to ASE, the driver will select an appropriate type, whi
 
 | Type    | Support     |
 | ------- |:-----------:|
-| `TDS_BINARY` | <span>&#10003;</span> |
-| `TDS_BIT` | <span>&#10003;</span> |
-| `TDS_CHAR` | <span>&#10003;</span> |
-| `TDS_DATETIME` | <span>&#10003;</span> |
-| `TDS_DATE` | <span>&#10003;</span> |
-| `TDS_DATEN` | <span>&#10003;</span> |
-| `TDS_SHORTDATE` | <span>&#10003;</span> |
-| `TDS_DATETIMN` | <span>&#10003;</span> |
-| `TDS_DECN` | <span>&#10003;</span> |
-| `TDS_FLT4` | <span>&#10003;</span> |
-| `TDS_FLT8` | <span>&#10003;</span> |
-| `TDS_FLTN` | <span>&#10003;</span> |
-| `TDS_IMAGE` | <span>TODO</span> |
-| `TDS_INT1` | <span>&#10003;</span> |
-| `TDS_INT2` | <span>&#10003;</span> |
-| `TDS_INT4` | <span>&#10003;</span> |
-| `TDS_INT8` | <span>&#10003;</span> |
-| `TDS_INTN` | <span>&#10003;</span> |
-| `TDS_INTERVAL` | <span>?</span> |
-| `TDS_SINT1` | <span>&#10003;</span> |
-| `TDS_UINT2` | <span>&#10003;</span> |
-| `TDS_UINT4` | <span>&#10003;</span> |
-| `TDS_UINT8` | <span>&#10003;</span> |
-| `TDS_UINTN` | <span>&#10003;</span> |
-| `TDS_LONGBINARY` | <span>&#10003;</span> |
-| `TDS_LONGCHAR` | <span>&#10003;</span> |
-| `TDS_MONEY` | <span>&#10003;</span> |
-| `TDS_SHORTMONEY` | <span>&#10003;</span> |
-| `TDS_MONEYN` | <span>&#10003;</span> |
-| `TDS_NUMN` | <span>&#10003;</span> |
-| `TDS_SENSITIVITY` | <span>&#10003;</span> |
-| `TDS_TIME` | <span>&#10003;</span> |
-| `TDS_TIMEN` | <span>&#10003;</span> |
-| `TDS_TEXT` | <span>TODO</span> |
-| `TDS_UNITEXT` | <span>TODO</span> |
-| `TDS_VARBINARY` | <span>&#10003;</span> |
-| `TDS_VARCHAR` | <span>&#10003;</span> |
-| `TDS_XML` | <span>TODO</span> |
-| `TDS_BOUNDARY` | <span>&#10003;</span> |
-| `TDS_BLOB` | <span>TODO</span> |
+| `TDS_BINARY` | &#10003; |
+| `TDS_BIT` | &#10003; |
+| `TDS_CHAR` | &#10003; |
+| `TDS_DATETIME` | &#10003; |
+| `TDS_DATE` | &#10003; |
+| `TDS_DATEN` | &#10003; |
+| `TDS_SHORTDATE` | &#10003; |
+| `TDS_DATETIMN` | &#10003; |
+| `TDS_DECN` | &#10003; |
+| `TDS_FLT4` | &#10003; |
+| `TDS_FLT8` | &#10003; |
+| `TDS_FLTN` | &#10003; |
+| `TDS_IMAGE` | &#10003; |
+| `TDS_INT1` | &#10003; |
+| `TDS_INT2` | &#10003; |
+| `TDS_INT4` | &#10003; |
+| `TDS_INT8` | &#10003; |
+| `TDS_INTN` | &#10003; |
+| `TDS_INTERVAL` | ? |
+| `TDS_SINT1` | &#10003; |
+| `TDS_UINT2` | &#10003; |
+| `TDS_UINT4` | &#10003; |
+| `TDS_UINT8` | &#10003; |
+| `TDS_UINTN` | &#10003; |
+| `TDS_LONGBINARY` | &#10003; |
+| `TDS_LONGCHAR` | &#10003; |
+| `TDS_MONEY` | &#10003; |
+| `TDS_SHORTMONEY` | &#10003; |
+| `TDS_MONEYN` | &#10003; |
+| `TDS_NUMN` | &#10003; |
+| `TDS_SENSITIVITY` | &#10003; |
+| `TDS_TIME` | &#10003; |
+| `TDS_TIMEN` | &#10003; |
+| `TDS_TEXT` | &#10003; |
+| `TDS_UNITEXT` | TODO |
+| `TDS_VARBINARY` | &#10003; |
+| `TDS_VARCHAR` | &#10003; |
+| `TDS_XML` | &#10003; |
+| `TDS_BOUNDARY` | &#10003; |
+| `TDS_BLOB` | TODO |
 
 ## Flows/design
 Roughly the flows will be (names not set in stone):

@@ -164,6 +164,15 @@ namespace AdoNetCore.AseClient.Internal
                         stream.WriteIntPartDateTime((DateTime)value);
                     }
                     break;
+                case TdsDataType.TDS_DATE:
+                    stream.WriteDate((DateTime) value);
+                    break;
+                case TdsDataType.TDS_DATEN:
+                    if (!stream.TryWriteBytePrefixedNull(value))
+                    {
+                        stream.WriteDate((DateTime)value);
+                    }
+                    break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

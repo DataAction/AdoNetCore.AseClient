@@ -649,5 +649,42 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
                 Assert.AreEqual(expected, connection.ExecuteScalar<DateTime?>("select convert(smalldatetime, @expected)", new { expected }));
             }
         }
+
+        [TestCaseSource(nameof(SelectDate_Literal_ShouldWork_Cases))]
+        public void SelectDate_Literal_ShouldWork(string input, DateTime? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<DateTime?>($"select convert(date, {input})"));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectDate_Literal_ShouldWork_Cases()
+        {
+            yield return new TestCaseData("null", null);
+            //range is 0001-01-01 to 9999-12-31
+            //a5 6a f5 ff, i1: -693595, s1: 27301, s2: -11
+            yield return new TestCaseData("'0001-01-01'", new DateTime(0001, 1, 1));
+            //7f 24 2d 00, i1: 2958463, s1: 9343, s2: 45
+            yield return new TestCaseData("'9999-12-31'", new DateTime(9999, 12, 31));
+        }
+
+        [TestCaseSource(nameof(SelectDate_Parameter_ShouldWork_Cases))]
+        public void SelectDate_Parameter_ShouldWork(DateTime? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.Date);
+                Assert.AreEqual(expected, connection.ExecuteScalar<DateTime?>("select @expected", p));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectDate_Parameter_ShouldWork_Cases()
+        {
+            yield return new TestCaseData(null);
+            yield return new TestCaseData(new DateTime(0001, 1, 1));
+            yield return new TestCaseData(new DateTime(9999, 12, 31));
+        }
     }
 }

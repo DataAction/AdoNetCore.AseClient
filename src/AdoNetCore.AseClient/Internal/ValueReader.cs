@@ -112,6 +112,15 @@ namespace AdoNetCore.AseClient.Internal
                             return stream.ReadIntPartDateTime();
                     }
                     break;
+                case TdsDataType.TDS_DATE:
+                    return stream.ReadDate();
+                case TdsDataType.TDS_DATEN:
+                    switch (stream.ReadByte())
+                    {
+                        case 4:
+                            return stream.ReadDate();
+                    }
+                    break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

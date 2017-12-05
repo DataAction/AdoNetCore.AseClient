@@ -154,6 +154,17 @@ namespace AdoNetCore.AseClient.Internal
             stream.WriteInt(day);
             stream.WriteInt(time);
         }
+
+        public static void WriteDate(this Stream stream, DateTime value)
+        {
+            var span = value - SqlDateTimeEpoch;
+            var day = span.Days;
+            if (span.Ticks - day * TimeSpan.TicksPerDay  < 0L)
+            {
+                day--;
+            }
+            stream.WriteInt(day);
+        }
     }
 
     internal static class StreamReadExtensions
@@ -311,16 +322,16 @@ namespace AdoNetCore.AseClient.Internal
 
         public static DateTime ReadShortPartDateTime(this Stream stream)
         {
-            var buf = new byte[4];
-            stream.Read(buf, 0, 4);
-
-            var text = string.Join(" ", buf.Select(b => b.ToString("x2")));
-            var p1 = BitConverter.ToUInt16(buf, 0);
-            var p2 = BitConverter.ToUInt16(buf, 2);
-
-            Console.WriteLine($"ReadShortPartDateTime: 0x {text}, p1: {p1}, p2: {p2}");
-
+            var p1 = stream.ReadUShort();
+            var p2 = stream.ReadUShort();
+            
             return SqlDateTimeEpoch.AddDays(p1).AddMinutes(p2);
+        }
+
+        public static DateTime ReadDate(this Stream stream)
+        {
+            var p1 = stream.ReadInt();
+            return SqlDateTimeEpoch.AddDays(p1);
         }
     }
 }

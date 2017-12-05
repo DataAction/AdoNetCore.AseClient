@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using Dapper;
@@ -13,82 +14,103 @@ namespace AdoNetCore.AseClient.Tests.Integration
     {
         private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
 
-        private class IntsRow
+        private IDbConnection GetConnection()
         {
-            public byte? Byte { get; set; }
-            public short? Short { get; set; }
-            public int? Int { get; set; }
-            public long? Long { get; set; }
+            return new AseConnection(_connectionStrings["pooled"]);
         }
 
-        [Test]
-        public void SelectInts_Literal_ShouldWork()
+        [TestCase("null", null)]
+        [TestCase("255", 255)]
+        [TestCase("0", 0)]
+        public void SelectByte_Literal_ShouldWork(string input, byte? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
-                var row = connection.Query<IntsRow>("select convert(tinyint, 1) as Byte, convert(smallint, 2) as Short, convert(int, 3) as Int, convert(bigint, 4) as Long").FirstOrDefault();
-                Assert.AreEqual(1, row?.Byte);
-                Assert.AreEqual(2, row?.Short);
-                Assert.AreEqual(3, row?.Int);
-                Assert.AreEqual(4, row?.Long);
+                Assert.AreEqual(expected, connection.ExecuteScalar<byte?>($"select convert(tinyint, {input})"));
             }
         }
 
-        [Test]
-        public void SelectInts_Parameters_ShouldWork()
+        [TestCase(null)]
+        [TestCase(255)]
+        [TestCase(0)]
+        public void SelectByte_Parameter_ShouldWork(byte? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
-                var pByte = (byte)1;
-                var pShort = (short)2;
-                var pInt = 4;
-                var pLong = (long)8;
-
-                var row = connection.Query<IntsRow>("select @pByte as Byte, @pShort as Short, @pInt as Int, @pLong as Long", new { pByte, pShort, pInt, pLong }).FirstOrDefault();
-
-                Assert.AreEqual(pByte, row?.Byte);
-                Assert.AreEqual(pShort, row?.Short);
-                Assert.AreEqual(pInt, row?.Int);
-                Assert.AreEqual(pLong, row?.Long);
+                Assert.AreEqual(expected, connection.ExecuteScalar<byte?>("select @expected", new { expected }));
             }
         }
 
-        [Test]
-        public void SelectNullInts_ShouldWork()
+        [TestCase("null", null)]
+        [TestCase("32767", 32767)]
+        [TestCase("-32768", -32768)]
+        public void SelectShort_Literal_ShouldWork(string input, short? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
-                var row = connection.Query<IntsRow>("select convert(tinyint, null) as Byte, convert(smallint, null) as Short, convert(int, null) as Int, convert(bigint, null) as Long").FirstOrDefault();
-                Assert.IsNull(row.Byte);
-                Assert.IsNull(row.Short);
-                Assert.IsNull(row.Int);
-                Assert.IsNull(row.Long);
+                Assert.AreEqual(expected, connection.ExecuteScalar<short?>($"select convert(smallint, {input})"));
             }
         }
 
-        [Test]
-        public void SelectNullInts_Parameters_ShouldWork()
+        [TestCase(null)]
+        [TestCase(32767)]
+        [TestCase(-32768)]
+        public void SelectShort_Parameter_ShouldWork(short? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
-                byte? pByte = null;
-                short? pShort = null;
-                int? pInt = null;
-                long? pLong = null;
-
-                var row = connection.Query<IntsRow>("select @pByte as Byte, @pShort as Short, @pInt as Int, @pLong as Long", new { pByte, pShort, pInt, pLong }).FirstOrDefault();
-
-                Assert.AreEqual(pByte, row?.Byte);
-                Assert.AreEqual(pShort, row?.Short);
-                Assert.AreEqual(pInt, row?.Int);
-                Assert.AreEqual(pLong, row?.Long);
+                Assert.AreEqual(expected, connection.ExecuteScalar<short?>("select @expected", new { expected }));
             }
         }
 
+        [TestCase("null", null)]
+        [TestCase("2147483647", 2147483647)]
+        [TestCase("-2147483648", -2147483648)]
+        public void SelectInt_Literal_ShouldWork(string input, int? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<int?>($"select convert(int, {input})"));
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase(2147483647)]
+        [TestCase(-2147483648)]
+        public void SelectInt_Parameter_ShouldWork(int? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<int?>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCase("null", null)]
+        [TestCase("9223372036854775807", 9223372036854775807)]
+        [TestCase("-9223372036854775808", -9223372036854775808)]
+        public void SelectLong_Literal_ShouldWork(string input, long? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<long?>($"select convert(bigint, {input})"));
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase(9223372036854775807)]
+        [TestCase(-9223372036854775808)]
+        public void SelectLong_Parameter_ShouldWork(long? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<long?>("select @expected", new { expected }));
+            }
+        }
+        
         [Test]
         public void SelectShortString_Literal_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 var expected = Guid.NewGuid().ToString();
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>($"select '{expected}'"));
@@ -98,7 +120,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectShortString_Parameter_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 var expected = Guid.NewGuid().ToString();
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @expected", new { expected }));
@@ -108,7 +130,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectNullShortString_Literal_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(null, connection.ExecuteScalar<string>($"select convert(varchar(255), null)"));
             }
@@ -117,7 +139,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectNullShortString_Parameter_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 string expected = null;
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>("select convert(varchar(255), @expected)", new { expected }));
@@ -133,7 +155,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         public void SelectLongString_Literal_ShouldWork(int count)
         {
             var expected = new string('1', count);
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>($"select '{expected}'"));
             }
@@ -148,7 +170,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         public void SelectLongString_Parameter_ShouldWork(int count)
         {
             var expected = new string('1', count);
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @expected", new { expected }));
             }
@@ -158,7 +180,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectNullLongString_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 string expected = null;
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>("select convert(varchar(1000), @expected)", new { expected }));
@@ -172,7 +194,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("'asdfasdfasdf'", "asdfasdfas")]
         public void SelectFixedLengthString_Literal_ShouldWork(string input, string expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>($"select convert(char(10), {input})"));
             }
@@ -187,7 +209,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("asdfasdfasdf", "asdfasdfas")]
         public void SelectFixedLengthString_Parameter_ShouldWork(string input, string expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>("select convert(char(10), @input)", new { input }));
             }
@@ -196,7 +218,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectShortBinary_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 var expected = Guid.NewGuid().ToByteArray();
                 Assert.AreEqual(expected, connection.ExecuteScalar<byte[]>("select @expected", new { expected }));
@@ -206,7 +228,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectNullShortBinary_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 byte[] expected = null;
                 Assert.AreEqual(expected, connection.ExecuteScalar<byte[]>("select @expected", new { expected }));
@@ -216,7 +238,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectLongBinary_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 var expected = Enumerable.Repeat<Func<byte[]>>(() => Guid.NewGuid().ToByteArray(), 100).SelectMany(f => f()).ToArray();
                 Assert.AreEqual(expected, connection.ExecuteScalar<byte[]>("select @expected", new { expected }));
@@ -226,7 +248,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void SelectNullLongBinary_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 byte[] expected = null;
                 Assert.AreEqual(expected, connection.ExecuteScalar<byte[]>("select convert(binary(1000), @expected)", new { expected }));
@@ -236,7 +258,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCaseSource(nameof(SelectDecimal_Literal_ShouldWork_Cases))]
         public void SelectDecimal_Literal_ShouldWork(string literal, int precision, int scale, decimal? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>($@"select convert(decimal({precision},{scale}), {literal})"));
             }
@@ -259,7 +281,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCaseSource(nameof(SelectDecimal_Literal_Simple_ShouldWork_Cases))]
         public void SelectDecimal_Literal_Simple_ShouldWork(string literal, decimal? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>($@"select
   convert(decimal(10,0), {literal}),
@@ -307,7 +329,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCaseSource(nameof(SelectDecimal_Parameter_ShouldWork_Cases))]
         public void SelectDecimal_Parameter_ShouldWork(decimal expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>("select @expected", new { expected }));
             }
@@ -335,7 +357,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCase("-123456789.5", -123456789.5f)]
         public void SelectFloat_Literal_Shouldwork(string input, float? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<float?>($"select convert(float, {input})"));
             }
@@ -349,7 +371,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCase(-123456789.5f)]
         public void SelectFloat_Parameter_Shouldwork(float? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<float?>("select @expected", new { expected }));
             }
@@ -365,7 +387,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCase("-123456789.1", -123456789.1d)]
         public void SelectDouble_Literal_Shouldwork(string input, double? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<double?>($"select convert(double precision, {input})"));
             }
@@ -381,7 +403,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCase(-123456789.1d)]
         public void SelectDouble_Parameter_Shouldwork(double? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<double?>("select @expected", new { expected }));
             }
@@ -390,7 +412,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [Test]
         public void SelectBool_Literal_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(true, connection.ExecuteScalar<bool>("select convert(bit, 1)"));
                 Assert.AreEqual(false, connection.ExecuteScalar<bool>("select convert(bit, 0)"));
@@ -401,7 +423,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCase(false)]
         public void SelectBool_Parameter_ShouldWork(bool expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<bool>("select @expected", new { expected }));
             }
@@ -410,7 +432,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCaseSource(nameof(SelectDateTime_Literal_ShouldWork_Cases))]
         public void SelectDateTime_Literal_ShouldWork(string input, DateTime expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<DateTime>($"select convert(datetime, {input})"));
             }
@@ -462,7 +484,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCaseSource(nameof(SelectDateTime_Parameter_ShouldWork_Cases))]
         public void SelectDateTime_Parameter_ShouldWork(string _, DateTime? expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<DateTime?>("select @expected", new { expected }));
             }
@@ -471,7 +493,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [Test]
         public void SelectDateTime_Parameter_Now_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 var now = DateTime.Now;
                 var expected = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, now.Kind);
@@ -505,7 +527,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCaseSource(nameof(SelectSmallDateTime_Literal_ShouldWork_Cases))]
         public void SelectSmallDateTime_Literal_ShouldWork(string input, DateTime expected)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<DateTime>($"select convert(smalldatetime, {input})"));
             }
@@ -521,7 +543,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData("'1900-12-31 00:00:00'", new DateTime(1900, 12, 31, 0, 0, 0));
             //6c 01 9f 05, p1: 364, p2: 1439
             yield return new TestCaseData("'1900-12-31 23:59:00'", new DateTime(1900, 12, 31, 23, 59, 00));
-            
+
             //ff ff 00 00, p1: 65535, p2: 0
             yield return new TestCaseData("'2079-06-06 00:00:00'", new DateTime(2079, 06, 06, 0, 0, 0));
             //ff ff 9f 05, p1: 65535, p2: 1439
@@ -532,7 +554,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [Test]
         public void SelectSmallDateTime_Parameter_Now_ShouldWork()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = GetConnection())
             {
                 var now = DateTime.Now;
                 var expected = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);

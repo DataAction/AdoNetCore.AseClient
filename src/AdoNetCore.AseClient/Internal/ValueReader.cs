@@ -62,6 +62,8 @@ namespace AdoNetCore.AseClient.Internal
                     break;
                 case TdsDataType.TDS_CHAR:
                 case TdsDataType.TDS_VARCHAR:
+                case TdsDataType.TDS_BOUNDARY:
+                case TdsDataType.TDS_SENSITIVITY:
                     return stream.ReadNullableByteLengthPrefixedString(enc);
                 case TdsDataType.TDS_BINARY:
                 case TdsDataType.TDS_VARBINARY:
@@ -72,33 +74,20 @@ namespace AdoNetCore.AseClient.Internal
                     return stream.ReadNullableIntLengthPrefixedByteArray();
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
+                    return stream.ReadDecimal(format.Precision ?? 1, format.Scale ?? 0);
+                case TdsDataType.TDS_MONEY:
+                    return stream.ReadMoney();
+                case TdsDataType.TDS_SHORTMONEY:
+                    return stream.ReadSmallMoney();
+                case TdsDataType.TDS_MONEYN:
+                    switch (stream.ReadByte())
                     {
-                        var length = stream.ReadByte();
-                        if (length == 0)
-                        {
-                            return null;
-                        }
-                        var isPositive = stream.ReadByte() == 0;
-                        var buffer = new byte[]
-                        {
-                        0, 0, 0, 0,
-                        0, 0, 0, 0,
-                        0, 0, 0, 0,
-                        0, 0, 0, 0
-                        };
-                        var remainingLength = length - 1;
-                        stream.Read(buffer, 16 - remainingLength, remainingLength);
-                        buffer = buffer.Reverse().ToArray();
-                        var bits = new[]
-                        {
-                            BitConverter.ToInt32(buffer, 0),
-                            BitConverter.ToInt32(buffer, 4),
-                            BitConverter.ToInt32(buffer, 8),
-                            BitConverter.ToInt32(buffer, 12)
-                        };
-
-                        return (decimal)new SqlDecimal(format.Precision ?? 0, format.Scale ?? 0, isPositive, bits);
+                        case 4:
+                            return stream.ReadSmallMoney();
+                        case 8:
+                            return stream.ReadMoney();
                     }
+                    break;
                 case TdsDataType.TDS_DATETIME:
                     return stream.ReadIntPartDateTime();
                 case TdsDataType.TDS_SHORTDATE:

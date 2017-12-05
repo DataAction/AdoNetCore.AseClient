@@ -98,7 +98,7 @@ For transmission of data to ASE, the driver will select an appropriate type, whi
 | `TDS_INT4` | <span>&#10003;</span> |
 | `TDS_INT8` | <span>&#10003;</span> |
 | `TDS_INTN` | <span>&#10003;</span> |
-| `TDS_INTERVAL` | <span>TODO</span> |
+| `TDS_INTERVAL` | <span>?</span> |
 | `TDS_SINT1` | <span>&#10003;</span> |
 | `TDS_UINT2` | <span>&#10003;</span> |
 | `TDS_UINT4` | <span>&#10003;</span> |
@@ -106,11 +106,11 @@ For transmission of data to ASE, the driver will select an appropriate type, whi
 | `TDS_UINTN` | <span>&#10003;</span> |
 | `TDS_LONGBINARY` | <span>&#10003;</span> |
 | `TDS_LONGCHAR` | <span>&#10003;</span> |
-| `TDS_MONEY` | <span>TODO</span> |
-| `TDS_SHORTMONEY` | <span>TODO</span> |
-| `TDS_MONEYN` | <span>TODO</span> |
+| `TDS_MONEY` | <span>&#10003;</span> |
+| `TDS_SHORTMONEY` | <span>&#10003;</span> |
+| `TDS_MONEYN` | <span>&#10003;</span> |
 | `TDS_NUMN` | <span>&#10003;</span> |
-| `TDS_SENSITIVITY` | <span>TODO</span> |
+| `TDS_SENSITIVITY` | <span>&#10003;</span> |
 | `TDS_TIME` | <span>&#10003;</span> |
 | `TDS_TIMEN` | <span>&#10003;</span> |
 | `TDS_TEXT` | <span>TODO</span> |
@@ -118,7 +118,7 @@ For transmission of data to ASE, the driver will select an appropriate type, whi
 | `TDS_VARBINARY` | <span>&#10003;</span> |
 | `TDS_VARCHAR` | <span>&#10003;</span> |
 | `TDS_XML` | <span>TODO</span> |
-| `TDS_BOUNDARY` | <span>TODO</span> |
+| `TDS_BOUNDARY` | <span>&#10003;</span> |
 | `TDS_BLOB` | <span>TODO</span> |
 
 ## Flows/design

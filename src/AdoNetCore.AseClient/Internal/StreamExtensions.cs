@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using AdoNetCore.AseClient.Token;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -103,7 +104,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void WriteBytePrefixedByteArray(this Stream stream, byte[] value)
         {
-            var len = (byte) value.Length;
+            var len = (byte)value.Length;
             stream.WriteByte(len);
             stream.Write(value, 0, len);
         }
@@ -159,7 +160,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             var span = value - SqlDateTimeEpoch;
             var day = span.Days;
-            if (span.Ticks - day * TimeSpan.TicksPerDay  < 0L)
+            if (span.Ticks - day * TimeSpan.TicksPerDay < 0L)
             {
                 day--;
             }
@@ -303,7 +304,7 @@ namespace AdoNetCore.AseClient.Internal
 
             return stream.ReadByteArray(length);
         }
-        
+
         public static byte[] ReadByteArray(this Stream stream, int length)
         {
             if (length == 0)
@@ -330,7 +331,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             var p1 = stream.ReadUShort();
             var p2 = stream.ReadUShort();
-            
+
             return SqlDateTimeEpoch.AddDays(p1).AddMinutes(p2);
         }
 
@@ -344,6 +345,54 @@ namespace AdoNetCore.AseClient.Internal
         {
             var sqlTicks = stream.ReadInt();
             return SqlDateTimeEpoch.AddMilliseconds(sqlTicks / SqlTicksPerMillisecond) - SqlDateTimeEpoch;
+        }
+
+        public static decimal? ReadDecimal(this Stream stream, byte precision, byte scale)
+        {
+            var length = stream.ReadByte();
+            if (length == 0)
+            {
+                return null;
+            }
+            var isPositive = stream.ReadByte() == 0;
+            var buffer = new byte[]
+            {
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0
+            };
+            var remainingLength = length - 1;
+            stream.Read(buffer, 16 - remainingLength, remainingLength);
+            buffer = buffer.Reverse().ToArray();
+            var bits = new[]
+            {
+                BitConverter.ToInt32(buffer, 0),
+                BitConverter.ToInt32(buffer, 4),
+                BitConverter.ToInt32(buffer, 8),
+                BitConverter.ToInt32(buffer, 12)
+            };
+
+            return (decimal) new SqlDecimal(precision, scale, isPositive, bits);
+        }
+
+        public static decimal ReadMoney(this Stream stream)
+        {
+            var buf = new byte[8];
+            stream.Read(buf, 0, 8);
+            buf = new[]
+            {
+                buf[4], buf[5], buf[6], buf[7],
+                buf[0], buf[1], buf[2], buf[3]
+            };
+            return new decimal(BitConverter.ToInt64(buf, 0)) / 10000m;
+        }
+
+        public static decimal ReadSmallMoney(this Stream stream)
+        {
+            var buf = new byte[4];
+            stream.Read(buf, 0, 4);
+            return new decimal(BitConverter.ToInt32(buf, 0)) / 10000m;
         }
     }
 }

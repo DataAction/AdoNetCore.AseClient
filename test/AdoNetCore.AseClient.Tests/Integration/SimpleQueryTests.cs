@@ -437,6 +437,50 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(-32109876543210.0123456789m);
         }
 
+        [TestCaseSource(nameof(SelectMoney_Literal_ShouldWork_Cases))]
+        public void SelectMoney_Literal_ShouldWork(string input, decimal? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>($"select convert(money, {input})"));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectMoney_Literal_ShouldWork_Cases()
+        {
+            //range: 922,337,203,685,477.5807 to -922,337,203,685,477.5808 equivalent to decimal(19,4)
+            //looks like the range of long.max to long.min / 10000
+            yield return new TestCaseData("null", null);
+            yield return new TestCaseData("0", 0m);
+            yield return new TestCaseData("0.9999", 0.9999m);
+            yield return new TestCaseData("1", 1m);
+            yield return new TestCaseData("-1", -1m);
+            yield return new TestCaseData("922337203685477.5807", 922337203685477.5807m);
+            yield return new TestCaseData("-922337203685477.5808", -922337203685477.5808m);
+        }
+
+        [TestCaseSource(nameof(SelectSmallMoney_Literal_ShouldWork_Cases))]
+        public void SelectSmallMoney_Literal_ShouldWork(string input, decimal? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>($"select convert(smallmoney, {input})"));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectSmallMoney_Literal_ShouldWork_Cases()
+        {
+            //range: 214,748.3647 to -214,748.3648 equivalent to decimal(10,4)
+            //looks like the range of int.max to int.min / 10000
+            yield return new TestCaseData("null", null);
+            yield return new TestCaseData("0", 0m);
+            yield return new TestCaseData("0.9999", 0.9999m);
+            yield return new TestCaseData("1", 1m);
+            yield return new TestCaseData("-1", -1m);
+            yield return new TestCaseData("214748.3647", 214748.3647m);
+            yield return new TestCaseData("-214748.3648", -214748.3648m);
+        }
+
         [TestCase("null", null)]
         [TestCase("0", 0.0f)]
         [TestCase("1.25", 1.25f)]

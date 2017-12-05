@@ -84,10 +84,10 @@ For transmission of data to ASE, the driver will select an appropriate type, whi
 | `TDS_BIT` | <span>&#10003;</span> |
 | `TDS_CHAR` | <span>&#10003;</span> |
 | `TDS_DATETIME` | <span>&#10003;</span> |
-| `TDS_DATE` | <span>TODO</span> |
-| `TDS_DATEN` | <span>TODO</span> |
-| `TDS_SHORTDATE` | <span>TODO</span> |
-| `TDS_DATETIMN` | <span>TODO</span> |
+| `TDS_DATE` | <span>&#10003;</span> |
+| `TDS_DATEN` | <span>&#10003;</span> |
+| `TDS_SHORTDATE` | <span>&#10003;</span> |
+| `TDS_DATETIMN` | <span>&#10003;</span> |
 | `TDS_DECN` | <span>&#10003;</span> |
 | `TDS_FLT4` | <span>&#10003;</span> |
 | `TDS_FLT8` | <span>&#10003;</span> |
@@ -111,8 +111,8 @@ For transmission of data to ASE, the driver will select an appropriate type, whi
 | `TDS_MONEYN` | <span>TODO</span> |
 | `TDS_NUMN` | <span>&#10003;</span> |
 | `TDS_SENSITIVITY` | <span>TODO</span> |
-| `TDS_TIME` | <span>TODO</span> |
-| `TDS_TIMEN` | <span>TODO</span> |
+| `TDS_TIME` | <span>&#10003;</span> |
+| `TDS_TIMEN` | <span>&#10003;</span> |
 | `TDS_TEXT` | <span>TODO</span> |
 | `TDS_UNITEXT` | <span>TODO</span> |
 | `TDS_VARBINARY` | <span>&#10003;</span> |

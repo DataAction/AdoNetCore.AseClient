@@ -686,5 +686,42 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(new DateTime(0001, 1, 1));
             yield return new TestCaseData(new DateTime(9999, 12, 31));
         }
+
+        [TestCaseSource(nameof(SelectTime_Literal_ShouldWork_Cases))]
+        public void SelectTime_Literal_ShouldWork(string input, TimeSpan? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<TimeSpan?>($"select convert(time, {input})"));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectTime_Literal_ShouldWork_Cases()
+        {
+            yield return new TestCaseData("null", null);
+            //range is 00:00:00.000 to 23:59:59.999
+            //
+            yield return new TestCaseData("'00:00:00'", new TimeSpan(0, 0, 0, 0, 0));
+            //
+            yield return new TestCaseData("'23:59:59.997'", new TimeSpan(0, 23, 59, 59, 997));
+        }
+
+        [TestCaseSource(nameof(SelectTime_Parameter_ShouldWork_Cases))]
+        public void SelectTime_Parameter_ShouldWork(TimeSpan? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.Time);
+                Assert.AreEqual(expected, connection.ExecuteScalar<TimeSpan?>("select @expected", p));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectTime_Parameter_ShouldWork_Cases()
+        {
+            yield return new TestCaseData(null);
+            yield return new TestCaseData(new TimeSpan(0, 0, 0, 0, 0));
+            yield return new TestCaseData(new TimeSpan(0, 23, 59, 59, 997));
+        }
     }
 }

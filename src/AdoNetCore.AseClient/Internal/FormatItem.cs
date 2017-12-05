@@ -95,6 +95,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DATETIME:
                 case TdsDataType.TDS_SHORTDATE:
                 case TdsDataType.TDS_DATE:
+                case TdsDataType.TDS_TIME:
                     break;
                 case TdsDataType.TDS_INTN:
                 case TdsDataType.TDS_UINTN:
@@ -105,6 +106,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_FLTN:
                 case TdsDataType.TDS_DATETIMEN:
                 case TdsDataType.TDS_DATEN:
+                case TdsDataType.TDS_TIMEN:
                     format.Length = stream.ReadByte();
                     break;
                 case TdsDataType.TDS_LONGCHAR:
@@ -167,6 +169,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_FLT8:
                 case TdsDataType.TDS_DATETIME:
                 case TdsDataType.TDS_DATE:
+                case TdsDataType.TDS_TIME:
                     break;
                 case TdsDataType.TDS_VARCHAR:
                 case TdsDataType.TDS_VARBINARY:
@@ -174,7 +177,9 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_INTN:
                 case TdsDataType.TDS_UINTN:
                 case TdsDataType.TDS_FLTN:
+                case TdsDataType.TDS_DATETIMEN:
                 case TdsDataType.TDS_DATEN:
+                case TdsDataType.TDS_TIMEN:
                     stream.WriteByte((byte)(Length ?? 0));
                     break;
                 case TdsDataType.TDS_LONGCHAR:
@@ -185,9 +190,6 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteByte((byte)(Length ?? 1));
                     stream.WriteByte(Precision ?? 1);
                     stream.WriteByte(Scale ?? 0);
-                    break;
-                case TdsDataType.TDS_DATETIMEN:
-                    stream.WriteByte(8);
                     break;
                 default:
                     throw new NotSupportedException($"{DataType} not yet supported");

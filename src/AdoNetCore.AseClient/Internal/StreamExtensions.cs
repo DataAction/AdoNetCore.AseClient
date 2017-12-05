@@ -165,6 +165,12 @@ namespace AdoNetCore.AseClient.Internal
             }
             stream.WriteInt(day);
         }
+
+        public static void WriteTime(this Stream stream, TimeSpan value)
+        {
+            var time = (int)((double)value.Ticks / TimeSpan.TicksPerMillisecond * SqlTicksPerMillisecond + 0.5);
+            stream.WriteInt(time);
+        }
     }
 
     internal static class StreamReadExtensions
@@ -332,6 +338,12 @@ namespace AdoNetCore.AseClient.Internal
         {
             var p1 = stream.ReadInt();
             return SqlDateTimeEpoch.AddDays(p1);
+        }
+
+        public static TimeSpan ReadTime(this Stream stream)
+        {
+            var sqlTicks = stream.ReadInt();
+            return SqlDateTimeEpoch.AddMilliseconds(sqlTicks / SqlTicksPerMillisecond) - SqlDateTimeEpoch;
         }
     }
 }

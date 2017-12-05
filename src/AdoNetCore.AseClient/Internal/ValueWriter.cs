@@ -173,6 +173,15 @@ namespace AdoNetCore.AseClient.Internal
                         stream.WriteDate((DateTime)value);
                     }
                     break;
+                case TdsDataType.TDS_TIME:
+                    stream.WriteTime((TimeSpan) value);
+                    break;
+                case TdsDataType.TDS_TIMEN:
+                    if (!stream.TryWriteBytePrefixedNull(value))
+                    {
+                        stream.WriteTime((TimeSpan)value);
+                    }
+                    break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

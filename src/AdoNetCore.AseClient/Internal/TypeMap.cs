@@ -26,7 +26,8 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4 },
             {DbType.Double, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8 },
             {DbType.DateTime, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME },
-            {DbType.Date, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATEN : TdsDataType.TDS_DATE }
+            {DbType.Date, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATEN : TdsDataType.TDS_DATE },
+            {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN: TdsDataType.TDS_TIME },
         };
 
         public static int? GetLength(DbType dbType, object value, Encoding enc)
@@ -55,7 +56,11 @@ namespace AdoNetCore.AseClient.Internal
                     return 4;
                 case DbType.Double:
                     return 8;
+                case DbType.DateTime:
+                    return 8;
                 case DbType.Date:
+                    return 4;
+                case DbType.Time:
                     return 4;
                 default:
                     return null;

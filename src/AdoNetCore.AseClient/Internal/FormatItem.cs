@@ -84,8 +84,11 @@ namespace AdoNetCore.AseClient.Internal
             {
                 case TdsDataType.TDS_INT1:
                 case TdsDataType.TDS_INT2:
+                case TdsDataType.TDS_UINT2:
                 case TdsDataType.TDS_INT4:
+                case TdsDataType.TDS_UINT4:
                 case TdsDataType.TDS_INT8:
+                case TdsDataType.TDS_UINT8:
                 case TdsDataType.TDS_FLT4:
                 case TdsDataType.TDS_FLT8:
                 case TdsDataType.TDS_BIT:
@@ -93,6 +96,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_SHORTDATE:
                     break;
                 case TdsDataType.TDS_INTN:
+                case TdsDataType.TDS_UINTN:
                 case TdsDataType.TDS_CHAR:
                 case TdsDataType.TDS_VARCHAR:
                 case TdsDataType.TDS_BINARY:
@@ -150,9 +154,13 @@ namespace AdoNetCore.AseClient.Internal
                 //fixed-length types
                 case TdsDataType.TDS_BIT:
                 case TdsDataType.TDS_INT1:
+                case TdsDataType.TDS_SINT1:
                 case TdsDataType.TDS_INT2:
+                case TdsDataType.TDS_UINT2:
                 case TdsDataType.TDS_INT4:
+                case TdsDataType.TDS_UINT4:
                 case TdsDataType.TDS_INT8:
+                case TdsDataType.TDS_UINT8:
                 case TdsDataType.TDS_FLT4:
                 case TdsDataType.TDS_FLT8:
                 case TdsDataType.TDS_DATETIME:
@@ -161,6 +169,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_VARBINARY:
                 case TdsDataType.TDS_BINARY:
                 case TdsDataType.TDS_INTN:
+                case TdsDataType.TDS_UINTN:
                 case TdsDataType.TDS_FLTN:
                     stream.WriteByte((byte)(Length ?? 0));
                     break;

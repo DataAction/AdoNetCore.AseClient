@@ -73,6 +73,11 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 | `UseCursor` | <span>?</span> |
 
 ## Supported types
+This is the list of types that ASE can emit.
+If the type is marked with &#10003;, then the driver can read it.
+
+For transmission of data to ASE, the driver will select an appropriate type, which will roughly line-up with what's supported below.
+
 | Type    | Support     |
 | ------- |:-----------:|
 | `TDS_BINARY` | <span>&#10003;</span> |
@@ -94,17 +99,17 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 | `TDS_INT8` | <span>&#10003;</span> |
 | `TDS_INTN` | <span>&#10003;</span> |
 | `TDS_INTERVAL` | <span>TODO</span> |
-| `TDS_SINT1` | <span>TODO</span> |
-| `TDS_UINT2` | <span>TODO</span> |
-| `TDS_UINT4` | <span>TODO</span> |
-| `TDS_UINT8` | <span>TODO</span> |
-| `TDS_UINTN` | <span>TODO</span> |
+| `TDS_SINT1` | <span>&#10003;</span> |
+| `TDS_UINT2` | <span>&#10003;</span> |
+| `TDS_UINT4` | <span>&#10003;</span> |
+| `TDS_UINT8` | <span>&#10003;</span> |
+| `TDS_UINTN` | <span>&#10003;</span> |
 | `TDS_LONGBINARY` | <span>&#10003;</span> |
 | `TDS_LONGCHAR` | <span>&#10003;</span> |
 | `TDS_MONEY` | <span>TODO</span> |
 | `TDS_SHORTMONEY` | <span>TODO</span> |
 | `TDS_MONEYN` | <span>TODO</span> |
-| `TDS_NUMN` | <span>TODO</span> |
+| `TDS_NUMN` | <span>&#10003;</span> |
 | `TDS_SENSITIVITY` | <span>TODO</span> |
 | `TDS_TIME` | <span>TODO</span> |
 | `TDS_TIMEN` | <span>TODO</span> |

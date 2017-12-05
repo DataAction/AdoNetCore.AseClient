@@ -81,7 +81,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 var buffer = new byte[env.PacketSize];
                 var received = _inner.Receive(buffer);
-                BufferType type = BufferType.TDS_BUF_NONE;
+                var type = BufferType.TDS_BUF_NONE;
                 while (received > 0)
                 {
                     if (type == BufferType.TDS_BUF_NONE)

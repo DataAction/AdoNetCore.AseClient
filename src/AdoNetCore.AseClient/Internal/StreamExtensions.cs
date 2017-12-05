@@ -19,7 +19,11 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void WriteShort(this Stream stream, short value)
         {
-            //todo: as long as BitConverter.IsLittleEndian, this'll work. revisit to support bigendian too?
+            stream.Write(BitConverter.GetBytes(value));
+        }
+
+        public static void WriteUShort(this Stream stream, ushort value)
+        {
             stream.Write(BitConverter.GetBytes(value));
         }
 

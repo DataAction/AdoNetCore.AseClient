@@ -16,7 +16,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         private IDbConnection GetConnection()
         {
-            return new AseConnection(_connectionStrings["pooled"]);
+            return new AseConnection(_connectionStrings["pooled"]); //"default"
         }
 
         [TestCase("null", null)]
@@ -38,6 +38,28 @@ namespace AdoNetCore.AseClient.Tests.Integration
             using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<byte?>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCase("null", null)]
+        [TestCase("127", 127)]
+        [TestCase("-128", -128)]
+        public void SelectSByte_Literal_ShouldWork(string input, sbyte? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<sbyte?>($"select {input}"));
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase(127)]
+        [TestCase(-128)]
+        public void SelectSByte_Parameter_ShouldWork(sbyte? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<sbyte?>("select @expected", new { expected }));
             }
         }
 
@@ -64,6 +86,28 @@ namespace AdoNetCore.AseClient.Tests.Integration
         }
 
         [TestCase("null", null)]
+        [TestCase("65535", (ushort)65535)]
+        [TestCase("0", (ushort)0)]
+        public void SelectUShort_Literal_ShouldWork(string input, ushort? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<ushort?>($"select convert(unsigned smallint, {input})"));
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase((ushort)65535)]
+        [TestCase((ushort)0)]
+        public void SelectUShort_Parameter_ShouldWork(ushort? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<ushort?>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCase("null", null)]
         [TestCase("2147483647", 2147483647)]
         [TestCase("-2147483648", -2147483648)]
         public void SelectInt_Literal_ShouldWork(string input, int? expected)
@@ -86,6 +130,28 @@ namespace AdoNetCore.AseClient.Tests.Integration
         }
 
         [TestCase("null", null)]
+        [TestCase("4294967295", 4294967295)]
+        [TestCase("0", (uint)0)]
+        public void SelectUInt_Literal_ShouldWork(string input, uint? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<uint?>($"select convert(unsigned int, {input})"));
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase(4294967295)]
+        [TestCase((uint)0)]
+        public void SelectUInt_Parameter_ShouldWork(uint? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<uint?>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCase("null", null)]
         [TestCase("9223372036854775807", 9223372036854775807)]
         [TestCase("-9223372036854775808", -9223372036854775808)]
         public void SelectLong_Literal_ShouldWork(string input, long? expected)
@@ -104,6 +170,28 @@ namespace AdoNetCore.AseClient.Tests.Integration
             using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<long?>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCase("null", null)]
+        [TestCase("18446744073709551615", 18446744073709551615)]
+        [TestCase("0", (ulong)0)]
+        public void SelectULong_Literal_ShouldWork(string input, ulong? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<ulong?>($"select convert(unsigned bigint, {input})"));
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase(18446744073709551615)]
+        [TestCase((ulong)0)]
+        public void SelectULong_Parameter_ShouldWork(ulong? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                Assert.AreEqual(expected, connection.ExecuteScalar<ulong?>("select @expected", new { expected }));
             }
         }
         

@@ -18,14 +18,24 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_INT1:
                     stream.WriteByte((byte)value);
                     break;
+                //no TDS_SINT1, we will transmit as an INTN(2)
                 case TdsDataType.TDS_INT2:
                     stream.WriteShort((short)value);
+                    break;
+                case TdsDataType.TDS_UINT2:
+                    stream.WriteUShort((ushort)value);
                     break;
                 case TdsDataType.TDS_INT4:
                     stream.WriteInt((int)value);
                     break;
+                case TdsDataType.TDS_UINT4:
+                    stream.WriteUInt((uint)value);
+                    break;
                 case TdsDataType.TDS_INT8:
                     stream.WriteLong((long)value);
+                    break;
+                case TdsDataType.TDS_UINT8:
+                    stream.WriteULong((ulong)value);
                     break;
                 case TdsDataType.TDS_INTN:
                     switch (value)
@@ -33,6 +43,10 @@ namespace AdoNetCore.AseClient.Internal
                         case byte b:
                             stream.WriteByte(1);
                             stream.WriteByte(b);
+                            break;
+                        case sbyte sb:
+                            stream.WriteByte(2);
+                            stream.WriteShort(sb);
                             break;
                         case short s:
                             stream.WriteByte(2);
@@ -45,6 +59,31 @@ namespace AdoNetCore.AseClient.Internal
                         case long l:
                             stream.WriteByte(8);
                             stream.WriteLong(l);
+                            break;
+                        //case null:
+                        default:
+                            stream.WriteByte(0);
+                            break;
+                    }
+                    break;
+                case TdsDataType.TDS_UINTN:
+                    switch (value)
+                    {
+                        case byte b:
+                            stream.WriteByte(1);
+                            stream.WriteByte(b);
+                            break;
+                        case ushort s:
+                            stream.WriteByte(2);
+                            stream.WriteUShort(s);
+                            break;
+                        case uint i:
+                            stream.WriteByte(4);
+                            stream.WriteUInt(i);
+                            break;
+                        case ulong l:
+                            stream.WriteByte(8);
+                            stream.WriteULong(l);
                             break;
                         //case null:
                         default:

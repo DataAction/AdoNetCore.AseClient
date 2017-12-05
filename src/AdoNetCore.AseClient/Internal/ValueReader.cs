@@ -17,19 +17,36 @@ namespace AdoNetCore.AseClient.Internal
                     return stream.ReadBool();
                 case TdsDataType.TDS_INT1:
                     return (byte)stream.ReadByte();
+                case TdsDataType.TDS_SINT1:
+                    return (sbyte)stream.ReadByte();
                 case TdsDataType.TDS_INT2:
                     return stream.ReadShort();
+                case TdsDataType.TDS_UINT2:
+                    return stream.ReadUShort();
                 case TdsDataType.TDS_INT4:
                     return stream.ReadInt();
+                case TdsDataType.TDS_UINT4:
+                    return stream.ReadUInt();
                 case TdsDataType.TDS_INT8:
                     return stream.ReadLong();
+                case TdsDataType.TDS_UINT8:
+                    return stream.ReadULong();
                 case TdsDataType.TDS_INTN:
                     switch (stream.ReadByte())
                     {
-                        case 1: return (byte)stream.ReadByte();
+                        case 1: return (byte)stream.ReadByte(); //both INTN(1) and UINTN(1) are an INT1. Never an SINT1.
                         case 2: return stream.ReadShort();
                         case 4: return stream.ReadInt();
                         case 8: return stream.ReadLong();
+                    }
+                    break;
+                case TdsDataType.TDS_UINTN:
+                    switch (stream.ReadByte())
+                    {
+                        case 1: return (byte)stream.ReadByte();
+                        case 2: return stream.ReadUShort();
+                        case 4: return stream.ReadUInt();
+                        case 8: return stream.ReadULong();
                     }
                     break;
                 case TdsDataType.TDS_FLT4:
@@ -54,6 +71,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_LONGBINARY:
                     return stream.ReadNullableIntLengthPrefixedByteArray();
                 case TdsDataType.TDS_DECN:
+                case TdsDataType.TDS_NUMN:
                     {
                         var length = stream.ReadByte();
                         if (length == 0)

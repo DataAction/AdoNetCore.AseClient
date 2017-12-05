@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
-            Console.WriteLine($"<- {Type}");
+            Logger.Instance?.WriteLine($"<- {Type}");
             var remainingLength = stream.ReadUShort();
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
@@ -27,7 +27,7 @@ namespace AdoNetCore.AseClient.Token
                     var customFormatInfo = ts.ReadByteLengthPrefixedString(enc);
                     if (!string.IsNullOrWhiteSpace(customFormatInfo))
                     {
-                        Console.WriteLine($"  <- Fmt: {customFormatInfo}");
+                        Logger.Instance?.WriteLine($"  <- Fmt: {customFormatInfo}");
                     }
                 }
             }

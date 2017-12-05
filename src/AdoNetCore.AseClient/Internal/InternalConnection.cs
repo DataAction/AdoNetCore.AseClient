@@ -23,15 +23,15 @@ namespace AdoNetCore.AseClient.Internal
 
         private void SendPacket(IPacket packet)
         {
-            Console.WriteLine();
-            Console.WriteLine("==========  Send packet   ==========");
+            Logger.Instance?.WriteLine();
+            Logger.Instance?.WriteLine("==========  Send packet   ==========");
             _socket.SendPacket(packet, _environment);
         }
 
         private void ReceiveTokens(ITokenHandler[] handlers)
         {
-            Console.WriteLine();
-            Console.WriteLine("========== Receive Tokens ==========");
+            Logger.Instance?.WriteLine();
+            Logger.Instance?.WriteLine("========== Receive Tokens ==========");
             foreach (var token in _socket.ReceiveTokens(_environment))
             {
                 foreach (var handler in handlers)

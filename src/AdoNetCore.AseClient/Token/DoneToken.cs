@@ -70,7 +70,7 @@ namespace AdoNetCore.AseClient.Token
             Status = (DoneStatus) stream.ReadUShort();
             TransactionState = (TranState) stream.ReadUShort();
             Count = stream.ReadInt();
-            Console.WriteLine($"<- {Type}: {Status} ({Count})");
+            Logger.Instance?.WriteLine($"<- {Type}: {Status} ({Count})");
         }
 
         public static DoneToken Create(Stream stream, Encoding enc, IFormatToken previous)

@@ -23,7 +23,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, Encoding enc)
         {
-            Console.WriteLine($"-> {Type}: {Formats.Length} parameters");
+            Logger.Instance?.WriteLine($"-> {Type}: {Formats.Length} parameters");
             stream.WriteByte((byte)Type);
             var paramCount = (short)Formats.Length;
             using (var ms = new MemoryStream())

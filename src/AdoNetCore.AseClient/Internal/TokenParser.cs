@@ -29,7 +29,7 @@ namespace AdoNetCore.AseClient.Internal
 
                     if (t is IFormatToken token)
                     {
-                        Console.WriteLine($"**Set new format token**");
+                        Logger.Instance?.WriteLine($"**Set new format token**");
                         previousFormatToken = token;
                     }
 
@@ -37,7 +37,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 else
                 {
-                    Console.WriteLine($"!!! Hit unknown token type {tokenType} !!!");
+                    Logger.Instance?.WriteLine($"!!! Hit unknown token type {tokenType} !!!");
                     var t = new CatchAllToken(tokenType);
                     t.Read(stream, enc, previousFormatToken);
                     yield return t;

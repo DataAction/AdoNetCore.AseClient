@@ -23,7 +23,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)
         {
-            Console.WriteLine($"<- {Type}");
+            Logger.Instance?.WriteLine($"<- {Type}");
             var values = new List<object>();
             foreach (var format in previousFormatToken.Formats)
             {

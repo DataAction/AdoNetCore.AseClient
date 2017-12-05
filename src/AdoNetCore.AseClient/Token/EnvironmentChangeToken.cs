@@ -61,7 +61,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, Encoding enc)
         {
-            Console.WriteLine($"Write {Type}");
+            Logger.Instance?.WriteLine($"Write {Type}");
             stream.WriteByte((byte)Type);
 
             var changeBytes = Changes

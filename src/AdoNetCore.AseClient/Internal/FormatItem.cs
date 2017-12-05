@@ -51,7 +51,7 @@ namespace AdoNetCore.AseClient.Internal
 
             ReadTypeInfo(format, stream, enc);
 
-            Console.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo})");
+            Logger.Instance?.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo})");
 
             return format;
         }
@@ -70,7 +70,7 @@ namespace AdoNetCore.AseClient.Internal
 
             ReadTypeInfo(format, stream, enc);
 
-            Console.WriteLine($"  <- {format.ParameterName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType})");
+            Logger.Instance?.WriteLine($"  <- {format.ParameterName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType})");
 
             return format;
         }
@@ -133,7 +133,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public void WriteForParameter(Stream stream, Encoding enc, TokenType srcTokenType)
         {
-            Console.WriteLine($"  -> {ParameterName}: {DataType}");
+            Logger.Instance?.WriteLine($"  -> {ParameterName}: {DataType}");
             if (string.IsNullOrWhiteSpace(ParameterName) || string.Equals("@", ParameterName))
             {
                 stream.WriteByte(0);

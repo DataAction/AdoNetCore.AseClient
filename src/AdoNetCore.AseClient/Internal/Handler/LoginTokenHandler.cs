@@ -27,12 +27,12 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
                     if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_NEGOTIATE)
                     {
-                        Console.WriteLine($"Login negotiation required");
+                        Logger.Instance?.WriteLine($"Login negotiation required");
                     }
 
                     if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
                     {
-                        Console.WriteLine($"Login success");
+                        Logger.Instance?.WriteLine($"Login success");
                     }
                     break;
                 default:

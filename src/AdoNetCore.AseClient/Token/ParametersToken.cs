@@ -25,7 +25,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, Encoding enc)
         {
-            Console.WriteLine($"-> {Type}: {Parameters.Length} parameters");
+            Logger.Instance?.WriteLine($"-> {Type}: {Parameters.Length} parameters");
             stream.WriteByte((byte)Type);
             foreach (var parameter in Parameters)
             {

@@ -22,7 +22,7 @@ namespace AdoNetCore.AseClient.Token
         public void Read(Stream stream, Encoding enc, IFormatToken previous)
         {
             Status = stream.ReadInt();
-            Console.WriteLine($"<- {Type}: {Status}");
+            Logger.Instance?.WriteLine($"<- {Type}: {Status}");
         }
 
         public static ReturnStatusToken Create(Stream stream, Encoding enc, IFormatToken previous)

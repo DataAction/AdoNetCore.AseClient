@@ -19,7 +19,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)
         {
-            Console.WriteLine($"<- {Type}");
+            Logger.Instance?.WriteLine($"<- {Type}");
             var remainingLength = stream.ReadUInt();
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {

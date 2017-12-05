@@ -16,7 +16,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, Encoding enc)
         {
-            Console.WriteLine($"Write {Type}: '{CommandText}'");
+            Logger.Instance?.WriteLine($"Write {Type}: '{CommandText}'");
             stream.WriteByte((byte)Type);
             var commandText = enc.GetBytes(CommandText);
             stream.WriteInt(1 + commandText.Length);

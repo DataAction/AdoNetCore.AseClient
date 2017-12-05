@@ -34,11 +34,11 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
                     if (formatted.EndsWith("\n"))
                     {
-                        Console.Write(formatted);
+                        Logger.Instance?.Write(formatted);
                     }
                     else
                     {
-                        Console.WriteLine(formatted);
+                        Logger.Instance?.WriteLine(formatted);
                     }
                     break;
                 default:

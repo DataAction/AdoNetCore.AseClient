@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, Encoding enc)
         {
-            Console.WriteLine($"-> {Type}: {ProcedureName}");
+            Logger.Instance?.WriteLine($"-> {Type}: {ProcedureName}");
 
             var rpcNameBytes = enc.GetBytes(ProcedureName);
             var rpcLength = (byte) rpcNameBytes.Length;

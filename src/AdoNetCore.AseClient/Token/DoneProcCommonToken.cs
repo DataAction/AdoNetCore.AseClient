@@ -53,7 +53,7 @@ namespace AdoNetCore.AseClient.Token
             Status = (DoneProcStatus)stream.ReadUShort();
             TransactionState = (TranState)stream.ReadUShort();
             Count = stream.ReadInt();
-            Console.WriteLine($"<- {Status}, {TransactionState}, {Count}");
+            Logger.Instance?.WriteLine($"<- {Status}, {TransactionState}, {Count}");
         }
     }
 }

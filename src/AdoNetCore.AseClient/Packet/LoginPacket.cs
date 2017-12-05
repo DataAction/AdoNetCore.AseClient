@@ -61,7 +61,7 @@ namespace AdoNetCore.AseClient.Packet
         public BufferType Type => BufferType.TDS_BUF_LOGIN;
         public void Write(Stream stream, Encoding enc)
         {
-            Console.WriteLine($"Write {Type}");
+            Logger.Instance?.WriteLine($"Write {Type}");
             stream.WritePaddedString(Hostname, TDS_MAXNAME, enc); //lhostname
             stream.WritePaddedString(Username, TDS_MAXNAME, enc); //lussername
             stream.WritePaddedString(Password, TDS_MAXNAME, enc); //lpw

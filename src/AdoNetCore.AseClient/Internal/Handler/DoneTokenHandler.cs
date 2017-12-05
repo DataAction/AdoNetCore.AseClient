@@ -28,21 +28,21 @@ namespace AdoNetCore.AseClient.Internal.Handler
             {
                 //TDS_DONE_COUNT - this means that the count we received is meaningful
                 case DoneToken t:
-                    Console.WriteLine($"{t.Type}: {t.Status}");
+                    Logger.Instance?.WriteLine($"{t.Type}: {t.Status}");
                     if (t.Status.HasFlag(DoneToken.DoneStatus.TDS_DONE_COUNT))
                     {
                         RowsAffected += t.Count;
                     }
                     break;
                 case DoneProcToken t:
-                    Console.WriteLine($"{t.Type}: {t.Status}");
+                    Logger.Instance?.WriteLine($"{t.Type}: {t.Status}");
                     if (t.Status.HasFlag(DoneProcCommonToken.DoneProcStatus.TDS_DONE_COUNT))
                     {
                         RowsAffected += t.Count;
                     }
                     break;
                 case DoneInProcToken t:
-                    Console.WriteLine($"{t.Type}: {t.Status}");
+                    Logger.Instance?.WriteLine($"{t.Type}: {t.Status}");
                     if (t.Status.HasFlag(DoneProcCommonToken.DoneProcStatus.TDS_DONE_COUNT))
                     {
                         RowsAffected += t.Count;

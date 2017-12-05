@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                 case EnvironmentChangeToken t:
                     foreach (var change in t.Changes)
                     {
-                        Console.WriteLine($"{t.Type}: {change.Type} - {change.OldValue} -> {change.NewValue}");
+                        Logger.Instance?.WriteLine($"{t.Type}: {change.Type} - {change.OldValue} -> {change.NewValue}");
                         switch (change.Type)
                         {
                             case EnvironmentChangeToken.ChangeType.TDS_ENV_DB:

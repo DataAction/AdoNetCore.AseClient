@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.0;netcoreapp1.1;netcoreapp2.0</TargetFrameworks>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Authors>Data Action</Authors>
+    <Description>.NET Core data provider for Sybase ASE</Description>
+    <PackageTags>Sybase ASE Adaptive</PackageTags>
+    <PackageProjectUrl>https://github.com/DataAction/AdoNetCore.AseClient</PackageProjectUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Data.Common" Version="4.3.0" />

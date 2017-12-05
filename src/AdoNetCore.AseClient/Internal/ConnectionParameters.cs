@@ -40,7 +40,27 @@ namespace AdoNetCore.AseClient.Internal
                 }
             }
 
+            parameters.Validate();
+
             return parameters;
+        }
+
+        private void Validate()
+        {
+            if (string.IsNullOrWhiteSpace(Server))
+            {
+                throw new ArgumentException("Data Source not specified");
+            }
+
+            if (Port <= 0 || Port > ushort.MaxValue)
+            {
+                throw new ArgumentException("Valid port not specified");
+            }
+
+            if (string.IsNullOrWhiteSpace(Username))
+            {
+                throw new ArgumentException("Uid not specified");
+            }
         }
 
         public string Server { get; private set; }

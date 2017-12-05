@@ -86,8 +86,11 @@ namespace AdoNetCore.AseClient.Internal
 
             lock (_mutex)
             {
-                var item = _connections.First(i => i.Connection == connection);
-                item.Available = true;
+                var item = _connections.FirstOrDefault(i => i.Connection == connection);
+                if (item != null)
+                {
+                    item.Available = true;
+                }
             }
         }
 

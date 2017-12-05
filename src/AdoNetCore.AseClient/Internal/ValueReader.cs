@@ -1,7 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 
@@ -119,6 +117,37 @@ namespace AdoNetCore.AseClient.Internal
                             return stream.ReadTime();
                     }
                     break;
+                case TdsDataType.TDS_TEXT:
+                case TdsDataType.TDS_XML:
+                    {
+                        var textPtrLen = (byte)stream.ReadByte();
+                        if (textPtrLen == 0)
+                        {
+                            return null;
+                        }
+                        var textPtr = new byte[textPtrLen];
+                        stream.Read(textPtr, 0, textPtrLen);
+                        stream.ReadULong(); //timestamp
+                        var dataLen = stream.ReadInt();
+                        var data = new byte[dataLen];
+                        stream.Read(data, 0, dataLen);
+                        return enc.GetString(data);
+                    }
+                case TdsDataType.TDS_IMAGE:
+                    {
+                        var textPtrLen = (byte)stream.ReadByte();
+                        if (textPtrLen == 0)
+                        {
+                            return null;
+                        }
+                        var textPtr = new byte[textPtrLen];
+                        stream.Read(textPtr, 0, textPtrLen);
+                        stream.ReadULong(); //timestamp
+                        var dataLen = stream.ReadInt();
+                        var data = new byte[dataLen];
+                        stream.Read(data, 0, dataLen);
+                        return data;
+                    }
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

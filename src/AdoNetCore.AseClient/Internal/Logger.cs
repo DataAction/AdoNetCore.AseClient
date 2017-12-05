@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public static void Enable(bool toConsole, bool toDebug)
+        public static void Enable(bool toConsole = true, bool toDebug = false)
         {
 #if DEBUG
             _instance = new Logger

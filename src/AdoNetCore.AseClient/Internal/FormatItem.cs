@@ -123,6 +123,13 @@ namespace AdoNetCore.AseClient.Internal
                     format.Precision = (byte)stream.ReadByte();
                     format.Scale = (byte)stream.ReadByte();
                     break;
+                case TdsDataType.TDS_TEXT:
+                case TdsDataType.TDS_XML:
+                case TdsDataType.TDS_IMAGE:
+                    format.Length = stream.ReadInt();
+                    var name = stream.ReadShortLengthPrefixedString(enc);
+                    Logger.Instance?.WriteLine($"ReadTypeInfo({format.DataType}) name: {name}");
+                    break;
                 default:
                     throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
             }

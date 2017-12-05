@@ -59,18 +59,7 @@ namespace AdoNetCore.AseClient.Internal
                     buffer[2] = (byte)(chunkLength >> 8);
                     buffer[3] = (byte)chunkLength;
 
-                    if (chunkLength == env.PacketSize)
-                    {
-                        //Console.WriteLine(HexDump.Dump(buffer));
-                        _inner.Send(buffer);
-                    }
-                    else
-                    {
-                        var temp = new byte[chunkLength];
-                        Array.Copy(buffer, temp, chunkLength);
-                        //Console.WriteLine(HexDump.Dump(temp));
-                        _inner.Send(temp);
-                    }
+                    _inner.EnsureSend(buffer, 0, chunkLength);
                 }
             }
         }
@@ -79,34 +68,26 @@ namespace AdoNetCore.AseClient.Internal
         {
             using (var ms = new MemoryStream())
             {
-                var buffer = new byte[env.PacketSize];
-                var received = _inner.Receive(buffer);
-                var type = BufferType.TDS_BUF_NONE;
-                while (received > 0)
                 {
-                    if (type == BufferType.TDS_BUF_NONE)
+                    var buffer = new byte[env.PacketSize];
+                    while (true)
                     {
-                        type = (BufferType)buffer[0];
-                    }
+                        _inner.EnsureReceive(buffer, 0, env.HeaderSize);
+                        var length = buffer[2] << 8 | buffer[3];
+                        var bufferStatus = (BufferStatus) buffer[1];
+                        var finalChunk = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM);
 
-                    if (received > env.HeaderSize)
-                    {
-                        ms.Write(buffer, env.HeaderSize, received - env.HeaderSize);
-                    }
+                        _inner.EnsureReceive(buffer, env.HeaderSize, length - env.HeaderSize);
+                        ms.Write(buffer, env.HeaderSize, length - env.HeaderSize);
 
-                    //todo: fix this, we may need to read the header to determine how many bytes left
-                    if (received < env.PacketSize)
-                    {
-                        received = 0;
-                    }
-                    else
-                    {
-                        received = _inner.Receive(buffer);
+                        if (finalChunk)
+                        {
+                            break;
+                        }
                     }
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);
-                //Console.WriteLine(HexDump.Dump(ms.ToArray()));
 
                 return _parser.Parse(ms, Encoding.ASCII);
             }

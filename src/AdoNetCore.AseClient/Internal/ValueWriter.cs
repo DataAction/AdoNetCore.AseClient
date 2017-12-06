@@ -147,6 +147,7 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_DECN:
+                case TdsDataType.TDS_NUMN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
                         var sqlDecimal = (SqlDecimal)(decimal)value;

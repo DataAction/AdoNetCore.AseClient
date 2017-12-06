@@ -119,6 +119,7 @@ namespace AdoNetCore.AseClient.Internal
                     format.Length = stream.ReadInt();
                     break;
                 case TdsDataType.TDS_DECN:
+                case TdsDataType.TDS_NUMN:
                     format.Length = stream.ReadByte();
                     format.Precision = (byte)stream.ReadByte();
                     format.Scale = (byte)stream.ReadByte();
@@ -199,6 +200,7 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteUInt((uint)(Length ?? 0));
                     break;
                 case TdsDataType.TDS_DECN:
+                case TdsDataType.TDS_NUMN:
                     stream.WriteByte((byte)(Length ?? 1));
                     stream.WriteByte(Precision ?? 1);
                     stream.WriteByte(Scale ?? 0);

@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient.Internal
         private const int VarLongBoundary = 255;
         private static readonly Dictionary<DbType, Func<object, int, TdsDataType>> DbToTdsMap = new Dictionary<DbType, Func<object, int, TdsDataType>>
         {
-            {DbType.Boolean, (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_BIT },
+            {DbType.Boolean, (value, length) => TdsDataType.TDS_BIT },
             {DbType.Byte, (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT1 },
             {DbType.SByte, (value, length) => TdsDataType.TDS_INTN },
             {DbType.Int16, (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT2 },
@@ -48,6 +48,7 @@ namespace AdoNetCore.AseClient.Internal
                     return value == DBNull.Value ? 0 : ((byte[])value).Length;
                 case DbType.Decimal:
                     return 17; //1 byte pos/neg, 16 bytes data
+                case DbType.Boolean:
                 case DbType.Byte:
                     return 1;
                 case DbType.Int16:

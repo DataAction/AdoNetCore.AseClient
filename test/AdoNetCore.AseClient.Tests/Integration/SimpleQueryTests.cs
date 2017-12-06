@@ -195,7 +195,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 Assert.AreEqual(expected, connection.ExecuteScalar<ulong?>("select @expected", new { expected }));
             }
         }
-        
+
         [Test]
         public void SelectShortString_Literal_ShouldWork()
         {
@@ -593,6 +593,17 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<bool>("select @expected", new { expected }));
+            }
+        }
+
+        [Test]
+        public void SelectNullBool_Parameter_ShouldWork()
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", DBNull.Value, DbType.Boolean);
+                Assert.AreEqual(false, connection.ExecuteScalar<bool>("select @expected", p));
             }
         }
 

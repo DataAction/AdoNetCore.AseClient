@@ -25,7 +25,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         ? "ERROR"
                         : "INFO ";
 
-                    var formatted = $"{msgType} [{t.Severity}]: {t.Message}";
+                    var formatted = $"{msgType} [{t.Severity}] [L:{t.LineNumber}]: {t.Message}";
 
                     if (isSevere)
                     {

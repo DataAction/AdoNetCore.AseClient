@@ -21,6 +21,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Int64, (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT8 },
             {DbType.UInt64, (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT8 },
             {DbType.String, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
+            {DbType.StringFixedLength, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
             {DbType.Binary, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
             {DbType.Decimal, (value, length) => TdsDataType.TDS_DECN },
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4 },
@@ -30,12 +31,19 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN: TdsDataType.TDS_TIME }
         };
 
-        public static int? GetLength(DbType dbType, object value, Encoding enc)
+        public static int? GetLength(DbType dbType, AseDataParameter parameter, Encoding enc)
         {
+            Logger.Instance?.WriteLine($"{parameter.ParameterName}: Reported size is {parameter.Size}");
+            if (parameter.Size > 0)
+            {
+                return parameter.Size;
+            }
+
+            var value = parameter.Value;
             switch (dbType)
             {
                 case DbType.String:
-                    return value == DBNull.Value ? 0 : enc.GetBytes((string)value).Length;
+                    return value == DBNull.Value ? 0 : enc.GetBytes(value.ToString()).Length;
                 case DbType.Binary:
                     return value == DBNull.Value ? 0 : ((byte[])value).Length;
                 case DbType.Decimal:

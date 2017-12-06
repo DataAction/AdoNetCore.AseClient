@@ -12,12 +12,16 @@ namespace AdoNetCore.AseClient.Internal
 
         private static readonly Dictionary<string, Action<ConnectionParameters, string>> _parsers = new Dictionary<string, Action<ConnectionParameters, string>>(StringComparer.OrdinalIgnoreCase)
         {
-            {"Data Source", (p, v) => { /*todo: need to parse Data Source values that contain the port*/p.Server = v; } },
+            {"Data Source", ParseDataSource },
+            {"DataSource", ParseDataSource },
             {"Port", (p, v) => { p.Port = Convert.ToInt32(v); } },
             {"Db", (p, v) => { p.Database = v; } },
             {"Database", (p, v) => { p.Database = v; } },
+            {"Initial Catalog", (p, v) => { p.Database = v; } },
             {"Uid", (p, v) => { p.Username = v; } },
+            {"User Id", (p, v) => { p.Username = v; } },
             {"Pwd", (p, v) => { p.Password = v; } },
+            {"Password", (p, v) => { p.Password = v; } },
             {"Charset", (p, v) => { p.Charset= v; } },
             {"Pooling", (p, v) => { p.Pooling = Convert.ToBoolean(v); } },
             {"ApplicationName", (p, v) => { p.ApplicationName = v; } },
@@ -25,6 +29,22 @@ namespace AdoNetCore.AseClient.Internal
             {"ClientHostName", (p, v) => { p.ClientHostName = v; } },
             {"ProcessId", (p, v) => { p.ProcessId = v; } },
         };
+
+        private static void ParseDataSource(ConnectionParameters p, string v)
+        {
+            if (string.IsNullOrWhiteSpace(v))
+            {
+                return;
+            }
+            var parts = v.Split(',', ':');
+
+            p.Server = parts[0];
+
+            if (parts.Length > 1)
+            {
+                p.Port = Convert.ToInt32(parts[1]);
+            }
+        }
 
         public static ConnectionParameters Parse(string connectionString)
         {
@@ -34,9 +54,17 @@ namespace AdoNetCore.AseClient.Internal
             foreach (var item in connectionString.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries))
             {
                 var pair = item.Split(new[] {'='}, 2).ToArray();
-                if (pair.Length == 2 && _parsers.ContainsKey(pair[0]))
+                if (pair.Length == 2)
                 {
+                    if (!_parsers.ContainsKey(pair[0]))
+                    {
+                        throw new ArgumentException("Unknown connection string parameter provided", pair[0]);
+                    }
                     _parsers[pair[0]](parameters, pair[1]);
+                }
+                else
+                {
+                    throw new ArgumentException("Badly formatted connection string parameter encountered");
                 }
             }
 
@@ -78,6 +106,11 @@ namespace AdoNetCore.AseClient.Internal
             if (string.IsNullOrWhiteSpace(Username))
             {
                 throw new ArgumentException("Uid not specified");
+            }
+
+            if (string.IsNullOrWhiteSpace(Database))
+            {
+                throw new ArgumentException("Database not specified");
             }
         }
     }

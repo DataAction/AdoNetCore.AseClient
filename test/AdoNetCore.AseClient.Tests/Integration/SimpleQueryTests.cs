@@ -217,6 +217,30 @@ namespace AdoNetCore.AseClient.Tests.Integration
         }
 
         [Test]
+        public void SelectShortStringFixedLength_Parameter_ShouldWork()
+        {
+            using (var connection = GetConnection())
+            {
+                var expected = Guid.NewGuid().ToString();
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.StringFixedLength);
+                Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @expected", p));
+            }
+        }
+
+        [Test]
+        public void SelectCharStringFixedLength_Parameter_ShouldWork()
+        {
+            using (var connection = GetConnection())
+            {
+                var expected = 'X';
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.StringFixedLength);
+                Assert.AreEqual(expected, connection.ExecuteScalar<char>("select @expected", p));
+            }
+        }
+
+        [Test]
         public void SelectNullShortString_Literal_ShouldWork()
         {
             using (var connection = GetConnection())

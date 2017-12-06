@@ -116,7 +116,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_VARCHAR:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteBytePrefixedString((string)value, enc);
+                        stream.WriteBytePrefixedString(value.ToString(), enc);
                     }
                     break;
                 case TdsDataType.TDS_LONGCHAR:

@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal class Logger
+    public sealed class Logger
     {
         private static Logger _instance;
         public static Logger Instance

@@ -225,7 +225,7 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var length = TypeMap.GetLength(parameter.DbType, parameter.Value, _environment.Encoding);
+                var length = TypeMap.GetLength(parameter.DbType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,

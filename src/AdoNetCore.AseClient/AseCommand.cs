@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
@@ -73,7 +74,8 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public int ExecuteNonQuery()
         {
-            return _connection.InternalConnection.ExecuteNonQuery(this);
+            LogExecution(nameof(ExecuteNonQuery));
+            return _connection.InternalConnection.ExecuteNonQuery(this, Transaction);
         }
 
         /// <summary>
@@ -128,7 +130,8 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public AseDataReader ExecuteReader(CommandBehavior behavior)
         {
-            return _connection.InternalConnection.ExecuteReader(behavior, this);
+            LogExecution(nameof(ExecuteReader));
+            return _connection.InternalConnection.ExecuteReader(behavior, this, Transaction);
         }
 
         /// <summary>
@@ -144,7 +147,18 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public object ExecuteScalar()
         {
-            return _connection.InternalConnection.ExecuteScalar(this);
+            LogExecution(nameof(ExecuteScalar));
+            return _connection.InternalConnection.ExecuteScalar(this, Transaction);
+        }
+
+        private void LogExecution(string methodName)
+        {
+            if (Logger.Instance != null)
+            {
+                Logger.Instance.WriteLine();
+                Logger.Instance.WriteLine($"========== {methodName.PadRight(15, ' ')}==========");
+                Logger.Instance.WriteLine($"Transaction set: {Transaction != null}");
+            }
         }
 
         /// <summary>
@@ -174,16 +188,10 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the <see cref="AseConnection" /> used by this instance of the AseCommand.
         /// </summary>
-        IDbConnection IDbCommand.Connection 
-        { 
-            get 
-            {
-                return Connection;
-            } 
-            set 
-            {
-                Connection = value as AseConnection;
-            } 
+        IDbConnection IDbCommand.Connection
+        {
+            get => Connection;
+            set => Connection = value as AseConnection;
         }
 
         /// <summary>
@@ -195,8 +203,8 @@ namespace AdoNetCore.AseClient
         /// Gets the <see cref="AseDataParameterCollection" /> used by this instance of the AseCommand. 
         /// </summary>
         IDataParameterCollection IDbCommand.Parameters
-        { 
-            get 
+        {
+            get
             {
                 return Parameters;
             }
@@ -210,23 +218,17 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the <see cref="AseTransaction" /> within which the SqlCommand executes.
         /// </summary>
-        IDbTransaction IDbCommand.Transaction 
-        { 
-            get 
-            {
-                return Transaction;
-            } 
-            set 
-            {
-                Transaction = value as AseTransaction;
-            } 
+        IDbTransaction IDbCommand.Transaction
+        {
+            get => Transaction;
+            set => Transaction = value as AseTransaction;
         }
 
 
         /// <summary>
         /// Gets or sets the <see cref="AseTransaction" /> within which the SqlCommand executes.
         /// </summary>
-        public AseTransaction Transaction { get; set; }
+        private AseTransaction Transaction { get; set; }
 
         /// <summary>
         /// Gets or sets how command results are applied to the <see cref="System.Data.DataRow" /> when used by the Update method of the DbDataAdapter.

@@ -144,7 +144,10 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public AseTransaction BeginTransaction()
         {
-            throw new NotImplementedException();
+            Open();
+            var t = new AseTransaction(this);
+            t.Begin();
+            return t;
         }
 
         /// <summary>
@@ -182,9 +185,12 @@ namespace AdoNetCore.AseClient
         /// level with the <see cref="BeginTransaction" /> method, use the overload that takes the iso parameter 
         /// (<see cref="BeginTransaction(IsolationLevel)" />).</para>
         /// </remarks>
-        public IDbTransaction BeginTransaction(IsolationLevel isolationLevel)
+        public AseTransaction BeginTransaction(IsolationLevel isolationLevel)
         {
-            throw new NotImplementedException();
+            Open();
+            var t = new AseTransaction(this, isolationLevel);
+            t.Begin();
+            return t;
         }
 
         /// <summary>
@@ -239,6 +245,11 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public void Open()
         {
+            if (State == ConnectionState.Open)
+            {
+                return; //already open
+            }
+
             if (State != ConnectionState.Closed)
             {
                 throw new InvalidOperationException("Cannot open a connection which is not closed");

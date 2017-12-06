@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
 using AdoNetCore.AseClient.Packet;
@@ -24,14 +25,14 @@ namespace AdoNetCore.AseClient.Internal
         private void SendPacket(IPacket packet)
         {
             Logger.Instance?.WriteLine();
-            Logger.Instance?.WriteLine("==========  Send packet   ==========");
+            Logger.Instance?.WriteLine("----------  Send packet   ----------");
             _socket.SendPacket(packet, _environment);
         }
 
         private void ReceiveTokens(ITokenHandler[] handlers)
         {
             Logger.Instance?.WriteLine();
-            Logger.Instance?.WriteLine("========== Receive Tokens ==========");
+            Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
             foreach (var token in _socket.ReceiveTokens(_environment))
             {
                 foreach (var handler in handlers)
@@ -115,7 +116,7 @@ namespace AdoNetCore.AseClient.Internal
             private set => _environment.Database = value;
         }
 
-        public int ExecuteNonQuery(AseCommand command)
+        public int ExecuteNonQuery(AseCommand command, AseTransaction transaction)
         {
             SendPacket(new NormalPacket(BuildCommandTokens(command)));
 
@@ -130,15 +131,21 @@ namespace AdoNetCore.AseClient.Internal
                 doneHandler,
             });
 
+            if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
+            {
+                transaction.MarkAborted();
+            }
+
             messageHandler.AssertNoErrors();
 
             return doneHandler.RowsAffected;
         }
 
-        public AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command)
+        public AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
         {
             SendPacket(new NormalPacket(BuildCommandTokens(command)));
 
+            var doneHandler = new DoneTokenHandler();
             var messageHandler = new MessageTokenHandler();
             var dataReaderHandler = new DataReaderTokenHandler();
 
@@ -148,16 +155,22 @@ namespace AdoNetCore.AseClient.Internal
                 messageHandler,
                 dataReaderHandler,
                 new ResponseParameterTokenHandler(command.AseParameters),
+                doneHandler
             });
+
+            if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
+            {
+                transaction.MarkAborted();
+            }
 
             messageHandler.AssertNoErrors();
 
             return new AseDataReader(dataReaderHandler.Results().ToArray());
         }
 
-        public object ExecuteScalar(AseCommand command)
+        public object ExecuteScalar(AseCommand command, AseTransaction transaction)
         {
-            using (var reader = (IDataReader) ExecuteReader(CommandBehavior.Default, command))
+            using (var reader = (IDataReader) ExecuteReader(CommandBehavior.Default, command, transaction))
             {
                 if (reader.Read())
                 {

@@ -68,8 +68,31 @@ namespace AdoNetCore.AseClient.Internal
                     return stream.ReadNullableByteLengthPrefixedByteArray();
                 case TdsDataType.TDS_LONGCHAR:
                     return stream.ReadNullableIntLengthPrefixedString(enc);
+                /*
+                 * TDS_LONGBINARY serialization 55 serialized java object or instance (i.e. java object)
+                 * TDS_LONGBINARY serialized java class 56 serialized java class (i.e. byte code)
+                 * TDS_LONGBINARY smallbinary 59 64K max length binary data (ASA)
+                 * TDS_LONGBINARY unichar 34 fixed length UTF-16 encoded data
+                 * TDS_LONGBINARY univarchar 35 variable length UTF-16 encoded data
+                */
                 case TdsDataType.TDS_LONGBINARY:
-                    return stream.ReadNullableIntLengthPrefixedByteArray();
+                    {
+                        var bytes = stream.ReadNullableIntLengthPrefixedByteArray();
+                        if (bytes == null)
+                        {
+                            return null;
+                        }
+
+                        //the UserType can affect how we need to interpret the result data
+                        switch (format.UserType)
+                        {
+                            case 34:
+                            case 35:
+                                return Encoding.Unicode.GetString(bytes);
+                            default:
+                                return bytes;
+                        }
+                    }
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
                     return stream.ReadDecimal(format.Precision ?? 1, format.Scale ?? 0);
@@ -147,6 +170,21 @@ namespace AdoNetCore.AseClient.Internal
                         var data = new byte[dataLen];
                         stream.Read(data, 0, dataLen);
                         return data;
+                    }
+                case TdsDataType.TDS_UNITEXT:
+                    {
+                        var textPtrLen = (byte)stream.ReadByte();
+                        if (textPtrLen == 0)
+                        {
+                            return null;
+                        }
+                        var textPtr = new byte[textPtrLen];
+                        stream.Read(textPtr, 0, textPtrLen);
+                        stream.ReadULong(); //timestamp
+                        var dataLen = stream.ReadInt();
+                        var data = new byte[dataLen];
+                        stream.Read(data, 0, dataLen);
+                        return Encoding.Unicode.GetString(data);
                     }
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");

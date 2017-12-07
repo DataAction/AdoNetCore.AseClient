@@ -44,7 +44,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             using (var ms = new MemoryStream())
             {
-                packet.Write(ms, Encoding.ASCII);
+                packet.Write(ms, env.Encoding);
                 ms.Seek(0, SeekOrigin.Begin);
 
                 while (ms.Position < ms.Length)
@@ -89,7 +89,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 ms.Seek(0, SeekOrigin.Begin);
 
-                return _parser.Parse(ms, Encoding.ASCII);
+                return _parser.Parse(ms, env.Encoding);
             }
         }
     }

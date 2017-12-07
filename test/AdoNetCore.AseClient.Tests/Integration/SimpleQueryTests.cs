@@ -241,6 +241,18 @@ namespace AdoNetCore.AseClient.Tests.Integration
         }
 
         [Test]
+        public void SelectShortAnsiStringFixedLength_Parameter_ShouldWork()
+        {
+            using (var connection = GetConnection())
+            {
+                var expected = Guid.NewGuid().ToString();
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.AnsiStringFixedLength);
+                Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @expected", p));
+            }
+        }
+
+        [Test]
         public void SelectNullShortString_Literal_ShouldWork()
         {
             using (var connection = GetConnection())
@@ -254,8 +266,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = GetConnection())
             {
-                string expected = null;
-                Assert.AreEqual(expected, connection.ExecuteScalar<string>("select convert(varchar(255), @expected)", new { expected }));
+                Assert.AreEqual(null, connection.ExecuteScalar<string>("select convert(varchar(255), @expected)", new { expected = (string)null }));
             }
         }
 
@@ -305,8 +316,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = GetConnection())
             {
-                string expected = null;
-                Assert.AreEqual(expected, connection.ExecuteScalar<string>("select convert(varchar(1000), @expected)", new { expected }));
+                Assert.AreEqual(null, connection.ExecuteScalar<string>("select convert(varchar(1000), @expected)", new { expected = (string)null }));
             }
         }
 
@@ -353,8 +363,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = GetConnection())
             {
-                byte[] expected = null;
-                Assert.AreEqual(expected, connection.ExecuteScalar<byte[]>("select @expected", new { expected }));
+                Assert.AreEqual(null, connection.ExecuteScalar<byte[]>("select @expected", new { expected = (byte[])null }));
             }
         }
 
@@ -373,8 +382,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = GetConnection())
             {
-                byte[] expected = null;
-                Assert.AreEqual(expected, connection.ExecuteScalar<byte[]>("select convert(binary(1000), @expected)", new { expected }));
+                Assert.AreEqual(null, connection.ExecuteScalar<byte[]>("select convert(binary(1000), @expected)", new { expected = (byte[])null }));
             }
         }
 
@@ -539,6 +547,25 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData("-1", -1m);
             yield return new TestCaseData("214748.3647", 214748.3647m);
             yield return new TestCaseData("-214748.3648", -214748.3648m);
+        }
+
+        [TestCaseSource(nameof(SelectMoney_Parameter_ShouldWork_Cases))]
+        public void SelectMoney_Parameter_ShouldWork(decimal? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.Currency);
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>("select convert(money, @expected)", p));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectMoney_Parameter_ShouldWork_Cases()
+        {
+            yield return new TestCaseData(null);
+            yield return new TestCaseData(0m);
+            yield return new TestCaseData(1m);
+            yield return new TestCaseData(1.1111m);
         }
 
         [TestCase("null", null)]

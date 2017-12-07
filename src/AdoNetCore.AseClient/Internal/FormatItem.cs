@@ -44,8 +44,8 @@ namespace AdoNetCore.AseClient.Internal
                 SchemaName = stream.ReadByteLengthPrefixedString(enc),
                 TableName = stream.ReadByteLengthPrefixedString(enc),
                 ColumnName = stream.ReadByteLengthPrefixedString(enc),
-                RowStatus = (RowFormatItemStatus) (srcTokenType == TokenType.TDS_ROWFMT
-                    ? (uint) stream.ReadByte()
+                RowStatus = (RowFormatItemStatus)(srcTokenType == TokenType.TDS_ROWFMT
+                    ? (uint)stream.ReadByte()
                     : stream.ReadUInt())
             };
 
@@ -62,7 +62,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 ParameterName = stream.ReadByteLengthPrefixedString(enc),
             };
-            var status = (ParameterFormatItemStatus) (srcTokenType == TokenType.TDS_PARAMFMT
+            var status = (ParameterFormatItemStatus)(srcTokenType == TokenType.TDS_PARAMFMT
                 ? (uint)stream.ReadByte()
                 : stream.ReadUInt());
             format.IsOutput = status.HasFlag(ParameterFormatItemStatus.TDS_PARAM_RETURN);
@@ -127,10 +127,13 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_TEXT:
                 case TdsDataType.TDS_XML:
                 case TdsDataType.TDS_IMAGE:
-                    format.Length = stream.ReadInt();
-                    var name = stream.ReadShortLengthPrefixedString(enc);
-                    Logger.Instance?.WriteLine($"ReadTypeInfo({format.DataType}) name: {name}");
-                    break;
+                case TdsDataType.TDS_UNITEXT:
+                    {
+                        format.Length = stream.ReadInt();
+                        var name = stream.ReadShortLengthPrefixedString(enc);
+                        Logger.Instance?.WriteLine($"ReadTypeInfo({format.DataType}) name: {name}");
+                        break;
+                    }
                 default:
                     throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
             }

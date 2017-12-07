@@ -144,7 +144,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public void WriteForParameter(Stream stream, Encoding enc, TokenType srcTokenType)
         {
-            Logger.Instance?.WriteLine($"  -> {ParameterName}: {DataType} ({Length})");
+            Logger.Instance?.WriteLine($"  -> {ParameterName}: {DataType} ({Length}) (ut:{UserType})");
             if (string.IsNullOrWhiteSpace(ParameterName) || string.Equals("@", ParameterName))
             {
                 stream.WriteByte(0);
@@ -166,7 +166,7 @@ namespace AdoNetCore.AseClient.Internal
                 stream.WriteUInt((uint)status);
             }
 
-            stream.WriteInt(0); //we don't currently do anything with user types
+            stream.WriteInt(UserType);
             stream.WriteByte((byte)DataType);
 
             switch (DataType)

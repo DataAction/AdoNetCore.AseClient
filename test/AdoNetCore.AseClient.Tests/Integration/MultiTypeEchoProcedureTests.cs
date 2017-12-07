@@ -40,7 +40,7 @@ end";
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
                 var p = new DynamicParameters();
-                p.Add("@echoChar", null, DbType.String, ParameterDirection.Output, 1);
+                p.Add("@echoChar", null, DbType.String, ParameterDirection.Output, 2);
                 var inBinary = Guid.NewGuid().ToByteArray();
                 p.Add("@inBinary", inBinary);
                 p.Add("@echoBinary", null, DbType.Binary, ParameterDirection.Output, 16);

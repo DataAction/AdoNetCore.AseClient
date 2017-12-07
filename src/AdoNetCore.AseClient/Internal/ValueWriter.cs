@@ -143,7 +143,24 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_LONGBINARY:
                     if (!stream.TryWriteIntPrefixedNull(value))
                     {
-                        stream.WriteIntPrefixedByteArray((byte[])value);
+                        switch (value)
+                        {
+                            case string s:
+                                stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(s));
+                                break;
+                            case char c:
+                                stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(new[] { c }));
+                                break;
+                            case byte[] ba:
+                                stream.WriteIntPrefixedByteArray(ba);
+                                break;
+                            case byte b:
+                                stream.WriteIntPrefixedByteArray(new[] { b });
+                                break;
+                            default:
+                                stream.WriteInt(0);
+                                break;
+                        }
                     }
                     break;
                 case TdsDataType.TDS_DECN:
@@ -174,7 +191,7 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_DATE:
-                    stream.WriteDate((DateTime) value);
+                    stream.WriteDate((DateTime)value);
                     break;
                 case TdsDataType.TDS_DATEN:
                     if (!stream.TryWriteBytePrefixedNull(value))
@@ -183,7 +200,7 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_TIME:
-                    stream.WriteTime((TimeSpan) value);
+                    stream.WriteTime((TimeSpan)value);
                     break;
                 case TdsDataType.TDS_TIMEN:
                     if (!stream.TryWriteBytePrefixedNull(value))

@@ -296,17 +296,34 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         [TestCase(255)]
         [TestCase(256)]
-        [TestCase(1000)]
-        [TestCase(2000)]
-        [TestCase(4000)]
-        [TestCase(8000)]
-        [TestCase(16384)]
+        [TestCase(1024)]
+        [TestCase(2048)]
+        [TestCase(4096)]
+        [TestCase(8192)]
         public void SelectLongString_Parameter_ShouldWork(int count)
         {
             var expected = new string('1', count);
             using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCase(255)]
+        [TestCase(256)]
+        [TestCase(1024)]
+        [TestCase(2048)]
+        [TestCase(4096)]
+        [TestCase(8192)]
+        [TestCase(16384)]
+        public void SelectLongAnsiString_Parameter_ShouldWork(int count)
+        {
+            var expected = new string('1', count);
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.AnsiString);
+                Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @expected", p));
             }
         }
 

@@ -225,7 +225,7 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var length = TypeMap.GetLength(parameter.DbType, parameter, _environment.Encoding);
+                var length = TypeMap.GetFormatLength(parameter.DbType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,
@@ -243,6 +243,16 @@ namespace AdoNetCore.AseClient.Internal
                     var sqlDecimal = (SqlDecimal) (decimal) parameter.Value;
                     formatItem.Precision = sqlDecimal.Precision;
                     formatItem.Scale = sqlDecimal.Scale;
+                }
+
+                if (parameter.DbType == DbType.String)
+                {
+                    formatItem.UserType = 35;
+                }
+
+                if (parameter.DbType == DbType.StringFixedLength)
+                {
+                    formatItem.UserType = 34;
                 }
 
                 formatItems.Add(formatItem);

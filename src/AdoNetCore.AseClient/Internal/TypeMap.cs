@@ -21,8 +21,8 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Int64, (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT8 },
             {DbType.UInt64, (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT8 },
             //todo: switch to using TDS_LONGBINARY with usertype 34/35 (UTF-16 encoding)
-            {DbType.String, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
-            {DbType.StringFixedLength, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
+            {DbType.String, (value, length) => TdsDataType.TDS_LONGBINARY},
+            {DbType.StringFixedLength, (value, length) => TdsDataType.TDS_LONGBINARY},
             {DbType.AnsiString, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
             {DbType.AnsiStringFixedLength, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
             {DbType.Binary, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
@@ -36,9 +36,8 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN: TdsDataType.TDS_TIME }
         };
 
-        public static int? GetLength(DbType dbType, AseDataParameter parameter, Encoding enc)
+        public static int? GetFormatLength(DbType dbType, AseDataParameter parameter, Encoding enc)
         {
-            Logger.Instance?.WriteLine($"{parameter.ParameterName}: Reported size is {parameter.Size}");
             if (parameter.Size > 0)
             {
                 return parameter.Size;
@@ -48,9 +47,37 @@ namespace AdoNetCore.AseClient.Internal
             switch (dbType)
             {
                 case DbType.String:
-                    return value == DBNull.Value ? 0 : enc.GetBytes(value.ToString()).Length;
+                case DbType.StringFixedLength:
+                    switch (value)
+                    {
+                        case string s:
+                            return Encoding.Unicode.GetByteCount(s);
+                        case char c:
+                            return Encoding.Unicode.GetByteCount(new[] {c});
+                        default:
+                            return 0;
+                    }
+                case DbType.AnsiString:
+                case DbType.AnsiStringFixedLength:
+                    switch (value)
+                    {
+                        case string s:
+                            return enc.GetByteCount(s);
+                        case char c:
+                            return enc.GetByteCount(new[] { c });
+                        default:
+                            return 0;
+                    }
                 case DbType.Binary:
-                    return value == DBNull.Value ? 0 : ((byte[])value).Length;
+                    switch (value)
+                    {
+                        case byte[] ba:
+                            return ba.Length;
+                        case byte b:
+                            return 1;
+                        default:
+                            return 0;
+                    }
                 case DbType.Decimal:
                 case DbType.Currency:
                 case DbType.VarNumeric:

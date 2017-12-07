@@ -472,6 +472,31 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(-32109876543210.0123456789m);
         }
 
+        [TestCaseSource(nameof(SelectVarNumeric_Parameter_ShouldWork_Cases))]
+        public void SelectVarNumeric_Parameter_ShouldWork(decimal expected)
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.VarNumeric);
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>("select @expected", p));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectVarNumeric_Parameter_ShouldWork_Cases()
+        {
+            yield return new TestCaseData(null);
+            yield return new TestCaseData(0m);
+            yield return new TestCaseData(1.1m);
+            yield return new TestCaseData(-1.1m);
+            yield return new TestCaseData(1.0123456789m);
+            yield return new TestCaseData(-1.0123456789m);
+            yield return new TestCaseData(987654321.0123456789m);
+            yield return new TestCaseData(-987654321.0123456789m);
+            yield return new TestCaseData(32109876543210.0123456789m);
+            yield return new TestCaseData(-32109876543210.0123456789m);
+        }
+
         [TestCaseSource(nameof(SelectMoney_Literal_ShouldWork_Cases))]
         public void SelectMoney_Literal_ShouldWork(string input, decimal? expected)
         {

@@ -24,6 +24,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.StringFixedLength, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
             {DbType.Binary, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
             {DbType.Decimal, (value, length) => TdsDataType.TDS_DECN },
+            {DbType.VarNumeric, (value, length) => TdsDataType.TDS_NUMN },
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4 },
             {DbType.Double, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8 },
             {DbType.DateTime, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME },
@@ -47,6 +48,7 @@ namespace AdoNetCore.AseClient.Internal
                 case DbType.Binary:
                     return value == DBNull.Value ? 0 : ((byte[])value).Length;
                 case DbType.Decimal:
+                case DbType.VarNumeric:
                     return 17; //1 byte pos/neg, 16 bytes data
                 case DbType.Boolean:
                 case DbType.Byte:

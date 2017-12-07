@@ -235,7 +235,7 @@ namespace AdoNetCore.AseClient.Internal
                     Length = length
                 };
 
-                if (parameter.DbType == DbType.Decimal && parameter.Value is decimal)
+                if ((parameter.DbType == DbType.Decimal || parameter.DbType == DbType.VarNumeric) && parameter.Value is decimal)
                 {
                     var sqlDecimal = (SqlDecimal) (decimal) parameter.Value;
                     formatItem.Precision = sqlDecimal.Precision;

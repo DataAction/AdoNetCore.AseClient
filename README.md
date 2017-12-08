@@ -74,6 +74,7 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 
 ## Supported types
 Send support:
+
 | DbType                  | Send      | .NET Type(s) | Notes
 | ----------------------- |:---------:| ------------ | -----
 | `AnsiString`            | TODO      | `string`
@@ -105,6 +106,7 @@ Send support:
 | `DateTimeOffset`        | ?         | | Investigate: not sure if available in ASE
 
 Receive support:
+
 | Type                | Receive   | .NET Type(s) | Notes
 | ------------------- |:---------:| ------------ | -----
 | `bigint`            | &#10003;  | `long`

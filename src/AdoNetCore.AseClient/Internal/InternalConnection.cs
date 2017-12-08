@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
@@ -12,55 +13,56 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal class InternalConnection : IInternalConnection
     {
-        private readonly ConnectionParameters _parameters;
+        private readonly IConnectionParameters _parameters;
         private readonly ISocket _socket;
         private readonly DbEnvironment _environment = new DbEnvironment();
 
-        public InternalConnection(ConnectionParameters parameters, ISocket socket)
+        public InternalConnection(IConnectionParameters parameters, ISocket socket)
         {
             _parameters = parameters;
             _socket = socket;
         }
 
-        private void SendPacket(IPacket packet)
+        private void SendPacket(IPacket packet, CancellationToken? token = null)
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("----------  Send packet   ----------");
-            _socket.SendPacket(packet, _environment);
+            _socket.SendPacket(packet, _environment, token);
         }
-
-        private void ReceiveTokens(ITokenHandler[] handlers)
+        
+        private void ReceiveTokens(ITokenHandler[] handlers, CancellationToken? token = null)
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
-            foreach (var token in _socket.ReceiveTokens(_environment))
+            foreach (var receivedToken in _socket.ReceiveTokens(_environment, token))
             {
                 foreach (var handler in handlers)
                 {
-                    if (handler.CanHandle(token.Type))
+                    if (handler.CanHandle(receivedToken.Type))
                     {
-                        handler.Handle(token);
+                        handler.Handle(receivedToken);
                     }
                 }
             }
         }
 
-        public void Connect()
+        public void Connect(CancellationToken token)
         {
             //socket is established already
             //login
             SendPacket(new LoginPacket(
-                _parameters.ClientHostName,
-                _parameters.Username,
-                _parameters.Password,
-                _parameters.ProcessId,
-                _parameters.ApplicationName,
-                _parameters.Server,
-                "us_english",
-                _parameters.Charset,
-                "ADO.NET",
-                _environment.PacketSize,
-                new CapabilityToken()));
+                    _parameters.ClientHostName,
+                    _parameters.Username,
+                    _parameters.Password,
+                    _parameters.ProcessId,
+                    _parameters.ApplicationName,
+                    _parameters.Server,
+                    "us_english",
+                    _parameters.Charset,
+                    "ADO.NET",
+                    _environment.PacketSize,
+                    new CapabilityToken()),
+                token);
 
             var ackHandler = new LoginTokenHandler();
             var messageHandler = new MessageTokenHandler();
@@ -70,7 +72,7 @@ namespace AdoNetCore.AseClient.Internal
                 ackHandler,
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
-            });
+            }, token);
 
             messageHandler.AssertNoErrors();
 
@@ -79,7 +81,7 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("No login ack found");
             }
 
-            ChangeDatabase(_parameters.Database);
+            ChangeDatabase(_parameters.Database, token);
         }
 
         public bool Ping()
@@ -87,7 +89,7 @@ namespace AdoNetCore.AseClient.Internal
             return true; //todo: implement
         }
 
-        public void ChangeDatabase(string databaseName)
+        public void ChangeDatabase(string databaseName, CancellationToken? token = null)
         {
             if (string.IsNullOrWhiteSpace(databaseName) || string.Equals(databaseName, Database, StringComparison.OrdinalIgnoreCase))
             {

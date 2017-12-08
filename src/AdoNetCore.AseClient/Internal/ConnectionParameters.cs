@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal class ConnectionParameters
+    internal class ConnectionParameters : IConnectionParameters
     {
         //Cache the current process details, expensive call
         private static readonly Process CurrentProcess = Process.GetCurrentProcess();

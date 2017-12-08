@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
-using System.Text;
+using System.Threading;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 
@@ -23,24 +23,15 @@ namespace AdoNetCore.AseClient.Internal
             _inner.Dispose();
         }
 
-        public int Send(byte[] buffer)
-        {
-            return _inner.Send(buffer);
-        }
-
-        public int Receive(byte[] buffer)
-        {
-            return _inner.Receive(buffer);
-        }
-
         private byte[] HeaderTemplate(BufferType type) => new byte[]
         {
             (byte) type, 0, 0, 0,
             0, 0, 0, 0
         };
 
-        public void SendPacket(IPacket packet, DbEnvironment env)
+        public void SendPacket(IPacket packet, DbEnvironment env, CancellationToken? token)
         {
+            //todo: use token --throw TimeoutException if the cancellation occurs
             using (var ms = new MemoryStream())
             {
                 packet.Write(ms, env.Encoding);
@@ -63,8 +54,9 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public IToken[] ReceiveTokens(DbEnvironment env)
+        public IToken[] ReceiveTokens(DbEnvironment env, CancellationToken? token)
         {
+            //todo: use token --throw TimeoutException if the cancellation occurs
             using (var ms = new MemoryStream())
             {
                 {

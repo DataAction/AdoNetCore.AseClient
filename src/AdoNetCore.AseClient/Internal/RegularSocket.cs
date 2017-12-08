@@ -18,7 +18,6 @@ namespace AdoNetCore.AseClient.Internal
             _parser = parser;
         }
 
-
         public void Dispose()
         {
             _inner.Dispose();

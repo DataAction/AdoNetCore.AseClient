@@ -55,7 +55,7 @@ In theory, since we're implementing TDS 5.0, this client might work with other S
 | `FetchArraySize`                  | TODO
 | `HASession`                       | X
 | `LoginTimeOut`                    | TODO
-| `Max Pool Size`                   | TODO
+| `Max Pool Size`                   | &#10003;
 | `Min Pool Size`                   | TODO
 | `PacketSize`                      | TODO
 | `Ping Server`                     | TODO
@@ -77,7 +77,7 @@ Send support:
 
 | DbType                  | Send      | .NET Type(s) | Notes
 | ----------------------- |:---------:| ------------ | -----
-| `AnsiString`            | TODO      | `string`
+| `AnsiString`            | &#10003;  | `string`
 | `Binary`                | &#10003;  | `byte[]`
 | `Byte`                  | &#10003;  | `byte`
 | `Boolean`               | &#10003;  | `bool`
@@ -86,24 +86,24 @@ Send support:
 | `DateTime`              | &#10003;  | `DateTime`
 | `Decimal`               | &#10003;  | `decimal`
 | `Double`                | &#10003;  | `double`
-| `Guid`                  | ~         | `Guid` | Call `.ToByteArray()` and use `DbType.Binary` instead
+| `Guid`                  | X         | | Call `.ToByteArray()` and use `DbType.Binary` instead
 | `Int16`                 | &#10003;  | `short`
 | `Int32`                 | &#10003;  | `int`
 | `Int64`                 | &#10003;  | `long`
 | `Object`                | X         | | User should select a more appropriate type
 | `SByte`                 | &#10003;  | `sbyte` | Sent as int16
 | `Single`                | &#10003;  | `float`
-| `String`                | &#10003;  | `string`
+| `String`                | &#10003;  | `string` | UTF-16 encoded, sent to server as binary with usertype `35`
 | `Time`                  | &#10003;  | `TimeSpan`
 | `UInt16`                | &#10003;  | `ushort`
 | `UInt32`                | &#10003;  | `uint`
 | `UInt64`                | &#10003;  | `ulong`
 | `VarNumeric`            | &#10003;  | `decimal`
-| `AnsiStringFixedLength` | TODO      | `string`
-| `StringFixedLength`     | &#10003;  | `string`
-| `Xml`                   | TODO      | `string`
-| `DateTime2`             | ?         | | Investigate: not sure if available in ASE
-| `DateTimeOffset`        | ?         | | Investigate: not sure if available in ASE
+| `AnsiStringFixedLength` | &#10003;  | `string`
+| `StringFixedLength`     | &#10003;  | `string` | UTF-16 encoded, sent to server as binary with usertype `34`
+| `Xml`                   | X         | | User should select a more appropriate type
+| `DateTime2`             | X         | | Use `DateTime` instead
+| `DateTimeOffset`        | X         | | Use `DateTime` instead
 
 Receive support:
 
@@ -130,8 +130,8 @@ Receive support:
 | `bigtime`           | ?         | `TimeSpan` | Investigate: can we enable this type on our test server?
 | `char`              | &#10003;  | `string`
 | `varchar`           | &#10003;  | `string`
-| `unichar`           | &#10003;  | `string`
-| `univarchar`        | &#10003;  | `string`
+| `unichar`           | &#10003;  | `string` | Server sends as binary with usertype `34`
+| `univarchar`        | &#10003;  | `string` | Server sends as binary with usertype `35`
 | `nchar`             | &#10003;  | `string`
 | `nvarchar`          | &#10003;  | `string`
 | `text`              | &#10003;  | `string`

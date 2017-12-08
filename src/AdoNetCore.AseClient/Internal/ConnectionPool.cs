@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -13,6 +14,8 @@ namespace AdoNetCore.AseClient.Internal
         {
             public InternalConnection Connection { get; set; }
             public bool Available { get; set; }
+            public DateTime Created { get; set; }
+            public DateTime LastActive { get; set; }
         }
 
         private readonly ConnectionParameters _parameters;
@@ -20,14 +23,14 @@ namespace AdoNetCore.AseClient.Internal
         private IPEndPoint _endpoint;
         private readonly object _mutex = new object();
 
-        private const int MaxPooledConnections = 8; //TODO: make configurable, add in min value
         private const int ReserveWaitPeriodMs = 5; //TODO: figure out appropriate value
 
-        private readonly List<PoolItem> _connections = new List<PoolItem>(MaxPooledConnections);
+        private readonly List<PoolItem> _connections;
 
         public ConnectionPool(ConnectionParameters parameters)
         {
             _parameters = parameters;
+            _connections = new List<PoolItem>(_parameters.MaxPoolSize);
         }
 
         public IInternalConnection Reserve()
@@ -44,6 +47,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 lock (_mutex)
                 {
+                    var now = DateTime.UtcNow;
                     var item = _connections.FirstOrDefault(i => i.Available);
 
                     if (item != null)
@@ -55,12 +59,14 @@ namespace AdoNetCore.AseClient.Internal
                     }
 
                     //determine if we can create new items
-                    else if (_connections.Count < MaxPooledConnections)
+                    else if (_connections.Count < _parameters.MaxPoolSize)
                     {
                         var newConnection = InitialiseNewConnection();
                         _connections.Add(new PoolItem
                         {
                             Connection = newConnection,
+                            Created = now,
+                            LastActive = now,
                             Available = false
                         });
 
@@ -90,6 +96,7 @@ namespace AdoNetCore.AseClient.Internal
                 if (item != null)
                 {
                     item.Available = true;
+                    item.LastActive = DateTime.UtcNow;
                 }
             }
         }

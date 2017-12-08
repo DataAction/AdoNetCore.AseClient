@@ -10,7 +10,7 @@ namespace AdoNetCore.AseClient.Internal
         //Cache the current process details, expensive call
         private static readonly Process CurrentProcess = Process.GetCurrentProcess();
 
-        private static readonly Dictionary<string, Action<ConnectionParameters, string>> _parsers = new Dictionary<string, Action<ConnectionParameters, string>>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, Action<ConnectionParameters, string>> Parsers = new Dictionary<string, Action<ConnectionParameters, string>>(StringComparer.OrdinalIgnoreCase)
         {
             {"Data Source", ParseDataSource },
             {"DataSource", ParseDataSource },
@@ -24,10 +24,18 @@ namespace AdoNetCore.AseClient.Internal
             {"Password", (p, v) => { p.Password = v; } },
             {"Charset", (p, v) => { p.Charset= v; } },
             {"Pooling", (p, v) => { p.Pooling = Convert.ToBoolean(v); } },
+            {"Max Pool Size", (p, v) => { p.MaxPoolSize = Convert.ToInt16(v); } },
+            {"Min Pool Size", (p, v) => { p.MinPoolSize = Convert.ToInt16(v); } },
             {"ApplicationName", (p, v) => { p.ApplicationName = v; } },
             {"Application Name", (p, v) => { p.ApplicationName = v; } },
             {"ClientHostName", (p, v) => { p.ClientHostName = v; } },
+            {"ClientHostProc", (p, v) => { p.ClientHostProc = v; } },
             {"ProcessId", (p, v) => { p.ProcessId = v; } },
+            {"Ping Server", (p, v) => { p.PingServer = Convert.ToBoolean(v); } },
+            {"LoginTimeOut", (p, v) => { p.LoginTimeout = Convert.ToInt16(v); } },
+            {"ConnectionIdleTimeout", (p, v) => { p.ConnectionIdleTimeout = Convert.ToInt16(v); } },
+            {"ConnectionLifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); } },
+            {"Connection Lifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); } },
         };
 
         private static void ParseDataSource(ConnectionParameters p, string v)
@@ -49,18 +57,18 @@ namespace AdoNetCore.AseClient.Internal
         public static ConnectionParameters Parse(string connectionString)
         {
             var parameters = new ConnectionParameters(connectionString);
-            
+
             //todo: this implementation may be too naiive - how do we handle for values which contain ';' or '=' ?
-            foreach (var item in connectionString.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var item in connectionString.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var pair = item.Split(new[] {'='}, 2).ToArray();
+                var pair = item.Split(new[] { '=' }, 2).ToArray();
                 if (pair.Length == 2)
                 {
-                    if (!_parsers.ContainsKey(pair[0]))
+                    if (!Parsers.ContainsKey(pair[0]))
                     {
                         throw new ArgumentException("Unknown connection string parameter provided", pair[0]);
                     }
-                    _parsers[pair[0]](parameters, pair[1]);
+                    Parsers[pair[0]](parameters, pair[1]);
                 }
                 else
                 {
@@ -75,16 +83,23 @@ namespace AdoNetCore.AseClient.Internal
 
         public string ConnectionString { get; }
 
-        public string Server { get; private set; }
+        public string Server { get; private set; } = string.Empty;
         public int Port { get; private set; } = 5000;
-        public string Database{ get; private set; }
-        public string Username { get; private set; }
-        public string Password{ get; private set; }
+        public string Database { get; private set; } = string.Empty;
+        public string Username { get; private set; } = string.Empty;
+        public string Password { get; private set; } = string.Empty;
         public string ProcessId { get; private set; } = CurrentProcess.Id.ToString();
         public string ApplicationName { get; private set; } = CurrentProcess.ProcessName;
         public string ClientHostName { get; private set; } = Environment.MachineName;
+        public string ClientHostProc { get; private set; } = string.Empty;
         public string Charset { get; private set; } = "iso_1";
         public bool Pooling { get; private set; } = true;
+        public short MaxPoolSize { get; private set; } = 100;
+        public short MinPoolSize { get; private set; } = 0;
+        public short LoginTimeout { get; private set; } = 15; //login timeout in seconds
+        public short ConnectionIdleTimeout { get; private set; } = 0; //how long a connection may be idle before being dropped/replaced. 0 = indefinite
+        public short ConnectionLifetime { get; private set; } = 0; //how long a connection may live before being dropped/replaced. 0 = indefinite
+        public bool PingServer { get; set; } = true; //in pooling, ping the server before returning from the pool
 
         private ConnectionParameters(string connectionString)
         {
@@ -111,6 +126,21 @@ namespace AdoNetCore.AseClient.Internal
             if (string.IsNullOrWhiteSpace(Database))
             {
                 throw new ArgumentException("Database not specified");
+            }
+
+            if (LoginTimeout < 1)
+            {
+                throw new ArgumentException("Login timeout must be at least 1 second");
+            }
+
+            if (ConnectionIdleTimeout < 0)
+            {
+                throw new ArgumentException("ConnectionIdleTimeout must be at least 0 seconds");
+            }
+
+            if (ConnectionLifetime < 0)
+            {
+                throw new ArgumentException("Connection Lifetime must be at least 0 seconds");
             }
         }
     }

@@ -82,6 +82,11 @@ namespace AdoNetCore.AseClient.Internal
             ChangeDatabase(_parameters.Database);
         }
 
+        public bool Ping()
+        {
+            return true; //todo: implement
+        }
+
         public void ChangeDatabase(string databaseName)
         {
             if (string.IsNullOrWhiteSpace(databaseName) || string.Equals(databaseName, Database, StringComparison.OrdinalIgnoreCase))
@@ -110,11 +115,7 @@ namespace AdoNetCore.AseClient.Internal
             messageHandler.AssertNoErrors();
         }
 
-        public string Database
-        {
-            get => _environment.Database;
-            private set => _environment.Database = value;
-        }
+        public string Database => _environment.Database;
 
         public int ExecuteNonQuery(AseCommand command, AseTransaction transaction)
         {
@@ -130,7 +131,7 @@ namespace AdoNetCore.AseClient.Internal
                 new ResponseParameterTokenHandler(command.AseParameters),
                 doneHandler,
             });
-
+            
             if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
             {
                 transaction.MarkAborted();

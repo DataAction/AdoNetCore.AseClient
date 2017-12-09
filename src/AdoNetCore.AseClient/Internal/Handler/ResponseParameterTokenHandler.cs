@@ -14,9 +14,9 @@ namespace AdoNetCore.AseClient.Internal.Handler
             TokenType.TDS_RETURNSTATUS,
             TokenType.TDS_PARAMS
         };
-        private readonly AseDataParameterCollection _parameters;
+        private readonly AseParameterCollection _parameters;
 
-        public ResponseParameterTokenHandler(AseDataParameterCollection parameters)
+        public ResponseParameterTokenHandler(AseParameterCollection parameters)
         {
             _parameters = parameters;
         }
@@ -31,7 +31,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
             switch (token)
             {
                 case ReturnStatusToken t:
-                    foreach (var parameter in _parameters)
+                    foreach (AseParameter parameter in _parameters)
                     {
                         if (parameter.Direction == ParameterDirection.ReturnValue)
                         {
@@ -42,7 +42,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                 case ParametersToken t:
                     var dict = t.Parameters.ToDictionary(p => p.Format.ParameterName);
 
-                    foreach (var parameter in _parameters)
+                    foreach (AseParameter parameter in _parameters)
                     {
                         if (parameter.IsOutput && dict.ContainsKey(parameter.ParameterName))
                         {

@@ -5,14 +5,41 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
-    public sealed class AseDataParameter : IDbDataParameter
+    public sealed class AseParameter : IDbDataParameter, IDataParameter
     {
         private string _parameterName;
+
+        private AseDbType _type;
 
         /// <summary>
         /// Gets or sets the <see cref="DbType" /> of the parameter.
         /// </summary>
-        public DbType DbType { get; set; } 
+        DbType IDataParameter.DbType 
+        { 
+            get 
+            {
+                return (DbType)_type;
+            }
+            set
+            {
+                _type = (AseDbType)value;
+            }
+        } 
+
+        /// <summary>
+        /// Gets or sets the <see cref="DbType" /> of the parameter.
+        /// </summary>
+        public AseDbType DbType 
+        { 
+            get 
+            {
+                return _type;
+            }
+            set
+            {
+                _type = value;
+            }
+        } 
 
         /// <summary>
         /// Gets or sets a value that indicates whether the parameter is input-only, output-only, 
@@ -20,7 +47,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <remarks>
         /// <para>If the <see cref="ParameterDirection" /> is output, and execution of the associated <see cref="AseCommand" /> does 
-        /// not return a value, the <see cref="AseDataParameter" /> contains a null value.</para>
+        /// not return a value, the <see cref="AseParameter" /> contains a null value.</para>
         /// <para><b>Output</b>, <b>InputOut</b>, and <b>ReturnValue</b> parameters returned by calling <see cref="AseCommand.ExecuteReader" /> cannot 
         /// be accessed until you close the <see cref="AseDataReader" />.</para>
         /// </remarks>
@@ -33,10 +60,10 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// <para>Null values are handled using the <see cref="System.DBNull" /> class.</para>
         /// </remarks>
-        public bool IsNullable { get; }
+        public bool IsNullable { get; internal set; }
 
         /// <summary>
-        /// Gets or sets the name of the <see cref="AseDataParameter" />.
+        /// Gets or sets the name of the <see cref="AseParameter" />.
         /// </summary>
         /// <remarks>
         /// <para>The ParameterName is specified in the form @paramname. You must set ParameterName before executing an 
@@ -130,5 +157,43 @@ namespace AdoNetCore.AseClient
 
         internal bool CanSendOverTheWire => Direction != ParameterDirection.ReturnValue;
         internal bool IsOutput => Direction == ParameterDirection.InputOutput || Direction == ParameterDirection.Output;
+    }
+
+    /// <summary>
+    /// Specifies ASE datatypes. 
+    /// </summary>
+    public enum AseDbType 
+    {
+        BigInt = DbType.Int64,
+        Binary = DbType.Binary,
+        Bit = DbType.Boolean,
+        Char = DbType.AnsiStringFixedLength,
+        Date = DbType.Date,
+        DateTime = DbType.DateTime,
+        Decimal = DbType.Decimal,
+        Double = DbType.Double,
+        Float = DbType.Single, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
+        Integer = DbType.Int32,
+        Image = DbType.Binary,
+        LongVarChar = DbType.AnsiString, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
+        Money = DbType.Currency,
+        Nchar = DbType.AnsiStringFixedLength,
+        Numeric = DbType.VarNumeric,
+        NVarChar = DbType.AnsiString,
+        Real = DbType.Single,
+        SmallDateTime = DbType.DateTime,
+        SmallInt = DbType.Int16, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
+        SmallMoney = DbType.Currency,
+        Text = DbType.AnsiString,
+        Time = DbType.Time,
+        TimeStamp = DbType.Binary,
+        TinyInt = DbType.Byte,
+        UniChar = DbType.StringFixedLength,
+        UniVarChar = DbType.String,
+        UnsignedBigInt = DbType.UInt64,
+        UnsignedInteger = DbType.UInt32,
+        UnsignedSmallInt = DbType.UInt16,
+        VarBinary = DbType.Binary,
+        VarChar = DbType.AnsiString
     }
 }

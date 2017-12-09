@@ -219,26 +219,27 @@ namespace AdoNetCore.AseClient.Internal
             };
         }
 
-        private IToken[] BuildParameterTokens(AseDataParameterCollection parameters)
+        private IToken[] BuildParameterTokens(AseParameterCollection parameters)
         {
             var formatItems = new List<FormatItem>();
             var parameterItems = new List<ParametersToken.Parameter>();
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var length = TypeMap.GetFormatLength(parameter.DbType, parameter, _environment.Encoding);
+                var parameterType = (DbType)parameter.DbType;                
+                var length = TypeMap.GetFormatLength(parameterType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(parameter.DbType, parameter.Value, length),
+                    DataType = TypeMap.GetTdsDataType(parameterType, parameter.Value, length),
                     IsOutput = parameter.IsOutput,
                     IsNullable = parameter.IsNullable,
                     Length = length
                 };
 
-                if ((parameter.DbType == DbType.Decimal
-                    || parameter.DbType == DbType.VarNumeric
-                    || parameter.DbType == DbType.Currency
+                if ((parameterType == DbType.Decimal
+                    || parameterType == DbType.VarNumeric
+                    || parameterType == DbType.Currency
                 ) && parameter.Value is decimal)
                 {
                     var sqlDecimal = (SqlDecimal) (decimal) parameter.Value;
@@ -246,12 +247,12 @@ namespace AdoNetCore.AseClient.Internal
                     formatItem.Scale = sqlDecimal.Scale;
                 }
 
-                if (parameter.DbType == DbType.String)
+                if (parameterType == DbType.String)
                 {
                     formatItem.UserType = 35;
                 }
 
-                if (parameter.DbType == DbType.StringFixedLength)
+                if (parameterType == DbType.StringFixedLength)
                 {
                     formatItem.UserType = 34;
                 }

@@ -11,12 +11,12 @@ namespace AdoNetCore.AseClient
     {
         // TODO - consider async
         private readonly AseConnection _connection;
-        internal readonly AseDataParameterCollection AseParameters;
+        internal readonly AseParameterCollection AseParameters;
 
         public AseCommand(AseConnection connection)
         {
             _connection = connection;
-            AseParameters = new AseDataParameterCollection();
+            AseParameters = new AseParameterCollection();
         }
 
         public void Dispose() { }
@@ -38,22 +38,21 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
-        /// Creates a new instance of a <see cref="AseDataParameter" /> object.
+        /// Creates a new instance of a <see cref="AselParameter" /> object.
         /// </summary>
         IDbDataParameter IDbCommand.CreateParameter()
         {
             return CreateParameter();
         }
 
-        /// <summary>
-        /// Creates a new instance of a <see cref="AseDataParameter" /> object.
+        /// <summary>Parameter" /> object.
         /// </summary>
         /// <remarks>
         /// The CreateParameter method is a strongly-typed version of <see cref="IDbCommand.CreateParameter" />.
         /// </remarks>
-        public AseDataParameter CreateParameter()
+        public AseParameter CreateParameter()
         {
-            return new AseDataParameter();
+            return new AseParameter();
         }
 
         /// <summary>
@@ -200,7 +199,7 @@ namespace AdoNetCore.AseClient
         public AseConnection Connection { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="AseDataParameterCollection" /> used by this instance of the AseCommand. 
+        /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
         /// </summary>
         IDataParameterCollection IDbCommand.Parameters
         {
@@ -211,9 +210,9 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
-        /// Gets the <see cref="AseDataParameterCollection" /> used by this instance of the AseCommand. 
+        /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
         /// </summary>
-        public AseDataParameterCollection Parameters => AseParameters;
+        public AseParameterCollection Parameters => AseParameters;
 
         /// <summary>
         /// Gets or sets the <see cref="AseTransaction" /> within which the SqlCommand executes.

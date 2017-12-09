@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Data;
 using System.Runtime.CompilerServices;
 using AdoNetCore.AseClient.Interface;
@@ -98,7 +99,7 @@ namespace AdoNetCore.AseClient
         public AseConnection(string connectionString)
         {
             ConnectionString = connectionString;
-            ConnectionTimeout = 30;
+            ConnectionTimeout = 15; // Default to 15s as per the SAP AseClient http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409555258.html
         }
 
         /// <summary>
@@ -311,6 +312,328 @@ namespace AdoNetCore.AseClient
                     throw new InvalidOperationException("Cannot execute on a connection which is not open");
                 }
                 return _internal;
+            }
+        }
+
+        /// <summary>
+        /// Occurs when Adaptive Server ADO.NET Data Provider sends a warning or an informational message.
+        /// </summary>
+        /// <remarks>
+        /// The event handler receives an argument of type AseInfoMessageEventArgs containing data related to this event. 
+        /// The Errors and Message properties provide information specific to this event.
+        /// </remarks>
+        public event AseInfoMessageEventHandler InfoMessage; // TODO - implement
+
+        /// <summary>
+        /// Occurs when the state of the connection changes.
+        /// </summary>
+        /// <remarks>
+        /// The event handler receives an argument of StateChangeEventArgs with data related to this event. Two StateChangeEventArgs properties 
+        /// provide information specific to this event: CurrentState and OriginalState.
+        /// </remarks>
+        public event StateChangeEventHandler StateChange; // TODO - implement
+
+        /// <summary>
+        /// Traces database activity within an application for debugging.
+        /// </summary>
+        /// <remarks>
+        /// <para>Use TraceEnter and TraceExit events to hook up your own tracing method. This event is unique to an 
+        /// instance of a connection. This allows different connections to be logged to different files. It can ignore 
+        /// the event, or you can program it for other tracing. In addition, by using a .NET event, you can set up more 
+        /// than one event handler for a single connection object. This enables you to log the event to both a window 
+        /// and a file at the same time.</para>
+        /// <para>Enable the ENABLETRACING connection property to trace Adaptive Server ADO.NET Data Provider activities. 
+        /// It is disabled by default to allow for better performance during normal execution where tracing is not needed. 
+        /// When this property is disabled, the TraceEnter and TraceExit events are not triggered, and tracing events are 
+        /// not executed. You can configure ENABLETRACING in the connection string using these values: True – triggers the 
+        /// TraceEnter and TraceExit events; and False – the default value; Adaptive Server ADO.NET Data Provider ignores 
+        /// the TraceEnter and TraceExit events.</para>
+        /// </remarks>
+        public event TraceEnterEventHandler TraceEnter; // TODO - implement
+
+        /// <summary>
+        /// Traces database activity within an application for debugging.
+        /// </summary>
+        /// <remarks>
+        /// <para>Use TraceEnter and TraceExit events to hook up your own tracing method. This event is unique to an 
+        /// instance of a connection. This allows different connections to be logged to different files. It can ignore 
+        /// the event, or you can program it for other tracing. In addition, by using a .NET event, you can set up more 
+        /// than one event handler for a single connection object. This enables you to log the event to both a window 
+        /// and a file at the same time.</para>
+        /// <para>Enable the ENABLETRACING connection property to trace Adaptive Server ADO.NET Data Provider activities. 
+        /// It is disabled by default to allow for better performance during normal execution where tracing is not needed. 
+        /// When this property is disabled, the TraceEnter and TraceExit events are not triggered, and tracing events are 
+        /// not executed. You can configure ENABLETRACING in the connection string using these values: True – triggers the 
+        /// TraceEnter and TraceExit events; and False – the default value; Adaptive Server ADO.NET Data Provider ignores 
+        /// the TraceEnter and TraceExit events.</para>
+        /// </remarks>
+        public event TraceExitEventHandler TraceExit; // TODO - implement
+
+        /// <summary>
+        /// Governs the default behavior of the AseCommand objects associated with this connection.
+        /// </summary>
+        /// <remarks>
+        /// This can be either set by the ConnectionString (NamedParameters='true'/'false') or the user can set it directly through an instance of AseConnection.
+        /// </remarks>
+        public bool NamedParameters // TODO - implement
+        {
+            get;
+            set;
+        }
+    }
+
+    /// <summary>
+    /// Represents the method that will handle the InfoMessage event of an AseConnection.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The AseInfoMessageEventArgs object that contains the event data.</param>
+    public delegate void AseInfoMessageEventHandler ( object sender, AseInfoMessageEventArgs e );
+
+    /// <summary>
+    /// Traces database activity within an application for debugging.
+    /// </summary>
+    /// <remarks>
+    /// <para>Use TraceEnter and TraceExit events to hook up your own tracing method. This event is unique to an 
+    /// instance of a connection. This allows different connections to be logged to different files. It can ignore 
+    /// the event, or you can program it for other tracing. In addition, by using a .NET event, you can set up more 
+    /// than one event handler for a single connection object. This enables you to log the event to both a window 
+    /// and a file at the same time.</para>
+    /// <para>Enable the ENABLETRACING connection property to trace Adaptive Server ADO.NET Data Provider activities. 
+    /// It is disabled by default to allow for better performance during normal execution where tracing is not needed. 
+    /// When this property is disabled, the TraceEnter and TraceExit events are not triggered, and tracing events are 
+    /// not executed. You can configure ENABLETRACING in the connection string using these values: True – triggers the 
+    /// TraceEnter and TraceExit events; and False – the default value; Adaptive Server ADO.NET Data Provider ignores 
+    /// the TraceEnter and TraceExit events.</para>
+    /// </remarks>
+    public delegate void TraceEnterEventHandler(AseConnection connection, object source, string method, object[] parameters);
+
+    /// <summary>
+    /// Traces database activity within an application for debugging.
+    /// </summary>
+    /// <remarks>
+    /// <para>Use TraceEnter and TraceExit events to hook up your own tracing method. This event is unique to an 
+    /// instance of a connection. This allows different connections to be logged to different files. It can ignore 
+    /// the event, or you can program it for other tracing. In addition, by using a .NET event, you can set up more 
+    /// than one event handler for a single connection object. This enables you to log the event to both a window 
+    /// and a file at the same time.</para>
+    /// <para>Enable the ENABLETRACING connection property to trace Adaptive Server ADO.NET Data Provider activities. 
+    /// It is disabled by default to allow for better performance during normal execution where tracing is not needed. 
+    /// When this property is disabled, the TraceEnter and TraceExit events are not triggered, and tracing events are 
+    /// not executed. You can configure ENABLETRACING in the connection string using these values: True – triggers the 
+    /// TraceEnter and TraceExit events; and False – the default value; Adaptive Server ADO.NET Data Provider ignores 
+    /// the TraceEnter and TraceExit events.</para>
+    /// </remarks>
+    public delegate void TraceExitEventHandler(AseConnection connection, object source, string method, object returnValue);
+
+    /// <summary>
+    /// The event arguments passed to the InfoMessage event handlers.
+    /// </summary>
+    public sealed class AseInfoMessageEventArgs : EventArgs
+    {
+        /// <summary>
+        /// A collection of the actual error objects returned by the server.
+        /// </summary>
+        public AseErrorCollection Errors 
+        {
+            get; 
+            private set;
+        }
+
+        /// <summary>
+        /// The error message.
+        /// </summary>
+        public string Message 
+        {
+            get; 
+            private set;
+        }
+
+    }
+
+    /// <summary>
+    /// Collects information relevant to a warning or error returned by the data source.
+    /// </summary>
+    public sealed class AseError 
+    {
+        /// <summary>
+        /// Number of the error message.
+        /// </summary>
+        public int MessageNumber 
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// A short description of the error.
+        /// </summary>
+        public string Message
+        {
+            get; internal set;
+        }        
+
+        /// <summary>
+        /// The Adaptive Server five-character SQL state following the ANSI SQL standard. If the error can 
+        /// be issued from more than one place, the five-character error code identifies the source of the error.
+        /// </summary>
+        public string SqlState
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// Identifies the complete text of the error message.
+        /// </summary>
+        public override string ToString() 
+        {
+            return $"AseError:{Message}";
+        }
+
+        /// <summary>
+        /// The message state. Used as a modifier to the MsgNumber.
+        /// </summary>
+        public int State 
+        {
+            get; internal set;
+        }        
+
+        /// <summary>
+        /// The severity of the message.
+        /// </summary>
+        public int Severity 
+        {
+            get; internal set;
+        }        
+
+        /// <summary>
+        /// The name of the server that is sending the message.
+        /// </summary>
+        public string ServerName 
+        {
+            get; internal set;
+        }        
+
+        /// <summary>
+        /// The name of the stored procedure or remote procedure call (RPC) in which the message occurred.
+        /// </summary>
+        public string ProcName 
+        {
+            get; internal set;
+        }        
+
+        /// <summary>
+        /// The line number in the command batch or the stored procedure that has the error, if applicable.
+        /// </summary>
+        public int LineNum 
+        {
+            get; internal set;
+        }        
+
+        /// <summary>
+        /// Associated with the extended message.
+        /// </summary>
+        public int Status 
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// The current state of any transactions that are active on this dialog.
+        /// </summary>
+        public int TranState 
+        {
+            get; internal set;
+        }
+        
+
+        /// <summary>
+        /// The error message that comes from the Adaptive Server server.
+        /// </summary>
+        public bool IsFromServer 
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// The error message that comes from Adaptive Server ADO.NET Data Provider.
+        /// </summary>
+        public bool IsFromClient 
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// The message is considered an error.
+        /// </summary>
+        public bool IsError
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// The message is a warning that things might not be quite right.
+        /// </summary>
+        public bool IsWarning 
+        {
+            get; internal set;
+        }
+
+        /// <summary>
+        /// An informative message, providing information such as the active catalog has changed.
+        /// </summary>
+        public bool IsInformation 
+        {
+            get; internal set;
+        }
+    }
+
+    /// <summary>
+    /// Collects all errors generated by Adaptive Server ADO.NET Data Provider.
+    /// </summary>
+    public sealed class AseErrorCollection : System.Collections.ICollection, System.Collections.IEnumerable
+    {
+        private readonly object _syncRoot = new object();
+        private readonly AseError[] _errors;
+
+        internal AseErrorCollection(params AseError[] errors) 
+        {
+            _errors = errors ?? new AseError[0];
+        }
+
+        /// <summar>
+        /// The number of errors in the collection.
+        /// </summary>
+        public int Count => _errors.Length;
+
+        bool System.Collections.ICollection.IsSynchronized => true;
+
+        object System.Collections.ICollection.SyncRoot => _syncRoot;
+
+        /// <summary>
+        /// Copies the elements of the AseErrorCollection into an array, starting at the given index within the array.
+        /// </summary>
+        /// <param name="array">The array into which to copy the elements.</param>
+        /// <param name="index">The starting index of the array.</param>
+        public void CopyTo(Array array, int index)
+        {
+            Array.Copy(_errors, 0, array, index, _errors.Length);
+        }
+
+        /// <summary>
+        /// Enumerates the errors in this collection.
+        /// </summary>
+        public IEnumerator GetEnumerator()
+        {
+            return _errors.GetEnumerator();
+        }
+
+        /// <summary>
+        /// The error at the specified index.
+        /// </summary>
+        public AseError this[int index] 
+        {
+            get 
+            {
+                return _errors[index];
             }
         }
     }

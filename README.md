@@ -77,7 +77,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `Database`                        | &#10003;
 | `Data Source`                     | &#10003;
 | `DistributedTransactionProtocol`  | X
-| `DSURL`                           | TODO
+| `DSURL`                           | TODO - consider [ini-parser](https://www.nuget.org/packages/ini-parser/)
 | `EnableBulkLoad`                  | ?
 | `EnableServerPacketSize`          | TODO
 | `Encryption`                      | X

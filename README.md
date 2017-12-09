@@ -264,23 +264,3 @@ using(var command = connection.CreateCommand())
 ```C#
 // TODO 
 ```
-
-## Project Development
-### Design points
-* In general worth comparing each type for equivalence with the SqlClient for best practice.
-* In general worth comparing each type for equivalence with the old AseClient for completeness of a drop in replacement.
-* SqlException has an Errors collection containing SqlError objects. It is derived from DbException.
-* SqlDbType - we have no equivalent...
-* We should avoid depending on Linq.
-* Async support would be sick as this is lacking in the old AseClient. 
-* Ensure that parameterised SQL escapes dangerous characters and protects against SQL injection.
-* Consider running this to eliminate the JIT cost prior to packing the Nuget package: http://www.jackdermody.net/article/Compiling_NET_Core_to_Native
-
-### DBMS Support
-In theory, since we're implementing TDS 5.0, this client might work with other SAP (Sybase) or Microsoft databases that also support TDS 5.0, however our goal is just for ASE 15.x-16x support, so this is all we're testing with.
-
-### Suggested dev reference material for contributers
-* [TDS 5.0 Functional Specification Version 3.8](http://www.sybase.com/content/1040983/Sybase-tds38-102306.pdf)
-  * This spec is fairly complete, but it's got a few ??? entries -- if you can find a newer version of the spec to use, let its existence be known.
-* `Sybase.AdoNet4.AseClient` wireshark packet captures
-* [jTDS](http://jtds.sourceforge.net/) if the above isn't informative enough (credit to them for figuring this out)

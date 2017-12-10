@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using AdoNetCore.AseClient.Interface;
 
@@ -8,14 +8,6 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal class ConnectionPool : IConnectionPool
     {
-        private class PoolItem
-        {
-            public IInternalConnection Connection { get; set; }
-            public bool Available { get; set; }
-            public DateTime Created { get; set; }
-            public DateTime LastActive { get; set; }
-        }
-
         private readonly IConnectionParameters _parameters;
         private readonly IInternalConnectionFactory _connectionFactory;
 
@@ -23,7 +15,8 @@ namespace AdoNetCore.AseClient.Internal
 
         private const int ReserveWaitPeriodMs = 5; //TODO: figure out appropriate value
 
-        private readonly List<PoolItem> _connections;
+        private readonly ConcurrentQueue<IInternalConnection> _available;
+        private readonly List<IInternalConnection> _connections;
 
         public int PoolSize
         {
@@ -40,7 +33,8 @@ namespace AdoNetCore.AseClient.Internal
         {
             _parameters = parameters;
             _connectionFactory = connectionFactory;
-            _connections = new List<PoolItem>(_parameters.MaxPoolSize);
+            _connections = new List<IInternalConnection>(_parameters.MaxPoolSize);
+            _available = new ConcurrentQueue<IInternalConnection>();
         }
 
         public IInternalConnection Reserve()
@@ -48,7 +42,7 @@ namespace AdoNetCore.AseClient.Internal
             var src = new CancellationTokenSource(TimeSpan.FromSeconds(_parameters.LoginTimeout));
             var t = src.Token;
             t.Register(() => Logger.Instance?.WriteLine("token cancelled"));
-            
+
             if (!_parameters.Pooling)
             {
                 return _connectionFactory.GetNewConnection(src.Token);
@@ -61,54 +55,40 @@ namespace AdoNetCore.AseClient.Internal
                 throw new TimeoutException("Pool timed out trying to reserve a connection");
             }
 
+            connection.ChangeDatabase(_parameters.Database);
+
             return connection;
         }
 
         private IInternalConnection InternalReserve(CancellationToken token)
         {
-            var wait = new ManualResetEvent(false);
-            IInternalConnection connection = null;
-
             do
             {
+                while (_available.TryDequeue(out var connection))
+                {
+                    if (connection.Ping())
+                    {
+                        return connection;
+                    }
+                }
+                
                 lock (_mutex)
                 {
-                    var now = DateTime.UtcNow;
-                    var item = _connections.FirstOrDefault(i => i.Available);
-
-                    if (item != null)
-                    {
-                        //todo: recreate connection if broken
-                        item.Available = false;
-                        connection = item.Connection;
-                        wait.Set();
-                    }
-
                     //determine if we can create new items
-                    else if (_connections.Count < _parameters.MaxPoolSize)
+                    if (_connections.Count < _parameters.MaxPoolSize)
                     {
                         var newConnection = _connectionFactory.GetNewConnection(token);
 
                         if (newConnection != null)
                         {
-                            _connections.Add(new PoolItem
-                            {
-                                Connection = newConnection,
-                                Created = now,
-                                LastActive = now,
-                                Available = false
-                            });
-
-                            connection = newConnection;
+                            _connections.Add(newConnection);
+                            return newConnection;
                         }
-
-                        wait.Set();
                     }
                 }
-            } while (WaitHandle.WaitAny(new[] { wait, token.WaitHandle }, ReserveWaitPeriodMs) < 0);
+            } while (WaitHandle.WaitAny(new[] { token.WaitHandle }, ReserveWaitPeriodMs) < 0);
 
-            connection?.ChangeDatabase(_parameters.Database);
-            return connection;
+            return null;
         }
 
         public void Release(IInternalConnection connection)
@@ -119,15 +99,8 @@ namespace AdoNetCore.AseClient.Internal
                 return;
             }
 
-            lock (_mutex)
-            {
-                var item = _connections.FirstOrDefault(i => i.Connection == connection);
-                if (item != null)
-                {
-                    item.Available = true;
-                    item.LastActive = DateTime.UtcNow;
-                }
-            }
+            connection.LastActive = DateTime.UtcNow;
+            _available.Enqueue(connection);
         }
     }
 }

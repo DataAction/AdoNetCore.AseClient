@@ -6,6 +6,10 @@ namespace AdoNetCore.AseClient.Interface
 {
     internal interface IInternalConnection : IDisposable
     {
+        DateTime Created { get; }
+
+        DateTime LastActive { get; set; }
+
         bool Ping();
 
         void ChangeDatabase(string databaseName, CancellationToken? token = null);

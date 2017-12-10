@@ -81,8 +81,13 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("No login ack found");
             }
 
+            Created = DateTime.UtcNow;
             ChangeDatabase(_parameters.Database, token);
+            LastActive = DateTime.UtcNow;
         }
+
+        public DateTime Created { get; private set; }
+        public DateTime LastActive { get; set; }
 
         public bool Ping()
         {

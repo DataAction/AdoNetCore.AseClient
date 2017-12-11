@@ -9,7 +9,7 @@ namespace AdoNetCore.AseClient
     /// Represents a collection of parameters associated with an <see cref="AseCommand" />. 
     /// This class cannot be inherited.
     /// </summary>
-    public sealed class AseParameterCollection : IList, IDataParameterCollection
+    public sealed class AseParameterCollection : IDataParameterCollection
     {
         private readonly List<AseParameter> _parameters;
         internal bool HasSendableParameters 
@@ -135,11 +135,11 @@ namespace AdoNetCore.AseClient
                 var index = IndexOf(parameterName);
                 if (index < 0)
                 {
-                    Add((AseParameter)value);
+                    Add(value);
                 }
                 else
                 {
-                    _parameters[index] = (AseParameter)value;
+                    _parameters[index] = value;
                 }
             }
         }

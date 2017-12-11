@@ -13,9 +13,9 @@ namespace AdoNetCore.AseClient
 #endif
     public sealed class AseException :
 #if NETCOREAPP2_0
-    System.SystemException
+    SystemException
 #else
-    System.Exception
+    Exception
 #endif
     {
         /// <summary>

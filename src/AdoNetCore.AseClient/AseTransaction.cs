@@ -16,7 +16,7 @@ namespace AdoNetCore.AseClient
             {IsolationLevel.RepeatableRead, 2},
             {IsolationLevel.Serializable, 3}
         };
-        private AseConnection Connection { get; }
+        public AseConnection Connection { get; private set; }
         private bool complete = false;
 
         internal AseTransaction(AseConnection connection, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)

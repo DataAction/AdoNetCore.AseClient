@@ -21,6 +21,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             _parameters = parameters;
             _socket = socket;
+            _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
         }
 
         private void SendPacket(IPacket packet, CancellationToken? token = null)
@@ -84,6 +85,8 @@ namespace AdoNetCore.AseClient.Internal
             Created = DateTime.UtcNow;
             ChangeDatabase(_parameters.Database, token);
             LastActive = DateTime.UtcNow;
+            //GetTextSize();
+            //SetTextSize(_parameters.TextSize);
         }
 
         public DateTime Created { get; private set; }
@@ -189,6 +192,50 @@ namespace AdoNetCore.AseClient.Internal
             return null;
         }
 
+        public void GetTextSize()
+        {
+            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.GetTextSize() }));
+
+            var doneHandler = new DoneTokenHandler();
+            var messageHandler = new MessageTokenHandler();
+            var dataReaderHandler = new DataReaderTokenHandler();
+
+            ReceiveTokens(new ITokenHandler[]
+            {
+                new EnvChangeTokenHandler(_environment), //this will handle the response token and set .TextSize
+                messageHandler,
+                dataReaderHandler,
+                doneHandler
+            });
+
+            messageHandler.AssertNoErrors();
+        }
+
+        public void SetTextSize(int textSize)
+        {
+            //todo: may need to remove this, user scripts could change the textsize value
+            if (_environment.TextSize == textSize)
+            {
+                return;
+            }
+
+            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.SetTextSize(textSize) }));
+
+            var doneHandler = new DoneTokenHandler();
+            var messageHandler = new MessageTokenHandler();
+            var dataReaderHandler = new DataReaderTokenHandler();
+
+            ReceiveTokens(new ITokenHandler[]
+            {
+                new EnvChangeTokenHandler(_environment),
+                messageHandler,
+                dataReaderHandler,
+                doneHandler
+            });
+
+            messageHandler.AssertNoErrors();
+        }
+
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
         {
             if (command.CommandType == CommandType.TableDirect)
@@ -226,26 +273,27 @@ namespace AdoNetCore.AseClient.Internal
             };
         }
 
-        private IToken[] BuildParameterTokens(AseDataParameterCollection parameters)
+        private IToken[] BuildParameterTokens(AseParameterCollection parameters)
         {
             var formatItems = new List<FormatItem>();
             var parameterItems = new List<ParametersToken.Parameter>();
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var length = TypeMap.GetFormatLength(parameter.DbType, parameter, _environment.Encoding);
+                var parameterType = (DbType)parameter.DbType;                
+                var length = TypeMap.GetFormatLength(parameterType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(parameter.DbType, parameter.Value, length),
+                    DataType = TypeMap.GetTdsDataType(parameterType, parameter.Value, length),
                     IsOutput = parameter.IsOutput,
                     IsNullable = parameter.IsNullable,
                     Length = length
                 };
 
-                if ((parameter.DbType == DbType.Decimal
-                    || parameter.DbType == DbType.VarNumeric
-                    || parameter.DbType == DbType.Currency
+                if ((parameterType == DbType.Decimal
+                    || parameterType == DbType.VarNumeric
+                    || parameterType == DbType.Currency
                 ) && parameter.Value is decimal)
                 {
                     var sqlDecimal = (SqlDecimal) (decimal) parameter.Value;
@@ -253,12 +301,12 @@ namespace AdoNetCore.AseClient.Internal
                     formatItem.Scale = sqlDecimal.Scale;
                 }
 
-                if (parameter.DbType == DbType.String)
+                if (parameterType == DbType.String)
                 {
                     formatItem.UserType = 35;
                 }
 
-                if (parameter.DbType == DbType.StringFixedLength)
+                if (parameterType == DbType.StringFixedLength)
                 {
                     formatItem.UserType = 34;
                 }

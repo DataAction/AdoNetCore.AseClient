@@ -36,7 +36,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN: TdsDataType.TDS_TIME }
         };
 
-        public static int? GetFormatLength(DbType dbType, AseDataParameter parameter, Encoding enc)
+        public static int? GetFormatLength(DbType dbType, AseParameter parameter, Encoding enc)
         {
             if (parameter.Size > 0)
             {

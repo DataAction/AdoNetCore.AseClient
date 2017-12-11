@@ -46,7 +46,9 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public short LoginTimeout { get; } = 1;
             public short ConnectionIdleTimeout { get; }
             public short ConnectionLifetime { get; }
-            public bool PingServer { get; set; }
+            public bool PingServer { get; }
+            public ushort PacketSize { get; }
+            public int TextSize { get; }
         }
     }
 }

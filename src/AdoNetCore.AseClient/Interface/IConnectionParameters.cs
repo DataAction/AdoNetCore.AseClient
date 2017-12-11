@@ -19,6 +19,8 @@
         short LoginTimeout { get; } //login timeout in seconds
         short ConnectionIdleTimeout { get; } //how long a connection may be idle before being dropped/replaced. 0 = indefinite
         short ConnectionLifetime { get; } //how long a connection may live before being dropped/replaced. 0 = indefinite
-        bool PingServer { get; set; } //in pooling, ping the server before returning from the pool
+        bool PingServer { get; } //in pooling, ping the server before returning from the pool
+        ushort PacketSize { get; }
+        int TextSize { get; }
     }
 }

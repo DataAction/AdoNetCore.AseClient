@@ -13,30 +13,32 @@ namespace AdoNetCore.AseClient.Internal
 
         private static readonly Dictionary<string, Action<ConnectionParameters, string>> Parsers = new Dictionary<string, Action<ConnectionParameters, string>>(StringComparer.OrdinalIgnoreCase)
         {
-            {"Data Source", ParseDataSource },
-            {"DataSource", ParseDataSource },
-            {"Port", (p, v) => { p.Port = Convert.ToInt32(v); } },
-            {"Db", (p, v) => { p.Database = v; } },
-            {"Database", (p, v) => { p.Database = v; } },
-            {"Initial Catalog", (p, v) => { p.Database = v; } },
-            {"Uid", (p, v) => { p.Username = v; } },
-            {"User Id", (p, v) => { p.Username = v; } },
-            {"Pwd", (p, v) => { p.Password = v; } },
-            {"Password", (p, v) => { p.Password = v; } },
-            {"Charset", (p, v) => { p.Charset= v; } },
-            {"Pooling", (p, v) => { p.Pooling = Convert.ToBoolean(v); } },
-            {"Max Pool Size", (p, v) => { p.MaxPoolSize = Convert.ToInt16(v); } },
-            {"Min Pool Size", (p, v) => { p.MinPoolSize = Convert.ToInt16(v); } },
-            {"ApplicationName", (p, v) => { p.ApplicationName = v; } },
-            {"Application Name", (p, v) => { p.ApplicationName = v; } },
-            {"ClientHostName", (p, v) => { p.ClientHostName = v; } },
-            {"ClientHostProc", (p, v) => { p.ClientHostProc = v; } },
-            {"ProcessId", (p, v) => { p.ProcessId = v; } },
-            {"Ping Server", (p, v) => { p.PingServer = Convert.ToBoolean(v); } },
-            {"LoginTimeOut", (p, v) => { p.LoginTimeout = Convert.ToInt16(v); } },
-            {"ConnectionIdleTimeout", (p, v) => { p.ConnectionIdleTimeout = Convert.ToInt16(v); } },
-            {"ConnectionLifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); } },
-            {"Connection Lifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); } },
+            {"Data Source", ParseDataSource},
+            {"DataSource", ParseDataSource},
+            {"Port", (p, v) => { p.Port = Convert.ToInt32(v); }},
+            {"Db", (p, v) => { p.Database = v; }},
+            {"Database", (p, v) => { p.Database = v; }},
+            {"Initial Catalog", (p, v) => { p.Database = v; }},
+            {"Uid", (p, v) => { p.Username = v; }},
+            {"User Id", (p, v) => { p.Username = v; }},
+            {"Pwd", (p, v) => { p.Password = v; }},
+            {"Password", (p, v) => { p.Password = v; }},
+            {"Charset", (p, v) => { p.Charset = v; }},
+            {"Pooling", (p, v) => { p.Pooling = Convert.ToBoolean(v); }},
+            {"Max Pool Size", (p, v) => { p.MaxPoolSize = Convert.ToInt16(v); }},
+            {"Min Pool Size", (p, v) => { p.MinPoolSize = Convert.ToInt16(v); }},
+            {"ApplicationName", (p, v) => { p.ApplicationName = v; }},
+            {"Application Name", (p, v) => { p.ApplicationName = v; }},
+            {"ClientHostName", (p, v) => { p.ClientHostName = v; }},
+            {"ClientHostProc", (p, v) => { p.ClientHostProc = v; }},
+            {"ProcessId", (p, v) => { p.ProcessId = v; }},
+            {"Ping Server", (p, v) => { p.PingServer = Convert.ToBoolean(v); }},
+            {"LoginTimeOut", (p, v) => { p.LoginTimeout = Convert.ToInt16(v); }},
+            {"ConnectionIdleTimeout", (p, v) => { p.ConnectionIdleTimeout = Convert.ToInt16(v); }},
+            {"ConnectionLifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
+            {"Connection Lifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
+            {"PacketSize", (p, v) => { p.PacketSize = Convert.ToUInt16(v); }},
+            {"TextSize", (p, v) => { p.TextSize = Convert.ToInt32(v); }},
         };
 
         private static void ParseDataSource(ConnectionParameters p, string v)
@@ -100,7 +102,9 @@ namespace AdoNetCore.AseClient.Internal
         public short LoginTimeout { get; private set; } = 15; //login timeout in seconds
         public short ConnectionIdleTimeout { get; private set; } = 0; //how long a connection may be idle before being dropped/replaced. 0 = indefinite
         public short ConnectionLifetime { get; private set; } = 0; //how long a connection may live before being dropped/replaced. 0 = indefinite
-        public bool PingServer { get; set; } = true; //in pooling, ping the server before returning from the pool
+        public bool PingServer { get; private set; } = true; //in pooling, ping the server before returning from the pool
+        public ushort PacketSize { get; private set; } = 512;
+        public int TextSize { get; private set; } = 32768;
 
         private ConnectionParameters(string connectionString)
         {
@@ -142,6 +146,11 @@ namespace AdoNetCore.AseClient.Internal
             if (ConnectionLifetime < 0)
             {
                 throw new ArgumentException("Connection Lifetime must be at least 0 seconds");
+            }
+
+            if (PacketSize < 256)
+            {
+                throw new ArgumentException("PacketSize must be at least 256, and at most 9999 (bytes)");
             }
         }
     }

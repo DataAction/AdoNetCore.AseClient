@@ -1,5 +1,4 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -27,7 +26,7 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// <para>If there is nothing to cancel, nothing occurs. However, if there is a command in process, 
         /// and the attempt to cancel fails, no exception is generated.</para>
-        /// <para> In some, rare, cases, if you call <see cref="ExecuteReader" /> then call <see cref="AseDataReader.Close" /> (implicitily or explicitly) 
+        /// <para> In some, rare, cases, if you call <see cref="ExecuteReader()" /> then call <see cref="AseDataReader.Close" /> (implicitily or explicitly) 
         /// before calling Cancel, and then call Cancel, the cancel command will not be sent to ASE Server and 
         /// the result set can continue to stream after you call <see cref="AseDataReader.Close" />. To avoid this, make sure that you call 
         /// Cancel before closing the reader or connection.</para>
@@ -38,7 +37,7 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
-        /// Creates a new instance of a <see cref="AselParameter" /> object.
+        /// Creates a new instance of a <see cref="AseParameter" /> object.
         /// </summary>
         IDbDataParameter IDbCommand.CreateParameter()
         {
@@ -97,7 +96,7 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
         /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
-        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader" />.</para>
+        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>
         /// </remarks>
         public AseDataReader ExecuteReader()
         {
@@ -140,9 +139,9 @@ namespace AdoNetCore.AseClient
         /// <returns>The first column of the first row in the result set, or a null reference if the result set is empty.</returns>
         /// <remarks>
         /// <para>Use the ExecuteScalar method to retrieve a single value (for example, an aggregate value) from a database. 
-        /// This requires less code than using the <see cref="ExecuteReader" /> method, and then performing the operations that you need to 
+        /// This requires less code than using the <see cref="ExecuteReader()" /> method, and then performing the operations that you need to 
         /// generate the single value using the data returned by a <see cref="AseDataReader" />.</para>
-        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader" />.</para>
+        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>
         /// </remarks>
         public object ExecuteScalar()
         {

@@ -38,7 +38,7 @@ end";
             {
                 var ex = Assert.Throws<AseException>(() => connection.Execute("sp_test_raiseerror", commandType: CommandType.StoredProcedure));
                 Assert.AreEqual("[16] BAD BAD BAD", ex.Message);
-                Assert.AreEqual(100000, ex.ErrorCode);
+                Assert.AreEqual(100000, ex.Errors[0].MessageNumber);
             }
         }
 

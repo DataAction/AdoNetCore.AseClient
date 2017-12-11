@@ -5,7 +5,7 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
-    public sealed class AseParameter : IDbDataParameter, IDataParameter
+    public sealed class AseParameter : IDbDataParameter
     {
         private string _parameterName;
 
@@ -48,7 +48,7 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// <para>If the <see cref="ParameterDirection" /> is output, and execution of the associated <see cref="AseCommand" /> does 
         /// not return a value, the <see cref="AseParameter" /> contains a null value.</para>
-        /// <para><b>Output</b>, <b>InputOut</b>, and <b>ReturnValue</b> parameters returned by calling <see cref="AseCommand.ExecuteReader" /> cannot 
+        /// <para><b>Output</b>, <b>InputOut</b>, and <b>ReturnValue</b> parameters returned by calling <see cref="AseCommand.ExecuteReader()" /> cannot 
         /// be accessed until you close the <see cref="AseDataReader" />.</para>
         /// </remarks>
         public ParameterDirection Direction { get; set; }
@@ -106,7 +106,7 @@ namespace AdoNetCore.AseClient
         /// Gets or sets the number of digits used to represent the <see cref="Value" /> property.
         /// </summary>
         /// <remarks>
-        /// <para>The Precision property is used by parameters that have a <see cref="DbType" /> of <see cref="DbType.Decimal" />.</para>
+        /// <para>The Precision property is used by parameters that have a <see cref="DbType" /> of <see cref="decimal" />.</para>
         /// <para>You do not need to specify values for the <see cref="Precision" /> and <see cref="Scale" /> properties for input parameters, as they can be 
         /// inferred from the parameter value. Precision and Scale are required for output parameters and for scenarios where 
         /// you need to specify complete metadata for a parameter without indicating a value, such as specifying a null value 
@@ -121,7 +121,7 @@ namespace AdoNetCore.AseClient
         /// Gets or sets the number of decimal places to which <see cref="Value" /> is resolved.
         /// </summary>
         /// <remarks>
-        /// <para>The Scale property is used by parameters that have a <see cref="DbType" /> of <see cref="DbType.Decimal" />.</para>
+        /// <para>The Scale property is used by parameters that have a <see cref="DbType" /> of <see cref="decimal" />.</para>
         /// <para>Data may be truncated if the Scale property is not explicitly specified and the data on the server does not fit 
         /// in scale 0 (the default).</para>
         /// <para>You do not need to specify values for the <see cref="Precision" /> and <see cref="Scale" /> properties for input parameters, as they can be 
@@ -142,8 +142,8 @@ namespace AdoNetCore.AseClient
         /// <para>For output parameters with a variable length type (nvarchar, for example), the size of the parameter defines the size of the 
         /// buffer holding the output parameter. The output parameter can be truncated to a size specified with Size. For character types, the 
         /// size specified with Size is in characters.</para>
-        /// <para>The Size property is used for binary and string types. For parameters of type <see cref="DbType.String" />, Size means length in Unicode 
-        /// characters. For parameters of type <see cref="DbType.Xml" />, Size is ignored.</para>
+        /// <para>The Size property is used for binary and string types. For parameters of type <see cref="string" />, Size means length in Unicode 
+        /// characters. For parameters of type <see cref="System.Data.DbType.Xml" />, Size is ignored.</para>
         /// <para>For nonstring data types and ANSI string data, the Size property refers to the number of bytes. For Unicode string data, Size refers 
         /// to the number of characters. The count for strings does not include the terminating character.</para>
         /// <para>For variable-length data types, Size describes the maximum amount of data to transmit to the server. For example, for a Unicode 
@@ -157,43 +157,5 @@ namespace AdoNetCore.AseClient
 
         internal bool CanSendOverTheWire => Direction != ParameterDirection.ReturnValue;
         internal bool IsOutput => Direction == ParameterDirection.InputOutput || Direction == ParameterDirection.Output;
-    }
-
-    /// <summary>
-    /// Specifies ASE datatypes. 
-    /// </summary>
-    public enum AseDbType 
-    {
-        BigInt = DbType.Int64,
-        Binary = DbType.Binary,
-        Bit = DbType.Boolean,
-        Char = DbType.AnsiStringFixedLength,
-        Date = DbType.Date,
-        DateTime = DbType.DateTime,
-        Decimal = DbType.Decimal,
-        Double = DbType.Double,
-        Float = DbType.Single, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
-        Integer = DbType.Int32,
-        Image = DbType.Binary,
-        LongVarChar = DbType.AnsiString, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
-        Money = DbType.Currency,
-        Nchar = DbType.AnsiStringFixedLength,
-        Numeric = DbType.VarNumeric,
-        NVarChar = DbType.AnsiString,
-        Real = DbType.Single,
-        SmallDateTime = DbType.DateTime,
-        SmallInt = DbType.Int16, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
-        SmallMoney = DbType.Currency,
-        Text = DbType.AnsiString,
-        Time = DbType.Time,
-        TimeStamp = DbType.Binary,
-        TinyInt = DbType.Byte,
-        UniChar = DbType.StringFixedLength,
-        UniVarChar = DbType.String,
-        UnsignedBigInt = DbType.UInt64,
-        UnsignedInteger = DbType.UInt32,
-        UnsignedSmallInt = DbType.UInt16,
-        VarBinary = DbType.Binary,
-        VarChar = DbType.AnsiString
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 
 namespace AdoNetCore.AseClient
 {
@@ -358,7 +357,6 @@ namespace AdoNetCore.AseClient
 
             if(p != null)
             {
-                _parameters.Add(p);
                  return ((IList)_parameters).Add(value);
             }
             return -1;

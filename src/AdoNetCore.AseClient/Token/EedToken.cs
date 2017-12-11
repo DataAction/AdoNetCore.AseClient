@@ -24,7 +24,7 @@ namespace AdoNetCore.AseClient.Token
         public EedStatus Status { get; set; }
         public TranState TransactionStatus { get; set; }
         public string Message { get; set; }
-        public uint MessageNumber { get; set; }
+        public int MessageNumber { get; set; }
         public int Severity { get; set; }
         public string ServerName { get; set; }
         public string ProcedureName { get; set; }
@@ -43,7 +43,7 @@ namespace AdoNetCore.AseClient.Token
 
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
-                MessageNumber = ts.ReadUInt();
+                MessageNumber = ts.ReadInt();
                 State = ts.ReadByte();
                 Severity = ts.ReadByte();
                 var sqlStateLen = ts.ReadByte();

@@ -37,8 +37,13 @@ end";
             using (var connection = new AseConnection(_connectionStrings["default"]))
             {
                 var ex = Assert.Throws<AseException>(() => connection.Execute("sp_test_raiseerror", commandType: CommandType.StoredProcedure));
-                Assert.AreEqual("[16] BAD BAD BAD", ex.Message);
-                Assert.AreEqual(100000, ex.Errors[0].MessageNumber);
+                var error = ex.Errors[0];
+                Assert.AreEqual("BAD BAD BAD", error.Message);
+                Assert.AreEqual(ex.Message, error.Message);
+                Assert.AreEqual(16, error.Severity);
+                Assert.AreEqual(100000, error.MessageNumber);
+                Assert.AreEqual(5, error.LineNum);
+                Assert.AreEqual("sp_test_raiseerror", error.ProcName);
             }
         }
 

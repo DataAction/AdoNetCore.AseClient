@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
@@ -64,7 +63,7 @@ namespace AdoNetCore.AseClient.Internal
             //todo: this implementation may be too naiive - how do we handle for values which contain ';' or '=' ?
             foreach (var item in connectionString.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var pair = item.Split(new[] { '=' }, 2).ToArray();
+                var pair = item.Split(new[] { '=' }, 2);
                 if (pair.Length == 2)
                 {
                     if (!Parsers.ContainsKey(pair[0]))

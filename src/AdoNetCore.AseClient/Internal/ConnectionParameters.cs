@@ -36,7 +36,7 @@ namespace AdoNetCore.AseClient.Internal
             {"ConnectionIdleTimeout", (p, v) => { p.ConnectionIdleTimeout = Convert.ToInt16(v); }},
             {"ConnectionLifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
             {"Connection Lifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
-            {"PacketSize", (p, v) => { p.PacketSize = Convert.ToInt16(v); }},
+            {"PacketSize", (p, v) => { p.PacketSize = Convert.ToUInt16(v); }},
             {"TextSize", (p, v) => { p.TextSize = Convert.ToInt32(v); }},
         };
 
@@ -102,7 +102,7 @@ namespace AdoNetCore.AseClient.Internal
         public short ConnectionIdleTimeout { get; private set; } = 0; //how long a connection may be idle before being dropped/replaced. 0 = indefinite
         public short ConnectionLifetime { get; private set; } = 0; //how long a connection may live before being dropped/replaced. 0 = indefinite
         public bool PingServer { get; set; } = true; //in pooling, ping the server before returning from the pool
-        public short PacketSize { get; set; } = 512;
+        public ushort PacketSize { get; set; } = 512;
         public int TextSize { get; set; } = 32768;
 
         private ConnectionParameters(string connectionString)
@@ -147,7 +147,7 @@ namespace AdoNetCore.AseClient.Internal
                 throw new ArgumentException("Connection Lifetime must be at least 0 seconds");
             }
 
-            if (PacketSize < 256 || PacketSize > 9999)
+            if (PacketSize < 256)
             {
                 throw new ArgumentException("PacketSize must be at least 256, and at most 9999 (bytes)");
             }

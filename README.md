@@ -79,7 +79,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `DistributedTransactionProtocol`  | X
 | `DSURL`                           | TODO | Consider [ini-parser](https://www.nuget.org/packages/ini-parser/)
 | `EnableBulkLoad`                  | ?
-| `EnableServerPacketSize`          | TODO
+| `EnableServerPacketSize`          | ? | May not be supported any more by capability bits
 | `Encryption`                      | X
 | `EncryptPassword`                 | ?
 | `Enlist`                          | X
@@ -93,7 +93,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `Pooling`                         | &#10003;
 | `Port`                            | &#10003;
 | `Pwd`                             | &#10003;
-| `RestrictMaximum PacketSize`      | TODO
+| `RestrictMaximum PacketSize`      | ? | May not be supported any more by capability bits
 | `Secondary Data Source`           | X
 | `Secondary Server Port`           | X
 | `TextSize`                        | &#10003;

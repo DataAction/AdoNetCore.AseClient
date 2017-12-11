@@ -20,6 +20,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             _parameters = parameters;
             _socket = socket;
+            _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
         }
 
         private void SendPacket(IPacket packet)
@@ -80,6 +81,8 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             ChangeDatabase(_parameters.Database);
+            GetTextSize();
+            SetTextSize(_parameters.TextSize);
         }
 
         public bool Ping()
@@ -180,6 +183,50 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             return null;
+        }
+
+        public void GetTextSize()
+        {
+            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.GetTextSize() }));
+
+            var doneHandler = new DoneTokenHandler();
+            var messageHandler = new MessageTokenHandler();
+            var dataReaderHandler = new DataReaderTokenHandler();
+
+            ReceiveTokens(new ITokenHandler[]
+            {
+                new EnvChangeTokenHandler(_environment), //this will handle the response token and set .TextSize
+                messageHandler,
+                dataReaderHandler,
+                doneHandler
+            });
+
+            messageHandler.AssertNoErrors();
+        }
+
+        public void SetTextSize(int textSize)
+        {
+            //todo: may need to remove this, user scripts could change the textsize value
+            if (_environment.TextSize == textSize)
+            {
+                return;
+            }
+
+            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.SetTextSize(textSize) }));
+
+            var doneHandler = new DoneTokenHandler();
+            var messageHandler = new MessageTokenHandler();
+            var dataReaderHandler = new DataReaderTokenHandler();
+
+            ReceiveTokens(new ITokenHandler[]
+            {
+                new EnvChangeTokenHandler(_environment),
+                messageHandler,
+                dataReaderHandler,
+                doneHandler
+            });
+
+            messageHandler.AssertNoErrors();
         }
 
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)

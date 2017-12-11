@@ -32,7 +32,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
         public bool CanHandle(TokenType type)
         {
-            return type == TokenType.TDS_ENVCHANGE;
+            return type == TokenType.TDS_ENVCHANGE || type == TokenType.TDS_OPTIONCMD;
         }
 
         public void Handle(IToken token)
@@ -65,6 +65,13 @@ namespace AdoNetCore.AseClient.Internal.Handler
                                 }
                                 break;
                         }
+                    }
+                    break;
+                case OptionCommandToken o:
+                    if (o.Option == OptionCommandToken.OptionType.TDS_OPT_TEXTSIZE)
+                    {
+                        _environment.TextSize = BitConverter.ToInt32(o.Arguments, 0);
+                        Logger.Instance?.WriteLine($"{o.Type}: {o.Option} -> {_environment.TextSize}");
                     }
                     break;
                 default:

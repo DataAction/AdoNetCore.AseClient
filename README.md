@@ -62,8 +62,8 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 ## Connection strings
 [connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. In keeping with our objective of being a drop-in replacement for the SAP AseClient, we aim to use identical connection string syntax to the SAP AseClient, however our support for the various properties will be limited. Our support is as follows:
 
-| Property                          | Support
-| --------------------------------- |:---------:
+| Property                          | Support   | Notes
+| --------------------------------- |:---------:| -----
 | `AlternateServers`                | X
 | `ApplicationName`                 | &#10003;
 | `BufferCacheSize`                 | TODO
@@ -77,7 +77,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `Database`                        | &#10003;
 | `Data Source`                     | &#10003;
 | `DistributedTransactionProtocol`  | X
-| `DSURL`                           | TODO - consider [ini-parser](https://www.nuget.org/packages/ini-parser/)
+| `DSURL`                           | TODO | Consider [ini-parser](https://www.nuget.org/packages/ini-parser/)
 | `EnableBulkLoad`                  | ?
 | `EnableServerPacketSize`          | TODO
 | `Encryption`                      | X
@@ -88,7 +88,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `LoginTimeOut`                    | TODO
 | `Max Pool Size`                   | &#10003;
 | `Min Pool Size`                   | TODO
-| `PacketSize`                      | TODO
+| `PacketSize`                      | &#10003; | The server can decide to change this value
 | `Ping Server`                     | TODO
 | `Pooling`                         | &#10003;
 | `Port`                            | &#10003;
@@ -96,7 +96,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `RestrictMaximum PacketSize`      | TODO
 | `Secondary Data Source`           | X
 | `Secondary Server Port`           | X
-| `TextSize`                        | TODO
+| `TextSize`                        | &#10003;
 | `TightlyCoupledTransaction`       | X
 | `TrustedFile`                     | X
 | `Uid`                             | &#10003;

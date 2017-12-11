@@ -281,6 +281,18 @@ namespace AdoNetCore.AseClient.Internal
             return enc.GetString(buf);
         }
 
+        public static byte[] ReadByteLengthPrefixedByteArray(this Stream stream)
+        {
+            var length = stream.ReadByte();
+
+            if (length == 0)
+            {
+                return new byte[0];
+            }
+
+            return stream.ReadByteArray(length);
+        }
+
         public static byte[] ReadNullableByteLengthPrefixedByteArray(this Stream stream)
         {
             var length = stream.ReadByte();

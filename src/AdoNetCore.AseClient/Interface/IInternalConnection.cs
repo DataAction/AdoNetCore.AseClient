@@ -16,5 +16,7 @@ namespace AdoNetCore.AseClient.Interface
         AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
 
         object ExecuteScalar(AseCommand command, AseTransaction transaction);
+
+        void SetTextSize(int textSize);
     }
 }

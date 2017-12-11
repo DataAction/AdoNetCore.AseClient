@@ -11,10 +11,11 @@ namespace AdoNetCore.AseClient.Tests.Integration
     {
         private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
 
-        [Test]
-        public void Login_Success()
+        [TestCase("default")]
+        [TestCase("big-packetsize")]
+        public void Login_Success(string csName)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(_connectionStrings[csName]))
             {
                 connection.Open();
                 Assert.IsTrue(connection.State == ConnectionState.Open, "Connection state should be Open after calling Open()");

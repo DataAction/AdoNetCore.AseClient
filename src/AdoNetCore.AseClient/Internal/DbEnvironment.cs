@@ -8,5 +8,6 @@ namespace AdoNetCore.AseClient.Internal
         public int PacketSize { get; set; } = 512;
         public Encoding Encoding { get; set; } = Encoding.ASCII;
         public string Database { get; set; }
+        public int TextSize { get; set; }
     }
 }

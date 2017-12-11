@@ -16,25 +16,15 @@ namespace AdoNetCore.AseClient.Internal
         private const int ReserveWaitPeriodMs = 5; //TODO: figure out appropriate value
 
         private readonly ConcurrentQueue<IInternalConnection> _available;
-        private readonly List<IInternalConnection> _connections;
 
-        public int PoolSize
-        {
-            get
-            {
-                lock (_mutex)
-                {
-                    return _connections.Count;
-                }
-            }
-        }
+        public int PoolSize { get; private set; }
 
         public ConnectionPool(IConnectionParameters parameters, IInternalConnectionFactory connectionFactory)
         {
             _parameters = parameters;
             _connectionFactory = connectionFactory;
-            _connections = new List<IInternalConnection>(_parameters.MaxPoolSize);
             _available = new ConcurrentQueue<IInternalConnection>();
+            PoolSize = 0;
         }
 
         public IInternalConnection Reserve()
@@ -56,7 +46,7 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             connection.ChangeDatabase(_parameters.Database);
-
+            connection.SetTextSize(_parameters.TextSize);
             return connection;
         }
 
@@ -66,29 +56,49 @@ namespace AdoNetCore.AseClient.Internal
             {
                 while (_available.TryDequeue(out var connection))
                 {
-                    if (connection.Ping())
+                    if (!_parameters.PingServer || connection.Ping())
                     {
                         return connection;
                     }
                 }
-                
+
                 lock (_mutex)
                 {
                     //determine if we can create new items
-                    if (_connections.Count < _parameters.MaxPoolSize)
+                    if (PoolSize >= _parameters.MaxPoolSize)
                     {
-                        var newConnection = _connectionFactory.GetNewConnection(token);
-
-                        if (newConnection != null)
-                        {
-                            _connections.Add(newConnection);
-                            return newConnection;
-                        }
+                        continue;
                     }
                 }
-            } while (WaitHandle.WaitAny(new[] { token.WaitHandle }, ReserveWaitPeriodMs) < 0);
+
+                PoolSize++;
+                IInternalConnection newConnection = null;
+                try
+                {
+                    newConnection = _connectionFactory.GetNewConnection(token);
+                    if (newConnection == null)
+                    {
+                        RemoveConnection(null);
+                    }
+                    return newConnection;
+                }
+                catch
+                {
+                    RemoveConnection(newConnection);
+                    throw;
+                }
+            } while (!token.WaitHandle.WaitOne(ReserveWaitPeriodMs));
 
             return null;
+        }
+
+        private void RemoveConnection(IInternalConnection connection)
+        {
+            lock (_mutex)
+            {
+                connection?.Dispose();
+                PoolSize--;
+            }
         }
 
         public void Release(IInternalConnection connection)
@@ -99,7 +109,21 @@ namespace AdoNetCore.AseClient.Internal
                 return;
             }
 
-            connection.LastActive = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+
+            if (connection.IsDoomed)
+            {
+                RemoveConnection(connection);
+                return;
+            }
+
+            if (_parameters.ConnectionLifetime > 0 && _parameters.ConnectionLifetime < (now - connection.Created).TotalSeconds)
+            {
+                RemoveConnection(connection);
+                return;
+            }
+
+            connection.LastActive = now;
             _available.Enqueue(connection);
         }
     }

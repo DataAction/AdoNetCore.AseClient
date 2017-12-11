@@ -23,5 +23,8 @@ namespace AdoNetCore.AseClient.Interface
         object ExecuteScalar(AseCommand command, AseTransaction transaction);
 
         void SetTextSize(int textSize);
+
+        bool IsDoomed { get; set; }
+        bool IsDisposed { get; }
     }
 }

@@ -22,7 +22,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
         {
             public IInternalConnection GetNewConnection(CancellationToken token )
             {
-                WaitHandle.WaitAny(new[] { token.WaitHandle });
+                token.WaitHandle.WaitOne();
                 return null;
             }
         }

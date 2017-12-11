@@ -85,8 +85,7 @@ namespace AdoNetCore.AseClient.Internal
             Created = DateTime.UtcNow;
             ChangeDatabase(_parameters.Database, token);
             LastActive = DateTime.UtcNow;
-            //GetTextSize();
-            //SetTextSize(_parameters.TextSize);
+            SetTextSize(_parameters.TextSize);
         }
 
         public DateTime Created { get; private set; }
@@ -236,6 +235,15 @@ namespace AdoNetCore.AseClient.Internal
             messageHandler.AssertNoErrors();
         }
 
+        private bool _isDoomed;
+        public bool IsDoomed
+        {
+            get => _isDoomed;
+            set => _isDoomed = _isDoomed || value;
+        }
+
+        public bool IsDisposed { get; private set; }
+
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
         {
             if (command.CommandType == CommandType.TableDirect)
@@ -334,6 +342,12 @@ namespace AdoNetCore.AseClient.Internal
 
         public void Dispose()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            IsDisposed = true;
             _socket.Dispose();
         }
     }

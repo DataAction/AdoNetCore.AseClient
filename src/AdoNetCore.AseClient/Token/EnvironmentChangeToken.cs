@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -29,24 +27,11 @@ namespace AdoNetCore.AseClient.Token
             public string NewValue { get; set; }
             public string OldValue { get; set; }
 
-            public byte[] GetBytes(Encoding enc)
+            public void Write (Stream stream, Encoding enc)
             {
-                var oldValue = enc.GetBytes(OldValue);
-                var newValue = enc.GetBytes(NewValue);
-
-                var response = new byte[3 + oldValue.Length + newValue.Length];
-
-                return new[]
-                {
-                    (byte) Type,
-                    (byte) newValue.Length
-                }
-                .Concat(newValue)
-                .Concat(new[]
-                    {
-                        (byte) oldValue.Length
-                    })
-                .Concat(oldValue).ToArray();
+                stream.WriteByte((byte)Type);
+                stream.WriteBytePrefixedString(NewValue, enc);
+                stream.WriteBytePrefixedString(OldValue, enc);
             }
         }
 
@@ -63,13 +48,18 @@ namespace AdoNetCore.AseClient.Token
         {
             Logger.Instance?.WriteLine($"Write {Type}");
             stream.WriteByte((byte)Type);
+            //we can't write directly to the stream because we need to know the length up-front
+            using (var ms = new MemoryStream())
+            {
+                foreach (var c in Changes)
+                {
+                    c.Write(ms, enc);
+                }
 
-            var changeBytes = Changes
-                .SelectMany(c => c.GetBytes(enc))
-                .ToArray();
-            var length = (short)changeBytes.Length;
-            stream.WriteShort(length);
-            stream.Write(changeBytes, 0, length);
+                ms.Seek(0, SeekOrigin.Begin);
+                stream.WriteShort((short)ms.Length);
+                ms.CopyTo(stream);
+            }
         }
 
         public void Read(Stream stream, Encoding enc, IFormatToken previous)

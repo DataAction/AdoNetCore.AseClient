@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Token;
@@ -40,7 +39,12 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     }
                     break;
                 case ParametersToken t:
-                    var dict = t.Parameters.ToDictionary(p => p.Format.ParameterName);
+                    var dict = new Dictionary<string, ParametersToken.Parameter>();
+
+                    foreach (var p in t.Parameters)
+                    {
+                        dict[p.Format.ParameterName] = p;
+                    }
 
                     foreach (AseParameter parameter in _parameters)
                     {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -13,7 +12,7 @@ namespace AdoNetCore.AseClient.Internal
     {
         public IToken[] Parse(Stream stream, Encoding enc)
         {
-            return ParseInternal(stream, enc).ToArray();
+            return new List<IToken>(ParseInternal(stream, enc)).ToArray();
         }
 
         private IEnumerable<IToken> ParseInternal(Stream stream, Encoding enc)

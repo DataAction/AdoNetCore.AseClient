@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 
 namespace AdoNetCore.AseClient
 {
@@ -9,16 +10,20 @@ namespace AdoNetCore.AseClient
     /// Represents a collection of parameters associated with an <see cref="AseCommand" />. 
     /// This class cannot be inherited.
     /// </summary>
+    [DebuggerDisplay("Count = {" + nameof(Count) + "}")]
     public sealed class AseParameterCollection : IDataParameterCollection
     {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly List<AseParameter> _parameters;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool HasSendableParameters 
         {
-            get 
+            get
             {
-                for (var i = 0; i < _parameters.Count; i++)
+                foreach (var p in _parameters)
                 {
-                    if (_parameters[i].CanSendOverTheWire)
+                    if (p.CanSendOverTheWire)
                     {
                         return true;
                     }
@@ -27,15 +32,17 @@ namespace AdoNetCore.AseClient
             }    
             
         }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal IEnumerable<AseParameter> SendableParameters 
         {
-            get 
+            get
             {
-                for (var i = 0; i < _parameters.Count; i++)
+                foreach (var p in _parameters)
                 {
-                    if (_parameters[i].CanSendOverTheWire)
+                    if (p.CanSendOverTheWire)
                     {
-                        yield return _parameters[i];
+                        yield return p;
                     }
                 }
             }
@@ -100,14 +107,8 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         object IDataParameterCollection.this[string parameterName]
         {
-            get
-            {
-                return this[parameterName];
-            }
-            set
-            {
-                this[parameterName] = value as AseParameter;
-            }
+            get => this[parameterName];
+            set => this[parameterName] = value as AseParameter;
         }
 
         /// <summary>
@@ -242,8 +243,6 @@ namespace AdoNetCore.AseClient
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         public AseParameter Add(object parameter) 
         {
-            var p = parameter as AseParameter;
-
             return Add(parameter as AseParameter);
         }
 
@@ -262,11 +261,9 @@ namespace AdoNetCore.AseClient
 
         int IList.Add(object value)
         {
-            var p = value as AseParameter;
-
-            if(p != null)
+            if(value is AseParameter p)
             {
-                 return ((IList)_parameters).Add(value);
+                 return ((IList)_parameters).Add(p);
             }
             return -1;
         }        
@@ -303,11 +300,15 @@ namespace AdoNetCore.AseClient
         /// Returns -1 when the object does not exist in the <see cref="AseParameterCollection" />.</returns>
         public int IndexOf(object value)
         {
-            var p = value as AseParameter;
-
-            if(p != null) 
+            if(value is AseParameter p) 
             {
-                return IndexOf(p.ParameterName);
+                for (var i = 0; i < _parameters.Count; i++)
+                {
+                    if (p == _parameters[i])
+                    {
+                        return i;
+                    }
+                }
             }
 
             return -1;

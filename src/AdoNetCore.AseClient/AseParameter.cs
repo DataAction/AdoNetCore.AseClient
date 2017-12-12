@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Data;
+using System.Diagnostics;
 
 namespace AdoNetCore.AseClient
 {
     /// <summary>
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
+    [DebuggerDisplay("{" + nameof(ParameterName) + "}")]
     public sealed class AseParameter : IDbDataParameter
     {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _parameterName;
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseDbType _type;
 
         /// <summary>
@@ -17,7 +21,9 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public AseParameter()
         {
-            
+            Direction = ParameterDirection.Input;
+            SourceVersion = DataRowVersion.Default;
+            IsNullable = false;
         }
 
         /// <summary>
@@ -25,11 +31,10 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="parameterName">The name of the parameter to add.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
-        public AseParameter(string parameterName, object value)
+        public AseParameter(string parameterName, object value) : this()
         {
             Value = value ?? throw new ArgumentNullException();
             ParameterName = parameterName;
-            Direction = ParameterDirection.Input;
 
             if (value == DBNull.Value)
             {
@@ -110,6 +115,7 @@ namespace AdoNetCore.AseClient
             else if (value is string)
             {
                 AseDbType = AseDbType.UniChar;
+                Size = ((string)value).Length;
             }
             else // AnsiString, AnsiStringFixedLength, Xml, Date, DateTime2, DateTimeOffset, Time, VarNumeric, Guid, Currency, Object.
             {
@@ -122,11 +128,10 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="parameterName">The name of the parameter to add.</param>
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
-        public AseParameter(string parameterName, AseDbType dbType)
+        public AseParameter(string parameterName, AseDbType dbType) : this()
         {
             ParameterName = parameterName;
             AseDbType = dbType;
-            Direction = ParameterDirection.Input;
         }
 
         /// <summary>
@@ -135,12 +140,11 @@ namespace AdoNetCore.AseClient
         /// <param name="parameterName">The name of the parameter to add.</param>
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
         /// <param name="size">The size as <see cref="int" />.</param>
-        public AseParameter(string parameterName, AseDbType dbType, int size)
+        public AseParameter(string parameterName, AseDbType dbType, int size) : this()
         {
             ParameterName = parameterName;
             AseDbType = dbType;
             Size = size;
-            Direction = ParameterDirection.Input;
         }
 
         /// <summary>
@@ -150,13 +154,12 @@ namespace AdoNetCore.AseClient
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
         /// <param name="size">The size as <see cref="int" />.</param>
         /// <param name="sourceColumn">The name of the source column.</param>
-        public AseParameter(string parameterName, AseDbType dbType, int size, string sourceColumn)
+        public AseParameter(string parameterName, AseDbType dbType, int size, string sourceColumn) : this()
         {
             ParameterName = parameterName;
             AseDbType = dbType;
             Size = size;
             SourceColumn = sourceColumn;
-            Direction = ParameterDirection.Input;
         }
 
         /// <summary>
@@ -172,8 +175,7 @@ namespace AdoNetCore.AseClient
         /// <param name="sourceColumn">The name of the source column.</param>
         /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
-        public AseParameter(string parameterName, AseDbType dbType, int size,
-            ParameterDirection direction, bool isNullable, byte precision, byte scale,
+        public AseParameter(string parameterName, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, byte precision, byte scale,
             string sourceColumn, DataRowVersion sourceVersion, object value)
         {
             ParameterName = parameterName;
@@ -191,16 +193,11 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the <see cref="AseDbType" /> of the parameter.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         DbType IDataParameter.DbType 
         { 
-            get 
-            {
-                return (DbType)_type;
-            }
-            set
-            {
-                _type = (AseDbType)value;
-            }
+            get => (DbType)_type;
+            set => _type = (AseDbType)value;
         } 
 
         /// <summary>
@@ -208,14 +205,8 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public AseDbType AseDbType 
         { 
-            get 
-            {
-                return _type;
-            }
-            set
-            {
-                _type = value;
-            }
+            get => _type;
+            set => _type = value;
         } 
 
         /// <summary>
@@ -237,7 +228,7 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// <para>Null values are handled using the <see cref="System.DBNull" /> class.</para>
         /// </remarks>
-        public bool IsNullable { get; internal set; }
+        public bool IsNullable { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="AseParameter" />.
@@ -261,7 +252,7 @@ namespace AdoNetCore.AseClient
         /// Not supported yet. .NET Core 2.0 dependency.
         /// </summary>
         public DataRowVersion SourceVersion { get; set; }
-       
+
         /// <summary>
         /// Gets or sets the value of the parameter.
         /// </summary>
@@ -332,7 +323,10 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public int Size { get; set; }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool CanSendOverTheWire => Direction != ParameterDirection.ReturnValue;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool IsOutput => Direction == ParameterDirection.InputOutput || Direction == ParameterDirection.Output;
 
 

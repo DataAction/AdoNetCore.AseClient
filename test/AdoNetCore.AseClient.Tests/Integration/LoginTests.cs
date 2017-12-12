@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Net.Sockets;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -31,36 +33,21 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
-        public void ConnectionSample()
+        [Test]
+        public void CannotResolveServer_Failure()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using(var connection = new AseConnection(connectionString)) 
+            using (var connection = new AseConnection("Data Source=myASEServer;Port=5000;Database=mydb;Uid=x;Pwd=y;"))
             {
-                connection.Open();
-                
-                // use the connection...
+                Assert.Throws<SocketException>(() => connection.Open());
             }
         }
 
-        
-        public void CommandSample()
+        [Test]
+        public void SmallTimeout_Failure()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using(var connection = new AseConnection(connectionString)) 
+            using (var connection = new AseConnection(_connectionStrings["default"]+";LoginTimeoutMs=1"))
             {
-                connection.Open();
-                
-                using(var command = connection.CreateCommand()) 
-                {
-                    command.CommandText = "SELECT FirstName, LastName FROM Customer";
-                    
-                    using(var reader = command.ExecuteReader())
-                    {
-                        // Get the results.
-                    }
-                }
+                Assert.Throws<OperationCanceledException>(() => connection.Open());
             }
         }
     }

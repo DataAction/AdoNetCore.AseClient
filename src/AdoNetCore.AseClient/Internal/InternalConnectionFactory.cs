@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -45,7 +44,7 @@ namespace AdoNetCore.AseClient.Internal
 
             try
             {
-                connection.Connect(token);
+                connection.Login();
             }
             catch (TimeoutException)
             {
@@ -66,12 +65,27 @@ namespace AdoNetCore.AseClient.Internal
         private static IPAddress ResolveAddress(string server, CancellationToken token)
         {
             var dnsTask = Dns.GetHostEntryAsync(server);
-            dnsTask.Wait(token);
+
+            try
+            {
+                dnsTask.Wait(token);
+            }
+            catch (AggregateException ae)
+            {
+                throw ae.InnerException;
+            }
+
             if (dnsTask.IsCanceled)
             {
                 throw new TimeoutException($"Timed out attempting to resolve {server}");
             }
-            return dnsTask.Result.AddressList.First();
+
+            if (dnsTask.Result.AddressList.Length == 0)
+            {
+                throw new SocketException(11001); //No such host is known
+            }
+
+            return dnsTask.Result.AddressList[0];
         }
     }
 }

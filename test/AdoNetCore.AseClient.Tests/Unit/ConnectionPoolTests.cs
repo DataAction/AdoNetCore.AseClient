@@ -43,7 +43,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public bool Pooling { get; } = true;
             public short MaxPoolSize { get; } = 100;
             public short MinPoolSize { get; }
-            public short LoginTimeout { get; } = 1;
+            public int LoginTimeoutMs { get; } = 1000;
             public short ConnectionIdleTimeout { get; }
             public short ConnectionLifetime { get; }
             public bool PingServer { get; }

@@ -32,7 +32,8 @@ namespace AdoNetCore.AseClient.Internal
             {"ClientHostProc", (p, v) => { p.ClientHostProc = v; }},
             {"ProcessId", (p, v) => { p.ProcessId = v; }},
             {"Ping Server", (p, v) => { p.PingServer = Convert.ToBoolean(v); }},
-            {"LoginTimeOut", (p, v) => { p.LoginTimeout = Convert.ToInt16(v); }},
+            {"LoginTimeOut", (p, v) => { p.LoginTimeoutMs = 1000 * Convert.ToInt32(v); }},
+            {"LoginTimeOutMs", (p, v) => { p.LoginTimeoutMs = Convert.ToInt32(v); }},
             {"ConnectionIdleTimeout", (p, v) => { p.ConnectionIdleTimeout = Convert.ToInt16(v); }},
             {"ConnectionLifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
             {"Connection Lifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
@@ -98,7 +99,7 @@ namespace AdoNetCore.AseClient.Internal
         public bool Pooling { get; private set; } = true;
         public short MaxPoolSize { get; private set; } = 100;
         public short MinPoolSize { get; private set; } = 0;
-        public short LoginTimeout { get; private set; } = 15; //login timeout in seconds
+        public int LoginTimeoutMs { get; private set; } = 15000; //login timeout in seconds
         public short ConnectionIdleTimeout { get; private set; } = 0; //how long a connection may be idle before being dropped/replaced. 0 = indefinite
         public short ConnectionLifetime { get; private set; } = 0; //how long a connection may live before being dropped/replaced. 0 = indefinite
         public bool PingServer { get; private set; } = true; //in pooling, ping the server before returning from the pool
@@ -132,7 +133,7 @@ namespace AdoNetCore.AseClient.Internal
                 throw new ArgumentException("Database not specified");
             }
 
-            if (LoginTimeout < 1)
+            if (LoginTimeoutMs < 1)
             {
                 throw new ArgumentException("Login timeout must be at least 1 second");
             }

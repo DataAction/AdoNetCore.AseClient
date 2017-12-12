@@ -16,7 +16,7 @@
         bool Pooling { get; }
         short MaxPoolSize { get; }
         short MinPoolSize { get; }
-        short LoginTimeout { get; } //login timeout in seconds
+        int LoginTimeoutMs { get; } //login timeout in seconds
         short ConnectionIdleTimeout { get; } //how long a connection may be idle before being dropped/replaced. 0 = indefinite
         short ConnectionLifetime { get; } //how long a connection may live before being dropped/replaced. 0 = indefinite
         bool PingServer { get; } //in pooling, ping the server before returning from the pool

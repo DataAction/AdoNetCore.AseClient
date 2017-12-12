@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using AdoNetCore.AseClient.Interface;
 
@@ -29,8 +28,11 @@ namespace AdoNetCore.AseClient.Internal
 
         public IInternalConnection Reserve()
         {
-            var src = new CancellationTokenSource(TimeSpan.FromSeconds(_parameters.LoginTimeout));
+            var src = new CancellationTokenSource();
             var t = src.Token;
+            t.ThrowIfCancellationRequested();
+            src.CancelAfter(_parameters.LoginTimeoutMs);
+
             t.Register(() => Logger.Instance?.WriteLine("token cancelled"));
 
             if (!_parameters.Pooling)
@@ -62,23 +64,19 @@ namespace AdoNetCore.AseClient.Internal
                     }
                 }
 
-                lock (_mutex)
+                if (!CheckAndIncrementPoolSize())
                 {
-                    //determine if we can create new items
-                    if (PoolSize >= _parameters.MaxPoolSize)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
-
-                PoolSize++;
+                
                 IInternalConnection newConnection = null;
+
                 try
                 {
                     newConnection = _connectionFactory.GetNewConnection(token);
                     if (newConnection == null)
                     {
-                        RemoveConnection(null);
+                        RemoveConnection();
                     }
                     return newConnection;
                 }
@@ -92,7 +90,20 @@ namespace AdoNetCore.AseClient.Internal
             return null;
         }
 
-        private void RemoveConnection(IInternalConnection connection)
+        private bool CheckAndIncrementPoolSize()
+        {
+            lock (_mutex)
+            {
+                if (PoolSize < _parameters.MaxPoolSize)
+                {
+                    PoolSize++;
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        private void RemoveConnection(IInternalConnection connection = null)
         {
             lock (_mutex)
             {
@@ -106,6 +117,11 @@ namespace AdoNetCore.AseClient.Internal
             if (!_parameters.Pooling)
             {
                 connection?.Dispose();
+                return;
+            }
+            
+            if (connection == null)
+            {
                 return;
             }
 

@@ -24,18 +24,18 @@ namespace AdoNetCore.AseClient.Internal
             _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
         }
 
-        private void SendPacket(IPacket packet, CancellationToken? token = null)
+        private void SendPacket(IPacket packet)
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("----------  Send packet   ----------");
-            _socket.SendPacket(packet, _environment, token);
+            _socket.SendPacket(packet, _environment);
         }
         
-        private void ReceiveTokens(ITokenHandler[] handlers, CancellationToken? token = null)
+        private void ReceiveTokens(ITokenHandler[] handlers)
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
-            foreach (var receivedToken in _socket.ReceiveTokens(_environment, token))
+            foreach (var receivedToken in _socket.ReceiveTokens(_environment))
             {
                 foreach (var handler in handlers)
                 {
@@ -47,7 +47,7 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public void Connect(CancellationToken token)
+        public void Login()
         {
             //socket is established already
             //login
@@ -62,8 +62,7 @@ namespace AdoNetCore.AseClient.Internal
                     _parameters.Charset,
                     "ADO.NET",
                     _environment.PacketSize,
-                    new CapabilityToken()),
-                token);
+                    new CapabilityToken()));
 
             var ackHandler = new LoginTokenHandler();
             var messageHandler = new MessageTokenHandler();
@@ -73,7 +72,7 @@ namespace AdoNetCore.AseClient.Internal
                 ackHandler,
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
-            }, token);
+            });
 
             messageHandler.AssertNoErrors();
 
@@ -83,7 +82,7 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             Created = DateTime.UtcNow;
-            ChangeDatabase(_parameters.Database, token);
+            ChangeDatabase(_parameters.Database);
             LastActive = DateTime.UtcNow;
             SetTextSize(_parameters.TextSize);
         }

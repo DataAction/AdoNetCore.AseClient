@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
-using System.Threading;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 
@@ -29,12 +28,12 @@ namespace AdoNetCore.AseClient.Internal
             0, 0, 0, 0
         };
 
-        public void SendPacket(IPacket packet, DbEnvironment env, CancellationToken? token)
+        public void SendPacket(IPacket packet, DbEnvironment env)
         {
-            //todo: use token --throw TimeoutException if the cancellation occurs
             using (var ms = new MemoryStream())
             {
                 packet.Write(ms, env.Encoding);
+
                 ms.Seek(0, SeekOrigin.Begin);
 
                 while (ms.Position < ms.Length)
@@ -54,9 +53,8 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public IToken[] ReceiveTokens(DbEnvironment env, CancellationToken? token)
+        public IToken[] ReceiveTokens(DbEnvironment env)
         {
-            //todo: use token --throw TimeoutException if the cancellation occurs
             using (var ms = new MemoryStream())
             {
                 {

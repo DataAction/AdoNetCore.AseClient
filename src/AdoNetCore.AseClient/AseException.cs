@@ -80,7 +80,7 @@ namespace AdoNetCore.AseClient
             {
                 Message = message
             });
-        } // TODO - construct an AseErrorCollection
+        } 
 
         /// <summary>
         /// Constructor function for an <see cref="AseException" /> instance.

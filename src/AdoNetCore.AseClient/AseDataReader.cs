@@ -140,7 +140,7 @@ namespace AdoNetCore.AseClient
                 return _results[_currentResult].Rows[_currentRow].Items[i];
             }
 
-            throw new ArgumentException();
+            throw new ArgumentOutOfRangeException();
         }
 
         public int GetValues(object[] values)

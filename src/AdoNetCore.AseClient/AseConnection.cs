@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Data;
-using System.Runtime.CompilerServices;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
-
-[assembly: InternalsVisibleTo("AdoNetCore.AseClient.Tests")]
 
 namespace AdoNetCore.AseClient
 {
@@ -14,7 +11,8 @@ namespace AdoNetCore.AseClient
     public sealed class AseConnection : IDbConnection
     {
         private IInternalConnection _internal;
-        private ConnectionParameters _parameters;
+        private string _connectionString;
+        private IConnectionPoolManager _connectionPoolManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AseConnection" /> class.
@@ -53,7 +51,7 @@ namespace AdoNetCore.AseClient
         /// </para>
         /// You can change the value for these properties only by using the <see cref="ConnectionString" /> property.
         /// </remarks>
-        public AseConnection() : this(string.Empty)
+        public AseConnection() : this(string.Empty, new ConnectionPoolManager())
         {
         }
 
@@ -95,10 +93,16 @@ namespace AdoNetCore.AseClient
         /// </para>
         /// You can change the value for these properties only by using the <see cref="ConnectionString" /> property.
         /// </remarks>
-        public AseConnection(string connectionString)
+        public AseConnection(string connectionString) : this(connectionString, new ConnectionPoolManager())
+        {
+        }
+
+        internal AseConnection(string connectionString, IConnectionPoolManager connectionPoolManager)
         {
             ConnectionString = connectionString;
             ConnectionTimeout = 15; // Default to 15s as per the SAP AseClient http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409555258.html
+            _connectionPoolManager = connectionPoolManager;
+
         }
 
         /// <summary>
@@ -201,7 +205,14 @@ namespace AdoNetCore.AseClient
         /// The value supplied in the <i>database</i> parameter must be a valid database name. The <i>database</i> parameter 
         /// cannot contain a null value, an empty string, or a string with only blank characters.
         /// </remarks>
-        public void ChangeDatabase(string databaseName) => _internal.ChangeDatabase(databaseName);
+        public void ChangeDatabase(string databaseName)
+        {
+            if (_internal != null && State == ConnectionState.Open)
+            {
+                _internal.ChangeDatabase(databaseName);
+            }
+            throw new InvalidOperationException("The Database cannot be changed unless the connection is open.");
+        }
 
         /// <summary>
         /// TODO - document this once transactions are supported.
@@ -213,7 +224,7 @@ namespace AdoNetCore.AseClient
                 return;
             }
 
-            ConnectionPoolManager.Release(_parameters, _internal);
+            _connectionPoolManager.Release(_connectionString, _internal);
             _internal = null;
             State = ConnectionState.Closed;
         }
@@ -257,7 +268,9 @@ namespace AdoNetCore.AseClient
 
             State = ConnectionState.Connecting;
 
-            _internal = ConnectionPoolManager.Reserve(_parameters);
+            var parameters = ConnectionParameters.Parse(_connectionString);
+
+            _internal = _connectionPoolManager.Reserve(_connectionString, parameters);
 
             State = ConnectionState.Open;
         }
@@ -268,8 +281,18 @@ namespace AdoNetCore.AseClient
         // TODO - expand docs.
         public string ConnectionString
         {
-            get => _parameters.ConnectionString;
-            set => _parameters = ConnectionParameters.Parse(value);
+            get => _connectionString;
+            set
+            {
+                if (State == ConnectionState.Closed)
+                {
+                    _connectionString = value;
+                }
+                else
+                {
+                    throw new InvalidOperationException("The connection string cannot be modified unless it is closed.");
+                }
+            }
         }
 
         /// <summary>
@@ -290,7 +313,7 @@ namespace AdoNetCore.AseClient
         /// statement or the <see cref="ChangeDatabase(string)" /> method, an informational message is sent and 
         /// the property is updated automatically.
         /// </remarks>
-        public string Database => _internal.Database;
+        public string Database => _internal?.Database;
 
         /// <summary>
         /// Indicates the state of the <see cref="AseConnection" /> during the most recent network operation 

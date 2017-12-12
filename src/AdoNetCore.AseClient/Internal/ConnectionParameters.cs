@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -10,80 +8,141 @@ namespace AdoNetCore.AseClient.Internal
         //Cache the current process details, expensive call
         private static readonly Process CurrentProcess = Process.GetCurrentProcess();
 
-        private static readonly Dictionary<string, Action<ConnectionParameters, string>> Parsers = new Dictionary<string, Action<ConnectionParameters, string>>(StringComparer.OrdinalIgnoreCase)
-        {
-            {"Data Source", ParseDataSource},
-            {"DataSource", ParseDataSource},
-            {"Port", (p, v) => { p.Port = Convert.ToInt32(v); }},
-            {"Db", (p, v) => { p.Database = v; }},
-            {"Database", (p, v) => { p.Database = v; }},
-            {"Initial Catalog", (p, v) => { p.Database = v; }},
-            {"Uid", (p, v) => { p.Username = v; }},
-            {"User Id", (p, v) => { p.Username = v; }},
-            {"Pwd", (p, v) => { p.Password = v; }},
-            {"Password", (p, v) => { p.Password = v; }},
-            {"Charset", (p, v) => { p.Charset = v; }},
-            {"Pooling", (p, v) => { p.Pooling = Convert.ToBoolean(v); }},
-            {"Max Pool Size", (p, v) => { p.MaxPoolSize = Convert.ToInt16(v); }},
-            {"Min Pool Size", (p, v) => { p.MinPoolSize = Convert.ToInt16(v); }},
-            {"ApplicationName", (p, v) => { p.ApplicationName = v; }},
-            {"Application Name", (p, v) => { p.ApplicationName = v; }},
-            {"ClientHostName", (p, v) => { p.ClientHostName = v; }},
-            {"ClientHostProc", (p, v) => { p.ClientHostProc = v; }},
-            {"ProcessId", (p, v) => { p.ProcessId = v; }},
-            {"Ping Server", (p, v) => { p.PingServer = Convert.ToBoolean(v); }},
-            {"LoginTimeOut", (p, v) => { p.LoginTimeout = Convert.ToInt16(v); }},
-            {"ConnectionIdleTimeout", (p, v) => { p.ConnectionIdleTimeout = Convert.ToInt16(v); }},
-            {"ConnectionLifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
-            {"Connection Lifetime", (p, v) => { p.ConnectionLifetime = Convert.ToInt16(v); }},
-            {"PacketSize", (p, v) => { p.PacketSize = Convert.ToUInt16(v); }},
-            {"TextSize", (p, v) => { p.TextSize = Convert.ToInt32(v); }},
-        };
-
-        private static void ParseDataSource(ConnectionParameters p, string v)
-        {
-            if (string.IsNullOrWhiteSpace(v))
-            {
-                return;
-            }
-            var parts = v.Split(',', ':');
-
-            p.Server = parts[0];
-
-            if (parts.Length > 1)
-            {
-                p.Port = Convert.ToInt32(parts[1]);
-            }
-        }
-
         public static ConnectionParameters Parse(string connectionString)
         {
-            var parameters = new ConnectionParameters(connectionString);
+            var connectionStringTokeniser = new ConnectionStringTokeniser();
+            
+            var result = new ConnectionParameters();
 
-            //todo: this implementation may be too naiive - how do we handle for values which contain ';' or '=' ?
-            foreach (var item in connectionString.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var item in connectionStringTokeniser.Tokenise(connectionString))
             {
-                var pair = item.Split(new[] { '=' }, 2).ToArray();
-                if (pair.Length == 2)
+                if (item.PropertyName.Equals("Data Source", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("DataSource", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!Parsers.ContainsKey(pair[0]))
+                    if (string.IsNullOrWhiteSpace(item.PropertyValue))
                     {
-                        throw new ArgumentException("Unknown connection string parameter provided", pair[0]);
+                        continue;
                     }
-                    Parsers[pair[0]](parameters, pair[1]);
+                    var parts = item.PropertyValue.Split(',', ':');
+
+                    result.Server = parts[0];
+
+                    if (parts.Length > 1)
+                    {
+                        result.Port = Convert.ToInt32(parts[1]);
+                    }
                 }
-                else
+                else if (item.PropertyName.Equals("Port", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new ArgumentException("Badly formatted connection string parameter encountered");
+                    result.Port = Convert.ToInt32(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("Db", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Database", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Initial Catalog", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Database = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("Uid", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("User Id", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Username = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("Pwd", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Password", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Password = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("Charset", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Charset = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("Pooling", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Pooling = Convert.ToBoolean(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("Max Pool Size", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.MaxPoolSize = Convert.ToInt16(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("Min Pool Size", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.MinPoolSize = Convert.ToInt16(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("ApplicationName", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Application Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.ApplicationName = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("ClientHostName", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.ClientHostName = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("ClientHostProc", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.ClientHostProc = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("Ping Server", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.PingServer = Convert.ToBoolean(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("LoginTimeOut", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.LoginTimeout = Convert.ToInt16(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("ConnectionIdleTimeout", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.ConnectionIdleTimeout = Convert.ToInt16(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("ConnectionLifetime", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Connection Lifetime", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.ConnectionLifetime = Convert.ToInt16(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("PacketSize", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.PacketSize = Convert.ToUInt16(item.PropertyValue);
+                }
+                else if (item.PropertyName.Equals("TextSize", StringComparison.OrdinalIgnoreCase))
+                {
+                    result.TextSize = Convert.ToInt32(item.PropertyValue);
                 }
             }
 
-            parameters.Validate();
+            if (string.IsNullOrWhiteSpace(result.Server))
+            {
+                throw new ArgumentException("Data Source not specified");
+            }
 
-            return parameters;
+            if (result.Port <= 0 || result.Port > ushort.MaxValue)
+            {
+                throw new ArgumentException("Valid port not specified");
+            }
+
+            if (string.IsNullOrWhiteSpace(result.Username))
+            {
+                throw new ArgumentException("Uid not specified"); // TODO - is this mandatory? What about Integrated Security?
+            }
+
+            if (string.IsNullOrWhiteSpace(result.Database))
+            {
+                throw new ArgumentException("Database not specified");
+            }
+
+            if (result.LoginTimeout < 1)
+            {
+                throw new ArgumentException("Login timeout must be at least 1 second");
+            }
+
+            if (result.ConnectionIdleTimeout < 0)
+            {
+                throw new ArgumentException("ConnectionIdleTimeout must be at least 0 seconds");
+            }
+
+            if (result.ConnectionLifetime < 0)
+            {
+                throw new ArgumentException("Connection Lifetime must be at least 0 seconds");
+            }
+
+            if (result.PacketSize < 256)
+            {
+                throw new ArgumentException("PacketSize must be at least 256, and at most 9999 (bytes)");
+            }
+
+            return result;
         }
-
-        public string ConnectionString { get; }
 
         public string Server { get; private set; } = string.Empty;
         public int Port { get; private set; } = 5000;
@@ -104,53 +163,5 @@ namespace AdoNetCore.AseClient.Internal
         public bool PingServer { get; set; } = true; //in pooling, ping the server before returning from the pool
         public ushort PacketSize { get; set; } = 512;
         public int TextSize { get; set; } = 32768;
-
-        private ConnectionParameters(string connectionString)
-        {
-            ConnectionString = connectionString;
-        }
-
-        private void Validate()
-        {
-            if (string.IsNullOrWhiteSpace(Server))
-            {
-                throw new ArgumentException("Data Source not specified");
-            }
-
-            if (Port <= 0 || Port > ushort.MaxValue)
-            {
-                throw new ArgumentException("Valid port not specified");
-            }
-
-            if (string.IsNullOrWhiteSpace(Username))
-            {
-                throw new ArgumentException("Uid not specified");
-            }
-
-            if (string.IsNullOrWhiteSpace(Database))
-            {
-                throw new ArgumentException("Database not specified");
-            }
-
-            if (LoginTimeout < 1)
-            {
-                throw new ArgumentException("Login timeout must be at least 1 second");
-            }
-
-            if (ConnectionIdleTimeout < 0)
-            {
-                throw new ArgumentException("ConnectionIdleTimeout must be at least 0 seconds");
-            }
-
-            if (ConnectionLifetime < 0)
-            {
-                throw new ArgumentException("Connection Lifetime must be at least 0 seconds");
-            }
-
-            if (PacketSize < 256)
-            {
-                throw new ArgumentException("PacketSize must be at least 256, and at most 9999 (bytes)");
-            }
-        }
     }
 }

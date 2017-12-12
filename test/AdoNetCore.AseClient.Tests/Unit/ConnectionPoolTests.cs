@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
@@ -16,6 +17,36 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             Assert.Throws<TimeoutException>(() => pool.Reserve());
             Assert.AreEqual(0, pool.PoolSize);
+        }
+
+        [Test]
+        public void WhenMinPoolSizeIsSet_NewPoolFillsToMin()
+        {
+            Logger.Enable();
+            var parameters = new TestConnectionParameters
+            {
+                MinPoolSize = 10
+            };
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+
+            Task.Delay(1000).Wait();
+
+            Assert.AreEqual(10, pool.PoolSize);
+        }
+
+        private class ImmediateConnectionFactory : IInternalConnectionFactory
+        {
+            private readonly TestConnectionParameters _parameters;
+
+            public ImmediateConnectionFactory(TestConnectionParameters parameters)
+            {
+                _parameters = parameters;
+            }
+
+            public IInternalConnection GetNewConnection(CancellationToken token)
+            {
+                return new InternalConnection(_parameters, null);
+            }
         }
 
         private class SlowConnectionFactory : IInternalConnectionFactory
@@ -42,7 +73,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public string Charset { get; }
             public bool Pooling { get; } = true;
             public short MaxPoolSize { get; } = 100;
-            public short MinPoolSize { get; }
+            public short MinPoolSize { get; set; }
             public int LoginTimeoutMs { get; } = 1000;
             public short ConnectionIdleTimeout { get; }
             public short ConnectionLifetime { get; }

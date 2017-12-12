@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data;
-using System.Threading;
 
 namespace AdoNetCore.AseClient.Interface
 {
@@ -12,7 +11,7 @@ namespace AdoNetCore.AseClient.Interface
 
         bool Ping();
 
-        void ChangeDatabase(string databaseName, CancellationToken? token = null);
+        void ChangeDatabase(string databaseName);
 
         string Database { get; }
 

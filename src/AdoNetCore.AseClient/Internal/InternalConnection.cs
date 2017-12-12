@@ -95,7 +95,7 @@ namespace AdoNetCore.AseClient.Internal
             return true; //todo: implement
         }
 
-        public void ChangeDatabase(string databaseName, CancellationToken? token = null)
+        public void ChangeDatabase(string databaseName)
         {
             if (string.IsNullOrWhiteSpace(databaseName) || string.Equals(databaseName, Database, StringComparison.OrdinalIgnoreCase))
             {

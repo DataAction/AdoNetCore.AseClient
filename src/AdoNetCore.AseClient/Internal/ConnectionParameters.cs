@@ -152,6 +152,16 @@ namespace AdoNetCore.AseClient.Internal
             {
                 throw new ArgumentException("PacketSize must be at least 256, and at most 9999 (bytes)");
             }
+
+            if (Pooling && MaxPoolSize <= 0)
+            {
+                throw new ArgumentException("Max Pool Size must be at least 1 when Pooling is enabled");
+            }
+
+            if (MinPoolSize > MaxPoolSize)
+            {
+                throw new ArgumentException("Min Pool Size must be at most the same as Max Pool Size");
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
@@ -24,6 +25,11 @@ namespace AdoNetCore.AseClient.Internal
             _connectionFactory = connectionFactory;
             _available = new ConcurrentQueue<IInternalConnection>();
             PoolSize = 0;
+
+            if (_parameters.MinPoolSize > 0)
+            {
+                Task.Run(() => FillPoolToMinSize());
+            }
         }
 
         public IInternalConnection Reserve()
@@ -90,15 +96,45 @@ namespace AdoNetCore.AseClient.Internal
             return null;
         }
 
-        private bool CheckAndIncrementPoolSize()
+        private void FillPoolToMinSize()
+        {
+            Logger.Instance?.WriteLine("FillPoolToMinSize begin");
+            while (CheckAndIncrementPoolSize(true))
+            {
+                IInternalConnection newConnection = null;
+                try
+                {
+                    newConnection = _connectionFactory.GetNewConnection(new CancellationToken());
+
+                    if (newConnection == null)
+                    {
+                        RemoveConnection();
+                    }
+                    else
+                    {
+                        Logger.Instance?.WriteLine("FillPoolToMinSize add new internal connection");
+                        _available.Enqueue(newConnection);
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Logger.Instance?.WriteLine($"FillPoolToMinSize exception: {ex}");
+                    RemoveConnection(newConnection);
+                }
+            }
+            Logger.Instance?.WriteLine("FillPoolToMinSize end");
+        }
+
+        private bool CheckAndIncrementPoolSize(bool mustBeBelowMin = false)
         {
             lock (_mutex)
             {
-                if (PoolSize < _parameters.MaxPoolSize)
+                if (PoolSize < (mustBeBelowMin ? _parameters.MinPoolSize : _parameters.MaxPoolSize))
                 {
                     PoolSize++;
                     return true;
                 }
+
                 return false;
             }
         }

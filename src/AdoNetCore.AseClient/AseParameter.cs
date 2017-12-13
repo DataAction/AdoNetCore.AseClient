@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Diagnostics;
+using System.Text;
 
 namespace AdoNetCore.AseClient
 {
@@ -105,17 +106,17 @@ namespace AdoNetCore.AseClient
             else if (value is char) // NOTE: - char is not supported by the SAP AseClient.
             {
                 AseDbType = AseDbType.UniChar;
-                Size = 1;
+                Size = Encoding.Unicode.GetByteCount(new[] {(char)value});
             }
             else if (value is char[]) // NOTE: - char[] is not supported by the SAP AseClient.
             {
                 AseDbType = AseDbType.UniChar;
-                Size = ((char[])value).Length;
+                Size = Encoding.Unicode.GetByteCount((char[])value);
             }
             else if (value is string)
             {
                 AseDbType = AseDbType.UniChar;
-                Size = ((string)value).Length;
+                Size = Encoding.Unicode.GetByteCount((string)value);
             }
             else // AnsiString, AnsiStringFixedLength, Xml, Date, DateTime2, DateTimeOffset, Time, VarNumeric, Guid, Currency, Object.
             {

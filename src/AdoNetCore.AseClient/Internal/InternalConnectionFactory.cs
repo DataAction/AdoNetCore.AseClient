@@ -22,6 +22,9 @@ namespace AdoNetCore.AseClient.Internal
 
         public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
         {
+            Socket socket = null;
+            InternalConnection connection = null;
+
             try
             {
                 if (_endpoint == null)
@@ -29,7 +32,7 @@ namespace AdoNetCore.AseClient.Internal
                     _endpoint = CreateEndpoint(_parameters.Server, _parameters.Port, token);
                 }
 
-                var socket = new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
+                socket = new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
 
 #if NET45
                 var connect = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, _endpoint, null);
@@ -37,35 +40,28 @@ namespace AdoNetCore.AseClient.Internal
                 var connect = socket.ConnectAsync(_endpoint);
 #endif
                 connect.Wait(token);
+
                 if (connect.IsCanceled)
                 {
                     socket.Dispose();
                     throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
                 }
 
-                var connection = new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
-
-                try
-                {
-                    connection.Login();
-                }
-                catch (TimeoutException)
-                {
-                    connection.Dispose();
-                    throw;
-                }
-
+                connection = new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
+                connection.Login();
                 return connection;
             }
             catch (OperationCanceledException)
             {
-                //todo: cleanup
+                connection?.Dispose();
+                socket?.Dispose();
                 throw;
             }
             catch(Exception ex)
             {
                 Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)} encountered exception: {ex}");
-                //todo: cleanup
+                connection?.Dispose();
+                socket?.Dispose();
                 throw new OperationCanceledException();
             }
         }

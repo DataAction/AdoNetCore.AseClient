@@ -11,6 +11,7 @@ namespace AdoNetCore.AseClient.Internal
     {
         //concurrency-related members
         private readonly object _mutex = new object();
+
         private readonly ConcurrentQueue<IInternalConnection> _available;
         private readonly ConcurrentQueue<TaskCompletionSource<IInternalConnection>> _requests;
         public int PoolSize { get; private set; }
@@ -101,7 +102,7 @@ namespace AdoNetCore.AseClient.Internal
                        //there's room in the pool! create new connection and return it
                        ? await CreateNewPooledConnection(cancellationToken)
                        //pool's full, wait for something to release a connection
-                       : await WaitForPooledConnection(cancellationToken));
+                       : WaitForPooledConnection(cancellationToken));
         }
 
         private IInternalConnection FetchIdlePooledConnection()
@@ -130,10 +131,12 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private async Task<IInternalConnection> WaitForPooledConnection(CancellationToken cancellationToken)
+        private IInternalConnection WaitForPooledConnection(CancellationToken cancellationToken)
         {
             var src = new TaskCompletionSource<IInternalConnection>();
             _requests.Enqueue(src);
+
+            Logger.Instance?.WriteLine("Waiting for pooled connection");
 
             try
             {
@@ -152,21 +155,21 @@ namespace AdoNetCore.AseClient.Internal
 
         private async Task TryFillPoolToMinSize()
         {
-            Logger.Instance?.WriteLine("FillPoolToMinSize begin");
+            Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} begin");
             while (CheckAndIncrementPoolSize(true))
             {
                 try
                 {
                     AddToPool(await CreateNewPooledConnection(new CancellationToken()));
-                    Logger.Instance?.WriteLine("FillPoolToMinSize added new internal connection");
+                    Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} added new internal connection");
                 }
                 catch(Exception ex)
                 {
-                    Logger.Instance?.WriteLine($"FillPoolToMinSize exception: {ex}");
+                    Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} exception: {ex}");
                     RemoveConnection();
                 }
             }
-            Logger.Instance?.WriteLine("FillPoolToMinSize end");
+            Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} end");
         }
 
         private async Task TryReplaceConnection()
@@ -177,11 +180,11 @@ namespace AdoNetCore.AseClient.Internal
                 try
                 {
                     AddToPool(await CreateNewPooledConnection(new CancellationToken()));
-                    Logger.Instance?.WriteLine("TryReplaceConnection added new internal connection");
+                    Logger.Instance?.WriteLine($"{nameof(TryReplaceConnection)} added new internal connection");
                 }
                 catch (Exception ex)
                 {
-                    Logger.Instance?.WriteLine($"TryReplaceConnection exception: {ex}");
+                    Logger.Instance?.WriteLine($"{nameof(TryReplaceConnection)} exception: {ex}");
                     RemoveConnection();
                 }
             }
@@ -261,6 +264,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 if (src.Task.IsCanceled)
                 {
+                    Logger.Instance?.WriteLine("Encountered canceled request");
                     continue;
                 }
 

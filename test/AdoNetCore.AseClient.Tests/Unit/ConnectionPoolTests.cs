@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Interface;
@@ -48,8 +49,52 @@ namespace AdoNetCore.AseClient.Tests.Unit
             };
             var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
 
-            pool.Reserve();
+            var c1 = pool.Reserve();
             Assert.Throws<AseException>(() => pool.Reserve());
+
+            Assert.AreEqual(1, pool.PoolSize);
+            pool.Release(c1);
+        }
+
+        [TestCase(1, 1)]
+        [TestCase(10, 1)]
+        [TestCase(100, 1)]
+        [TestCase(1, 3)]
+        [TestCase(10, 3)]
+        [TestCase(100, 3)]
+        [TestCase(1, 6)]
+        [TestCase(10, 6)]
+        [TestCase(100, 6)]
+        [TestCase(1, 10)]
+        [TestCase(10, 10)]
+        [TestCase(100, 10)]
+        public void ReleaseConnection_WhilePoolFull_ShouldHandImmediatelyToNewRequestor(short size, int runs)
+        {
+            var parameters = new TestConnectionParameters
+            {
+                MaxPoolSize = size,
+                LoginTimeout = 5
+            };
+
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+
+            var connections = Enumerable.Repeat<Func<IInternalConnection>>(() => pool.Reserve(), size).Select(f => f()).ToArray();
+
+            for (var run = 0; run < runs; run++)
+            {
+                Console.WriteLine($"Run {run+1} of {runs}");
+                var reserveTasks = Enumerable.Repeat<Func<Task<IInternalConnection>>>(() => Task.Run(() => pool.Reserve()), size).Select(f => f()).ToArray();
+                var releaseTasks = connections.Select(c => Task.Run(() => pool.Release(c))).ToArray();
+
+                Task.WaitAll(releaseTasks);
+                // ReSharper disable once CoVariantArrayConversion
+                Task.WaitAll(reserveTasks);
+
+                Assert.IsTrue(reserveTasks.All(t => t.IsCompleted));
+                Assert.IsTrue(reserveTasks.All(t => t.Result != null));
+
+                connections = reserveTasks.Select(t => t.Result).ToArray();
+            }
         }
 
         private class ImmediateConnectionFactory : IInternalConnectionFactory

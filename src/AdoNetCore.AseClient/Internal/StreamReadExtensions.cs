@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace AdoNetCore.AseClient.Internal
@@ -207,7 +206,16 @@ namespace AdoNetCore.AseClient.Internal
             };
             var remainingLength = length - 1;
             stream.Read(buffer, 16 - remainingLength, remainingLength);
-            buffer = buffer.Reverse().ToArray();
+            //buffer = buffer.Reverse().ToArray();
+
+            buffer = new[]
+            {
+                buffer[15], buffer[14], buffer[13], buffer[12],
+                buffer[11], buffer[10], buffer[9], buffer[8],
+                buffer[7], buffer[6], buffer[5], buffer[4],
+                buffer[3], buffer[2], buffer[1], buffer[0],
+            };
+
             var bits = new[]
             {
                 BitConverter.ToInt32(buffer, 0),

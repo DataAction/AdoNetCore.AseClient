@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
@@ -175,7 +174,7 @@ namespace AdoNetCore.AseClient.Internal
 
             messageHandler.AssertNoErrors();
 
-            return new AseDataReader(dataReaderHandler.Results().ToArray());
+            return new AseDataReader(dataReaderHandler.Results());
         }
 
         public object ExecuteScalar(AseCommand command, AseTransaction transaction)
@@ -249,16 +248,14 @@ namespace AdoNetCore.AseClient.Internal
                 throw new NotImplementedException($"{command.CommandType} is not implemented");
             }
 
-            var commandToken = command.CommandType == CommandType.StoredProcedure
+            yield return command.CommandType == CommandType.StoredProcedure
                 ? BuildRpcToken(command)
                 : BuildLanguageToken(command);
 
-            if (command.HasSendableParameters)
+            foreach (var token in BuildParameterTokens(command.AseParameters))
             {
-                return new[] { commandToken }.Concat(BuildParameterTokens(command.AseParameters));
+                yield return token;
             }
-
-            return new[] { commandToken };
         }
 
         private IToken BuildLanguageToken(AseCommand command)
@@ -323,6 +320,11 @@ namespace AdoNetCore.AseClient.Internal
                     Format = formatItem,
                     Value = parameter.Value
                 });
+            }
+
+            if (formatItems.Count == 0)
+            {
+                return new IToken[0];
             }
 
             return new IToken[]

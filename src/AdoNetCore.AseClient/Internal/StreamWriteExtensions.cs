@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace AdoNetCore.AseClient.Internal
@@ -27,9 +26,12 @@ namespace AdoNetCore.AseClient.Internal
             stream.Write(BitConverter.GetBytes(value));
         }
 
-        public static void WriteRepeatedBytes(this Stream stream, byte value, int repeat)
+        private static void WriteRepeatedBytes(this Stream stream, byte value, int repeat)
         {
-            stream.Write(Enumerable.Repeat(value, repeat).ToArray());
+            for (var i = 0; i < repeat; i++)
+            {
+                stream.WriteByte(value);
+            }
         }
 
         public static void WriteInt(this Stream stream, int value)

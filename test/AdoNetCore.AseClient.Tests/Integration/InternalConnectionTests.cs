@@ -19,9 +19,10 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void Ping_ShouldWork()
         {
-            using (var connection = ConnectionPoolManager.Reserve(ConnectionParameters.Parse(_connectionStrings["default"])))
+            using (var connection = new AseConnection(_connectionStrings["default"]))
             {
-                Assert.IsTrue(connection.Ping());
+                connection.Open();
+                Assert.IsTrue(connection.InternalConnection.Ping());
             }
         }
     }

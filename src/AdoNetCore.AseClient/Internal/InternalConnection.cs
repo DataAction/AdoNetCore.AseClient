@@ -231,6 +231,8 @@ namespace AdoNetCore.AseClient.Internal
                 doneHandler);
 
             messageHandler.AssertNoErrors();
+
+            _environment.TextSize = textSize;
         }
 
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
@@ -277,7 +279,7 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var parameterType = (DbType)parameter.DbType;                
+                var parameterType = (DbType)parameter.AseDbType;                
                 var length = TypeMap.GetFormatLength(parameterType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {

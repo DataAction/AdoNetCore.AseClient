@@ -50,7 +50,7 @@ namespace AdoNetCore.AseClient
             }
             else if (value is long)
             {
-                AseDbType = AseDbType.BigInt; // NOTE: - char is not supported by the SAP AseClient.
+                AseDbType = AseDbType.BigInt; // NOTE: - long is not supported by the SAP AseClient.
             }
             else if (value is uint)
             {

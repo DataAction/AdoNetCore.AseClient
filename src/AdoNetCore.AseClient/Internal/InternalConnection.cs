@@ -232,6 +232,8 @@ namespace AdoNetCore.AseClient.Internal
             });
 
             messageHandler.AssertNoErrors();
+
+            _environment.TextSize = textSize;
         }
 
         private bool _isDoomed;

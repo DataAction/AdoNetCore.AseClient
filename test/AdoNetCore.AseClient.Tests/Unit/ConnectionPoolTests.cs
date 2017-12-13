@@ -44,7 +44,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var parameters = new TestConnectionParameters
             {
                 MaxPoolSize = 1,
-                LoginTimeoutMs = 1000
+                LoginTimeout = 1
             };
             var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
 
@@ -78,7 +78,6 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class TestConnectionParameters : IConnectionParameters
         {
-            public string ConnectionString { get; }
             public string Server { get; }
             public int Port { get; }
             public string Database { get; }
@@ -92,7 +91,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public bool Pooling { get; } = true;
             public short MaxPoolSize { get; set; } = 100;
             public short MinPoolSize { get; set; }
-            public int LoginTimeoutMs { get; set; } = 1000;
+            public int LoginTimeout { get; set; }
             public short ConnectionIdleTimeout { get; }
             public short ConnectionLifetime { get; }
             public bool PingServer { get; }

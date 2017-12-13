@@ -24,6 +24,5 @@ namespace AdoNetCore.AseClient
             get; 
             private set;
         }
-
     }
 }

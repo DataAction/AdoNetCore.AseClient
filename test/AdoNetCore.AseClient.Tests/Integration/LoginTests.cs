@@ -41,15 +41,5 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 Assert.Throws<AseException>(() => connection.Open());
             }
         }
-
-        [Test]
-        [Ignore("Passes sometimes, depends on cancellation token reliability")]
-        public void SmallTimeout_Failure()
-        {
-            using (var connection = new AseConnection(_connectionStrings["default"]+";LoginTimeoutMs=1"))
-            {
-                Assert.Throws<AseException>(() => connection.Open());
-            }
-        }
     }
 }

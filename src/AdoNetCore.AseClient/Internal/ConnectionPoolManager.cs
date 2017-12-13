@@ -4,18 +4,18 @@ using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal static class ConnectionPoolManager
+    internal sealed class ConnectionPoolManager : IConnectionPoolManager
     {
         private static readonly ConcurrentDictionary<string, IConnectionPool> Pools = new ConcurrentDictionary<string, IConnectionPool>(StringComparer.OrdinalIgnoreCase);
 
-        public static IInternalConnection Reserve(ConnectionParameters parameters)
+        public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters)
         {
-            return Pools.GetOrAdd(parameters.ConnectionString, _ => new ConnectionPool(parameters, new InternalConnectionFactory(parameters))).Reserve();
+            return Pools.GetOrAdd(connectionString, _ => new ConnectionPool(parameters, new InternalConnectionFactory(parameters))).Reserve();
         }
 
-        public static void Release(ConnectionParameters parameters, IInternalConnection connection)
+        public void Release(string connectionString, IInternalConnection connection)
         {
-            if (Pools.TryGetValue(parameters.ConnectionString, out var pool))
+            if (Pools.TryGetValue(connectionString, out var pool))
             {
                 pool.Release(connection);
             }

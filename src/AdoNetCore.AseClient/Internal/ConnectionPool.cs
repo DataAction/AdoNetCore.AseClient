@@ -41,7 +41,7 @@ namespace AdoNetCore.AseClient.Internal
                 using (var src = new CancellationTokenSource())
                 {
                     var t = src.Token;
-                    src.CancelAfter(_parameters.LoginTimeoutMs);
+                    src.CancelAfter(TimeSpan.FromSeconds(_parameters.LoginTimeout));
 
                     var task = _parameters.Pooling
                         ? ReservePooledConnection(t)

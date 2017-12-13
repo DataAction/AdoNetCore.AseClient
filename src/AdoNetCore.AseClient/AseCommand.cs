@@ -9,7 +9,7 @@ namespace AdoNetCore.AseClient
     public sealed class AseCommand : IDbCommand
     {
         // TODO - consider async
-        private readonly AseConnection _connection;
+        private AseConnection _connection;
         internal readonly AseParameterCollection AseParameters;
 
         public AseCommand(AseConnection connection)
@@ -195,7 +195,22 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the <see cref="AseConnection" /> used by this instance of the AseCommand.
         /// </summary>
-        public AseConnection Connection { get; set; }
+        public AseConnection Connection {
+            get => _connection;
+            set => _connection = value;
+        }
+
+        /// <summary>
+        /// Governs the default behavior of the AseCommand objects associated with this connection.
+        /// </summary>
+        /// <remarks>
+        /// When true then the ? syntax is not supported, and a name is expected.
+        /// </remarks>
+        public bool NamedParameters // TODO - implement
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 

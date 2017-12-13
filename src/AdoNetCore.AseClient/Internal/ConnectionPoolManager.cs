@@ -6,11 +6,11 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal sealed class ConnectionPoolManager : IConnectionPoolManager
     {
-        private static readonly ConcurrentDictionary<string, ConnectionPool> Pools = new ConcurrentDictionary<string, ConnectionPool>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, IConnectionPool> Pools = new ConcurrentDictionary<string, IConnectionPool>(StringComparer.OrdinalIgnoreCase);
 
-        public IInternalConnection Reserve(string connectionString, ConnectionParameters parameters)
+        public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters)
         {
-            return Pools.GetOrAdd(connectionString, _ => new ConnectionPool(parameters)).Reserve();
+            return Pools.GetOrAdd(connectionString, _ => new ConnectionPool(parameters, new InternalConnectionFactory(parameters))).Reserve();
         }
 
         public void Release(string connectionString, IInternalConnection connection)

@@ -15,7 +15,12 @@ namespace AdoNetCore.AseClient.Internal.Handler
         };
         private readonly List<IToken> _tokens = new List<IToken>();
 
-        public IEnumerable<TableResult> Results()
+        public TableResult[] Results()
+        {
+            return new List<TableResult>(ResultsInternal()).ToArray();
+        }
+
+        public IEnumerable<TableResult> ResultsInternal()
         {
             TableResult current = null;
             foreach (var token in _tokens)

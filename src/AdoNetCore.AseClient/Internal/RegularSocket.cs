@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 
@@ -12,6 +11,8 @@ namespace AdoNetCore.AseClient.Internal
         private readonly Socket _inner;
         private readonly ITokenParser _parser;
 
+        public DateTime LastActive { get; private set; }
+
         public RegularSocket(Socket inner, ITokenParser parser)
         {
             _inner = inner;
@@ -21,16 +22,6 @@ namespace AdoNetCore.AseClient.Internal
         public void Dispose()
         {
             _inner.Dispose();
-        }
-
-        public int Send(byte[] buffer)
-        {
-            return _inner.Send(buffer);
-        }
-
-        public int Receive(byte[] buffer)
-        {
-            return _inner.Receive(buffer);
         }
 
         private byte[] HeaderTemplate(BufferType type) => new byte[]
@@ -44,6 +35,7 @@ namespace AdoNetCore.AseClient.Internal
             using (var ms = new MemoryStream())
             {
                 packet.Write(ms, env.Encoding);
+
                 ms.Seek(0, SeekOrigin.Begin);
 
                 while (ms.Position < ms.Length)
@@ -60,6 +52,8 @@ namespace AdoNetCore.AseClient.Internal
 
                     _inner.EnsureSend(buffer, 0, chunkLength);
                 }
+
+                LastActive = DateTime.UtcNow;
             }
         }
 
@@ -67,27 +61,26 @@ namespace AdoNetCore.AseClient.Internal
         {
             using (var ms = new MemoryStream())
             {
+                var buffer = new byte[env.PacketSize];
+                while (true)
                 {
-                    var buffer = new byte[env.PacketSize];
-                    while (true)
+                    _inner.EnsureReceive(buffer, 0, env.HeaderSize);
+                    var length = buffer[2] << 8 | buffer[3];
+                    var bufferStatus = (BufferStatus)buffer[1];
+                    var finalChunk = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM);
+
+                    _inner.EnsureReceive(buffer, env.HeaderSize, length - env.HeaderSize);
+                    ms.Write(buffer, env.HeaderSize, length - env.HeaderSize);
+
+                    if (finalChunk)
                     {
-                        _inner.EnsureReceive(buffer, 0, env.HeaderSize);
-                        var length = buffer[2] << 8 | buffer[3];
-                        var bufferStatus = (BufferStatus) buffer[1];
-                        var finalChunk = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM);
-
-                        _inner.EnsureReceive(buffer, env.HeaderSize, length - env.HeaderSize);
-                        ms.Write(buffer, env.HeaderSize, length - env.HeaderSize);
-
-                        if (finalChunk)
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);
 
+                LastActive = DateTime.UtcNow;
                 return _parser.Parse(ms, env.Encoding);
             }
         }

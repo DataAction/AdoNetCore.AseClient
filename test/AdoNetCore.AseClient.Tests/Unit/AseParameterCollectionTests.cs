@@ -265,7 +265,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             Assert.AreEqual(parameterName, parameter.ParameterName);
             Assert.AreEqual(AseDbType.UniChar, parameter.AseDbType);
-            Assert.AreEqual(value.Length, parameter.Size);
+            Assert.AreEqual(14, parameter.Size);
             Assert.AreEqual(ParameterDirection.Input, parameter.Direction);
             Assert.AreEqual(false, parameter.IsNullable);
             Assert.AreEqual(0, parameter.Precision);

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
@@ -12,11 +11,11 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal class InternalConnection : IInternalConnection
     {
-        private readonly ConnectionParameters _parameters;
+        private readonly IConnectionParameters _parameters;
         private readonly ISocket _socket;
         private readonly DbEnvironment _environment = new DbEnvironment();
 
-        public InternalConnection(ConnectionParameters parameters, ISocket socket)
+        public InternalConnection(IConnectionParameters parameters, ISocket socket)
         {
             _parameters = parameters;
             _socket = socket;
@@ -30,48 +29,46 @@ namespace AdoNetCore.AseClient.Internal
             _socket.SendPacket(packet, _environment);
         }
 
-        private void ReceiveTokens(ITokenHandler[] handlers)
+        private void ReceiveTokens(params ITokenHandler[] handlers)
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
-            foreach (var token in _socket.ReceiveTokens(_environment))
+            foreach (var receivedToken in _socket.ReceiveTokens(_environment))
             {
                 foreach (var handler in handlers)
                 {
-                    if (handler.CanHandle(token.Type))
+                    if (handler.CanHandle(receivedToken.Type))
                     {
-                        handler.Handle(token);
+                        handler.Handle(receivedToken);
                     }
                 }
             }
         }
 
-        public void Connect()
+        public void Login()
         {
             //socket is established already
             //login
             SendPacket(new LoginPacket(
-                _parameters.ClientHostName,
-                _parameters.Username,
-                _parameters.Password,
-                _parameters.ProcessId,
-                _parameters.ApplicationName,
-                _parameters.Server,
-                "us_english",
-                _parameters.Charset,
-                "ADO.NET",
-                _environment.PacketSize,
-                new CapabilityToken()));
+                    _parameters.ClientHostName,
+                    _parameters.Username,
+                    _parameters.Password,
+                    _parameters.ProcessId,
+                    _parameters.ApplicationName,
+                    _parameters.Server,
+                    "us_english",
+                    _parameters.Charset,
+                    "ADO.NET",
+                    _environment.PacketSize,
+                    new CapabilityToken()));
 
             var ackHandler = new LoginTokenHandler();
             var messageHandler = new MessageTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 ackHandler,
                 new EnvChangeTokenHandler(_environment),
-                messageHandler,
-            });
+                messageHandler);
 
             messageHandler.AssertNoErrors();
 
@@ -80,14 +77,31 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("No login ack found");
             }
 
-            ChangeDatabase(_parameters.Database);
-            GetTextSize();
-            SetTextSize(_parameters.TextSize);
+            Created = DateTime.UtcNow;
         }
+
+        public DateTime Created { get; private set; }
+        public DateTime LastActive => _socket.LastActive;
 
         public bool Ping()
         {
-            return true; //todo: implement
+            try
+            {
+                SendPacket(new NormalPacket(OptionCommandToken.CreateGet(OptionCommandToken.OptionType.TDS_OPT_STAT_TIME)));
+
+                var messageHandler = new MessageTokenHandler();
+
+                ReceiveTokens(messageHandler);
+
+                messageHandler.AssertNoErrors();
+
+                return true;
+            }
+            catch(Exception ex)
+            {
+                Logger.Instance?.WriteLine($"Internal ping resulted in exception: {ex}");
+                return false;
+            }
         }
 
         public void ChangeDatabase(string databaseName)
@@ -98,22 +112,17 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             //turns out, you can't issue an env change token to change the database, it responds saying it doesn't know how to process such a token
-            SendPacket(new NormalPacket(new IToken[]
+            SendPacket(new NormalPacket(new LanguageToken
             {
-                new LanguageToken
-                {
-                    HasParameters = false,
-                    CommandText = $"USE {databaseName}"
-                }
+                HasParameters = false,
+                CommandText = $"USE {databaseName}"
             }));
 
             var messageHandler = new MessageTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
-                messageHandler
-            });
+                messageHandler);
 
             messageHandler.AssertNoErrors();
         }
@@ -127,13 +136,11 @@ namespace AdoNetCore.AseClient.Internal
             var doneHandler = new DoneTokenHandler();
             var messageHandler = new MessageTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 new ResponseParameterTokenHandler(command.AseParameters),
-                doneHandler,
-            });
+                doneHandler);
             
             if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
             {
@@ -153,14 +160,12 @@ namespace AdoNetCore.AseClient.Internal
             var messageHandler = new MessageTokenHandler();
             var dataReaderHandler = new DataReaderTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 dataReaderHandler,
                 new ResponseParameterTokenHandler(command.AseParameters),
-                doneHandler
-            });
+                doneHandler);
 
             if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
             {
@@ -169,7 +174,7 @@ namespace AdoNetCore.AseClient.Internal
 
             messageHandler.AssertNoErrors();
 
-            return new AseDataReader(dataReaderHandler.Results().ToArray());
+            return new AseDataReader(dataReaderHandler.Results());
         }
 
         public object ExecuteScalar(AseCommand command, AseTransaction transaction)
@@ -187,19 +192,17 @@ namespace AdoNetCore.AseClient.Internal
 
         public void GetTextSize()
         {
-            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.GetTextSize() }));
+            SendPacket(new NormalPacket(OptionCommandToken.CreateGet(OptionCommandToken.OptionType.TDS_OPT_TEXTSIZE)));
 
             var doneHandler = new DoneTokenHandler();
             var messageHandler = new MessageTokenHandler();
             var dataReaderHandler = new DataReaderTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
-                new EnvChangeTokenHandler(_environment), //this will handle the response token and set .TextSize
+            ReceiveTokens(
+                new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 dataReaderHandler,
-                doneHandler
-            });
+                doneHandler);
 
             messageHandler.AssertNoErrors();
         }
@@ -212,22 +215,31 @@ namespace AdoNetCore.AseClient.Internal
                 return;
             }
 
-            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.SetTextSize(textSize) }));
+            SendPacket(new NormalPacket(OptionCommandToken.CreateSetTextSize(textSize)));
 
             var doneHandler = new DoneTokenHandler();
             var messageHandler = new MessageTokenHandler();
             var dataReaderHandler = new DataReaderTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 dataReaderHandler,
-                doneHandler
-            });
+                doneHandler);
 
             messageHandler.AssertNoErrors();
+
+            _environment.TextSize = textSize;
         }
+
+        private bool _isDoomed;
+        public bool IsDoomed
+        {
+            get => _isDoomed;
+            set => _isDoomed = _isDoomed || value;
+        }
+
+        public bool IsDisposed { get; private set; }
 
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
         {
@@ -236,16 +248,14 @@ namespace AdoNetCore.AseClient.Internal
                 throw new NotImplementedException($"{command.CommandType} is not implemented");
             }
 
-            var commandToken = command.CommandType == CommandType.StoredProcedure
+            yield return command.CommandType == CommandType.StoredProcedure
                 ? BuildRpcToken(command)
                 : BuildLanguageToken(command);
 
-            if (command.HasSendableParameters)
+            foreach (var token in BuildParameterTokens(command.AseParameters))
             {
-                return new[] { commandToken }.Concat(BuildParameterTokens(command.AseParameters));
+                yield return token;
             }
-
-            return new[] { commandToken };
         }
 
         private IToken BuildLanguageToken(AseCommand command)
@@ -312,6 +322,11 @@ namespace AdoNetCore.AseClient.Internal
                 });
             }
 
+            if (formatItems.Count == 0)
+            {
+                return new IToken[0];
+            }
+
             return new IToken[]
             {
                 new ParameterFormat2Token
@@ -327,6 +342,12 @@ namespace AdoNetCore.AseClient.Internal
 
         public void Dispose()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            IsDisposed = true;
             _socket.Dispose();
         }
     }

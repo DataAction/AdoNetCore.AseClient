@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -7,6 +9,9 @@ namespace AdoNetCore.AseClient.Internal
     {
         //Cache the current process details, expensive call
         private static readonly Process CurrentProcess = Process.GetCurrentProcess();
+        private static readonly Regex DsUrlRegex = new Regex(
+            @"^file://(?<path>.+" + Regex.Escape(new string(new [] { Path.DirectorySeparatorChar })) + ")?(?<filename>[^" + Regex.Escape(new string(new[] { Path.DirectorySeparatorChar })) + "?]+)(?:[?](?<servicename>.+))?$", 
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
         public static ConnectionParameters Parse(string connectionString)
         {
@@ -14,9 +19,14 @@ namespace AdoNetCore.AseClient.Internal
             
             var result = new ConnectionParameters();
 
+            string dsUrl = null;
             foreach (var item in connectionStringTokeniser.Tokenise(connectionString))
             {
-                if (item.PropertyName.Equals("Data Source", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("DataSource", StringComparison.OrdinalIgnoreCase))
+                if (item.PropertyName.Equals("DSURL", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Directory Service URL", StringComparison.OrdinalIgnoreCase))
+                {
+                    dsUrl = item.PropertyValue;
+                }
+                else if (item.PropertyName.Equals("Server", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Data Source", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("DataSource", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Address", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Addr", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Network Address", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Server Name", StringComparison.OrdinalIgnoreCase))
                 {
                     if (string.IsNullOrWhiteSpace(item.PropertyValue))
                     {
@@ -31,7 +41,7 @@ namespace AdoNetCore.AseClient.Internal
                         result.Port = Convert.ToInt32(parts[1]);
                     }
                 }
-                else if (item.PropertyName.Equals("Port", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("Port", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Server Port", StringComparison.OrdinalIgnoreCase))
                 {
                     result.Port = Convert.ToInt32(item.PropertyValue);
                 }
@@ -39,7 +49,7 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     result.Database = item.PropertyValue;
                 }
-                else if (item.PropertyName.Equals("Uid", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("User Id", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("UID", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("User ID", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("UserID", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("User", StringComparison.OrdinalIgnoreCase))
                 {
                     result.Username = item.PropertyValue;
                 }
@@ -79,11 +89,11 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     result.PingServer = Convert.ToBoolean(item.PropertyValue);
                 }
-                else if (item.PropertyName.Equals("LoginTimeOut", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("LoginTimeOut", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Connect Timeout", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Connection Timeout", StringComparison.OrdinalIgnoreCase))
                 {
                     result.LoginTimeout = Convert.ToInt16(item.PropertyValue);
                 }
-                else if (item.PropertyName.Equals("ConnectionIdleTimeout", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("ConnectionIdleTimeout", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Connection IdleTimeout", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Connection Idle Timeout", StringComparison.OrdinalIgnoreCase))
                 {
                     result.ConnectionIdleTimeout = Convert.ToInt16(item.PropertyValue);
                 }
@@ -91,13 +101,56 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     result.ConnectionLifetime = Convert.ToInt16(item.PropertyValue);
                 }
-                else if (item.PropertyName.Equals("PacketSize", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("PacketSize", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Packet Size", StringComparison.OrdinalIgnoreCase))
                 {
                     result.PacketSize = Convert.ToUInt16(item.PropertyValue);
                 }
                 else if (item.PropertyName.Equals("TextSize", StringComparison.OrdinalIgnoreCase))
                 {
                     result.TextSize = Convert.ToInt32(item.PropertyValue);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(dsUrl))
+            {
+                // file://[path]<filename>[?][servicename]
+                var match = DsUrlRegex.Match(dsUrl);
+                if (match.Success)
+                {
+                    var path = match.Groups["path"].Value;
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        var sybaseEnvironmentVariablePath = @"%SYBASE%\ini";
+                        var resolvedSybasePath = Environment.ExpandEnvironmentVariables(sybaseEnvironmentVariablePath);
+
+                        if (!string.Equals(sybaseEnvironmentVariablePath, resolvedSybasePath))
+                        {
+                            path = resolvedSybasePath;
+                        }
+                    }
+
+                    // If we got a path...
+                    if (!string.IsNullOrWhiteSpace(path))
+                    {
+                        var filename = match.Groups["filename"].Value;
+                        var servicename = match.Groups["servicename"].Value;
+
+                        if (string.IsNullOrWhiteSpace(servicename))
+                        {
+                            servicename = result.Server;
+                        }
+
+                        var fullpath = Path.Combine(path, filename);
+
+                        var iniReader = new IniReader();
+                        var iniEntry = iniReader.Query(fullpath, servicename);
+
+                        if (iniEntry != null)
+                        {
+                            result.Server = iniEntry.HostName;
+                            result.Port = iniEntry.Port;
+                        }
+                    }
                 }
             }
 

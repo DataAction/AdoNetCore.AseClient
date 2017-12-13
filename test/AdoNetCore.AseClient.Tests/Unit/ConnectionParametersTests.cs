@@ -1,4 +1,8 @@
-﻿using AdoNetCore.AseClient.Internal;
+﻿using System;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Unit
@@ -107,5 +111,95 @@ namespace AdoNetCore.AseClient.Tests.Unit
             // Assert
             Assert.AreEqual(expectedConnectionLifetime, actual.ConnectionLifetime);
         }
+
+        // TODO - some tests for the DSUrl property.
+
+        [Test]
+        public void ConnectionParameters_WithDSURL_SetsProperties()
+        {
+            // Arrange
+            var path = MakeFile(SqlIniWithSeveralEntries);
+            var connectionString = $"DSURL=file://{path}?PIANO_BS;Db=a_database;Uid=a_user;Pwd=myPassword";
+
+            // Act
+            var actual = ConnectionParameters.Parse(connectionString);
+
+            // Assert
+            Assert.AreEqual("PIANO", actual.Server);
+            Assert.AreEqual(5001, actual.Port);
+        }
+
+
+        [Test]
+        public void ConnectionParameters_WithDSURLButNoServiceNameAndOneDefinitionInTheFile_SetsProperties()
+        {
+            // Arrange
+            var path = MakeFile(SqlIniWithOneEntry);
+            var connectionString = $"DSURL=file://{path};Db=a_database;Uid=a_user;Pwd=myPassword";
+
+            // Act
+            var actual = ConnectionParameters.Parse(connectionString);
+
+            // Assert
+            Assert.AreEqual("PIANO", actual.Server);
+            Assert.AreEqual(5001, actual.Port);
+        }
+
+        [Test]
+        public void ConnectionParameters_WithDSURLButNoServiceNameAndManyDefinitionsInTheFile_error()
+        {
+            // Arrange
+            var path = MakeFile(SqlIniWithSeveralEntries);
+            var connectionString = $"DSURL=file://{path};Db=a_database;Uid=a_user;Pwd=myPassword";
+
+            // Act//Assert
+            Assert.Throws<AseException>(() =>
+            {
+                ConnectionParameters.Parse(connectionString);
+            });
+        }
+
+        private static string MakeFile(string contents)
+        {
+            var filename = Path.GetTempFileName();
+
+            File.WriteAllText(filename, contents, Encoding.UTF8);
+
+            return filename;
+        }
+
+        private const string SqlIniWithSeveralEntries = 
+@"[PIANO_XP]
+master=NLWNSCK,PIANO,5003
+query=NLWNSCK,PIANO,5003
+
+
+[PIANO]
+master=NLWNSCK,PIANO,5000
+query=NLWNSCK,PIANO,5000
+
+
+[PIANO_BS]
+master=NLWNSCK,PIANO,5001
+query=NLWNSCK,PIANO,5001
+
+
+[PIANO_MS]
+master=NLWNSCK,PIANO,5002
+query=NLWNSCK,PIANO,5002
+
+
+[PIANO_JSAGENT]
+master=NLWNSCK,PIANO,4900
+query=NLWNSCK,PIANO,4900
+
+
+[ws]
+master=NLWNSCK,PIANO,8183";
+
+        private const string SqlIniWithOneEntry =
+@"[PIANO_BS]
+master=NLWNSCK,PIANO,5001
+query=NLWNSCK,PIANO,5001";
     }
 }

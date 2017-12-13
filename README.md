@@ -68,6 +68,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | Property                          | Support   | Notes
 | --------------------------------- |:---------:| -----
 | `AlternateServers`                | X
+| `AnsiNull`                        | TODO
 | `ApplicationName`                 | &#10003;
 | `BufferCacheSize`                 | TODO
 | `Charset`                         | &#10003;
@@ -80,7 +81,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `Database`                        | &#10003;
 | `Data Source`                     | &#10003;
 | `DistributedTransactionProtocol`  | X
-| `DSURL`                           | TODO | Consider [ini-parser](https://www.nuget.org/packages/ini-parser/)
+| `DSURL`                           | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
 | `EnableBulkLoad`                  | X
 | `EnableServerPacketSize`          | ? | May not be supported any more by capability bits
 | `Encryption`                      | X
@@ -105,6 +106,8 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `Uid`                             | &#10003;
 | `UseAseDecimal`                   | TODO
 | `UseCursor`                       | X
+
+http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.infocenter.dc20066.1570100/doc/html/adh1366129118970.html
 
 Notes on SAP AseClient connection string support from the [online docs](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409554914.html):
 * The ConnectionString is designed to match the ODBC connection string format as closely as possible.

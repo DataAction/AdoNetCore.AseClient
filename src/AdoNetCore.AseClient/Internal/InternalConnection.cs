@@ -227,6 +227,8 @@ namespace AdoNetCore.AseClient.Internal
             });
 
             messageHandler.AssertNoErrors();
+
+            _environment.TextSize = textSize;
         }
 
         private IEnumerable<IToken> BuildCommandTokens(AseCommand command)

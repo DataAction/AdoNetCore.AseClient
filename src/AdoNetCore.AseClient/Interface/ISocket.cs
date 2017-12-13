@@ -8,5 +8,7 @@ namespace AdoNetCore.AseClient.Interface
         void SendPacket(IPacket packet, DbEnvironment env);
 
         IToken[] ReceiveTokens(DbEnvironment env);
+
+        DateTime LastActive { get; }
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Threading;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
@@ -82,13 +81,10 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             Created = DateTime.UtcNow;
-            ChangeDatabase(_parameters.Database);
-            LastActive = DateTime.UtcNow;
-            SetTextSize(_parameters.TextSize);
         }
 
         public DateTime Created { get; private set; }
-        public DateTime LastActive { get; set; }
+        public DateTime LastActive => _socket.LastActive;
 
         public bool Ping()
         {

@@ -56,6 +56,10 @@ namespace AdoNetCore.AseClient.Tests.Unit
             pool.Release(c1);
         }
 
+        /// <summary>
+        /// In this scenario, the pool is fully consumed, and then an additional pool's worth of Reserve() calls are applied
+        /// This is then repeated for so many runs
+        /// </summary>
         [TestCase(1, 1)]
         [TestCase(10, 1)]
         [TestCase(100, 1)]
@@ -68,12 +72,12 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [TestCase(1, 10)]
         [TestCase(10, 10)]
         [TestCase(100, 10)]
-        public void ReleaseConnection_WhilePoolFull_ShouldHandImmediatelyToNewRequestor(short size, int runs)
+        public void PoolSpam_Waves(short size, int runs)
         {
             var parameters = new TestConnectionParameters
             {
                 MaxPoolSize = size,
-                LoginTimeout = 5
+                LoginTimeout = 1
             };
 
             var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
@@ -82,7 +86,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             for (var run = 0; run < runs; run++)
             {
-                Console.WriteLine($"Run {run+1} of {runs}");
+                Console.WriteLine($"Run {run + 1} of {runs}");
                 var reserveTasks = Enumerable.Repeat<Func<Task<IInternalConnection>>>(() => Task.Run(() => pool.Reserve()), size).Select(f => f()).ToArray();
                 var releaseTasks = connections.Select(c => Task.Run(() => pool.Release(c))).ToArray();
 
@@ -95,6 +99,42 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
                 connections = reserveTasks.Select(t => t.Result).ToArray();
             }
+        }
+
+        /// <summary>
+        /// In this scenario, we throw as many threads as we can at the pool
+        /// </summary>
+        [TestCase(1, 100)]
+        [TestCase(10, 100)]
+        [TestCase(100, 1000)]
+        [TestCase(100, 10000)]
+        [TestCase(100, 100000)]
+        [TestCase(100, 1000000)]
+        public void PoolSpam_Blitz(short size, int threads)
+        {
+            Logger.Disable();
+            var parallelism = size * 2;
+            var parameters = new TestConnectionParameters
+            {
+                MaxPoolSize = size,
+                LoginTimeout = 1
+            };
+
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+
+            var result = Parallel.ForEach(
+                Enumerable.Repeat(1, threads),
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = parallelism
+                },
+                (_, __) =>
+                {
+                    var c = pool.Reserve();
+                    pool.Release(c);
+                });
+
+            Assert.IsTrue(result.IsCompleted);
         }
 
         private class ImmediateConnectionFactory : IInternalConnectionFactory

@@ -11,10 +11,9 @@ namespace AdoNetCore.AseClient.Internal
     {
         //concurrency-related members
         private readonly object _mutex = new object();
-
-        private readonly ConcurrentQueue<IInternalConnection> _available;
-        private readonly ConcurrentQueue<TaskCompletionSource<IInternalConnection>> _requests;
+        private readonly BlockingCollection<IInternalConnection> _available;
         public int PoolSize { get; private set; }
+
         //regular members
         private readonly IConnectionParameters _parameters;
         private readonly IInternalConnectionFactory _connectionFactory;
@@ -23,8 +22,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             _parameters = parameters;
             _connectionFactory = connectionFactory;
-            _available = new ConcurrentQueue<IInternalConnection>();
-            _requests = new ConcurrentQueue<TaskCompletionSource<IInternalConnection>>();
+            _available = new BlockingCollection<IInternalConnection>();
 
             PoolSize = 0;
 
@@ -107,14 +105,22 @@ namespace AdoNetCore.AseClient.Internal
 
         private IInternalConnection FetchIdlePooledConnection()
         {
-            while (_available.TryDequeue(out var connection))
+            var now = DateTime.UtcNow;
+            while (_available.TryTake(out var connection))
             {
+                if (ShouldRemoveAndReplace(connection, now))
+                {
+                    RemoveAndReplace(connection);
+                    continue;
+                }
+
                 if (!_parameters.PingServer || connection.Ping())
                 {
                     return connection;
                 }
             }
 
+            Logger.Instance?.WriteLine($"{nameof(FetchIdlePooledConnection)} found no idle connection");
             return null;
         }
 
@@ -122,10 +128,12 @@ namespace AdoNetCore.AseClient.Internal
         {
             try
             {
+                Logger.Instance?.WriteLine($"{nameof(CreateNewPooledConnection)} start");
                 return await _connectionFactory.GetNewConnection(cancellationToken);
             }
             catch
             {
+                Logger.Instance?.WriteLine($"{nameof(CreateNewPooledConnection)} failed");
                 RemoveConnection();
                 throw;
             }
@@ -133,24 +141,10 @@ namespace AdoNetCore.AseClient.Internal
 
         private IInternalConnection WaitForPooledConnection(CancellationToken cancellationToken)
         {
-            var src = new TaskCompletionSource<IInternalConnection>();
-            _requests.Enqueue(src);
-
-            Logger.Instance?.WriteLine("Waiting for pooled connection");
-
-            try
-            {
-                src.Task.Wait(cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                if (src.Task.IsCompleted)
-                {
-                    return src.Task.Result;
-                }
-                throw;
-            }
-            return src.Task.Result;
+            Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} start");
+            var conn = _available.Take(cancellationToken);
+            Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} found connection");
+            return conn;
         }
 
         private async Task TryFillPoolToMinSize()
@@ -228,7 +222,8 @@ namespace AdoNetCore.AseClient.Internal
         private bool ShouldRemoveAndReplace(IInternalConnection connection, DateTime now)
         {
             return connection.IsDoomed
-                   || (_parameters.ConnectionLifetime > 0 && _parameters.ConnectionLifetime < (now - connection.Created).TotalSeconds);
+                   || (_parameters.ConnectionLifetime > 0 && _parameters.ConnectionLifetime < (now - connection.Created).TotalSeconds)
+                   || (_parameters.ConnectionIdleTimeout > 0 && _parameters.ConnectionIdleTimeout < (now - connection.LastActive).TotalSeconds);
         }
 
         public void Release(IInternalConnection connection)
@@ -251,32 +246,12 @@ namespace AdoNetCore.AseClient.Internal
                 return;
             }
             
-            connection.LastActive = now;
-
             AddToPool(connection);
         }
 
         private void AddToPool(IInternalConnection connection)
         {
-            //palm the connection off to an existing request
-            TaskCompletionSource<IInternalConnection> src;
-            while (_requests.TryDequeue(out src))
-            {
-                if (src.Task.IsCanceled)
-                {
-                    Logger.Instance?.WriteLine("Encountered canceled request");
-                    continue;
-                }
-
-                if (src.TrySetResult(connection))
-                {
-                    Logger.Instance?.WriteLine("Released connection was palmed-off to existing request");
-                    return;
-                }
-            }
-
-            //no valid requests, park it for later
-            _available.Enqueue(connection);
+            _available.Add(connection);
             Logger.Instance?.WriteLine("Released connection was placed in available queue");
         }
     }

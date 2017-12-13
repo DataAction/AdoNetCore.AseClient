@@ -29,8 +29,8 @@ namespace AdoNetCore.AseClient.Internal
             Logger.Instance?.WriteLine("----------  Send packet   ----------");
             _socket.SendPacket(packet, _environment);
         }
-        
-        private void ReceiveTokens(ITokenHandler[] handlers)
+
+        private void ReceiveTokens(params ITokenHandler[] handlers)
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
@@ -66,12 +66,10 @@ namespace AdoNetCore.AseClient.Internal
             var ackHandler = new LoginTokenHandler();
             var messageHandler = new MessageTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 ackHandler,
                 new EnvChangeTokenHandler(_environment),
-                messageHandler,
-            });
+                messageHandler);
 
             messageHandler.AssertNoErrors();
 
@@ -88,7 +86,23 @@ namespace AdoNetCore.AseClient.Internal
 
         public bool Ping()
         {
-            return true; //todo: implement
+            try
+            {
+                SendPacket(new NormalPacket(OptionCommandToken.CreateGet(OptionCommandToken.OptionType.TDS_OPT_STAT_TIME)));
+
+                var messageHandler = new MessageTokenHandler();
+
+                ReceiveTokens(messageHandler);
+
+                messageHandler.AssertNoErrors();
+
+                return true;
+            }
+            catch(Exception ex)
+            {
+                Logger.Instance?.WriteLine($"Internal ping resulted in exception: {ex}");
+                return false;
+            }
         }
 
         public void ChangeDatabase(string databaseName)
@@ -99,22 +113,17 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             //turns out, you can't issue an env change token to change the database, it responds saying it doesn't know how to process such a token
-            SendPacket(new NormalPacket(new IToken[]
+            SendPacket(new NormalPacket(new LanguageToken
             {
-                new LanguageToken
-                {
-                    HasParameters = false,
-                    CommandText = $"USE {databaseName}"
-                }
+                HasParameters = false,
+                CommandText = $"USE {databaseName}"
             }));
 
             var messageHandler = new MessageTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
-                messageHandler
-            });
+                messageHandler);
 
             messageHandler.AssertNoErrors();
         }
@@ -128,13 +137,11 @@ namespace AdoNetCore.AseClient.Internal
             var doneHandler = new DoneTokenHandler();
             var messageHandler = new MessageTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 new ResponseParameterTokenHandler(command.AseParameters),
-                doneHandler,
-            });
+                doneHandler);
             
             if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
             {
@@ -154,14 +161,12 @@ namespace AdoNetCore.AseClient.Internal
             var messageHandler = new MessageTokenHandler();
             var dataReaderHandler = new DataReaderTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 dataReaderHandler,
                 new ResponseParameterTokenHandler(command.AseParameters),
-                doneHandler
-            });
+                doneHandler);
 
             if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
             {
@@ -188,19 +193,17 @@ namespace AdoNetCore.AseClient.Internal
 
         public void GetTextSize()
         {
-            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.GetTextSize() }));
+            SendPacket(new NormalPacket(OptionCommandToken.CreateGet(OptionCommandToken.OptionType.TDS_OPT_TEXTSIZE)));
 
             var doneHandler = new DoneTokenHandler();
             var messageHandler = new MessageTokenHandler();
             var dataReaderHandler = new DataReaderTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
-                new EnvChangeTokenHandler(_environment), //this will handle the response token and set .TextSize
+            ReceiveTokens(
+                new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 dataReaderHandler,
-                doneHandler
-            });
+                doneHandler);
 
             messageHandler.AssertNoErrors();
         }
@@ -213,19 +216,17 @@ namespace AdoNetCore.AseClient.Internal
                 return;
             }
 
-            SendPacket(new NormalPacket(new IToken[] { OptionCommandToken.SetTextSize(textSize) }));
+            SendPacket(new NormalPacket(OptionCommandToken.CreateSetTextSize(textSize)));
 
             var doneHandler = new DoneTokenHandler();
             var messageHandler = new MessageTokenHandler();
             var dataReaderHandler = new DataReaderTokenHandler();
 
-            ReceiveTokens(new ITokenHandler[]
-            {
+            ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
                 messageHandler,
                 dataReaderHandler,
-                doneHandler
-            });
+                doneHandler);
 
             messageHandler.AssertNoErrors();
 

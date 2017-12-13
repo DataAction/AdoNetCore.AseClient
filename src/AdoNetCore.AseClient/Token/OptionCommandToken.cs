@@ -16,7 +16,7 @@ namespace AdoNetCore.AseClient.Token
         public OptionType Option { get; private set; }
 
         public byte[] Arguments { get; set; }
-        
+
         private OptionCommandToken() { }
 
         public void Write(Stream stream, Encoding enc)
@@ -38,8 +38,8 @@ namespace AdoNetCore.AseClient.Token
             var remainingLength = stream.ReadShort();
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
-                Command = (CommandType) ts.ReadByte();
-                Option = (OptionType) ts.ReadByte();
+                Command = (CommandType)ts.ReadByte();
+                Option = (OptionType)ts.ReadByte();
                 Arguments = ts.ReadByteLengthPrefixedByteArray();
             }
         }
@@ -51,7 +51,7 @@ namespace AdoNetCore.AseClient.Token
             return t;
         }
 
-        public static OptionCommandToken SetTextSize(int textSize)
+        public static OptionCommandToken CreateSetTextSize(int textSize)
         {
             return new OptionCommandToken
             {
@@ -61,13 +61,13 @@ namespace AdoNetCore.AseClient.Token
             };
         }
 
-        public static OptionCommandToken GetTextSize()
+        public static OptionCommandToken CreateGet(OptionType option)
         {
             return new OptionCommandToken
             {
                 Arguments = new byte[0],
                 Command = CommandType.TDS_OPT_LIST,
-                Option = OptionType.TDS_OPT_TEXTSIZE
+                Option = option
             };
         }
 

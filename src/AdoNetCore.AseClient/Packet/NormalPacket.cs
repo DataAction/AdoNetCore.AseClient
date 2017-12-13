@@ -14,6 +14,11 @@ namespace AdoNetCore.AseClient.Packet
 
         public BufferType Type => BufferType.TDS_BUF_NORMAL;
 
+        public NormalPacket(params IToken[] tokens)
+        {
+            _tokens = tokens;
+        }
+
         public NormalPacket(IEnumerable<IToken> tokens)
         {
             _tokens = tokens;

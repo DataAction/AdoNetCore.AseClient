@@ -68,6 +68,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | Property                          | Support   | Notes
 | --------------------------------- |:---------:| -----
 | `AlternateServers`                | X
+| `AnsiNull`                        | TODO
 | `ApplicationName`                 | &#10003;
 | `BufferCacheSize`                 | TODO
 | `Charset`                         | &#10003;
@@ -80,7 +81,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `Database`                        | &#10003;
 | `Data Source`                     | &#10003;
 | `DistributedTransactionProtocol`  | X
-| `DSURL`                           | TODO | Consider [ini-parser](https://www.nuget.org/packages/ini-parser/)
+| `DSURL`                           | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
 | `EnableBulkLoad`                  | X
 | `EnableServerPacketSize`          | ? | May not be supported any more by capability bits
 | `Encryption`                      | X
@@ -105,23 +106,6 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `Uid`                             | &#10003;
 | `UseAseDecimal`                   | TODO
 | `UseCursor`                       | X
-
-Notes on SAP AseClient connection string support from the [online docs](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409554914.html):
-* The ConnectionString is designed to match the ODBC connection string format as closely as possible.
-* You can set the ConnectionString property only when the connection is closed. Many of the connection string values have corresponding read-only properties. When the connection string is set, all of these properties are updated. However, if an error is detected, none of the properties are updated. AseConnection properties return only those settings contained in the ConnectionString.
-* If you reset the ConnectionString on a closed connection, all connection string values and related properties are reset, including the password.
-* When the property is set, a preliminary validation of the connection string is performed. When an application calls the Open method, the connection string is fully validated. A runtime exception is generated if the connection string contains invalid or unsupported properties.
-* Values can be delimited by single or double quotes. Either single or double quotes can be used within a connection string by using the other delimiter. For example, name="value's" or name= 'value"s', but not name='value's' or name= ""value"".
-
-  Blank characters are ignored unless they are placed within a value or within quotes.
-
-  Keyword-value pairs must be separated by a semicolon. If a semicolon is part of a value, it must also be delimited by quotes.
-
-  Escape sequences are not supported, and the value type is irrelevant.
-
-  Names are not case sensitive. If a property name occurs more than once in the connection string, the value associated with the last occurrence is used.
-* Use caution when constructing a connection string based on user input, such as when retrieving a user ID and password from a dialog box, and appending it to the connection string. The application should not allow a user to embed extra connection string parameters in these values.
-
 
 ## Supported types
 ### Types supported when sending requests to the database

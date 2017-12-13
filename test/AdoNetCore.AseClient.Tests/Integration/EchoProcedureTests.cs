@@ -61,7 +61,7 @@ end";
             var result = Parallel.ForEach(Enumerable.Repeat(1, threads), new ParallelOptions { MaxDegreeOfParallelism = parallelism }, (_, __) => ExecuteProcedure(connectionString));
             sw.Stop();
             Assert.True(result.IsCompleted);
-            Debug.WriteLine($"Stopwatch reports: {sw.ElapsedMilliseconds} ms");
+            Console.WriteLine($"Stopwatch reports: {sw.ElapsedMilliseconds} ms");
         }
 
         private void ExecuteProcedure(string connectionString)

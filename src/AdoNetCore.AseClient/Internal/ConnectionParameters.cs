@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal class ConnectionParameters
+    internal class ConnectionParameters : IConnectionParameters
     {
         //Cache the current process details, expensive call
         private static readonly Process CurrentProcess = Process.GetCurrentProcess();
@@ -16,7 +17,8 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var item in connectionStringTokeniser.Tokenise(connectionString))
             {
-                if (item.PropertyName.Equals("Data Source", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("DataSource", StringComparison.OrdinalIgnoreCase))
+                if (item.PropertyName.Equals("Data Source", StringComparison.OrdinalIgnoreCase)
+                    || item.PropertyName.Equals("DataSource", StringComparison.OrdinalIgnoreCase))
                 {
                     if (string.IsNullOrWhiteSpace(item.PropertyValue))
                     {
@@ -35,15 +37,19 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     result.Port = Convert.ToInt32(item.PropertyValue);
                 }
-                else if (item.PropertyName.Equals("Db", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Database", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Initial Catalog", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("Db", StringComparison.OrdinalIgnoreCase)
+                    || item.PropertyName.Equals("Database", StringComparison.OrdinalIgnoreCase)
+                    || item.PropertyName.Equals("Initial Catalog", StringComparison.OrdinalIgnoreCase))
                 {
                     result.Database = item.PropertyValue;
                 }
-                else if (item.PropertyName.Equals("Uid", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("User Id", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("Uid", StringComparison.OrdinalIgnoreCase)
+                    || item.PropertyName.Equals("User Id", StringComparison.OrdinalIgnoreCase))
                 {
                     result.Username = item.PropertyValue;
                 }
-                else if (item.PropertyName.Equals("Pwd", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Password", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("Pwd", StringComparison.OrdinalIgnoreCase)
+                    || item.PropertyName.Equals("Password", StringComparison.OrdinalIgnoreCase))
                 {
                     result.Password = item.PropertyValue;
                 }
@@ -63,7 +69,8 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     result.MinPoolSize = Convert.ToInt16(item.PropertyValue);
                 }
-                else if (item.PropertyName.Equals("ApplicationName", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Application Name", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("ApplicationName", StringComparison.OrdinalIgnoreCase)
+                    || item.PropertyName.Equals("Application Name", StringComparison.OrdinalIgnoreCase))
                 {
                     result.ApplicationName = item.PropertyValue;
                 }
@@ -81,13 +88,14 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 else if (item.PropertyName.Equals("LoginTimeOut", StringComparison.OrdinalIgnoreCase))
                 {
-                    result.LoginTimeout = Convert.ToInt16(item.PropertyValue);
+                    result.LoginTimeout = Convert.ToInt32(item.PropertyValue);
                 }
                 else if (item.PropertyName.Equals("ConnectionIdleTimeout", StringComparison.OrdinalIgnoreCase))
                 {
                     result.ConnectionIdleTimeout = Convert.ToInt16(item.PropertyValue);
                 }
-                else if (item.PropertyName.Equals("ConnectionLifetime", StringComparison.OrdinalIgnoreCase) || item.PropertyName.Equals("Connection Lifetime", StringComparison.OrdinalIgnoreCase))
+                else if (item.PropertyName.Equals("ConnectionLifetime", StringComparison.OrdinalIgnoreCase)
+                    || item.PropertyName.Equals("Connection Lifetime", StringComparison.OrdinalIgnoreCase))
                 {
                     result.ConnectionLifetime = Convert.ToInt16(item.PropertyValue);
                 }
@@ -138,7 +146,17 @@ namespace AdoNetCore.AseClient.Internal
 
             if (result.PacketSize < 256)
             {
-                throw new ArgumentException("PacketSize must be at least 256, and at most 9999 (bytes)");
+                throw new ArgumentException("PacketSize must be at least 256 (bytes)");
+            }
+
+            if (result.Pooling && result.MaxPoolSize <= 0)
+            {
+                throw new ArgumentException("Max Pool Size must be at least 1 when Pooling is enabled");
+            }
+
+            if (result.MinPoolSize > result.MaxPoolSize)
+            {
+                throw new ArgumentException("Min Pool Size must be at most the same as Max Pool Size");
             }
 
             return result;
@@ -156,12 +174,12 @@ namespace AdoNetCore.AseClient.Internal
         public string Charset { get; private set; } = "iso_1";
         public bool Pooling { get; private set; } = true;
         public short MaxPoolSize { get; private set; } = 100;
-        public short MinPoolSize { get; private set; } = 0;
-        public short LoginTimeout { get; private set; } = 15; //login timeout in seconds
-        public short ConnectionIdleTimeout { get; private set; } = 0; //how long a connection may be idle before being dropped/replaced. 0 = indefinite
-        public short ConnectionLifetime { get; private set; } = 0; //how long a connection may live before being dropped/replaced. 0 = indefinite
-        public bool PingServer { get; set; } = true; //in pooling, ping the server before returning from the pool
-        public ushort PacketSize { get; set; } = 512;
-        public int TextSize { get; set; } = 32768;
+        public short MinPoolSize { get; private set; }
+        public int LoginTimeout { get; private set; } = 15; //login timeout in seconds
+        public short ConnectionIdleTimeout { get; private set; } //how long a connection may be idle before being dropped/replaced. 0 = indefinite
+        public short ConnectionLifetime { get; private set; } //how long a connection may live before being dropped/replaced. 0 = indefinite
+        public bool PingServer { get; private set; } = true; //in pooling, ping the server before returning from the pool
+        public ushort PacketSize { get; private set; } = 512;
+        public int TextSize { get; private set; } = 32768;
     }
 }

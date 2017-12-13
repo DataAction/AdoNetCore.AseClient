@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using AdoNetCore.AseClient.Internal;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -31,37 +34,39 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
-        public void ConnectionSample()
+        [Test]
+        public void CannotResolveServer_Failure()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using(var connection = new AseConnection(connectionString)) 
+            using (var connection = new AseConnection("Data Source=myASEServer;Port=5000;Database=mydb;Uid=x;Pwd=y;"))
             {
-                connection.Open();
-                
-                // use the connection...
+                Assert.Throws<AseException>(() => connection.Open());
             }
         }
 
-        
-        public void CommandSample()
+        [TestCase(10, 100)]
+        [TestCase(100, 1000)]
+        [TestCase(100, 10000)]
+        public void Login_Blitz(short size, int threads)
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+            //need to add some counters so we can see what's going on
+            Logger.Disable();
+            var parallelism = size * 2;
 
-            using(var connection = new AseConnection(connectionString)) 
-            {
-                connection.Open();
-                
-                using(var command = connection.CreateCommand()) 
+            var result = Parallel.ForEach(
+                Enumerable.Repeat(1, threads),
+                new ParallelOptions
                 {
-                    command.CommandText = "SELECT FirstName, LastName FROM Customer";
-                    
-                    using(var reader = command.ExecuteReader())
+                    MaxDegreeOfParallelism = parallelism
+                },
+                (_, __) =>
+                {
+                    using (var connection = new AseConnection(_connectionStrings["pooled"] + $";Max Pool Size={size};ConnectionLifetime=1"))
                     {
-                        // Get the results.
+                        connection.Open();
                     }
-                }
-            }
+                });
+
+            Assert.IsTrue(result.IsCompleted);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 #if NET45
 using System.Threading.Tasks;
 #endif
@@ -19,40 +20,54 @@ namespace AdoNetCore.AseClient.Internal
             _parameters = parameters;
         }
 
-        public IInternalConnection GetNewConnection(CancellationToken token)
+        public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
         {
-            if (_endpoint == null)
-            {
-                _endpoint = CreateEndpoint(_parameters.Server, _parameters.Port, token);
-            }
-
-            var socket = new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
-
-#if NET45
-            var connect = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, _endpoint, null);
-#else
-            var connect = socket.ConnectAsync(_endpoint);
-#endif        
-            connect.Wait(token);
-            if (connect.IsCanceled)
-            {
-                socket.Dispose();
-                throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
-            }
-
-            var connection = new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
-
             try
             {
-                connection.Login();
+                if (_endpoint == null)
+                {
+                    _endpoint = CreateEndpoint(_parameters.Server, _parameters.Port, token);
+                }
+
+                var socket = new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
+
+#if NET45
+                var connect = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, _endpoint, null);
+#else
+                var connect = socket.ConnectAsync(_endpoint);
+#endif
+                connect.Wait(token);
+                if (connect.IsCanceled)
+                {
+                    socket.Dispose();
+                    throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
+                }
+
+                var connection = new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
+
+                try
+                {
+                    connection.Login();
+                }
+                catch (TimeoutException)
+                {
+                    connection.Dispose();
+                    throw;
+                }
+
+                return connection;
             }
-            catch (TimeoutException)
+            catch (OperationCanceledException)
             {
-                connection.Dispose();
+                //todo: cleanup
                 throw;
             }
-
-            return connection;
+            catch(Exception ex)
+            {
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)} encountered exception: {ex}");
+                //todo: cleanup
+                throw new OperationCanceledException();
+            }
         }
 
         private static IPEndPoint CreateEndpoint(string server, int port, CancellationToken token)

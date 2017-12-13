@@ -38,7 +38,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = new AseConnection("Data Source=myASEServer;Port=5000;Database=mydb;Uid=x;Pwd=y;"))
             {
-                Assert.Throws<SocketException>(() => connection.Open());
+                Assert.Throws<AseException>(() => connection.Open());
             }
         }
 

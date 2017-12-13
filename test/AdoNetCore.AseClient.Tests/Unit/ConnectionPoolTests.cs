@@ -10,19 +10,23 @@ namespace AdoNetCore.AseClient.Tests.Unit
     [TestFixture]
     public class ConnectionPoolTests
     {
+        public ConnectionPoolTests()
+        {
+            Logger.Enable();
+        }
+
         [Test]
         public void UponCancellationTokenTriggering_ConnectionEstablishmentFails_ThrowsTimeoutException()
         {
             var pool = new ConnectionPool(new TestConnectionParameters(), new SlowConnectionFactory());
 
-            Assert.Throws<TimeoutException>(() => pool.Reserve());
+            Assert.Throws<AseException>(() => pool.Reserve());
             Assert.AreEqual(0, pool.PoolSize);
         }
 
         [Test]
         public void WhenMinPoolSizeIsSet_NewPoolFillsToMin()
         {
-            Logger.Enable();
             var parameters = new TestConnectionParameters
             {
                 MinPoolSize = 10
@@ -34,6 +38,20 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(10, pool.PoolSize);
         }
 
+        [Test]
+        public void NewOpenCall_TimesOut_ShouldThrow()
+        {
+            var parameters = new TestConnectionParameters
+            {
+                MaxPoolSize = 1,
+                LoginTimeoutMs = 1000
+            };
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+
+            pool.Reserve();
+            Assert.Throws<AseException>(() => pool.Reserve());
+        }
+
         private class ImmediateConnectionFactory : IInternalConnectionFactory
         {
             private readonly TestConnectionParameters _parameters;
@@ -43,7 +61,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 _parameters = parameters;
             }
 
-            public IInternalConnection GetNewConnection(CancellationToken token)
+            public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
             {
                 return new InternalConnection(_parameters, null);
             }
@@ -51,10 +69,10 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class SlowConnectionFactory : IInternalConnectionFactory
         {
-            public IInternalConnection GetNewConnection(CancellationToken token )
+            public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
             {
                 token.WaitHandle.WaitOne();
-                return null;
+                throw new TimeoutException($"Timed out attempting to create new connection");
             }
         }
 
@@ -72,9 +90,9 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public string ClientHostProc { get; }
             public string Charset { get; }
             public bool Pooling { get; } = true;
-            public short MaxPoolSize { get; } = 100;
+            public short MaxPoolSize { get; set; } = 100;
             public short MinPoolSize { get; set; }
-            public int LoginTimeoutMs { get; } = 1000;
+            public int LoginTimeoutMs { get; set; } = 1000;
             public short ConnectionIdleTimeout { get; }
             public short ConnectionLifetime { get; }
             public bool PingServer { get; }

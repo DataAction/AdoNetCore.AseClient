@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 
 namespace AdoNetCore.AseClient
 {
@@ -9,16 +10,20 @@ namespace AdoNetCore.AseClient
     /// Represents a collection of parameters associated with an <see cref="AseCommand" />. 
     /// This class cannot be inherited.
     /// </summary>
+    [DebuggerDisplay("Count = {" + nameof(Count) + "}")]
     public sealed class AseParameterCollection : IDataParameterCollection
     {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly List<AseParameter> _parameters;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool HasSendableParameters 
         {
-            get 
+            get
             {
-                for (var i = 0; i < _parameters.Count; i++)
+                foreach (var p in _parameters)
                 {
-                    if (_parameters[i].CanSendOverTheWire)
+                    if (p.CanSendOverTheWire)
                     {
                         return true;
                     }
@@ -27,15 +32,17 @@ namespace AdoNetCore.AseClient
             }    
             
         }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal IEnumerable<AseParameter> SendableParameters 
         {
-            get 
+            get
             {
-                for (var i = 0; i < _parameters.Count; i++)
+                foreach (var p in _parameters)
                 {
-                    if (_parameters[i].CanSendOverTheWire)
+                    if (p.CanSendOverTheWire)
                     {
-                        yield return _parameters[i];
+                        yield return p;
                     }
                 }
             }
@@ -100,14 +107,8 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         object IDataParameterCollection.this[string parameterName]
         {
-            get
-            {
-                return this[parameterName];
-            }
-            set
-            {
-                this[parameterName] = value as AseParameter;
-            }
+            get => this[parameterName];
+            set => this[parameterName] = value as AseParameter;
         }
 
         /// <summary>
@@ -152,11 +153,9 @@ namespace AdoNetCore.AseClient
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         public AseParameter Add(string parameterName, AseDbType dbType) 
         {
-            var parameter = new AseParameter(){ParameterName = parameterName, DbType = dbType, Direction = ParameterDirection.Input};
-            
-            Add(parameter);
+            var parameter = new AseParameter(parameterName, dbType);
 
-            return parameter;
+            return Add(parameter);
         }
         
         /// <summary>
@@ -169,11 +168,9 @@ namespace AdoNetCore.AseClient
         /// <remarks>This overload is useful when you are adding a parameter of a variable-length data type such as <b>varchar</b> or <b>binary</b>.</remarks>
         public AseParameter Add(string parameterName, AseDbType dbType, int size) 
         {
-            var parameter = new AseParameter(){ParameterName = parameterName, DbType = dbType, Size = size, Direction = ParameterDirection.Input};
+            var parameter = new AseParameter(parameterName, dbType, size);
             
-            Add(parameter);
-
-            return parameter;
+            return Add(parameter);
         }
 
         /// <summary>
@@ -185,13 +182,11 @@ namespace AdoNetCore.AseClient
         /// <param name="sourceColumn">The name of the source column.</param>
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         /// <remarks>This overload is useful when you are adding a parameter of a variable-length data type such as <b>varchar</b> or <b>binary</b>.</remarks>
-        public AseParameter Add(string parameterName, AseDbType dbType, int size, string sourceColumn) 
+        public AseParameter Add(string parameterName, AseDbType dbType, int size, string sourceColumn)
         {
-            var parameter = new AseParameter(){ParameterName = parameterName, DbType = dbType, Size = size, Direction = ParameterDirection.Input, SourceColumn = sourceColumn};
-            
-            Add(parameter);
+            var parameter = new AseParameter(parameterName, dbType, size, sourceColumn);
 
-            return parameter;
+            return Add(parameter);
         }
 
         /// <summary>
@@ -200,28 +195,31 @@ namespace AdoNetCore.AseClient
         /// <param name="parameterName">The name of the parameter to add.</param>
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
         /// <param name="size">The size as <see cref="Int32" />.</param>
+        /// <param name="direction">One of the <see cref="ParameterDirection" /> values.</param>
+        /// <param name="isNullable"> true if the value of the field can be null; otherwise, false.</param>
+        /// <param name="precision">The total number of digits to the left and right of the decimal point to which Value is resolved.</param>
+        /// <param name="scale">The total number of decimal places to which Value is resolved.</param>
         /// <param name="sourceColumn">The name of the source column.</param>
+        /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
+        /// <param name="value">An object that is the value of the parameter.</param>
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         /// <remarks>This overload is useful when you are adding a parameter of a variable-length data type such as <b>varchar</b> or <b>binary</b>.</remarks>
         public AseParameter Add(string parameterName, AseDbType dbType, int size, ParameterDirection direction, Boolean isNullable, Byte precision, Byte scale, string sourceColumn, DataRowVersion sourceVersion, object value) 
         {
-            var parameter = new AseParameter()
-            {
-                ParameterName = parameterName, 
-                DbType = dbType, 
-                Size = size, 
-                Direction = direction,
-                IsNullable = isNullable,
-                Precision = precision,
-                Scale = scale,
-                SourceColumn = sourceColumn,
-                SourceVersion = sourceVersion,
-                Value = value
-            };
-            
-            Add(parameter);
+            var parameter = new AseParameter(
+                parameterName, 
+                dbType, 
+                size, 
+                direction,
+                isNullable,
+                precision,
+                scale,
+                sourceColumn,
+                sourceVersion,
+                value
+            );
 
-            return parameter;
+            return Add(parameter);
         }
 
         /// <summary>
@@ -245,8 +243,6 @@ namespace AdoNetCore.AseClient
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         public AseParameter Add(object parameter) 
         {
-            var p = parameter as AseParameter;
-
             return Add(parameter as AseParameter);
         }
 
@@ -258,106 +254,16 @@ namespace AdoNetCore.AseClient
         /// <returns>An <see cref="AseParameter" /> object.</returns>
         public AseParameter Add(string parameterName, object value) 
         {
-            if(value == null) {
-                throw new ArgumentNullException();
-            }
-
-            var parameter = new AseParameter(){ParameterName = parameterName, Value = value, Direction = ParameterDirection.Input};
-            if(value == DBNull.Value) 
-            {
-                // Do nothing.
-            } 
-            else if(value is int) 
-            {
-                parameter.DbType = AseDbType.Integer;
-            } 
-            else if(value is short) 
-            {
-                parameter.DbType = AseDbType.SmallInt;
-            } 
-            else if(value is long) 
-            {
-                parameter.DbType = AseDbType.BigInt; // NOTE: - char is not supported by the SAP AseClient.
-            } 
-            else if(value is uint) 
-            {
-                parameter.DbType = AseDbType.UnsignedInteger; // NOTE: - uint is not supported by the SAP AseClient.
-            } 
-            else if(value is ushort) 
-            {
-                parameter.DbType = AseDbType.UnsignedSmallInt; // NOTE: - ushort is not supported by the SAP AseClient.
-            } 
-            else if(value is ulong) 
-            {
-                parameter.DbType = AseDbType.UnsignedBigInt; // NOTE: - ulong is not supported by the SAP AseClient.
-            } 
-            else if(value is byte) 
-            {
-                parameter.DbType = AseDbType.TinyInt;
-            } 
-            else if(value is sbyte) 
-            {
-                parameter.DbType = AseDbType.TinyInt;
-            } 
-            else if(value is bool) 
-            {
-                parameter.DbType = AseDbType.Bit;
-            } 
-            else if(value is float) 
-            {
-                parameter.DbType = AseDbType.Float;
-            } 
-            else if(value is double) 
-            {
-                parameter.DbType = AseDbType.Double;
-            } 
-            else if(value is decimal) 
-            {
-                parameter.DbType = AseDbType.Decimal;
-            } 
-            else if(value is Guid) 
-            {
-                parameter.DbType = AseDbType.Binary;
-                parameter.Size = 16;
-            } 
-            else if(value is DateTime) 
-            {
-                parameter.DbType = AseDbType.DateTime;
-            } 
-            else if(value is byte[]) 
-            {
-                parameter.DbType = AseDbType.Binary;
-                parameter.Size = ((byte[])value).Length;
-            } 
-            else if(value is char) // NOTE: - char is not supported by the SAP AseClient.
-            {
-                parameter.DbType = AseDbType.UniChar; 
-                parameter.Size = 1;
-            } 
-            else if(value is char[]) // NOTE: - char[] is not supported by the SAP AseClient.
-            {
-                parameter.DbType = AseDbType.UniChar;
-                parameter.Size = ((char[])value).Length;
-            } 
-            else if(value is string) 
-            {
-                parameter.DbType = AseDbType.UniChar;
-            }  
-            else // AnsiString, AnsiStringFixedLength, Xml, Date, DateTime2, DateTimeOffset, Time, VarNumeric, Guid, Currency, Object.
-            {
-                throw new NotSupportedException("Inference of data type not supported, add the parameter explicitly.");
-            }
+            var parameter = new AseParameter(parameterName, value);
             
             return Add(parameter);
         }
 
         int IList.Add(object value)
         {
-            var p = value as AseParameter;
-
-            if(p != null)
+            if(value is AseParameter p)
             {
-                 return ((IList)_parameters).Add(value);
+                 return ((IList)_parameters).Add(p);
             }
             return -1;
         }        
@@ -394,11 +300,15 @@ namespace AdoNetCore.AseClient
         /// Returns -1 when the object does not exist in the <see cref="AseParameterCollection" />.</returns>
         public int IndexOf(object value)
         {
-            var p = value as AseParameter;
-
-            if(p != null) 
+            if(value is AseParameter p) 
             {
-                return IndexOf(p.ParameterName);
+                for (var i = 0; i < _parameters.Count; i++)
+                {
+                    if (p == _parameters[i])
+                    {
+                        return i;
+                    }
+                }
             }
 
             return -1;

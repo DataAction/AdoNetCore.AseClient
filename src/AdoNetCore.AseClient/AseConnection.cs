@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Data.Common;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
@@ -8,7 +9,7 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// Represents an open connection to an ASE Server database. This class cannot be inherited.
     /// </summary>
-    public sealed class AseConnection : IDbConnection
+    public sealed class AseConnection : DbConnection
     {
         private IInternalConnection _internal;
         private string _connectionString;
@@ -102,7 +103,7 @@ namespace AdoNetCore.AseClient
         internal AseConnection(string connectionString, IConnectionPoolManager connectionPoolManager)
         {
             ConnectionString = connectionString;
-            ConnectionTimeout = 15; // Default to 15s as per the SAP AseClient http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409555258.html
+            InternalConnectionTimeout = 15; // Default to 15s as per the SAP AseClient http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409555258.html
             _connectionPoolManager = connectionPoolManager;
             NamedParameters = true;
             _isDisposed = false;
@@ -111,7 +112,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Releases all resources used by the <see cref="AseConnection" />.
         /// </summary>
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
             if (_isDisposed)
             {
@@ -148,26 +149,7 @@ namespace AdoNetCore.AseClient
         /// level with the <see cref="BeginTransaction()" /> method, use the overload that takes the iso parameter 
         /// (<see cref="BeginTransaction(IsolationLevel)" />).</para>
         /// </remarks>
-        IDbTransaction IDbConnection.BeginTransaction()
-        {
-            return BeginTransaction();
-        }
-
-        /// <summary>
-        /// Starts a database transaction.
-        /// </summary>
-        /// <returns>An object representing the new transaction.</returns>
-        /// <remarks>
-        /// <para>This command maps to the SQL Server implementation of BEGIN TRANSACTION.</para>
-        /// <para>You must explicitly commit or roll back the transaction using the <see cref="AseTransaction.Commit" /> 
-        /// or <see cref="AseTransaction.Rollback" /> method. To make sure that the .NET Framework Data Provider for ASE 
-        /// transaction management model performs correctly, avoid using other transaction management models, such as the 
-        /// one provided by ASE.</para>
-        /// <para>If you do not specify an isolation level, the default isolation level is used. To specify an isolation 
-        /// level with the <see cref="BeginTransaction()" /> method, use the overload that takes the iso parameter 
-        /// (<see cref="BeginTransaction(IsolationLevel)" />).</para>
-        /// </remarks>
-        public AseTransaction BeginTransaction()
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
         {
             if (_isDisposed)
             {
@@ -181,54 +163,6 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
-        /// Starts a database transaction.
-        /// </summary>
-        /// <param name="isolationLevel">The isolation level under which the transaction should run.</param>
-        /// <returns>An object representing the new transaction.</returns>
-        /// <remarks>
-        /// <para>This command maps to the SQL Server implementation of BEGIN TRANSACTION.</para>
-        /// <para>You must explicitly commit or roll back the transaction using the <see cref="AseTransaction.Commit" /> 
-        /// or <see cref="AseTransaction.Rollback" /> method. To make sure that the .NET Framework Data Provider for ASE 
-        /// transaction management model performs correctly, avoid using other transaction management models, such as the 
-        /// one provided by ASE.</para>
-        /// <para>If you do not specify an isolation level, the default isolation level is used. To specify an isolation 
-        /// level with the <see cref="BeginTransaction()" /> method, use the overload that takes the iso parameter 
-        /// (<see cref="BeginTransaction(IsolationLevel)" />).</para>
-        /// </remarks>
-        IDbTransaction IDbConnection.BeginTransaction(IsolationLevel isolationLevel)
-        {
-            return BeginTransaction(isolationLevel);
-        }
-
-        /// <summary>
-        /// Starts a database transaction.
-        /// </summary>
-        /// <param name="isolationLevel">The isolation level under which the transaction should run.</param>
-        /// <returns>An object representing the new transaction.</returns>
-        /// <remarks>
-        /// <para>This command maps to the SQL Server implementation of BEGIN TRANSACTION.</para>
-        /// <para>You must explicitly commit or roll back the transaction using the <see cref="AseTransaction.Commit" /> 
-        /// or <see cref="AseTransaction.Rollback" /> method. To make sure that the .NET Framework Data Provider for ASE 
-        /// transaction management model performs correctly, avoid using other transaction management models, such as the 
-        /// one provided by ASE.</para>
-        /// <para>If you do not specify an isolation level, the default isolation level is used. To specify an isolation 
-        /// level with the <see cref="BeginTransaction()" /> method, use the overload that takes the iso parameter 
-        /// (<see cref="BeginTransaction(IsolationLevel)" />).</para>
-        /// </remarks>
-        public AseTransaction BeginTransaction(IsolationLevel isolationLevel)
-        {
-            if (_isDisposed)
-            {
-                throw new ObjectDisposedException(nameof(AseConnection));
-            }
-
-            Open();
-            var t = new AseTransaction(this, isolationLevel);
-            t.Begin();
-            return t;
-        }
-
-        /// <summary>
         /// Changes the current database for an open <see cref="AseConnection" />.
         /// </summary>
         /// <param name="databaseName">The name of the database to use instead of the current database.</param>
@@ -236,7 +170,7 @@ namespace AdoNetCore.AseClient
         /// The value supplied in the <i>database</i> parameter must be a valid database name. The <i>database</i> parameter 
         /// cannot contain a null value, an empty string, or a string with only blank characters.
         /// </remarks>
-        public void ChangeDatabase(string databaseName)
+        public override void ChangeDatabase(string databaseName)
         {
             if (_isDisposed)
             {
@@ -256,7 +190,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// TODO - document this once transactions are supported.
         /// </summary>
-        public void Close()
+        public override void Close()
         {
             if (_isDisposed)
             {
@@ -270,30 +204,21 @@ namespace AdoNetCore.AseClient
 
             _connectionPoolManager.Release(_connectionString, _internal);
             _internal = null;
-            State = ConnectionState.Closed;
+            InternalState = ConnectionState.Closed;
         }
 
         /// <summary>
         /// Creates and returns an <see cref="AseCommand" /> object associated with the <see cref="AseConnection" />.
         /// </summary>
         /// <returns>An <see cref="AseCommand" /> object.</returns>
-        IDbCommand IDbConnection.CreateCommand()
-        {
-            return CreateCommand();
-        }
-
-        /// <summary>
-        /// Creates and returns an <see cref="AseCommand" /> object associated with the <see cref="AseConnection" />.
-        /// </summary>
-        /// <returns>An <see cref="AseCommand" /> object.</returns>
-        public AseCommand CreateCommand()
+        protected override DbCommand CreateDbCommand()
         {
             if (_isDisposed)
             {
                 throw new ObjectDisposedException(nameof(AseConnection));
             }
 
-            var aseCommand = new AseCommand(this) {NamedParameters = NamedParameters};
+            var aseCommand = new AseCommand(this) { NamedParameters = NamedParameters };
 
             return aseCommand;
         }
@@ -305,7 +230,7 @@ namespace AdoNetCore.AseClient
         /// The <see cref="AseConnection" /> draws an open connection from the connection pool if one is available. 
         /// Otherwise, it establishes a new connection to an instance of ASE.
         /// </remarks>
-        public void Open()
+        public override void Open()
         {
             if (_isDisposed)
             {
@@ -322,21 +247,21 @@ namespace AdoNetCore.AseClient
                 throw new InvalidOperationException("Cannot open a connection which is not closed");
             }
 
-            State = ConnectionState.Connecting;
+            InternalState = ConnectionState.Connecting;
 
             var parameters = ConnectionParameters.Parse(_connectionString);
 
             _internal = _connectionPoolManager.Reserve(_connectionString, parameters);
 
-            ConnectionTimeout = parameters.LoginTimeout;
+            InternalConnectionTimeout = parameters.LoginTimeout;
 
-            State = ConnectionState.Open;
+            InternalState = ConnectionState.Open;
         }
 
         /// <summary>
         /// Gets or sets the string used to open a connection to an ASE database.
         /// </summary>
-        public string ConnectionString
+        public override string ConnectionString
         {
             get => _connectionString;
             set
@@ -365,7 +290,8 @@ namespace AdoNetCore.AseClient
         /// string. A value of 0 indicates no limit, and should be avoided in a <see cref="ConnectionString" /> because an attempt to 
         /// connect waits indefinitely.
         /// </remarks>
-        public int ConnectionTimeout { get; private set; }
+        public override int ConnectionTimeout => InternalConnectionTimeout;
+        private int InternalConnectionTimeout { get; set; }
 
         /// <summary>
         /// Gets the name of the current database or the database to be used after a connection is opened.
@@ -375,7 +301,11 @@ namespace AdoNetCore.AseClient
         /// statement or the <see cref="ChangeDatabase(string)" /> method, an informational message is sent and 
         /// the property is updated automatically.
         /// </remarks>
-        public string Database => _internal?.Database;
+        public override string Database => _internal?.Database;
+
+        public override string DataSource { get; }
+
+        public override string ServerVersion { get; }
 
         /// <summary>
         /// Indicates the state of the <see cref="AseConnection" /> during the most recent network operation 
@@ -385,10 +315,11 @@ namespace AdoNetCore.AseClient
         /// Returns a <see cref="System.Data.ConnectionState" /> enumeration indicating the state of the 
         /// <see cref="AseConnection" />. Closing and reopening the connection will refresh the value of State.
         /// </remarks>
-        public ConnectionState State
+        public override ConnectionState State => InternalState;
+        private ConnectionState InternalState
         {
             get => _state;
-            private set
+            set
             {
                 if (_isDisposed)
                 {
@@ -442,9 +373,16 @@ namespace AdoNetCore.AseClient
                 }
                 InfoMessageInternal -= value;
             }
-        } 
+        }
 
         private event AseInfoMessageEventHandler InfoMessageInternal; // TODO - implement
+
+        private void NotifyInfoMessage(AseErrorCollection errors, string message)
+        {
+            var infoMessage = InfoMessageInternal;
+
+            infoMessage?.Invoke(this, new AseInfoMessageEventArgs(errors, message));
+        }
 
         /// <summary>
         /// Occurs when the state of the connection changes.
@@ -453,7 +391,7 @@ namespace AdoNetCore.AseClient
         /// The event handler receives an argument of StateChangeEventArgs with data related to this event. Two StateChangeEventArgs properties 
         /// provide information specific to this event: CurrentState and OriginalState.
         /// </remarks>
-        public event StateChangeEventHandler StateChange
+        public override event StateChangeEventHandler StateChange
         {
             add
             {
@@ -517,7 +455,14 @@ namespace AdoNetCore.AseClient
                 TraceEnterInternal -= value;
             }
         }
-        private event TraceEnterEventHandler TraceEnterInternal; // TODO - implement
+
+        private event TraceEnterEventHandler TraceEnterInternal;
+
+        private void NotifyTraceEnter(object source, string method, params object[] parameters)
+        {
+            var traceEnter = TraceEnterInternal;
+            traceEnter?.Invoke(this, source, method, parameters);
+        }
 
         /// <summary>
         /// Traces database activity within an application for debugging.
@@ -554,7 +499,14 @@ namespace AdoNetCore.AseClient
                 TraceExitInternal -= value;
             }
         }
-        private event TraceExitEventHandler TraceExitInternal; // TODO - implement
+
+        private event TraceExitEventHandler TraceExitInternal;
+
+        private void NotifyTraceExit(object source, string method, object returnValue)
+        {
+            var traceExit = TraceExitInternal;
+            traceExit?.Invoke(this, source, method, returnValue);
+        }
 
         /// <summary>
         /// Governs the default behavior of the AseCommand objects associated with this connection.
@@ -574,7 +526,7 @@ namespace AdoNetCore.AseClient
     /// </summary>
     /// <param name="sender">The source of the event.</param>
     /// <param name="e">The AseInfoMessageEventArgs object that contains the event data.</param>
-    public delegate void AseInfoMessageEventHandler ( object sender, AseInfoMessageEventArgs e );
+    public delegate void AseInfoMessageEventHandler(object sender, AseInfoMessageEventArgs e);
 
     /// <summary>
     /// Traces database activity within an application for debugging.

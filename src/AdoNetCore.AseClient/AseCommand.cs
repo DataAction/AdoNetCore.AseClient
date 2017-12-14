@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Data.Common;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -6,10 +7,10 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// Represents a Transact-SQL statement or stored procedure to execute against a SAP ASE database. This class cannot be inherited.
     /// </summary>
-    public sealed class AseCommand : IDbCommand
+    public sealed class AseCommand : DbCommand
     {
-        // TODO - consider async
         private AseConnection _connection;
+        private AseTransaction _transaction;
         internal readonly AseParameterCollection AseParameters;
 
         public AseCommand(AseConnection connection)
@@ -17,8 +18,6 @@ namespace AdoNetCore.AseClient
             _connection = connection;
             AseParameters = new AseParameterCollection();
         }
-
-        public void Dispose() { }
 
         /// <summary>
         /// Tries to cancel the execution of a <see cref="AseCommand" />.
@@ -31,17 +30,9 @@ namespace AdoNetCore.AseClient
         /// the result set can continue to stream after you call <see cref="AseDataReader.Close" />. To avoid this, make sure that you call 
         /// Cancel before closing the reader or connection.</para>
         /// </remarks>
-        public void Cancel()
+        public override void Cancel()
         {
             //todo: implement
-        }
-
-        /// <summary>
-        /// Creates a new instance of a <see cref="AseParameter" /> object.
-        /// </summary>
-        IDbDataParameter IDbCommand.CreateParameter()
-        {
-            return CreateParameter();
         }
 
         /// <summary>Parameter" /> object.
@@ -49,7 +40,7 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// The CreateParameter method is a strongly-typed version of <see cref="IDbCommand.CreateParameter" />.
         /// </remarks>
-        public AseParameter CreateParameter()
+        protected override DbParameter CreateDbParameter()
         {
             return new AseParameter();
         }
@@ -70,50 +61,10 @@ namespace AdoNetCore.AseClient
         /// triggers. For all other types of statements, the return value is -1. If a rollback occurs, the return value 
         /// is also -1.</para>
         /// </remarks>
-        public int ExecuteNonQuery()
+        public override int ExecuteNonQuery()
         {
             LogExecution(nameof(ExecuteNonQuery));
-            return _connection.InternalConnection.ExecuteNonQuery(this, Transaction);
-        }
-
-        /// <summary>
-        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.
-        /// </summary>
-        /// <returns>An <see cref="AseDataReader" /> object.</returns>
-        /// <remarks>
-        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
-        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
-        /// </remarks>
-        IDataReader IDbCommand.ExecuteReader()
-        {
-            return ExecuteReader();
-        }
-
-        /// <summary>
-        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.
-        /// </summary>
-        /// <returns>An <see cref="AseDataReader" /> object.</returns>
-        /// <remarks>
-        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
-        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
-        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>
-        /// </remarks>
-        public AseDataReader ExecuteReader()
-        {
-            return ExecuteReader(CommandBehavior.Default);
-        }
-
-        /// <summary>
-        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.
-        /// </summary>
-        /// <returns>An <see cref="AseDataReader" /> object.</returns>
-        /// <remarks>
-        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
-        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
-        /// </remarks>
-        IDataReader IDbCommand.ExecuteReader(CommandBehavior behavior)
-        {
-            return ExecuteReader(behavior);
+            return _connection.InternalConnection.ExecuteNonQuery(this, (AseTransaction)Transaction);
         }
 
         /// <summary>
@@ -126,10 +77,10 @@ namespace AdoNetCore.AseClient
         /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
         /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader(CommandBehavior)" />.</para>
         /// </remarks>
-        public AseDataReader ExecuteReader(CommandBehavior behavior)
+        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
         {
             LogExecution(nameof(ExecuteReader));
-            return _connection.InternalConnection.ExecuteReader(behavior, this, Transaction);
+            return _connection.InternalConnection.ExecuteReader(behavior, this, (AseTransaction)Transaction);
         }
 
         /// <summary>
@@ -143,10 +94,10 @@ namespace AdoNetCore.AseClient
         /// generate the single value using the data returned by a <see cref="AseDataReader" />.</para>
         /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>
         /// </remarks>
-        public object ExecuteScalar()
+        public override object ExecuteScalar()
         {
             LogExecution(nameof(ExecuteScalar));
-            return _connection.InternalConnection.ExecuteScalar(this, Transaction);
+            return _connection.InternalConnection.ExecuteScalar(this, (AseTransaction)Transaction);
         }
 
         private void LogExecution(string methodName)
@@ -162,7 +113,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Not implemented.
         /// </summary>
-        public void Prepare()
+        public override void Prepare()
         {
             // Support for prepared statements is not currently implemented. But to make this a drop in replacement for other DB Providers,
             // it's better to treat this call as a no-op, than to throw a NotImplementedException.
@@ -171,34 +122,31 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the Transact-SQL statement, table name or stored procedure to execute at the data source.
         /// </summary>
-        public string CommandText { get; set; }
+        public override string CommandText { get; set; }
 
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
-        public int CommandTimeout { get; set; }
+        public override int CommandTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating how the <see cref="CommandText" /> property is to be interpreted.
         /// </summary>
-        public CommandType CommandType { get; set; }
+        public override CommandType CommandType { get; set; }
 
-        /// <summary>
-        /// Gets or sets the <see cref="AseConnection" /> used by this instance of the AseCommand.
-        /// </summary>
-        IDbConnection IDbCommand.Connection
+        protected override DbConnection DbConnection
         {
-            get => Connection;
-            set => Connection = value as AseConnection;
+            get => _connection;
+            set => _connection = (AseConnection)value;
         }
 
-        /// <summary>
-        /// Gets or sets the <see cref="AseConnection" /> used by this instance of the AseCommand.
-        /// </summary>
-        public AseConnection Connection {
-            get => _connection;
-            set => _connection = value;
+        protected override DbTransaction DbTransaction
+        {
+            get => _transaction;
+            set => _transaction = (AseTransaction)value;
         }
+
+        public override bool DesignTimeVisible { get; set; }
 
         /// <summary>
         /// Governs the default behavior of the AseCommand objects associated with this connection.
@@ -215,38 +163,12 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
         /// </summary>
-        IDataParameterCollection IDbCommand.Parameters
-        {
-            get
-            {
-                return Parameters;
-            }
-        }
-
-        /// <summary>
-        /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
-        /// </summary>
-        public AseParameterCollection Parameters => AseParameters;
-
-        /// <summary>
-        /// Gets or sets the <see cref="AseTransaction" /> within which the SqlCommand executes.
-        /// </summary>
-        IDbTransaction IDbCommand.Transaction
-        {
-            get => Transaction;
-            set => Transaction = value as AseTransaction;
-        }
-
-
-        /// <summary>
-        /// Gets or sets the <see cref="AseTransaction" /> within which the SqlCommand executes.
-        /// </summary>
-        private AseTransaction Transaction { get; set; }
+        protected override DbParameterCollection DbParameterCollection => AseParameters;
 
         /// <summary>
         /// Gets or sets how command results are applied to the <see cref="System.Data.DataRow" /> when used by the Update method of the DbDataAdapter.
         /// </summary>
-        public UpdateRowSource UpdatedRowSource { get; set; }
+        public override UpdateRowSource UpdatedRowSource { get; set; }
 
         internal bool HasSendableParameters => AseParameters?.HasSendableParameters ?? false;
     }

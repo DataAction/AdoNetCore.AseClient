@@ -297,10 +297,10 @@ namespace AdoNetCore.AseClient
         /// passing it to the database, use the <see cref="System.Math" /> class that is part of the System namespace prior to assigning a value to 
         /// the parameter's <see cref="Value" /> property.</para>
         /// </remarks>
-#if NETCOREAPP2_0
-        public override byte Precision { get; set; }
-#else
+#if NET45
         public byte Precision { get; set; }
+#else
+        public override byte Precision { get; set; }
 #endif
 
         /// <summary>
@@ -318,10 +318,10 @@ namespace AdoNetCore.AseClient
         /// passing it to the database, use the <see cref="System.Math" /> class that is part of the System namespace prior to assigning a value to 
         /// the parameter's <see cref="Value" /> property.</para>
         /// </remarks>
-#if NETCOREAPP2_0
-        public override byte Scale { get; set; }
-#else
+#if NET45
         public byte Scale { get; set; }
+#else
+        public override byte Scale { get; set; }
 #endif
 
         /// <summary>

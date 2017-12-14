@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 
 namespace AdoNetCore.AseClient
@@ -11,7 +12,7 @@ namespace AdoNetCore.AseClient
     /// This class cannot be inherited.
     /// </summary>
     [DebuggerDisplay("Count = {" + nameof(Count) + "}")]
-    public sealed class AseParameterCollection : IDataParameterCollection
+    public sealed class AseParameterCollection : DbParameterCollection//IDataParameterCollection
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly List<AseParameter> _parameters;
@@ -48,20 +49,39 @@ namespace AdoNetCore.AseClient
             }
         }
 
+#if NETCOREAPP2_0 || NET45
+        public override bool IsFixedSize => ((IList)_parameters).IsFixedSize;
+#else
         public bool IsFixedSize => ((IList)_parameters).IsFixedSize;
+#endif
 
+#if NETCOREAPP2_0 || NET45
+        public override bool IsReadOnly => ((IList)_parameters).IsReadOnly;
+#else
         public bool IsReadOnly => ((IList)_parameters).IsReadOnly;
+#endif
 
         /// <summary>
         /// Represents the number of <see cref="AseParameter" /> objects in the collection.
         /// </summary>
-        public int Count => _parameters.Count;
+        public override int Count => _parameters.Count;
 
+#if NETCOREAPP2_0 || NET45
+        public override bool IsSynchronized => ((IList)_parameters).IsSynchronized;
+#else
         public bool IsSynchronized => ((IList)_parameters).IsSynchronized;
+#endif
 
-        public object SyncRoot => ((IList)_parameters).SyncRoot;
+        public override object SyncRoot => ((IList)_parameters).SyncRoot;
 
-        public object this[int index] { get => ((IList)_parameters)[index]; set => ((IList)_parameters)[index] = value; }
+        protected override DbParameter GetParameter(int index)
+        {
+            return _parameters[index];
+        }
+        protected override void SetParameter(int index, DbParameter value)
+        {
+            _parameters[index] = (AseParameter)value;
+        }
 
         public AseParameterCollection() 
         {
@@ -71,7 +91,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Removes all items from the collection.
         /// </summary>
-        public void Clear() 
+        public override void Clear() 
         {
             _parameters.Clear();
         }
@@ -81,7 +101,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="parameterName">The name of the parameter.</param>
         /// <returns><b>true</b> if the <see cref="AseParameterCollection" /> contains the value; otherwise <b>false</b>.</returns>
-        public bool Contains(string parameterName)
+        public override bool Contains(string parameterName)
         {
             return IndexOf(parameterName) >= 0;
         }
@@ -91,7 +111,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="value">The <see cref="AseParameter" />.</param>
         /// <returns><b>true</b> if the <see cref="AseParameterCollection" /> contains the value; otherwise <b>false</b>.</returns>
-        public bool Contains(object value)
+        public override bool Contains(object value)
         {
             return IndexOf(value) >= 0;
         }
@@ -105,43 +125,35 @@ namespace AdoNetCore.AseClient
         /// <para>The <i>parameterName</i> is used to look up the index value in the underlying <see cref="AseParameterCollection" />. 
         /// If the <i>parameterName</i> is not valid, an <see cref="IndexOutOfRangeException" /> will be thrown.</para>
         /// </remarks>
-        object IDataParameterCollection.this[string parameterName]
+        protected override DbParameter GetParameter(string parameterName)
         {
-            get => this[parameterName];
-            set => this[parameterName] = value as AseParameter;
+            var index = IndexOf(parameterName);
+            if (index < 0)
+            {
+                return null;
+            }
+            return _parameters[index];
         }
 
         /// <summary>
-        /// Gets the <see cref="AseParameter" /> with the specified name.
+        /// Sets the <see cref="AseParameter" /> with the specified name.
         /// </summary>
         /// <param name="parameterName">The name of the parameter.</param>
-        /// <returns>The <see cref="AseParameter" /> with the specified name.</returns>
+        /// <param name="value">The parameter.</param>
         /// <remarks>
         /// <para>The <i>parameterName</i> is used to look up the index value in the underlying <see cref="AseParameterCollection" />. 
         /// If the <i>parameterName</i> is not valid, an <see cref="IndexOutOfRangeException" /> will be thrown.</para>
         /// </remarks>
-        public AseParameter this[string parameterName]
+        protected override void SetParameter(string parameterName, DbParameter value)
         {
-            get
+            var index = IndexOf(parameterName);
+            if (index < 0)
             {
-                var index = IndexOf(parameterName);
-                if (index < 0)
-                {
-                    return null;
-                }
-                return _parameters[index];
+                Add(value);
             }
-            set
+            else
             {
-                var index = IndexOf(parameterName);
-                if (index < 0)
-                {
-                    Add(value);
-                }
-                else
-                {
-                    _parameters[index] = value;
-                }
+                _parameters[index] = (AseParameter) value;
             }
         }
 
@@ -237,13 +249,15 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
-        /// Adds an <see cref="AseParameter" /> to the <see cref="AseParameterCollection" />.
+        /// Adds an <see cref="Array"/> of <see cref="AseParameter"/> to the <see cref="AseParameterCollection"/>.
         /// </summary>
-        /// <param name="parameter">The <see cref="AseParameter" /> to add.</param>
-        /// <returns>A new <see cref="AseParameter" /> object.</returns>
-        public AseParameter Add(object parameter) 
+        /// <param name="values"></param>
+        public override void AddRange(Array values)
         {
-            return Add(parameter as AseParameter);
+            foreach (var obj in values)
+            {
+                Add(obj);
+            }
         }
 
         /// <summary>
@@ -259,14 +273,19 @@ namespace AdoNetCore.AseClient
             return Add(parameter);
         }
 
-        int IList.Add(object value)
+        /// <summary>
+        /// Adds an <see cref="AseParameter" /> to the <see cref="AseParameterCollection" />.
+        /// </summary>
+        /// <param name="value">The <see cref="AseParameter" /> to add.</param>
+        /// <returns>The index of the <see cref="AseParameter" /> object.</returns>
+        public override int Add(object value)
         {
-            if(value is AseParameter p)
+            if (value is AseParameter p)
             {
-                 return ((IList)_parameters).Add(p);
+                return ((IList)_parameters).Add(p);
             }
             return -1;
-        }        
+        }
 
         /// <summary>
         /// Gets the location of the specified <see cref="AseParameter" /> with the specified name.
@@ -274,7 +293,7 @@ namespace AdoNetCore.AseClient
         /// <param name="parameterName">The name of the parameter.</param>
         /// <returns>The zero-based location of the specified <see cref="AseParameter" /> with the specified case-sensitive name. 
         /// Returns -1 when the object does not exist in the <see cref="AseParameterCollection" />.</returns>
-        public int IndexOf(string parameterName)
+        public override int IndexOf(string parameterName)
         {
             if (string.IsNullOrWhiteSpace(parameterName))
             {
@@ -298,7 +317,7 @@ namespace AdoNetCore.AseClient
         /// <param name="value">The <see cref="AseParameter" />.</param>
         /// <returns>The zero-based location of the specified <see cref="AseParameter" />. 
         /// Returns -1 when the object does not exist in the <see cref="AseParameterCollection" />.</returns>
-        public int IndexOf(object value)
+        public override int IndexOf(object value)
         {
             if(value is AseParameter p) 
             {
@@ -319,7 +338,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="index">The zero-based index where the parameter is to be inserted within the collection.</param>
         /// <param name="value">The <see cref="AseParameter" /> object to add to the collection.</param>
-        public void Insert(int index, object value)
+        public override void Insert(int index, object value)
         {
             ((IList)_parameters).Insert(index, value);
         }
@@ -328,7 +347,7 @@ namespace AdoNetCore.AseClient
         /// Removes the <see cref="AseParameter" /> from the <see cref="AseParameterCollection" />.
         /// </summary>
         /// <param name="value">The <see cref="AseParameter" /> object to remove from the collection.</param>
-        public void Remove(object value)
+        public override void Remove(object value)
         {
             ((IList)_parameters).Remove(value);
         }
@@ -337,7 +356,7 @@ namespace AdoNetCore.AseClient
         /// Removes the <see cref="AseParameter" /> from the <see cref="AseParameterCollection" /> at the specified parameter name.
         /// </summary>
         /// <param name="parameterName">The name of the parameter to remove.</param>
-        public void RemoveAt(string parameterName)
+        public override void RemoveAt(string parameterName)
         {
             var index = IndexOf(parameterName);
             if (index < 0)
@@ -352,7 +371,7 @@ namespace AdoNetCore.AseClient
         /// Removes the <see cref="AseParameter" /> from the <see cref="AseParameterCollection" /> at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the parameter to remove.</param>
-        public void RemoveAt(int index)
+        public override void RemoveAt(int index)
         {
             _parameters.RemoveAt(index);
         }
@@ -362,7 +381,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="array">The array into which to copy the AseParameter objects.</param>
         /// <param name="index">The starting index of the array.</param>
-        public void CopyTo(Array array, int index)
+        public override void CopyTo(Array array, int index)
         {
             ((IList)_parameters).CopyTo(array, index);
         }
@@ -371,7 +390,7 @@ namespace AdoNetCore.AseClient
         /// Enumerates the <see cref="AseParameter" /> objects.
         /// </summary>
         /// <returns>The <see cref="AseParameter" /> objects.</returns>
-        public IEnumerator GetEnumerator()
+        public override IEnumerator GetEnumerator()
         {
             return ((IList)_parameters).GetEnumerator();
         }

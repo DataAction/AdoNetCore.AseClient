@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Data;
+using System.Data.Common;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
-    public sealed class AseDataReader : IDataReader
+    public sealed class AseDataReader : DbDataReader
     {
         //todo: needs unit tests, feels a bit flimsy
         private readonly TableResult[] _results;
@@ -17,84 +19,84 @@ namespace AdoNetCore.AseClient
             NextResult();
         }
 
-        public bool GetBoolean(int i)
+        public override bool GetBoolean(int i)
         {
             throw new NotImplementedException();
         }
 
-        public byte GetByte(int i)
+        public override byte GetByte(int i)
         {
             throw new NotImplementedException();
         }
 
-        public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
+        public override long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
         {
             throw new NotImplementedException();
         }
 
-        public char GetChar(int i)
+        public override char GetChar(int i)
         {
             throw new NotImplementedException();
         }
 
-        public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
+        public override long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
         {
             throw new NotImplementedException();
         }
 
-        public IDataReader GetData(int i)
+        public override string GetDataTypeName(int i)
         {
             throw new NotImplementedException();
         }
 
-        public string GetDataTypeName(int i)
+        public override IEnumerator GetEnumerator()
         {
             throw new NotImplementedException();
         }
 
-        public DateTime GetDateTime(int i)
+        public override DateTime GetDateTime(int i)
         {
             throw new NotImplementedException();
         }
 
-        public decimal GetDecimal(int i)
+        public override decimal GetDecimal(int i)
         {
             throw new NotImplementedException();
         }
 
-        public double GetDouble(int i)
+        public override double GetDouble(int i)
         {
             throw new NotImplementedException();
         }
 
-        public Type GetFieldType(int i) => typeof(object);
+        public override Type GetFieldType(int i) => typeof(object);
 
-        public float GetFloat(int i)
+        public override float GetFloat(int i)
         {
             throw new NotImplementedException();
         }
 
-        public Guid GetGuid(int i)
+        public override Guid GetGuid(int i)
         {
             throw new NotImplementedException();
         }
 
-        public short GetInt16(int i)
+        public override short GetInt16(int i)
         {
             throw new NotImplementedException();
         }
 
-        public int GetInt32(int i)
+        public override int GetInt32(int i)
         {
             throw new NotImplementedException();
         }
 
-        public long GetInt64(int i)
+        public override long GetInt64(int i)
         {
             throw new NotImplementedException();
         }
 
-        public string GetName(int i)
+        public override string GetName(int i)
         {
             if (_currentResult >= 0
                 && _currentResult < _results.Length
@@ -106,7 +108,7 @@ namespace AdoNetCore.AseClient
             throw new ArgumentException();
         }
 
-        public int GetOrdinal(string name)
+        public override int GetOrdinal(string name)
         {
             if (_currentResult >= 0 && _currentResult < _results.Length)
             {
@@ -123,12 +125,12 @@ namespace AdoNetCore.AseClient
             throw new ArgumentException();
         }
 
-        public string GetString(int i)
+        public override string GetString(int i)
         {
             throw new NotImplementedException();
         }
 
-        public object GetValue(int i)
+        public override object GetValue(int i)
         {
             if (_currentResult >= 0
                 && _currentResult < _results.Length
@@ -143,37 +145,45 @@ namespace AdoNetCore.AseClient
             throw new ArgumentOutOfRangeException();
         }
 
-        public int GetValues(object[] values)
+        public override int GetValues(object[] values)
         {
             throw new NotImplementedException();
         }
 
-        public bool IsDBNull(int i)
+        public override bool IsDBNull(int i)
         {
             throw new NotImplementedException();
         }
 
-        public int FieldCount => _currentResult >= 0 && _currentResult < _results.Length
+        public override int FieldCount => _currentResult >= 0 && _currentResult < _results.Length
             ? _results[_currentResult].Formats.Length
             : 0;
 
-        object IDataRecord.this[int i] => GetValue(i);
+        public override bool HasRows => _results.Length > 0;
 
-        object IDataRecord.this[string name] => GetValue(GetOrdinal(name));
-        
-        public void Dispose() { }
+        public override object this[int ordinal] => GetValue(ordinal);
 
-        public void Close()
+        public override object this[string name] => GetValue(GetOrdinal(name));
+
+#if NETCOREAPP2_0 || NET45
+        public override void Close() { }
+#else
+        public void Close() { }
+#endif
+
+#if NETCOREAPP2_0 || NET45
+        public override DataTable GetSchemaTable()
         {
             throw new NotImplementedException();
         }
-
+#else
         public DataTable GetSchemaTable()
         {
             throw new NotImplementedException();
         }
+#endif
 
-        public bool NextResult()
+        public override bool NextResult()
         {
             _currentResult++;
 
@@ -188,7 +198,7 @@ namespace AdoNetCore.AseClient
             }
         }
 
-        public bool Read()
+        public override bool Read()
         {
             if (_currentResult < 0)
             {
@@ -205,9 +215,9 @@ namespace AdoNetCore.AseClient
             return false;
         }
 
-        public int Depth => 0;
-        public bool IsClosed => _currentResult >= _results.Length;
-        public int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
+        public override int Depth => 0;
+        public override bool IsClosed => _currentResult >= _results.Length;
+        public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
             ? _results[_currentResult].Rows.Count
             : 0;
     }

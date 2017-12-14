@@ -194,7 +194,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             // Assert
             Assert.IsNotNull(command);
-            Assert.AreEqual(namedParameters, command.NamedParameters);
+            Assert.AreEqual(namedParameters, ((AseCommand)command).NamedParameters);
         }
 
         [Test]

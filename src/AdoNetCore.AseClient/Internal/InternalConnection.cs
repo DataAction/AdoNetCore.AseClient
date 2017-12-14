@@ -198,6 +198,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public void Cancel()
         {
+            Logger.Instance?.WriteLine($"Canceling...");
             SendPacket(new AttentionPacket());
         }
 

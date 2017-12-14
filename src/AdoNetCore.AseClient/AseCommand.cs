@@ -1,5 +1,8 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -32,7 +35,8 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public override void Cancel()
         {
-            //todo: implement
+            Logger.Instance?.WriteLine("Cancel requested");
+            _connection.InternalConnection.Cancel();
         }
 
         /// <summary>Parameter" /> object.

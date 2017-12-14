@@ -498,6 +498,28 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(-32109876543210.0123456789m);
         }
 
+        [TestCaseSource(nameof(SelectDecimal_OtherTypedParameter_ShouldWork_Cases))]
+        public void SelectDecimal_OtherTypedParameter_ShouldWork(object expected)
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.Decimal);
+                Assert.AreEqual(Convert.ToDecimal(expected), connection.ExecuteScalar<decimal?>("select @expected", p));
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectDecimal_OtherTypedParameter_ShouldWork_Cases()
+        {
+            yield return new TestCaseData((byte)0);
+            yield return new TestCaseData((short)0);
+            yield return new TestCaseData(0);
+            yield return new TestCaseData((long)0);
+            yield return new TestCaseData((ushort)0);
+            yield return new TestCaseData((uint)0);
+            yield return new TestCaseData((ulong)0);
+        }
+
         [TestCaseSource(nameof(SelectVarNumeric_Parameter_ShouldWork_Cases))]
         public void SelectVarNumeric_Parameter_ShouldWork(decimal expected)
         {

@@ -8,6 +8,23 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueWriter
     {
+        private static T Cast<T>(object value, FormatItem format)
+        {
+            try
+            {
+                if (typeof(T) != value.GetType())
+                {
+                    return (T) Convert.ChangeType(value, typeof(T));
+                }
+
+                return (T) value;
+            }
+            catch (InvalidCastException)
+            {
+                throw new InvalidCastException($"Specified cast is not valid. Parameter: {format.ParameterName}. From: {value.GetType().Name} to: {typeof(T).Name}");
+            }
+        }
+
         public static void Write(object value, Stream stream, FormatItem format, Encoding enc)
         {
             switch (format.DataType)
@@ -24,26 +41,26 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_INT1:
-                    stream.WriteByte((byte)value);
+                    stream.WriteByte(Cast<byte>(value, format));
                     break;
                 //no TDS_SINT1, we will transmit as an INTN(2)
                 case TdsDataType.TDS_INT2:
-                    stream.WriteShort((short)value);
+                    stream.WriteShort(Cast<short>(value, format));
                     break;
                 case TdsDataType.TDS_UINT2:
-                    stream.WriteUShort((ushort)value);
+                    stream.WriteUShort(Cast<ushort>(value, format));
                     break;
                 case TdsDataType.TDS_INT4:
-                    stream.WriteInt((int)value);
+                    stream.WriteInt(Cast<int>(value, format));
                     break;
                 case TdsDataType.TDS_UINT4:
-                    stream.WriteUInt((uint)value);
+                    stream.WriteUInt(Cast<uint>(value, format));
                     break;
                 case TdsDataType.TDS_INT8:
-                    stream.WriteLong((long)value);
+                    stream.WriteLong(Cast<long>(value, format));
                     break;
                 case TdsDataType.TDS_UINT8:
-                    stream.WriteULong((ulong)value);
+                    stream.WriteULong(Cast<ulong>(value, format));
                     break;
                 case TdsDataType.TDS_INTN:
                     switch (value)
@@ -100,10 +117,10 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_FLT4:
-                    stream.WriteFloat((float)value);
+                    stream.WriteFloat(Cast<float>(value, format));
                     break;
                 case TdsDataType.TDS_FLT8:
-                    stream.WriteDouble((double)value);
+                    stream.WriteDouble(Cast<double>(value, format));
                     break;
                 case TdsDataType.TDS_FLTN:
                     switch (value)
@@ -124,20 +141,20 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_VARCHAR:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteBytePrefixedString(value.ToString(), enc);
+                        stream.WriteBytePrefixedString(Cast<string>(value, format), enc);
                     }
                     break;
                 case TdsDataType.TDS_LONGCHAR:
                     if (!stream.TryWriteIntPrefixedNull(value))
                     {
-                        stream.WriteIntPrefixedString((string)value, enc);
+                        stream.WriteIntPrefixedString(Cast<string>(value, format), enc);
                     }
                     break;
                 case TdsDataType.TDS_VARBINARY:
                 case TdsDataType.TDS_BINARY:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteBytePrefixedByteArray((byte[])value);
+                        stream.WriteBytePrefixedByteArray(Cast<byte[]>(value, format));
                     }
                     break;
                 case TdsDataType.TDS_LONGBINARY:
@@ -167,7 +184,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_NUMN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        var sqlDecimal = (SqlDecimal)(decimal)value;
+                        var sqlDecimal = (SqlDecimal) Cast<decimal>(value, format);
                         stream.WriteByte(17);
                         stream.WriteByte(sqlDecimal.IsPositive ? (byte)0 : (byte)1);
                         var data = sqlDecimal.BinData;
@@ -182,30 +199,30 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_DATETIME:
-                    stream.WriteIntPartDateTime((DateTime)value);
+                    stream.WriteIntPartDateTime(Cast<DateTime>(value, format));
                     break;
                 case TdsDataType.TDS_DATETIMEN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteIntPartDateTime((DateTime)value);
+                        stream.WriteIntPartDateTime(Cast<DateTime>(value, format));
                     }
                     break;
                 case TdsDataType.TDS_DATE:
-                    stream.WriteDate((DateTime)value);
+                    stream.WriteDate(Cast<DateTime>(value, format));
                     break;
                 case TdsDataType.TDS_DATEN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteDate((DateTime)value);
+                        stream.WriteDate(Cast<DateTime>(value, format));
                     }
                     break;
                 case TdsDataType.TDS_TIME:
-                    stream.WriteTime((TimeSpan)value);
+                    stream.WriteTime(Cast<TimeSpan>(value, format));
                     break;
                 case TdsDataType.TDS_TIMEN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteTime((TimeSpan)value);
+                        stream.WriteTime(Cast<TimeSpan>(value, format));
                     }
                     break;
                 default:

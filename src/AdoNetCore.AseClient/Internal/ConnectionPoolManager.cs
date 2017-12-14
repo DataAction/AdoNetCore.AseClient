@@ -15,13 +15,14 @@ namespace AdoNetCore.AseClient.Internal
 
         public void Release(string connectionString, IInternalConnection connection)
         {
+            if (connection == null)
+            {
+                return; //essentially, it's released :)
+            }
+
             if (Pools.TryGetValue(connectionString, out var pool))
             {
                 pool.Release(connection);
-            }
-            else
-            {
-                throw new ArgumentException("No connection pool exists for that connection string");
             }
         }
     }

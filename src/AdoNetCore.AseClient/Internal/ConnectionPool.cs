@@ -114,10 +114,13 @@ namespace AdoNetCore.AseClient.Internal
                     continue;
                 }
 
-                if (!_parameters.PingServer || connection.Ping())
+                if (_parameters.PingServer && !connection.Ping())
                 {
-                    return connection;
+                    RemoveAndReplace(connection);
+                    continue;
                 }
+
+                return connection;
             }
 
             Logger.Instance?.WriteLine($"{nameof(FetchIdlePooledConnection)} found no idle connection");

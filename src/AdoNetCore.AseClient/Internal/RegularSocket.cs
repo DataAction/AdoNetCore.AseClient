@@ -46,7 +46,7 @@ namespace AdoNetCore.AseClient.Internal
                     Array.Copy(template, buffer, template.Length);
                     var copied = ms.Read(buffer, template.Length, buffer.Length - template.Length);
                     var chunkLength = template.Length + copied;
-                    buffer[1] = (byte)(ms.Position >= ms.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE); //todo: set other statuses?
+                    buffer[1] = (byte)((ms.Position >= ms.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE) | packet.Status);
                     buffer[2] = (byte)(chunkLength >> 8);
                     buffer[3] = (byte)chunkLength;
 
@@ -61,21 +61,28 @@ namespace AdoNetCore.AseClient.Internal
         {
             using (var ms = new MemoryStream())
             {
+                bool canceled;
                 var buffer = new byte[env.PacketSize];
                 while (true)
                 {
                     _inner.EnsureReceive(buffer, 0, env.HeaderSize);
                     var length = buffer[2] << 8 | buffer[3];
                     var bufferStatus = (BufferStatus)buffer[1];
-                    var finalChunk = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM);
-
                     _inner.EnsureReceive(buffer, env.HeaderSize, length - env.HeaderSize);
                     ms.Write(buffer, env.HeaderSize, length - env.HeaderSize);
 
-                    if (finalChunk)
+                    //" If TDS_BUFSTAT_ATTNACK not also TDS_BUFSTAT_EOM, continue reading packets until TDS_BUFSTAT_EOM."
+                    canceled = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTNACK);
+
+                    if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM))
                     {
                         break;
                     }
+                }
+
+                if (canceled)
+                {
+                    return new IToken[0];
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);

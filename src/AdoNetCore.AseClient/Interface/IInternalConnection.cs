@@ -48,6 +48,8 @@ namespace AdoNetCore.AseClient.Interface
         /// </summary>
         object ExecuteScalar(AseCommand command, AseTransaction transaction);
 
+        void Cancel();
+
         /// <summary>
         /// Set @@textsize, useful if the caller needs to select out very large text data
         /// </summary>

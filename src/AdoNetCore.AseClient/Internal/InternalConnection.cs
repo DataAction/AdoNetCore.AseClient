@@ -15,6 +15,8 @@ namespace AdoNetCore.AseClient.Internal
         private readonly ISocket _socket;
         private readonly DbEnvironment _environment = new DbEnvironment();
 
+        private object _sendMutex = new object();
+
         public InternalConnection(IConnectionParameters parameters, ISocket socket)
         {
             _parameters = parameters;
@@ -24,9 +26,13 @@ namespace AdoNetCore.AseClient.Internal
 
         private void SendPacket(IPacket packet)
         {
-            Logger.Instance?.WriteLine();
-            Logger.Instance?.WriteLine("----------  Send packet   ----------");
-            _socket.SendPacket(packet, _environment);
+            //prevent cancel token from being sent at the same time as other tokens
+            lock (_sendMutex)
+            {
+                Logger.Instance?.WriteLine();
+                Logger.Instance?.WriteLine("----------  Send packet   ----------");
+                _socket.SendPacket(packet, _environment);
+            }
         }
 
         private void ReceiveTokens(params ITokenHandler[] handlers)
@@ -188,6 +194,11 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             return null;
+        }
+
+        public void Cancel()
+        {
+            SendPacket(new AttentionPacket());
         }
 
         public void GetTextSize()

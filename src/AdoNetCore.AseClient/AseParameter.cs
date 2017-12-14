@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Text;
 
@@ -9,7 +10,7 @@ namespace AdoNetCore.AseClient
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
     [DebuggerDisplay("{" + nameof(ParameterName) + "}")]
-    public sealed class AseParameter : IDbDataParameter
+    public sealed class AseParameter : DbParameter
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _parameterName;
@@ -106,7 +107,7 @@ namespace AdoNetCore.AseClient
             else if (value is char) // NOTE: - char is not supported by the SAP AseClient.
             {
                 AseDbType = AseDbType.UniChar;
-                Size = Encoding.Unicode.GetByteCount(new[] {(char)value});
+                Size = Encoding.Unicode.GetByteCount(new[] { (char)value });
             }
             else if (value is char[]) // NOTE: - char[] is not supported by the SAP AseClient.
             {
@@ -191,24 +192,29 @@ namespace AdoNetCore.AseClient
             Value = value;
         }
 
-        /// <summary>
-        /// Gets or sets the <see cref="AseDbType" /> of the parameter.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        DbType IDataParameter.DbType 
-        { 
-            get => (DbType)_type;
-            set => _type = (AseDbType)value;
-        } 
+        public override void ResetDbType()
+        {
+            //todo: implement? doesn't seem like we need to
+        }
 
         /// <summary>
         /// Gets or sets the <see cref="AseDbType" /> of the parameter.
         /// </summary>
-        public AseDbType AseDbType 
-        { 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        public override DbType DbType
+        {
+            get => (DbType)_type;
+            set => _type = (AseDbType)value;
+        }
+
+        /// <summary>
+        /// Gets or sets the <see cref="AseDbType" /> of the parameter.
+        /// </summary>
+        public AseDbType AseDbType
+        {
             get => _type;
             set => _type = value;
-        } 
+        }
 
         /// <summary>
         /// Gets or sets a value that indicates whether the parameter is input-only, output-only, 
@@ -220,7 +226,7 @@ namespace AdoNetCore.AseClient
         /// <para><b>Output</b>, <b>InputOut</b>, and <b>ReturnValue</b> parameters returned by calling <see cref="AseCommand.ExecuteReader()" /> cannot 
         /// be accessed until you close the <see cref="AseDataReader" />.</para>
         /// </remarks>
-        public ParameterDirection Direction { get; set; }
+        public override ParameterDirection Direction { get; set; }
 
         /// <summary>
         /// Gets or sets a value that indicates whether the parameter accepts null values. IsNullable is not used to validate the 
@@ -229,7 +235,7 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// <para>Null values are handled using the <see cref="System.DBNull" /> class.</para>
         /// </remarks>
-        public bool IsNullable { get; set; }
+        public override bool IsNullable { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the <see cref="AseParameter" />.
@@ -238,7 +244,7 @@ namespace AdoNetCore.AseClient
         /// <para>The ParameterName is specified in the form @paramname. You must set ParameterName before executing an 
         /// <see cref="AseCommand" /> that relies on parameters.</para>
         /// </remarks>
-        public string ParameterName
+        public override string ParameterName
         {
             get => _parameterName;
             set => _parameterName = value == null || value.StartsWith("@") ? value : $"@{value}";
@@ -247,13 +253,20 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Not supported yet. .NET Core 2.0 dependency.
         /// </summary>
-        public string SourceColumn { get; set; }
+        public override string SourceColumn { get; set; }
 
+        //public override DataRowVersion SourceVersion { get; set; }
+
+        public override bool SourceColumnNullMapping { get; set; }
+
+#if NETCOREAPP2_0 || NET45
         /// <summary>
         /// Not supported yet. .NET Core 2.0 dependency.
         /// </summary>
+        public override DataRowVersion SourceVersion { get; set; }
+#else
         public DataRowVersion SourceVersion { get; set; }
-
+#endif
         /// <summary>
         /// Gets or sets the value of the parameter.
         /// </summary>
@@ -269,7 +282,7 @@ namespace AdoNetCore.AseClient
         /// interface. Conversion errors may result if the specified type is not compatible with the value.</para>
         /// <para>The <see cref="AseDbType" /> property can be inferred by setting the Value.</para>
         /// </remarks>
-        public object Value { get; set; }
+        public override object Value { get; set; }
 
         /// <summary>
         /// Gets or sets the number of digits used to represent the <see cref="Value" /> property.
@@ -284,7 +297,11 @@ namespace AdoNetCore.AseClient
         /// passing it to the database, use the <see cref="System.Math" /> class that is part of the System namespace prior to assigning a value to 
         /// the parameter's <see cref="Value" /> property.</para>
         /// </remarks>
+#if NETCOREAPP2_0
+        public override byte Precision { get; set; }
+#else
         public byte Precision { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets the number of decimal places to which <see cref="Value" /> is resolved.
@@ -301,7 +318,11 @@ namespace AdoNetCore.AseClient
         /// passing it to the database, use the <see cref="System.Math" /> class that is part of the System namespace prior to assigning a value to 
         /// the parameter's <see cref="Value" /> property.</para>
         /// </remarks>
+#if NETCOREAPP2_0
+        public override byte Scale { get; set; }
+#else
         public byte Scale { get; set; }
+#endif
 
         /// <summary>
         /// Gets or sets the maximum size, in bytes, of the data within the column.
@@ -322,15 +343,13 @@ namespace AdoNetCore.AseClient
         /// <para>For fixed length data types, the value of Size is ignored. It can be retrieved for informational purposes, and returns the 
         /// maximum amount of bytes the provider uses when transmitting the value of the parameter to the server. </para>
         /// </remarks>
-        public int Size { get; set; }
+        public override int Size { get; set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool CanSendOverTheWire => Direction != ParameterDirection.ReturnValue;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool IsOutput => Direction == ParameterDirection.InputOutput || Direction == ParameterDirection.Output;
-
-
 
         public override string ToString()
         {

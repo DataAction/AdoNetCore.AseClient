@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Text;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -19,27 +20,189 @@ namespace AdoNetCore.AseClient
 
         public bool GetBoolean(int i)
         {
-            return GetValue<bool>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is bool i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Boolean");
+            }
+
+            return convertible.ToBoolean(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
         public byte GetByte(int i)
         {
-            return GetValue<byte>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is byte i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Byte");
+            }
+
+            return convertible.ToByte(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
+        public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferOffset, int length)
         {
-            throw new NotImplementedException();
+            if (IsDBNull(i))
+            {
+                return 0;
+            }
+
+            var obj = GetValue(i);
+
+            if (obj == null)
+            {
+                return 0;
+            }
+
+            byte[] byteArray;
+            long byteArrayLength;
+            if (obj is byte[] bytes)
+            {
+                byteArray = bytes;
+                byteArrayLength = byteArray.Length;
+            }
+            else
+            {
+                if (!(obj is string))
+                {
+                    return 0;
+                }
+
+                byteArray = Encoding.Unicode.GetBytes((string)obj);
+
+                if (byteArray == null)
+                {
+                    return 0;
+                }
+                byteArrayLength = byteArray.Length;
+            }
+
+            if (buffer == null)
+            {
+                return byteArrayLength;
+            }
+
+            // Assume we can read all of the bytes requested.
+            var bytesToRead = (long)length;
+
+            // If the number of bytes required plus the position in the field exceed the length of the field
+            if (length + fieldOffset >= byteArrayLength)
+            {
+                bytesToRead = byteArrayLength - fieldOffset; // Shrink the bytes requested.
+            }
+
+#if NETCOREAPP1_0 || NETCOREAPP1_1
+            var cIndex = fieldOffset;
+            var bIndex = (long)bufferOffset;
+
+            for (long index3 = 0; index3 < bytesToRead; ++index3)
+            {
+                buffer[bIndex] = byteArray[cIndex];
+                ++bIndex;
+                ++cIndex;
+            }
+#else
+            Array.Copy(byteArray, fieldOffset, buffer, bufferOffset, bytesToRead);
+#endif
+
+            return bytesToRead;
         }
 
         public char GetChar(int i)
         {
-            return GetValue<char>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is char i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Char");
+            }
+
+            return convertible.ToChar(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
+        public long GetChars(int i, long fieldOffset, char[] buffer, int bufferoffset, int length)
         {
-            throw new NotImplementedException();
+            if (IsDBNull(i))
+            {
+                return 0;
+            }
+
+            var obj = GetValue(i);
+
+            if (obj == null)
+            {
+                return 0;
+            }
+
+            char[] charArray;
+            long charArrayLength;
+
+            if (obj is char[] c)
+            {
+                charArray = c;
+                charArrayLength = charArray.Length - 1;
+            }
+            else
+            {
+                if (!(obj is string))
+                {
+                    return 0;
+                }
+                charArray = ((string)obj).ToCharArray();
+                charArrayLength = charArray.Length;
+            }
+
+            if (buffer == null)
+            {
+                return charArrayLength;
+            }
+
+            // Assume we can read all of the bytes requested.
+            var charsToRead = (long)length;
+
+            // If the number of bytes required plus the position in the field exceed the length of the field
+            if (length + fieldOffset >= charArrayLength)
+            {
+                charsToRead = charArrayLength - fieldOffset; // Shrink the bytes requested.
+            }
+
+#if NETCOREAPP1_0 || NETCOREAPP1_1
+            var cIndex = fieldOffset;
+            var bIndex = (long)bufferoffset;
+
+            for (long index3 = 0; index3 < charsToRead; ++index3)
+            {
+                buffer[bIndex] = charArray[cIndex];
+                ++bIndex;
+                ++cIndex;
+            }
+#else
+            Array.Copy(charArray, fieldOffset, buffer, bufferoffset, charsToRead);
+#endif
+            return charsToRead;
         }
 
         public IDataReader GetData(int i)
@@ -54,49 +217,246 @@ namespace AdoNetCore.AseClient
 
         public DateTime GetDateTime(int i)
         {
-            return GetValue<DateTime>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is DateTime i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to DateTime");
+            }
+
+            return convertible.ToDateTime(System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat);
+        }
+
+        public TimeSpan GetTimeSpan(int i)
+        {
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is TimeSpan i1)
+            {
+                return i1;
+            }
+
+            throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to TimeSpan");
         }
 
         public decimal GetDecimal(int i)
         {
-            return GetValue<decimal>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is decimal i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Decimal");
+            }
+
+            return convertible.ToDecimal(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
         public double GetDouble(int i)
         {
-            return GetValue<double>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is double i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Double");
+            }
+
+            return convertible.ToDouble(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
         public Type GetFieldType(int i) => typeof(object);
 
         public float GetFloat(int i)
         {
-            return GetValue<float>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is float i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Float");
+            }
+
+            return convertible.ToSingle(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
         public Guid GetGuid(int i)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException($"{nameof(AseDataReader)}.{nameof(GetGuid)}({nameof(i)})");
         }
 
         public short GetInt16(int i)
         {
-            return GetValue<short>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is short i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int16");
+            }
+
+            return convertible.ToInt16(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
         public int GetInt32(int i)
         {
-            return GetValue<int>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is int i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int32");
+            }
+
+            return convertible.ToInt32(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
         public long GetInt64(int i)
         {
-            return GetValue<long>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is long i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int64");
+            }
+
+            return convertible.ToInt64(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+        }
+
+        public ushort GetUInt16(int i)
+        {
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is ushort i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt16");
+            }
+
+            return convertible.ToUInt16(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+        }
+
+        public uint GetUInt32(int i)
+        {
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is uint i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt32");
+            }
+
+            return convertible.ToUInt32(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+        }
+
+        public ulong GetUInt64(int i)
+        {
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is ulong i1)
+            {
+                return i1;
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt64");
+            }
+
+            return convertible.ToUInt64(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
         public string GetString(int i)
         {
-            return GetValue<string>(i);
+            var obj = GetValue(i);
+
+            AssertNotDBNull(obj);
+
+            if (obj is string s)
+            {
+                return s;
+            }
+
+            if (obj is char[] c)
+            {
+                return new string(c, 0, c.Length - 1);
+            }
+
+            if (!(obj is IConvertible convertible))
+            {
+                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to String");
+            }
+
+            return convertible.ToString(System.Globalization.CultureInfo.CurrentCulture);
+        }
+
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+        private static void AssertNotDBNull(object obj)
+        {
+            if (obj == DBNull.Value)
+            {
+                throw new AseException(new AseError {IsError = true, IsFromClient = true, IsFromServer = false, IsInformation = false, IsWarning = false, Message = "Cannot read DBNull as type."});
+            }
         }
 
         public string GetName(int i)
@@ -131,6 +491,11 @@ namespace AdoNetCore.AseClient
         }
         public object GetValue(int i)
         {
+            if (IsDBNull(i))
+            {
+                return DBNull.Value;
+            }
+
             if (_currentResult >= 0
                 && _currentResult < _results.Length
                 && _currentRow >= 0
@@ -144,26 +509,49 @@ namespace AdoNetCore.AseClient
             throw new ArgumentOutOfRangeException();
         }
 
-        private T GetValue<T>(int i)
-        {
-            var value = GetValue(i);
-
-            if (value is T casted)
-            {
-                return casted;
-            }
-
-            throw new InvalidCastException("Specified cast is not valid.");
-        }
-
         public int GetValues(object[] values)
         {
-            throw new NotImplementedException();
+            var num = values.Length;
+
+            if (_currentResult >= 0
+                && _currentResult < _results.Length
+                && _currentRow >= 0
+                && _currentRow < _results[_currentResult].Rows.Count)
+            {
+                var items = _results[_currentResult].Rows[_currentRow].Items;
+
+                if (num > items.Length)
+                {
+                    num = items.Length;
+                }
+
+                Array.Copy(items, 0, values, 0, num); // TODO - check how DBNull.Value goes back.
+
+                if (num < values.Length)
+                {
+                    Array.Clear(values, num, values.Length - num); // Clear any extra values to avoid confusion.
+                }
+                return num;
+            }
+
+            return 0;
         }
 
         public bool IsDBNull(int i)
         {
-            throw new NotImplementedException();
+            if (_currentResult >= 0
+                && _currentResult < _results.Length
+                && _currentRow >= 0
+                && _currentRow < _results[_currentResult].Rows.Count
+                && i >= 0
+                && i < _results[_currentResult].Rows[_currentRow].Items.Length)
+            {
+                var value = _results[_currentResult].Rows[_currentRow].Items[i];
+
+                return value == DBNull.Value; // TODO - don't think this is right. Test with a debugger.
+            }
+
+            throw new ArgumentOutOfRangeException();
         }
 
         public int FieldCount => _currentResult >= 0 && _currentResult < _results.Length

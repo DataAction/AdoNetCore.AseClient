@@ -10,130 +10,271 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class AseDataReaderTests
     {
-        // TODO - more tests.
+        // TODO - more tests -money, smallmoney, binary, varbinary, image (blob), unsigned
 
         private const string AllTypesQuery =
 @"SELECT 
-    CAST(123 AS INT) AS [IntColumn],
-    CAST(NULL AS INT) AS [NullIntColumn],
-    CAST(123 AS SMALLINT) AS [ShortColumn],
-    CAST(NULL AS SMALLINT) AS [NullShortColumn],
-    CAST(123 AS BIGINT) AS [LongColumn],
-    CAST(NULL AS BIGINT) AS [NullLongColumn],
-    CAST('Hello world' AS VARCHAR) AS [StringColumn],
-    CAST(NULL AS VARCHAR) AS [NullStringColumn],
-    CAST(1 AS BIT) AS [BooleanColumn],
-    CAST(123 AS TINYINT) AS [ByteColumn],
-    CAST(NULL AS TINYINT) AS [NullByteColumn],
-    CAST(123.45 AS REAL) AS [FloatColumn],
-    CAST(NULL AS REAL) AS [NullFloatColumn],
-    CAST(123.45 AS DOUBLE PRECISION) AS [DoubleColumn],
-    CAST(NULL AS DOUBLE PRECISION) AS [NullDoubleColumn],
-    CAST(123.45 AS NUMERIC(18,6)) AS [DecimalColumn],
-    CAST(NULL AS NUMERIC(18,6)) AS [NullDecimalColumn]";
+    CAST(123 AS INT) AS [INT],
+    CAST(NULL AS INT) AS [NULL_INT],
+    CAST(123 AS SMALLINT) AS [SMALLINT],
+    CAST(NULL AS SMALLINT) AS [NULL_SMALLINT],
+    CAST(123 AS BIGINT) AS [BIGINT],
+    CAST(NULL AS BIGINT) AS [NULL_BIGINT],
+    CAST(123 AS TINYINT) AS [TINYINT],
+    CAST(NULL AS TINYINT) AS [NULL_TINYINT],
+
+    CAST(123.45 AS REAL) AS [REAL],
+    CAST(NULL AS REAL) AS [NULL_REAL],
+    CAST(123.45 AS DOUBLE PRECISION) AS [DOUBLE_PRECISION],
+    CAST(NULL AS DOUBLE PRECISION) AS [NULL_DOUBLE_PRECISION],
+    CAST(123.45 AS NUMERIC(18,6)) AS [NUMERIC],
+    CAST(NULL AS NUMERIC(18,6)) AS [NULL_NUMERIC],
+
+    CAST(1 AS BIT) AS [BIT],
+
+    CAST('Hello world' AS VARCHAR) AS [VARCHAR],
+    CAST(NULL AS VARCHAR) AS [NULL_VARCHAR],
+    CAST('Hello world' AS CHAR) AS [CHAR],
+    CAST(NULL AS CHAR) AS [NULL_CHAR],
+    CAST('Hello world' AS UNIVARCHAR) AS [UNIVARCHAR],
+    CAST(NULL AS UNIVARCHAR) AS [NULL_UNIVARCHAR],
+    CAST('Hello world' AS UNICHAR) AS [UNICHAR],
+    CAST(NULL AS UNICHAR) AS [NULL_UNICHAR],
+    CAST('Hello world' AS TEXT) AS [TEXT],
+    CAST(NULL AS TEXT) AS [NULL_TEXT],
+    CAST('Hello world' AS UNITEXT) AS [UNITEXT],
+    CAST(NULL AS UNITEXT) AS [NULL_UNITEXT],
+
+    --CAST('Apr 15 1987 10:23:00.000000PM' AS BIGDATETIME) AS [BIGDATETIME],
+    --CAST(NULL AS BIGDATETIME) AS [NULL_BIGDATETIME],
+    CAST('Apr 15 1987 10:23:00.000PM' AS DATETIME) AS [DATETIME],
+    CAST(NULL AS DATETIME) AS [NULL_DATETIME],
+    CAST('Apr 15 1987 10:23:00PM' AS SMALLDATETIME) AS [SMALLDATETIME],
+    CAST(NULL AS SMALLDATETIME) AS [NULL_SMALLDATETIME],
+    CAST('Apr 15 1987' AS DATE) AS [DATE],
+    CAST(NULL AS DATE) AS [NULL_DATE],
+
+    --CAST('11:59:59.999999 PM' AS BIGTIME) AS [BIGTIME],
+    --CAST(NULL AS BIGTIME) AS [NULL_BIGTIME],
+    CAST('23:59:59:997' AS TIME) AS [TIME],
+    CAST(NULL AS TIME) AS [NULL_TIME]
+";
 
         private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
 
-        [Test]
-        public void GetInt32_WithValue_CastSuccessfully()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetInt32_WithValue_CastSuccessfully(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully("IntColumn", (reader, ordinal) => reader.GetInt32(ordinal), 123);
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetInt32(ordinal), 123);
         }
 
-        [Test]
-        public void GetInt32_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetInt32_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullIntColumn", (reader, ordinal) => reader.GetInt32(ordinal));
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetInt32(ordinal));
         }
 
-        [Test]
-        public void GetInt16_WithValue_CastSuccessfully()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetInt16_WithValue_CastSuccessfully(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully("ShortColumn", (reader, ordinal) => reader.GetInt16(ordinal), 123);
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetInt16(ordinal), 123);
         }
 
-        [Test]
-        public void GetInt16_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetInt16_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullShortColumn", (reader, ordinal) => reader.GetInt16(ordinal));
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetInt16(ordinal));
         }
 
-        [Test]
-        public void GetInt64_WithValue_CastSuccessfully()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetInt64_WithValue_CastSuccessfully(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully("LongColumn", (reader, ordinal) => reader.GetInt64(ordinal), 123);
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetInt64(ordinal), 123);
         }
 
-        [Test]
-        public void GetInt64_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetInt64_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullLongColumn", (reader, ordinal) => reader.GetInt64(ordinal));
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetInt64(ordinal));
         }
 
-        [Test]
-        public void GetString_WithValue_CastSuccessfully()
+        [TestCase("VARCHAR", "Hello world")]
+        [TestCase("CHAR", "Hello world")]
+        [TestCase("UNIVARCHAR", "Hello world")]
+        [TestCase("UNICHAR", "Hello world")]
+        [TestCase("TEXT", "Hello world")]
+        [TestCase("UNITEXT", "Hello world")]
+        public void GetString_WithValue_CastSuccessfully(string aseType, string expectedValue)
         {
-            GetHelper_WithValue_TCastSuccessfully("StringColumn", (reader, ordinal) => reader.GetString(ordinal), "Hello world");
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetString(ordinal), expectedValue);
         }
 
-        [Test]
-        public void GetString_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("VARCHAR")]
+        [TestCase("CHAR")]
+        [TestCase("UNIVARCHAR")]
+        [TestCase("UNICHAR")]
+        [TestCase("TEXT")]
+        [TestCase("UNITEXT")]
+        public void GetString_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullStringColumn", (reader, ordinal) => reader.GetString(ordinal));
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetString(ordinal));
         }
 
-        [Test]
-        public void GetBoolean_WithValue_CastSuccessfully()
+
+
+        [TestCase("DATE", "Apr 15 1987")]
+        [TestCase("DATETIME", "Apr 15 1987 10:23:00.000PM")]
+        [TestCase("SMALLDATETIME", "Apr 15 1987 10:23:00PM")]
+        [TestCase("BIGDATETIME", "Apr 15 1987 10:23:00.000000PM", Ignore = "true", IgnoreReason = "BIGDATETIME is not supported yet")]
+        public void GetDateTime_WithValue_CastSuccessfully(string aseType, string expectedDateTime)
         {
-            GetHelper_WithValue_TCastSuccessfully("BooleanColumn", (reader, ordinal) => reader.GetBoolean(ordinal), true);
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetDateTime(ordinal), DateTime.Parse(expectedDateTime));
         }
 
-        [Test]
-        public void GetByte_WithValue_CastSuccessfully()
+        [TestCase("DATE")]
+        [TestCase("DATETIME")]
+        [TestCase("SMALLDATETIME")]
+        [TestCase("BIGDATETIME", Ignore = "true", IgnoreReason = "BIGDATETIME is not supported yet")]
+        public void GetDateTime_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully("ByteColumn", (reader, ordinal) => reader.GetByte(ordinal), 123);
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetDateTime(ordinal));
+        }
+        [TestCase("TIME", "23:59:59.997")]
+        [TestCase("BIGTIME", "11:59:59.999999 PM", Ignore = "true", IgnoreReason = "BIGTIME is not supported yet")]
+        public void GetTimeSpan_WithValue_CastSuccessfully(string aseType, string expectedTimeSpan)
+        {
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetTimeSpan(ordinal), TimeSpan.Parse(expectedTimeSpan));
         }
 
-        [Test]
-        public void GetByte_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("TIME")]
+        [TestCase("BIGTIME", Ignore = "true", IgnoreReason = "BIGTIME is not supported yet")]
+        public void GetTimeSpan_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullByteColumn", (reader, ordinal) => reader.GetByte(ordinal));
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetTimeSpan(ordinal));
         }
 
-        [Test]
-        public void GetFloat_WithValue_CastSuccessfully()
+        [TestCase("BIT")]
+        public void GetBoolean_WithValue_CastSuccessfully(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully("FloatColumn", (reader, ordinal) => reader.GetFloat(ordinal), 123.45f);
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetBoolean(ordinal), true);
         }
 
-        [Test]
-        public void GetFloat_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetByte_WithValue_CastSuccessfully(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullFloatColumn", (reader, ordinal) => reader.GetFloat(ordinal));
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetByte(ordinal), 123);
         }
 
-        [Test]
-        public void GetDouble_WithValue_CastSuccessfully()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetByte_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully("DoubleColumn", (reader, ordinal) => reader.GetDouble(ordinal), 123.45d);
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetByte(ordinal));
         }
 
-        [Test]
-        public void GetDouble_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("INT", 123)]
+        [TestCase("BIGINT", 123)]
+        [TestCase("TINYINT", 123)]
+        [TestCase("REAL", 123.45f)]
+        [TestCase("DOUBLE_PRECISION", 123.45f)]
+        [TestCase("NUMERIC", 123.45f)]
+        public void GetFloat_WithValue_CastSuccessfully(string aseType, float expectedValue)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullDoubleColumn", (reader, ordinal) => reader.GetDouble(ordinal));
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetFloat(ordinal), expectedValue);
         }
 
-        [Test]
-        public void GetDecimal_WithValue_CastSuccessfully()
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetFloat_WithNullValue_ThrowsInvalidCastException(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully("DecimalColumn", (reader, ordinal) => reader.GetDecimal(ordinal), 123.45m);
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetFloat(ordinal));
         }
 
-        [Test]
-        public void GetDecimal_WithNullValue_ThrowsInvalidCastException()
+        [TestCase("INT", 123d)]
+        [TestCase("BIGINT", 123d)]
+        [TestCase("TINYINT", 123d)]
+        [TestCase("REAL", 123.45d)]
+        [TestCase("DOUBLE_PRECISION", 123.45d)]
+        [TestCase("NUMERIC", 123.45d)]
+        public void GetDouble_WithValue_CastSuccessfully(string aseType, double expectedValue)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException("NullDecimalColumn", (reader, ordinal) => reader.GetDecimal(ordinal));
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetDouble(ordinal), expectedValue);
+        }
+
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetDouble_WithNullValue_ThrowsInvalidCastException(string aseType)
+        {
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetDouble(ordinal));
+        }
+
+        [TestCase("INT", 123)]
+        [TestCase("BIGINT", 123)]
+        [TestCase("TINYINT", 123)]
+        [TestCase("REAL", 123.45d)]
+        [TestCase("DOUBLE_PRECISION", 123.45d)]
+        [TestCase("NUMERIC", 123.45d)]
+        public void GetDecimal_WithValue_CastSuccessfully(string aseType, decimal expectedValue)
+        {
+            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetDecimal(ordinal), expectedValue);
+        }
+
+        [TestCase("INT")]
+        [TestCase("BIGINT")]
+        [TestCase("TINYINT")]
+        [TestCase("REAL")]
+        [TestCase("DOUBLE_PRECISION")]
+        [TestCase("NUMERIC")]
+        public void GetDecimal_WithNullValue_ThrowsInvalidCastException(string aseType)
+        {
+            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetDecimal(ordinal));
         }
 
         private void GetHelper_WithValue_TCastSuccessfully<T>(string columnName, Func<AseDataReader, int, T> testMethod, T expectedValue)
@@ -153,7 +294,19 @@ namespace AdoNetCore.AseClient.Tests.Integration
                         Assert.IsTrue(reader.Read());
 
                         T value = testMethod(reader, targetFieldOrdinal);
-                        Assert.AreEqual(expectedValue, value);
+
+                        if (expectedValue is float || expectedValue is double)
+                        {
+                            Assert.That(expectedValue, Is.EqualTo(value).Within(0.1));
+                        }
+                        else if (expectedValue is string)
+                        {
+                            Assert.AreEqual(expectedValue, (value as string)?.Trim());
+                        }
+                        else
+                        {
+                            Assert.AreEqual(expectedValue, value);
+                        }
 
                         Assert.IsFalse(reader.Read());
                         Assert.IsFalse(reader.NextResult());
@@ -174,7 +327,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
                     using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
                     {
-                        var targetFieldOrdinal = reader.GetOrdinal(columnName);
+                        var targetFieldOrdinal = reader.GetOrdinal($"NULL_{columnName}");
 
                         Assert.IsTrue(reader.Read());
 

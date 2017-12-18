@@ -10,8 +10,8 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
 
 ## Objectives
 * Functional parity with the `Sybase.AdoNet4.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the SAP AseClient. The following types are supported:
-    * [AseClientPermission] - Stubs are provided for binary compatibility in .NET Core 2.0 and higher, however [CAS will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas) and is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security).
-    * [AseClientPermissionAttribute] - Stubs are provided for binary compatibility in .NET Core 2.0 and higher, however [CAS will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas) and is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security).
+    * [AseClientPermission] - Stubs only in .NET Core 2.0+, however CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
+    * [AseClientPermissionAttribute] - Stubs only in .NET Core 2.0+, however CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
     * AseCommand - in progress
     * AseConnection - in progress
     * AseParameter

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -76,7 +77,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 foreach (var handler in handlers)
                 {
-                    if (handler.CanHandle(receivedToken.Type))
+                    if (handler != null && handler.CanHandle(receivedToken.Type))
                     {
                         handler.Handle(receivedToken);
                     }
@@ -177,39 +178,9 @@ namespace AdoNetCore.AseClient.Internal
 
         public string Database => _environment.Database;
 
-        public int ExecuteNonQuery(AseCommand command, AseTransaction transaction)
+        private void InternalExecuteAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<int> rowsAffectedSource = null, TaskCompletionSource<DbDataReader> readerSource = null)
         {
             AssertExecutionStart();
-
-            SendPacket(new NormalPacket(BuildCommandTokens(command)));
-
-            var doneHandler = new DoneTokenHandler();
-            var messageHandler = new MessageTokenHandler();
-
-            ReceiveTokens(
-                new EnvChangeTokenHandler(_environment),
-                messageHandler,
-                new ResponseParameterTokenHandler(command.AseParameters),
-                doneHandler);
-
-            AssertExecutionCompletion(doneHandler);
-
-            if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
-            {
-                transaction.MarkAborted();
-            }
-
-            messageHandler.AssertNoErrors();
-
-            return doneHandler.RowsAffected;
-        }
-
-        //todo: might be able to change this so that TCS is passed in as parameter, and clean up the AseCommand implementation
-        public Task<int> ExecuteNonQueryAsTask(AseCommand command, AseTransaction transaction)
-        {
-            AssertExecutionStart();
-
-            var source = new TaskCompletionSource<int>();
 
             try
             {
@@ -217,10 +188,12 @@ namespace AdoNetCore.AseClient.Internal
 
                 var doneHandler = new DoneTokenHandler();
                 var messageHandler = new MessageTokenHandler();
+                var dataReaderHandler = readerSource != null ? new DataReaderTokenHandler() : null;
 
                 ReceiveTokens(
                     new EnvChangeTokenHandler(_environment),
                     messageHandler,
+                    dataReaderHandler,
                     new ResponseParameterTokenHandler(command.AseParameters),
                     doneHandler);
 
@@ -235,54 +208,62 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (doneHandler.Canceled)
                 {
-
-                    source.SetCanceled();
+                    rowsAffectedSource?.SetCanceled();
+                    readerSource?.SetCanceled();
                 }
                 else
                 {
-                    source.SetResult(doneHandler.RowsAffected);
+                    rowsAffectedSource?.SetResult(doneHandler.RowsAffected);
+                    readerSource?.SetResult(new AseDataReader(dataReaderHandler.Results()));
                 }
             }
             catch (Exception ex)
             {
-                source.SetException(ex);
+                rowsAffectedSource?.SetException(ex);
+                readerSource?.SetException(ex);
             }
-
-            return source.Task;
         }
 
-        public AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
+        public int ExecuteNonQuery(AseCommand command, AseTransaction transaction)
         {
-            AssertExecutionStart();
-
-            SendPacket(new NormalPacket(BuildCommandTokens(command)));
-
-            var doneHandler = new DoneTokenHandler();
-            var messageHandler = new MessageTokenHandler();
-            var dataReaderHandler = new DataReaderTokenHandler();
-
-            ReceiveTokens(
-                new EnvChangeTokenHandler(_environment),
-                messageHandler,
-                dataReaderHandler,
-                new ResponseParameterTokenHandler(command.AseParameters),
-                doneHandler);
-
-            if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
+            try
             {
-                transaction.MarkAborted();
+                var execTask = ExecuteNonQueryTaskRunnable(command, transaction);
+                execTask.Wait();
+                return execTask.Result;
             }
-
-            if (doneHandler.Canceled)
+            catch (AggregateException ae)
             {
-                TrySetState(InternalConnectionState.Ready, s => s == InternalConnectionState.Canceled);
+                throw ae.InnerException;
             }
+        }
 
-            AssertExecutionCompletion(doneHandler);
+        public Task<int> ExecuteNonQueryTaskRunnable(AseCommand command, AseTransaction transaction)
+        {
+            var rowsAffectedSource = new TaskCompletionSource<int>();
+            InternalExecuteAsync(command, transaction, rowsAffectedSource);
+            return rowsAffectedSource.Task;
+        }
 
-            messageHandler.AssertNoErrors();
+        public DbDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
+        {
+            try
+            {
+                var readerTask = ExecuteReaderTaskRunnable(behavior, command, transaction);
+                readerTask.Wait();
+                return readerTask.Result;
+            }
+            catch (AggregateException ae)
+            {
+                throw ae.InnerException;
+            }
+        }
 
-            return new AseDataReader(dataReaderHandler.Results());
+        public Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
+        {
+            var readerSource = new TaskCompletionSource<DbDataReader>();
+            InternalExecuteAsync(command, transaction, null, readerSource);
+            return readerSource.Task;
         }
 
         public object ExecuteScalar(AseCommand command, AseTransaction transaction)
@@ -307,13 +288,13 @@ namespace AdoNetCore.AseClient.Internal
             }
             else
             {
-                Logger.Instance?.WriteLine("");
+                Logger.Instance?.WriteLine("Did not issue cancel packet as connection is not in the Active state");
             }
         }
 
         private void AssertExecutionStart()
         {
-            if(!TrySetState(InternalConnectionState.Active, s => s == InternalConnectionState.Ready))
+            if (!TrySetState(InternalConnectionState.Active, s => s == InternalConnectionState.Ready))
             {
                 IsDoomed = true;
                 throw new AseException("Connection entered broken state");

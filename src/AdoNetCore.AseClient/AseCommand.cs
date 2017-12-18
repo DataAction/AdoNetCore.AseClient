@@ -185,9 +185,9 @@ namespace AdoNetCore.AseClient
             catch (Exception) { }
         }
 
-        public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
+        private Task<T> InternalExecuteAsync<T>(Func<Task<T>> taskFunc, CancellationToken cancellationToken)
         {
-            var source = new TaskCompletionSource<int>();
+            var source = new TaskCompletionSource<T>();
             var registration = new CancellationTokenRegistration();
             if (cancellationToken.CanBeCanceled)
             {
@@ -197,14 +197,12 @@ namespace AdoNetCore.AseClient
                     source.SetCanceled();
                     return source.Task;
                 }
-                registration = cancellationToken.Register(s => ((AseCommand) s).CancelIgnoreFailure(), this);
+                registration = cancellationToken.Register(s => ((AseCommand)s).CancelIgnoreFailure(), this);
             }
-
-            var returnedTask = source.Task;
 
             try
             {
-                Task.Run(() => _connection.InternalConnection.ExecuteNonQueryAsTask(this, (AseTransaction) Transaction))
+                Task.Run(taskFunc)
                     .ContinueWith(t =>
                     {
                         registration.Dispose();
@@ -235,7 +233,41 @@ namespace AdoNetCore.AseClient
                 source.SetException(ex);
             }
 
-            return returnedTask;
+            return source.Task;
+        }
+
+        public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
+        {
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteNonQueryTaskRunnable(this, (AseTransaction)Transaction), cancellationToken);
+        }
+
+        protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+        {
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteReaderTaskRunnable(behavior, this, (AseTransaction)Transaction), cancellationToken);
+        }
+
+        public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
+        {
+            return ExecuteReaderAsync(cancellationToken)
+                .ContinueWith(task =>
+                {
+                    var source = new TaskCompletionSource<object>();
+                    if (task.IsCanceled)
+                    {
+                        source.SetCanceled();
+                    }
+                    else if (task.IsFaulted)
+                    {
+                        source.SetException(task.Exception.InnerException);
+                    }
+                    else
+                    {
+                        var reader = task.Result;
+                        source.SetResult(reader.Read() ? reader[0] : null);
+                    }
+
+                    return source.Task;
+                }).Unwrap();
         }
     }
 }

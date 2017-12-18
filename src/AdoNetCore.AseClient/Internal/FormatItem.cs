@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Internal
 {
+    [DebuggerDisplay("[{" + nameof(ColumnName) + ",nq}]")]
     internal class FormatItem
     {
         public string ColumnLabel { get; set; }

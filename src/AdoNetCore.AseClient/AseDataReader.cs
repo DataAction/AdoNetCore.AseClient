@@ -19,12 +19,12 @@ namespace AdoNetCore.AseClient
 
         public bool GetBoolean(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<bool>(i);
         }
 
         public byte GetByte(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<byte>(i);
         }
 
         public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
@@ -34,7 +34,7 @@ namespace AdoNetCore.AseClient
 
         public char GetChar(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<char>(i);
         }
 
         public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
@@ -54,24 +54,24 @@ namespace AdoNetCore.AseClient
 
         public DateTime GetDateTime(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<DateTime>(i);
         }
 
         public decimal GetDecimal(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<decimal>(i);
         }
 
         public double GetDouble(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<double>(i);
         }
 
         public Type GetFieldType(int i) => typeof(object);
 
         public float GetFloat(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<float>(i);
         }
 
         public Guid GetGuid(int i)
@@ -81,17 +81,22 @@ namespace AdoNetCore.AseClient
 
         public short GetInt16(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<short>(i);
         }
 
         public int GetInt32(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<int>(i);
         }
 
         public long GetInt64(int i)
         {
-            throw new NotImplementedException();
+            return GetValue<long>(i);
+        }
+
+        public string GetString(int i)
+        {
+            return GetValue<string>(i);
         }
 
         public string GetName(int i)
@@ -103,17 +108,19 @@ namespace AdoNetCore.AseClient
                 return _results[_currentResult].Formats[i].ColumnName;
             }
 
-            throw new ArgumentException();
+            throw new ArgumentOutOfRangeException(nameof(i));
         }
 
         public int GetOrdinal(string name)
         {
-            if (_currentResult >= 0 && _currentResult < _results.Length)
+            if (!string.IsNullOrEmpty(name) && _currentResult >= 0 && _currentResult < _results.Length)
             {
+                name = name?.TrimStart('[').TrimEnd(']');
+
                 var formats = _results[_currentResult].Formats;
                 for (var i = 0; i < formats.Length; i++)
                 {
-                    if (string.Equals(formats[i].ColumnName, name))
+                    if (string.Equals(formats[i].ColumnName?.TrimStart('[').TrimEnd(']'), name, StringComparison.OrdinalIgnoreCase))
                     {
                         return i;
                     }
@@ -122,12 +129,6 @@ namespace AdoNetCore.AseClient
 
             throw new ArgumentException();
         }
-
-        public string GetString(int i)
-        {
-            throw new NotImplementedException();
-        }
-
         public object GetValue(int i)
         {
             if (_currentResult >= 0
@@ -141,6 +142,18 @@ namespace AdoNetCore.AseClient
             }
 
             throw new ArgumentOutOfRangeException();
+        }
+
+        private T GetValue<T>(int i)
+        {
+            var value = GetValue(i);
+
+            if (value is T casted)
+            {
+                return casted;
+            }
+
+            throw new InvalidCastException("Specified cast is not valid.");
         }
 
         public int GetValues(object[] values)
@@ -160,12 +173,14 @@ namespace AdoNetCore.AseClient
         object IDataRecord.this[int i] => GetValue(i);
 
         object IDataRecord.this[string name] => GetValue(GetOrdinal(name));
-        
-        public void Dispose() { }
+
+        public void Dispose()
+        {
+            Close();
+        }
 
         public void Close()
         {
-            throw new NotImplementedException();
         }
 
         public DataTable GetSchemaTable()
@@ -173,6 +188,10 @@ namespace AdoNetCore.AseClient
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Advances the reader to the next result set.
+        /// </summary>
+        /// <returns>true if the reader is pointing at a record set; false otherwise.</returns>
         public bool NextResult()
         {
             _currentResult++;
@@ -188,6 +207,10 @@ namespace AdoNetCore.AseClient
             }
         }
 
+        /// <summary>
+        /// Advance the reader to the next record in the current result set.
+        /// </summary>
+        /// <returns>true if the reader is pointing at a row of data; false otherwise.</returns>
         public bool Read()
         {
             if (_currentResult < 0)
@@ -197,12 +220,7 @@ namespace AdoNetCore.AseClient
 
             _currentRow++;
 
-            if (_results[_currentResult].Rows.Count > _currentRow)
-            {
-                return true;
-            }
-
-            return false;
+            return _results[_currentResult].Rows.Count > _currentRow;
         }
 
         public int Depth => 0;

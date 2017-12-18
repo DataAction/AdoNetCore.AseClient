@@ -193,7 +193,7 @@ namespace AdoNetCore.AseClient
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    Logger.Instance?.Write($"{nameof(ExecuteNonQueryAsync)} - cancellation already requested");
+                    Logger.Instance?.Write($"{nameof(InternalExecuteAsync)} - cancellation already requested");
                     source.SetCanceled();
                     return source.Task;
                 }
@@ -209,19 +209,19 @@ namespace AdoNetCore.AseClient
 
                         if (t.IsFaulted)
                         {
-                            Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - task faulted: {t.Exception.InnerException}");
+                            Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - task faulted: {t.Exception.InnerException}");
                             source.SetException(t.Exception.InnerException);
                         }
                         else
                         {
                             if (t.IsCanceled)
                             {
-                                Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - task canceled");
+                                Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - task canceled");
                                 source.SetCanceled();
                             }
                             else
                             {
-                                Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - task completed");
+                                Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - task completed");
                                 source.SetResult(t.Result);
                             }
                         }
@@ -229,7 +229,7 @@ namespace AdoNetCore.AseClient
             }
             catch (Exception ex)
             {
-                Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - exception: {ex}");
+                Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - exception: {ex}");
                 source.SetException(ex);
             }
 

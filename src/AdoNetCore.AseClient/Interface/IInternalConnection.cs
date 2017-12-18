@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace AdoNetCore.AseClient.Interface
 {
@@ -37,6 +38,13 @@ namespace AdoNetCore.AseClient.Interface
         /// Internal implementation of <see cref="IDbCommand.ExecuteNonQuery"/>
         /// </summary>
         int ExecuteNonQuery(AseCommand command, AseTransaction transaction);
+        
+        /// <summary>
+        /// Internal implementation of <see cref="IDbCommand.ExecuteNonQuery"/>,
+        /// but the result is wrapped in a Task to allow the caller to check IsCanceled
+        /// </summary>
+        Task<int> ExecuteNonQueryAsTask(AseCommand command, AseTransaction transaction);
+
 
         /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteReader()"/>

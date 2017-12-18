@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal.Handler;
@@ -15,7 +16,43 @@ namespace AdoNetCore.AseClient.Internal
         private readonly ISocket _socket;
         private readonly DbEnvironment _environment = new DbEnvironment();
 
-        private object _sendMutex = new object();
+        private enum InternalConnectionState
+        {
+            None,
+            Ready,
+            Active,
+            Canceled,
+            Broken
+        }
+
+        private InternalConnectionState _state = InternalConnectionState.None;
+        private readonly object _stateMutex = new object();
+
+        private void SetState(InternalConnectionState newState)
+        {
+            lock (_stateMutex)
+            {
+                if (_state == InternalConnectionState.Broken)
+                {
+                    throw new ArgumentException("Cannot change internal connection state as it is Broken");
+                }
+                _state = newState;
+            }
+        }
+
+        private bool TrySetState(InternalConnectionState newState, Func<InternalConnectionState, bool> predicate)
+        {
+            lock (_stateMutex)
+            {
+                if (_state == InternalConnectionState.Broken || !predicate(_state))
+                {
+                    return false;
+                }
+
+                _state = newState;
+                return true;
+            }
+        }
 
         public InternalConnection(IConnectionParameters parameters, ISocket socket)
         {
@@ -26,13 +63,9 @@ namespace AdoNetCore.AseClient.Internal
 
         private void SendPacket(IPacket packet)
         {
-            //prevent cancel token from being sent at the same time as other tokens
-            lock (_sendMutex)
-            {
-                Logger.Instance?.WriteLine();
-                Logger.Instance?.WriteLine("----------  Send packet   ----------");
-                _socket.SendPacket(packet, _environment);
-            }
+            Logger.Instance?.WriteLine();
+            Logger.Instance?.WriteLine("----------  Send packet   ----------");
+            _socket.SendPacket(packet, _environment);
         }
 
         private void ReceiveTokens(params ITokenHandler[] handlers)
@@ -80,10 +113,12 @@ namespace AdoNetCore.AseClient.Internal
 
             if (!ackHandler.ReceivedAck)
             {
+                IsDoomed = true;
                 throw new InvalidOperationException("No login ack found");
             }
 
             Created = DateTime.UtcNow;
+            SetState(InternalConnectionState.Ready);
         }
 
         public DateTime Created { get; private set; }
@@ -93,19 +128,22 @@ namespace AdoNetCore.AseClient.Internal
         {
             try
             {
+                AssertExecutionStart();
                 SendPacket(new NormalPacket(OptionCommandToken.CreateGet(OptionCommandToken.OptionType.TDS_OPT_STAT_TIME)));
 
                 var messageHandler = new MessageTokenHandler();
 
                 ReceiveTokens(messageHandler);
 
+                AssertExecutionCompletion();
                 messageHandler.AssertNoErrors();
 
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.Instance?.WriteLine($"Internal ping resulted in exception: {ex}");
+                IsDoomed = true;
                 return false;
             }
         }
@@ -116,6 +154,8 @@ namespace AdoNetCore.AseClient.Internal
             {
                 return;
             }
+
+            AssertExecutionStart();
 
             //turns out, you can't issue an env change token to change the database, it responds saying it doesn't know how to process such a token
             SendPacket(new NormalPacket(new LanguageToken
@@ -130,6 +170,8 @@ namespace AdoNetCore.AseClient.Internal
                 new EnvChangeTokenHandler(_environment),
                 messageHandler);
 
+            AssertExecutionCompletion();
+
             messageHandler.AssertNoErrors();
         }
 
@@ -137,6 +179,8 @@ namespace AdoNetCore.AseClient.Internal
 
         public int ExecuteNonQuery(AseCommand command, AseTransaction transaction)
         {
+            AssertExecutionStart();
+
             SendPacket(new NormalPacket(BuildCommandTokens(command)));
 
             var doneHandler = new DoneTokenHandler();
@@ -147,7 +191,9 @@ namespace AdoNetCore.AseClient.Internal
                 messageHandler,
                 new ResponseParameterTokenHandler(command.AseParameters),
                 doneHandler);
-            
+
+            AssertExecutionCompletion(doneHandler);
+
             if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
             {
                 transaction.MarkAborted();
@@ -158,8 +204,57 @@ namespace AdoNetCore.AseClient.Internal
             return doneHandler.RowsAffected;
         }
 
+        //todo: might be able to change this so that TCS is passed in as parameter, and clean up the AseCommand implementation
+        public Task<int> ExecuteNonQueryAsTask(AseCommand command, AseTransaction transaction)
+        {
+            AssertExecutionStart();
+
+            var source = new TaskCompletionSource<int>();
+
+            try
+            {
+                SendPacket(new NormalPacket(BuildCommandTokens(command)));
+
+                var doneHandler = new DoneTokenHandler();
+                var messageHandler = new MessageTokenHandler();
+
+                ReceiveTokens(
+                    new EnvChangeTokenHandler(_environment),
+                    messageHandler,
+                    new ResponseParameterTokenHandler(command.AseParameters),
+                    doneHandler);
+
+                AssertExecutionCompletion(doneHandler);
+
+                if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
+                {
+                    transaction.MarkAborted();
+                }
+
+                messageHandler.AssertNoErrors();
+
+                if (doneHandler.Canceled)
+                {
+
+                    source.SetCanceled();
+                }
+                else
+                {
+                    source.SetResult(doneHandler.RowsAffected);
+                }
+            }
+            catch (Exception ex)
+            {
+                source.SetException(ex);
+            }
+
+            return source.Task;
+        }
+
         public AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
         {
+            AssertExecutionStart();
+
             SendPacket(new NormalPacket(BuildCommandTokens(command)));
 
             var doneHandler = new DoneTokenHandler();
@@ -178,6 +273,13 @@ namespace AdoNetCore.AseClient.Internal
                 transaction.MarkAborted();
             }
 
+            if (doneHandler.Canceled)
+            {
+                TrySetState(InternalConnectionState.Ready, s => s == InternalConnectionState.Canceled);
+            }
+
+            AssertExecutionCompletion(doneHandler);
+
             messageHandler.AssertNoErrors();
 
             return new AseDataReader(dataReaderHandler.Results());
@@ -185,7 +287,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public object ExecuteScalar(AseCommand command, AseTransaction transaction)
         {
-            using (var reader = (IDataReader) ExecuteReader(CommandBehavior.Default, command, transaction))
+            using (var reader = (IDataReader)ExecuteReader(CommandBehavior.Default, command, transaction))
             {
                 if (reader.Read())
                 {
@@ -198,8 +300,41 @@ namespace AdoNetCore.AseClient.Internal
 
         public void Cancel()
         {
-            Logger.Instance?.WriteLine($"Canceling...");
-            SendPacket(new AttentionPacket());
+            if (TrySetState(InternalConnectionState.Canceled, s => s == InternalConnectionState.Active))
+            {
+                Logger.Instance?.WriteLine("Canceling...");
+                SendPacket(new AttentionPacket());
+            }
+            else
+            {
+                Logger.Instance?.WriteLine("");
+            }
+        }
+
+        private void AssertExecutionStart()
+        {
+            if(!TrySetState(InternalConnectionState.Active, s => s == InternalConnectionState.Ready))
+            {
+                IsDoomed = true;
+                throw new AseException("Connection entered broken state");
+            }
+        }
+
+        private void AssertExecutionCompletion(DoneTokenHandler doneHandler = null)
+        {
+            if (doneHandler?.Canceled == true)
+            {
+                TrySetState(InternalConnectionState.Ready, s => s == InternalConnectionState.Canceled);
+            }
+
+            if (_state == InternalConnectionState.Canceled)
+            {
+                //we're in a broken state
+                IsDoomed = true;
+                throw new AseException("Connection entered broken state");
+            }
+
+            TrySetState(InternalConnectionState.Ready, s => s == InternalConnectionState.Active);
         }
 
         public void GetTextSize()
@@ -248,7 +383,14 @@ namespace AdoNetCore.AseClient.Internal
         public bool IsDoomed
         {
             get => _isDoomed;
-            set => _isDoomed = _isDoomed || value;
+            set
+            {
+                if (value)
+                {
+                    SetState(InternalConnectionState.Broken);
+                }
+                _isDoomed = _isDoomed || value;
+            }
         }
 
         public bool IsDisposed { get; private set; }
@@ -295,7 +437,7 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var parameterType = (DbType)parameter.AseDbType;                
+                var parameterType = (DbType)parameter.AseDbType;
                 var length = TypeMap.GetFormatLength(parameterType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
@@ -311,7 +453,7 @@ namespace AdoNetCore.AseClient.Internal
                     || parameterType == DbType.Currency
                 ) && parameter.Value is decimal)
                 {
-                    var sqlDecimal = (SqlDecimal) (decimal) parameter.Value;
+                    var sqlDecimal = (SqlDecimal)(decimal)parameter.Value;
                     formatItem.Precision = sqlDecimal.Precision;
                     formatItem.Scale = sqlDecimal.Scale;
                 }

@@ -175,5 +175,67 @@ namespace AdoNetCore.AseClient
         public override UpdateRowSource UpdatedRowSource { get; set; }
 
         internal bool HasSendableParameters => AseParameters?.HasSendableParameters ?? false;
+
+        internal void CancelIgnoreFailure()
+        {
+            try
+            {
+                Cancel();
+            }
+            catch (Exception) { }
+        }
+
+        public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
+        {
+            var source = new TaskCompletionSource<int>();
+            var registration = new CancellationTokenRegistration();
+            if (cancellationToken.CanBeCanceled)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.Instance?.Write($"{nameof(ExecuteNonQueryAsync)} - cancellation already requested");
+                    source.SetCanceled();
+                    return source.Task;
+                }
+                registration = cancellationToken.Register(s => ((AseCommand) s).CancelIgnoreFailure(), this);
+            }
+
+            var returnedTask = source.Task;
+
+            try
+            {
+                Task.Run(() => _connection.InternalConnection.ExecuteNonQueryAsTask(this, (AseTransaction) Transaction))
+                    .ContinueWith(t =>
+                    {
+                        registration.Dispose();
+
+                        if (t.IsFaulted)
+                        {
+                            Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - task faulted: {t.Exception.InnerException}");
+                            source.SetException(t.Exception.InnerException);
+                        }
+                        else
+                        {
+                            if (t.IsCanceled)
+                            {
+                                Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - task canceled");
+                                source.SetCanceled();
+                            }
+                            else
+                            {
+                                Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - task completed");
+                                source.SetResult(t.Result);
+                            }
+                        }
+                    });
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance?.WriteLine($"{nameof(ExecuteNonQueryAsync)} - exception: {ex}");
+                source.SetException(ex);
+            }
+
+            return returnedTask;
+        }
     }
 }

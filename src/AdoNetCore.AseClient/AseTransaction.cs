@@ -29,11 +29,17 @@ namespace AdoNetCore.AseClient
         /// <param name="connection">The <see cref="AseConnection"/> that initiated this <see cref="AseTransaction"/>.</param>
         /// <param name="isolationLevel">The <see cref="IsolationLevel"/> to apply to the transaction.</param>
         /// <exception cref="ArgumentException">Thrown in the provided <paramref name="isolationLevel"/> is not an isolation level supported by ASE.</exception>
-        internal AseTransaction(IDbConnection connection, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        internal AseTransaction(IDbConnection connection, IsolationLevel isolationLevel = IsolationLevel.Unspecified)
         {
+            //default
+            if (isolationLevel == IsolationLevel.Unspecified)
+            {
+                isolationLevel = IsolationLevel.ReadCommitted;
+            }
+
             if (!IsolationLevelMap.ContainsKey(isolationLevel))
             {
-                throw new ArgumentException("Isolation level is unsupported by ASE", nameof(isolationLevel));
+                throw new ArgumentException($"Isolation level '{isolationLevel}' is not supported", nameof(isolationLevel));
             }
             _connection = connection;
             _isolationLevel = isolationLevel;
@@ -44,7 +50,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// The <see cref="AseConnection"/> that initiated this <see cref="AseTransaction"/>.
         /// </summary>
-        protected override DbConnection DbConnection
+        public new AseConnection Connection
         {
             get
             {
@@ -55,6 +61,8 @@ namespace AdoNetCore.AseClient
                 return (AseConnection)_connection;
             }
         }
+
+        protected override DbConnection DbConnection => Connection;
 
         /// <summary>
         /// The <see cref="IsolationLevel"/> to apply to the transaction.

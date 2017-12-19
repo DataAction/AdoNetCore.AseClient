@@ -12,7 +12,7 @@ namespace AdoNetCore.AseClient
     /// This class cannot be inherited.
     /// </summary>
     [DebuggerDisplay("Count = {" + nameof(Count) + "}")]
-    public sealed class AseParameterCollection : DbParameterCollection//IDataParameterCollection
+    public sealed class AseParameterCollection : DbParameterCollection
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly List<AseParameter> _parameters;
@@ -78,6 +78,7 @@ namespace AdoNetCore.AseClient
         {
             return _parameters[index];
         }
+
         protected override void SetParameter(int index, DbParameter value)
         {
             _parameters[index] = (AseParameter)value;
@@ -114,6 +115,18 @@ namespace AdoNetCore.AseClient
         public override bool Contains(object value)
         {
             return IndexOf(value) >= 0;
+        }
+
+        public new AseParameter this[string parameterName]
+        {
+            get => (AseParameter) GetParameter(parameterName);
+            set => SetParameter(parameterName, value);
+        }
+
+        public new AseParameter this[int index]
+        {
+            get => (AseParameter) GetParameter(index);
+            set => SetParameter(index, value);
         }
 
         /// <summary>

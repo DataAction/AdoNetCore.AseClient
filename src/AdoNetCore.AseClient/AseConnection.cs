@@ -135,21 +135,22 @@ namespace AdoNetCore.AseClient
             }
         }
 
-        /// <summary>
-        /// Starts a database transaction.
-        /// </summary>
-        /// <returns>An object representing the new transaction.</returns>
-        /// <remarks>
-        /// <para>This command maps to the SQL Server implementation of BEGIN TRANSACTION.</para>
-        /// <para>You must explicitly commit or roll back the transaction using the <see cref="AseTransaction.Commit" /> 
-        /// or <see cref="AseTransaction.Rollback" /> method. To make sure that the .NET Framework Data Provider for ASE 
-        /// transaction management model performs correctly, avoid using other transaction management models, such as the 
-        /// one provided by ASE.</para>
-        /// <para>If you do not specify an isolation level, the default isolation level is used. To specify an isolation 
-        /// level with the <see cref="BeginTransaction()" /> method, use the overload that takes the iso parameter 
-        /// (<see cref="BeginTransaction(IsolationLevel)" />).</para>
+        /// <summary>		
+        /// Starts a database transaction.		
+        /// </summary>		
+        /// <param name="isolationLevel">The isolation level under which the transaction should run.</param>		
+        /// <returns>An object representing the new transaction.</returns>		
+        /// <remarks>		
+        /// <para>This command maps to the SQL Server implementation of BEGIN TRANSACTION.</para>		
+        /// <para>You must explicitly commit or roll back the transaction using the <see cref="AseTransaction.Commit" /> 		
+        /// or <see cref="AseTransaction.Rollback" /> method. To make sure that the .NET Framework Data Provider for ASE 		
+        /// transaction management model performs correctly, avoid using other transaction management models, such as the 		
+        /// one provided by ASE.</para>		
+        /// <para>If you do not specify an isolation level, the default isolation level is used. To specify an isolation 		
+        /// level with the <see cref="BeginTransaction" /> method, use the overload that takes the iso parameter 		
+        /// (<see cref="BeginTransaction(IsolationLevel)" />).</para>		
         /// </remarks>
-        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
+        public new AseTransaction BeginTransaction(IsolationLevel isolationLevel = IsolationLevel.Unspecified)
         {
             if (_isDisposed)
             {
@@ -157,9 +158,14 @@ namespace AdoNetCore.AseClient
             }
 
             Open();
-            var t = new AseTransaction(this);
+            var t = new AseTransaction(this, isolationLevel);
             t.Begin();
             return t;
+        }
+
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
+        {
+            return BeginTransaction(isolationLevel);
         }
 
         /// <summary>
@@ -211,7 +217,7 @@ namespace AdoNetCore.AseClient
         /// Creates and returns an <see cref="AseCommand" /> object associated with the <see cref="AseConnection" />.
         /// </summary>
         /// <returns>An <see cref="AseCommand" /> object.</returns>
-        protected override DbCommand CreateDbCommand()
+        public new AseCommand CreateCommand()
         {
             if (_isDisposed)
             {
@@ -221,6 +227,11 @@ namespace AdoNetCore.AseClient
             var aseCommand = new AseCommand(this) { NamedParameters = NamedParameters };
 
             return aseCommand;
+        }
+
+        protected override DbCommand CreateDbCommand()
+        {
+            return CreateCommand();
         }
 
         /// <summary>
@@ -301,11 +312,17 @@ namespace AdoNetCore.AseClient
         /// statement or the <see cref="ChangeDatabase(string)" /> method, an informational message is sent and 
         /// the property is updated automatically.
         /// </remarks>
-        public override string Database => _internal?.Database;
+        public override string Database => _internal?.Database ?? string.Empty;
 
-        public override string DataSource { get; }
+        /// <summary>
+        /// Gets the name of the current server
+        /// </summary>
+        public override string DataSource => _internal?.DataSource ?? string.Empty;
 
-        public override string ServerVersion { get; }
+        /// <summary>
+        /// Gets the version of the current server
+        /// </summary>
+        public override string ServerVersion => _internal?.ServerVersion ?? string.Empty;
 
         /// <summary>
         /// Indicates the state of the <see cref="AseConnection" /> during the most recent network operation 

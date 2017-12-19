@@ -1,5 +1,4 @@
-﻿using System;
-using AdoNetCore.AseClient.Enum;
+﻿using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Token;
 
@@ -8,6 +7,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
     internal class LoginTokenHandler : ITokenHandler
     {
         public bool ReceivedAck { get; private set; }
+        public LoginAckToken Token { get; private set; }
 
         public bool CanHandle(TokenType type)
         {
@@ -20,6 +20,8 @@ namespace AdoNetCore.AseClient.Internal.Handler
             {
                 case LoginAckToken t:
                     ReceivedAck = true;
+                    Token = t;
+
                     if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_FAIL)
                     {
                         throw new AseException("Login failed.");

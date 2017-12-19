@@ -118,6 +118,8 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("No login ack found");
             }
 
+            ServerVersion = ackHandler.Token.ProgramVersion;
+
             Created = DateTime.UtcNow;
             SetState(InternalConnectionState.Ready);
         }
@@ -177,6 +179,8 @@ namespace AdoNetCore.AseClient.Internal
         }
 
         public string Database => _environment.Database;
+        public string DataSource => $"{_parameters.Server},{_parameters.Port}";
+        public string ServerVersion { get; private set; } = string.Empty;
 
         private void InternalExecuteAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<int> rowsAffectedSource = null, TaskCompletionSource<DbDataReader> readerSource = null)
         {

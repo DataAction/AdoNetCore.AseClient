@@ -39,14 +39,20 @@ namespace AdoNetCore.AseClient
             _connection.InternalConnection.Cancel();
         }
 
-        /// <summary>Parameter" /> object.
+        /// <summary>
+        /// Creates a new instance of a <see cref="AseParameter" /> object.
         /// </summary>
         /// <remarks>
         /// The CreateParameter method is a strongly-typed version of <see cref="IDbCommand.CreateParameter" />.
         /// </remarks>
-        protected override DbParameter CreateDbParameter()
+        public new AseParameter CreateParameter()
         {
             return new AseParameter();
+        }
+
+        protected override DbParameter CreateDbParameter()
+        {
+            return CreateParameter();
         }
 
         /// <summary>
@@ -71,6 +77,20 @@ namespace AdoNetCore.AseClient
             return _connection.InternalConnection.ExecuteNonQuery(this, (AseTransaction)Transaction);
         }
 
+        /// <summary>		
+        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.		
+        /// </summary>		
+        /// <returns>An <see cref="AseDataReader" /> object.</returns>		
+        /// <remarks>		
+        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 		
+        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>		
+        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>		
+        /// </remarks>		
+        public new AseDataReader ExecuteReader()
+        {		
+            return ExecuteReader(CommandBehavior.Default);		
+        }
+
         /// <summary>
         /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.
         /// </summary>
@@ -81,10 +101,15 @@ namespace AdoNetCore.AseClient
         /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
         /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader(CommandBehavior)" />.</para>
         /// </remarks>
-        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
+        public new AseDataReader ExecuteReader(CommandBehavior behavior)
         {
             LogExecution(nameof(ExecuteReader));
-            return _connection.InternalConnection.ExecuteReader(behavior, this, (AseTransaction)Transaction);
+            return (AseDataReader) _connection.InternalConnection.ExecuteReader(behavior, this, (AseTransaction) Transaction);
+        }
+
+        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
+        {
+            return ExecuteReader(behavior);
         }
 
         /// <summary>
@@ -138,10 +163,19 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public override CommandType CommandType { get; set; }
 
-        protected override DbConnection DbConnection
+        /// <summary>
+        /// Gets or sets the <see cref="AseConnection" /> used by this instance of the AseCommand.
+        /// </summary>
+        public new AseConnection Connection
         {
             get => _connection;
-            set => _connection = (AseConnection)value;
+            set => _connection = value;
+        }
+
+        protected override DbConnection DbConnection
+        {
+            get => Connection;
+            set => Connection = (AseConnection)value;
         }
 
         protected override DbTransaction DbTransaction
@@ -170,7 +204,7 @@ namespace AdoNetCore.AseClient
         protected override DbParameterCollection DbParameterCollection => AseParameters;
 
         /// <summary>
-        /// Gets or sets how command results are applied to the <see cref="System.Data.DataRow" /> when used by the Update method of the DbDataAdapter.
+        /// Gets or sets how command results are applied to the DataRow when used by the Update method of the DbDataAdapter.
         /// </summary>
         public override UpdateRowSource UpdatedRowSource { get; set; }
 
@@ -182,7 +216,10 @@ namespace AdoNetCore.AseClient
             {
                 Cancel();
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private Task<T> InternalExecuteAsync<T>(Func<Task<T>> taskFunc, CancellationToken cancellationToken)
@@ -202,15 +239,22 @@ namespace AdoNetCore.AseClient
 
             try
             {
+                // ReSharper disable once MethodSupportsCancellation
                 Task.Run(taskFunc)
+                    // ReSharper disable once MethodSupportsCancellation
                     .ContinueWith(t =>
                     {
                         registration.Dispose();
 
                         if (t.IsFaulted)
                         {
+                            // Documentation states Exception can't be null if IsFaulted is true
+                            // ReSharper disable PossibleNullReferenceException
+                            // ReSharper disable AssignNullToNotNullAttribute
                             Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - task faulted: {t.Exception.InnerException}");
                             source.SetException(t.Exception.InnerException);
+                            // ReSharper restore AssignNullToNotNullAttribute
+                            // ReSharper restore PossibleNullReferenceException
                         }
                         else
                         {
@@ -249,6 +293,7 @@ namespace AdoNetCore.AseClient
         public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
         {
             return ExecuteReaderAsync(cancellationToken)
+                // ReSharper disable once MethodSupportsCancellation
                 .ContinueWith(task =>
                 {
                     var source = new TaskCompletionSource<object>();
@@ -258,6 +303,9 @@ namespace AdoNetCore.AseClient
                     }
                     else if (task.IsFaulted)
                     {
+                        // Documentation states Exception can't be null if IsFaulted is true
+                        // ReSharper disable once AssignNullToNotNullAttribute
+                        // ReSharper disable once PossibleNullReferenceException
                         source.SetException(task.Exception.InnerException);
                     }
                     else

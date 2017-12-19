@@ -9,9 +9,9 @@ Under the hood, ASE (and Microsoft Sql Server for that matter) relies on an appl
 This project provides a .NET Core native implementation of the TDS 5.0 protocol via an ADO.NET DB Provider, making SAP ASE accessible from .NET Core applications hosted on Windows, Linux, Docker and also serverless platforms like [AWS Lambda](https://aws.amazon.com/lambda/).
 
 ## Objectives
-* Functional parity with the `Sybase.AdoNet4.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the SAP AseClient. The following types are supported:
-    * [AseClientPermission] - Stubs only in .NET Core 2.0+, however CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
-    * [AseClientPermissionAttribute] - Stubs only in .NET Core 2.0+, however CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
+* Functional parity with the `Sybase.AdoNet4.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the SAP AseClient (with some namespace changes). The following types are supported:
+    * AseClientPermission - Stubs only in .NET Core 2.0+. CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
+    * AseClientPermissionAttribute - Stubs only in .NET Core 2.0+. CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
     * AseCommand - in progress
     * AseConnection - in progress
     * AseParameter
@@ -35,13 +35,14 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
         * [AseRowsCopiedEventHandler](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409612103.html)
     * `Failover` - no reason this can't be supported, just hasn't been a priority thus far. As such the following types have not yet been implemented:
         * [AseFailoverException](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409597900.html)
+    * `AseDecimal` - no reason this can't be supported, but it's complicated. See also [#10](https://github.com/DataAction/AdoNetCore.AseClient/issues/10).
+        * [AseFailoverException](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409597900.html)
 * The following types are not yet supported:
     * [AseClientFactory](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409534226.html) - waiting on .NET Core 2.1 for this type to be supported.
     * [AseCommandBuilder](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409546398.html) - TODO - depends on .NET Core 2.0.
     * [AseConnectionPool](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409558524.html) - TODO - where is this exposed?
     * [AseConnectionPoolManager](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409559633.html) - TODO - where is this exposed?
     * [AseDataAdapter](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409561039.html) - TODO - depends on .NET Core 2.0.
-    * [AseDecimal](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409584368.html) - TODO - is the parallel type to SqlDecimal?
     * [AseRowUpdatedEventArgs](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409612447.html) - TODO - depends on .NET Core 2.0.
     * [AseRowUpdatingEventArgs](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409615713.html)  - TODO - depends on .NET Core 2.0.
     * [AseRowUpdatedEventHandler](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409618604.html)  - TODO - depends on .NET Core 2.0.
@@ -52,12 +53,23 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
 * Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the .NET 4 client
 
 ## Performance benchmarks
-We've spent considerable time optimising this driver so that it performs as well as possible. We have benchmarked the .NET Core AseClient against the SAP AseClient in the following ways:
 
 ### TODO - test methodology
-Look at a tool like: https://github.com/dotnet/BenchmarkDotNet
-http://benchmarkdotnet.org/Overview.htm
-https://www.nuget.org/packages/BenchmarkDotNet.Core/
+We've optimised this driver so that it performs well (pull requests to optimise further are accepted of course). We have benchmarked the .NET Core AseClient against the SAP AseClient in the following ways:
+1. Fetch a single row from a simple database table without connection pooling enabled.
+2. Fetch a single row from a simple database table with connection pooling enabled.
+3. Fetch multiple rows using a single query from a simple database table without connection pooling enabled.
+4. Fetch multiple rows using a single query from a simple database table with connection pooling enabled.
+5. Fetch multiple rows using multiple queries from a simple database table without connection pooling enabled.
+6. Fetch multiple rows using multiple queries from a simple database table with connection pooling enabled.
+7. Fetch multiple rows using multiple queries from simple database table without connection pooling enabled. Then we update the data, and update the database one record at a time.
+8. Fetch multiple rows using multiple queries from simple database table with connection pooling enabled. Then we update the data, and update the database one record at a time.
+
+We perform these tests for .NET Core 1.0, 2.0, and .NET Standard 4.6 using the AdoNetCore AseClient. For comparison, we also perform these tests on .NET Standard 4.6 using the SAP AseClient.
+
+Our test machine has the following spec: TODO.
+
+The SAP ASE server is held constant in all of the test cases, and as it is not the subject of the tests, it is therefore not documented. You should be able to get similar results on your own platform.
 
 ### TODO - test results
 ![Long story short, our speed is a stampede](http://via.placeholder.com/1024x496?text=Run%20Forrest,%20run! "Some sick chart")
@@ -104,7 +116,7 @@ https://www.nuget.org/packages/BenchmarkDotNet.Core/
 | `TightlyCoupledTransaction`       | X
 | `TrustedFile`                     | X
 | `Uid`                             | &#10003;
-| `UseAseDecimal`                   | TODO
+| `UseAseDecimal`                   | X
 | `UseCursor`                       | X
 
 ## Supported types

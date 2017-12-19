@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+VisualStudioVersion = 15.0.27130.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdoNetCore.AseClient", "src\AdoNetCore.AseClient\AdoNetCore.AseClient.csproj", "{A994B1E4-2B7F-40B8-B045-57E4F324FF67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdoNetCore.AseClient.Tests", "test\AdoNetCore.AseClient.Tests\AdoNetCore.AseClient.Tests.csproj", "{C9D8BA23-621B-4F75-B6EB-6B4961ACD3E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdoNetCore.AseClient.Tests", "test\AdoNetCore.AseClient.Tests\AdoNetCore.AseClient.Tests.csproj", "{C9D8BA23-621B-4F75-B6EB-6B4961ACD3E8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdoNetCore.AseClient.Benchmark.AdoNetCore", "test\AdoNetCore.AseClient.Benchmark.AdoNetCore\AdoNetCore.AseClient.Benchmark.AdoNetCore.csproj", "{B52D738B-26C3-4F85-BBAB-26C20BBADF7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdoNetCore.AseClient.Benchmark.SAP", "test\AdoNetCore.AseClient.Benchmark.SAP\AdoNetCore.AseClient.Benchmark.SAP.csproj", "{E58FACD9-16FC-4B9E-9936-4795775AD7F4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{C9D8BA23-621B-4F75-B6EB-6B4961ACD3E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9D8BA23-621B-4F75-B6EB-6B4961ACD3E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9D8BA23-621B-4F75-B6EB-6B4961ACD3E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B52D738B-26C3-4F85-BBAB-26C20BBADF7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B52D738B-26C3-4F85-BBAB-26C20BBADF7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B52D738B-26C3-4F85-BBAB-26C20BBADF7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B52D738B-26C3-4F85-BBAB-26C20BBADF7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E58FACD9-16FC-4B9E-9936-4795775AD7F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E58FACD9-16FC-4B9E-9936-4795775AD7F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E58FACD9-16FC-4B9E-9936-4795775AD7F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E58FACD9-16FC-4B9E-9936-4795775AD7F4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

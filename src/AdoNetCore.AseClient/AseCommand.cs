@@ -11,6 +11,9 @@ namespace AdoNetCore.AseClient
     /// Represents a Transact-SQL statement or stored procedure to execute against a SAP ASE database. This class cannot be inherited.
     /// </summary>
     public sealed class AseCommand : DbCommand
+#if NETCOREAPP2_0 || NET45 || NET46
+        , ICloneable
+#endif
     {
         private AseConnection _connection;
         private AseTransaction _transaction;
@@ -25,6 +28,7 @@ namespace AdoNetCore.AseClient
         {
             _connection = connection;
             AseParameters = new AseParameterCollection();
+            NamedParameters = connection.NamedParameters;
         }
 
         /// <summary>
@@ -312,6 +316,11 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
         /// </summary>
+        public new AseParameterCollection Parameters => AseParameters;
+
+        /// <summary>
+        /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
+        /// </summary>
         protected override DbParameterCollection DbParameterCollection => AseParameters;
 
         /// <summary>
@@ -473,5 +482,26 @@ namespace AdoNetCore.AseClient
                     return source.Task;
                 }).Unwrap();
         }
+
+#if NETCOREAPP2_0 || NET45 || NET46
+        object ICloneable.Clone()
+        {
+            var clone = new AseCommand(Connection)
+            {
+                CommandText = CommandText,
+                CommandTimeout = CommandTimeout,
+                CommandType = CommandType,
+                Transaction = Transaction,
+                UpdatedRowSource = UpdatedRowSource
+            };
+
+            foreach (ICloneable p in Parameters)
+            {
+                clone.Parameters.Add((AseParameter)p.Clone());
+            }
+
+            return clone;
+        }
+#endif
     }
 }

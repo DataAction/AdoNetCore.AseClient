@@ -11,6 +11,9 @@ namespace AdoNetCore.AseClient
     /// </summary>
     [DebuggerDisplay("{" + nameof(ParameterName) + "}")]
     public sealed class AseParameter : DbParameter
+#if NETCOREAPP2_0 || NET45 || NET46
+        , ICloneable
+#endif
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _parameterName;
@@ -350,5 +353,27 @@ namespace AdoNetCore.AseClient
         {
             return ParameterName;
         }
+
+
+#if NETCOREAPP2_0 || NET45 || NET46
+        object ICloneable.Clone()
+        {
+            var clone = new AseParameter
+            {
+                DbType = DbType,
+                AseDbType = AseDbType,
+                Direction = Direction,
+                IsNullable = IsNullable,
+                ParameterName = ParameterName,
+                Precision = Precision,
+                Scale = Scale,
+                Size = Size,
+                SourceColumn = SourceColumn,
+                SourceVersion = SourceVersion,
+                Value = Value
+            };
+            return clone;
+        }
+#endif
     }
 }

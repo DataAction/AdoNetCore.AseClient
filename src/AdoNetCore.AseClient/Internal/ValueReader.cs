@@ -77,20 +77,14 @@ namespace AdoNetCore.AseClient.Internal
                 */
                 case TdsDataType.TDS_LONGBINARY:
                     {
-                        var bytes = stream.ReadNullableIntLengthPrefixedByteArray();
-                        if (bytes == null)
-                        {
-                            return null;
-                        }
-
                         //the UserType can affect how we need to interpret the result data
                         switch (format.UserType)
                         {
                             case 34:
                             case 35:
-                                return Encoding.Unicode.GetString(bytes);
+                                return stream.ReadNullableIntLengthPrefixedString(Encoding.Unicode);
                             default:
-                                return bytes;
+                                return stream.ReadNullableIntLengthPrefixedByteArray();
                         }
                     }
                 case TdsDataType.TDS_DECN:
@@ -151,10 +145,7 @@ namespace AdoNetCore.AseClient.Internal
                         var textPtr = new byte[textPtrLen];
                         stream.Read(textPtr, 0, textPtrLen);
                         stream.ReadULong(); //timestamp
-                        var dataLen = stream.ReadInt();
-                        var data = new byte[dataLen];
-                        stream.Read(data, 0, dataLen);
-                        return enc.GetString(data);
+                        return stream.ReadNullableIntLengthPrefixedString(enc);
                     }
                 case TdsDataType.TDS_IMAGE:
                     {
@@ -181,10 +172,7 @@ namespace AdoNetCore.AseClient.Internal
                         var textPtr = new byte[textPtrLen];
                         stream.Read(textPtr, 0, textPtrLen);
                         stream.ReadULong(); //timestamp
-                        var dataLen = stream.ReadInt();
-                        var data = new byte[dataLen];
-                        stream.Read(data, 0, dataLen);
-                        return Encoding.Unicode.GetString(data);
+                        return stream.ReadNullableIntLengthPrefixedString(Encoding.Unicode);
                     }
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");

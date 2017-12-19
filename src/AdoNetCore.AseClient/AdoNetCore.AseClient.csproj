@@ -8,6 +8,9 @@
     <PackageProjectUrl>https://github.com/DataAction/AdoNetCore.AseClient</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp1.1'">
+    <DefineConstants>$(DefineConstants);NETCORE_OLD</DefineConstants>
+  </PropertyGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
   </ItemGroup>

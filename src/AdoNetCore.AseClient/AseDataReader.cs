@@ -165,19 +165,19 @@ namespace AdoNetCore.AseClient
 
         public override object this[string name] => GetValue(GetOrdinal(name));
 
-#if NETCOREAPP2_0 || NET45
-        public override void Close() { }
-#else
+#if NETCORE_OLD
         public void Close() { }
+#else
+        public override void Close() { }
 #endif
 
-#if NETCOREAPP2_0 || NET45
-        public override DataTable GetSchemaTable()
+#if NETCORE_OLD
+        public DataTable GetSchemaTable()
         {
             throw new NotImplementedException();
         }
 #else
-        public DataTable GetSchemaTable()
+        public override DataTable GetSchemaTable()
         {
             throw new NotImplementedException();
         }

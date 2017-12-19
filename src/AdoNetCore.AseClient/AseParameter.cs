@@ -255,17 +255,12 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public override string SourceColumn { get; set; }
 
-        //public override DataRowVersion SourceVersion { get; set; }
-
         public override bool SourceColumnNullMapping { get; set; }
 
-#if NETCOREAPP2_0 || NET45
-        /// <summary>
-        /// Not supported yet. .NET Core 2.0 dependency.
-        /// </summary>
-        public override DataRowVersion SourceVersion { get; set; }
-#else
+#if NETCORE_OLD
         public DataRowVersion SourceVersion { get; set; }
+#else
+        public override DataRowVersion SourceVersion { get; set; }
 #endif
         /// <summary>
         /// Gets or sets the value of the parameter.

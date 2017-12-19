@@ -1,5 +1,5 @@
 ﻿using System;
-#if NETCOREAPP2_0 || NET45
+#if !NETCORE_OLD
 using System.Runtime.Serialization;
 #endif
 
@@ -8,14 +8,14 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// The exception that is thrown when ASE returns a warning or error. This class cannot be inherited.
     /// </summary>
-#if NETCOREAPP2_0 || NET45
+#if !NETCORE_OLD
     [Serializable]
 #endif
     public sealed class AseException :
-#if NETCOREAPP2_0 || NET45
-    SystemException
-#else
+#if NETCORE_OLD
     Exception
+#else
+    SystemException
 #endif
     {
         /// <summary>
@@ -107,7 +107,7 @@ namespace AdoNetCore.AseClient
             Errors = new AseErrorCollection(errors);
         }
 
-#if NETCOREAPP2_0 || NET45
+#if !NETCORE_OLD
         private AseException(SerializationInfo info, StreamingContext context) : base(info, context) {
             Errors = new AseErrorCollection(new AseError
             {

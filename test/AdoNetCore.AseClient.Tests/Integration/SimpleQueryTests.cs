@@ -905,5 +905,32 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(new TimeSpan(0, 0, 0, 0, 0));
             yield return new TestCaseData(new TimeSpan(0, 23, 59, 59, 997));
         }
+
+        [Test]
+        public void SelectGuid_Parameter_ShouldWork()
+        {
+            var expected = Guid.NewGuid();
+
+            using (var connection = GetConnection())
+            using (var command = connection.CreateCommand())
+            {
+                connection.Open();
+
+                command.CommandText = "select @expected";
+                command.CommandType = CommandType.Text;
+
+                var p = command.CreateParameter();
+                p.ParameterName = "@expected";
+                p.DbType = DbType.Guid;
+                p.Value = expected;
+                command.Parameters.Add(p);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    Assert.IsTrue(reader.Read());
+                    Assert.AreEqual(expected, reader.GetGuid(0));
+                }
+            }
+        }
     }
 }

@@ -132,12 +132,11 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_UNITEXT:
                     {
                         format.Length = stream.ReadInt();
-                        var name = stream.ReadShortLengthPrefixedString(enc);
-                        Logger.Instance?.WriteLine($"ReadTypeInfo({format.DataType}) name: {name}");
+                        /*var name =*/stream.ReadShortLengthPrefixedString(enc);
                         break;
                     }
                 default:
-                    throw new InvalidOperationException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
+                    throw new NotSupportedException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
             }
 
             format.LocaleInfo = stream.ReadByteLengthPrefixedString(enc);

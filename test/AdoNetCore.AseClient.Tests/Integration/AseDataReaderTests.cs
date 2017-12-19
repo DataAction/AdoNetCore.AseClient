@@ -332,13 +332,15 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("BINARY")]
         public void GetGuid_WithValue_CastSuccessfully(string aseType)
         {
-            GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetGuid(ordinal), Guid.Parse("c9f317f5-1cdb-45ba-903e-82bb4bfed8ef"));
+            GetHelper_WithValue_TCastSuccessfully(aseType,
+                (reader, ordinal) => reader.GetGuid(ordinal),
+                new Guid(new byte[] {0xc9, 0xf3, 0x17, 0xf5, 0x1c, 0xdb, 0x45, 0xba, 0x90, 0x3e, 0x82, 0xbb, 0x4b, 0xfe, 0xd8, 0xef}));
         }
 
         [TestCase("BINARY")]
         public void GetGuid_WithNullValue_ReturnsNull(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetGuid(ordinal));
+            GetHelper_WithNullValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetGuid(ordinal), Guid.Empty);
         }
 
         [TestCase("VARCHAR", "Hello world")]
@@ -604,6 +606,11 @@ namespace AdoNetCore.AseClient.Tests.Integration
                     }
                 }
             }
+        }
+
+        private void GetHelper_WithNullValue_TCastSuccessfully<T>(string columnName, Func<AseDataReader, int, T> testMethod, T expectedValue)
+        {
+            GetHelper_WithValue_TCastSuccessfully($"NULL_{columnName}", testMethod, expectedValue);
         }
     }
 }

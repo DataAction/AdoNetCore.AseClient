@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -8,16 +9,31 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueWriter
     {
+        private static readonly Dictionary<Type, Dictionary<Type, Func<object, object>>> CastMap = new Dictionary<Type, Dictionary<Type, Func<object, object>>>
+        {
+            {
+                typeof(Guid), new Dictionary<Type, Func<object, object>>
+                {
+                    {typeof(byte[]), o => ((Guid) o).ToByteArray()}
+                }
+            }
+        };
+
         private static T Cast<T>(object value, FormatItem format)
         {
             try
             {
-                if (typeof(T) != value.GetType())
+                var tFrom = value.GetType();
+                var tTo = typeof(T);
+
+                if (tTo == tFrom)
                 {
-                    return (T) Convert.ChangeType(value, typeof(T));
+                    return (T) value;
                 }
 
-                return (T) value;
+                return (T) (CastMap.ContainsKey(tFrom) && CastMap[tFrom].ContainsKey(tTo)
+                    ? CastMap[tFrom][tTo](value)
+                    : Convert.ChangeType(value, tTo));
             }
             catch (InvalidCastException)
             {

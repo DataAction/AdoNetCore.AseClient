@@ -1,4 +1,8 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -6,19 +10,22 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// Represents a Transact-SQL statement or stored procedure to execute against a SAP ASE database. This class cannot be inherited.
     /// </summary>
-    public sealed class AseCommand : IDbCommand
+    public sealed class AseCommand : DbCommand
     {
-        // TODO - consider async
         private AseConnection _connection;
+        private AseTransaction _transaction;
+        private bool _isDisposed;
         internal readonly AseParameterCollection AseParameters;
+        private CommandType _commandType;
+        private int _commandTimeout;
+        private string _commandText;
+        private UpdateRowSource _updatedRowSource;
 
         public AseCommand(AseConnection connection)
         {
             _connection = connection;
             AseParameters = new AseParameterCollection();
         }
-
-        public void Dispose() { }
 
         /// <summary>
         /// Tries to cancel the execution of a <see cref="AseCommand" />.
@@ -31,27 +38,36 @@ namespace AdoNetCore.AseClient
         /// the result set can continue to stream after you call <see cref="AseDataReader.Close" />. To avoid this, make sure that you call 
         /// Cancel before closing the reader or connection.</para>
         /// </remarks>
-        public void Cancel()
+        public override void Cancel()
         {
-            //todo: implement
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
+            Logger.Instance?.WriteLine("Cancel requested");
+            _connection.InternalConnection.Cancel();
         }
 
         /// <summary>
         /// Creates a new instance of a <see cref="AseParameter" /> object.
         /// </summary>
-        IDbDataParameter IDbCommand.CreateParameter()
-        {
-            return CreateParameter();
-        }
-
-        /// <summary>Parameter" /> object.
-        /// </summary>
         /// <remarks>
         /// The CreateParameter method is a strongly-typed version of <see cref="IDbCommand.CreateParameter" />.
         /// </remarks>
-        public AseParameter CreateParameter()
+        public new AseParameter CreateParameter()
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
             return new AseParameter();
+        }
+
+        protected override DbParameter CreateDbParameter()
+        {
+            return CreateParameter();
         }
 
         /// <summary>
@@ -70,50 +86,15 @@ namespace AdoNetCore.AseClient
         /// triggers. For all other types of statements, the return value is -1. If a rollback occurs, the return value 
         /// is also -1.</para>
         /// </remarks>
-        public int ExecuteNonQuery()
+        public override int ExecuteNonQuery()
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
             LogExecution(nameof(ExecuteNonQuery));
-            return _connection.InternalConnection.ExecuteNonQuery(this, Transaction);
-        }
-
-        /// <summary>
-        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.
-        /// </summary>
-        /// <returns>An <see cref="AseDataReader" /> object.</returns>
-        /// <remarks>
-        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
-        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
-        /// </remarks>
-        IDataReader IDbCommand.ExecuteReader()
-        {
-            return ExecuteReader();
-        }
-
-        /// <summary>
-        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.
-        /// </summary>
-        /// <returns>An <see cref="AseDataReader" /> object.</returns>
-        /// <remarks>
-        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
-        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
-        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>
-        /// </remarks>
-        public AseDataReader ExecuteReader()
-        {
-            return ExecuteReader(CommandBehavior.Default);
-        }
-
-        /// <summary>
-        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.
-        /// </summary>
-        /// <returns>An <see cref="AseDataReader" /> object.</returns>
-        /// <remarks>
-        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
-        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
-        /// </remarks>
-        IDataReader IDbCommand.ExecuteReader(CommandBehavior behavior)
-        {
-            return ExecuteReader(behavior);
+            return _connection.InternalConnection.ExecuteNonQuery(this, (AseTransaction)Transaction);
         }
 
         /// <summary>
@@ -126,10 +107,34 @@ namespace AdoNetCore.AseClient
         /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>
         /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader(CommandBehavior)" />.</para>
         /// </remarks>
-        public AseDataReader ExecuteReader(CommandBehavior behavior)
+        public new AseDataReader ExecuteReader(CommandBehavior behavior)
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
             LogExecution(nameof(ExecuteReader));
-            return _connection.InternalConnection.ExecuteReader(behavior, this, Transaction);
+            return (AseDataReader)_connection.InternalConnection.ExecuteReader(behavior, this, (AseTransaction)Transaction);
+        }
+
+        /// <summary>		
+        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an <see cref="AseDataReader" />.		
+        /// </summary>		
+        /// <returns>An <see cref="AseDataReader" /> object.</returns>		
+        /// <remarks>		
+        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 		
+        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteReader.</para>		
+        /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>		
+        /// </remarks>		
+        public new AseDataReader ExecuteReader()
+        {
+            return ExecuteReader(CommandBehavior.Default);
+        }
+
+        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
+        {
+            return ExecuteReader(behavior);
         }
 
         /// <summary>
@@ -143,10 +148,15 @@ namespace AdoNetCore.AseClient
         /// generate the single value using the data returned by a <see cref="AseDataReader" />.</para>
         /// <para>The ExecuteReader method is a strongly-typed version of <see cref="IDbCommand.ExecuteReader()" />.</para>
         /// </remarks>
-        public object ExecuteScalar()
+        public override object ExecuteScalar()
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
             LogExecution(nameof(ExecuteScalar));
-            return _connection.InternalConnection.ExecuteScalar(this, Transaction);
+            return _connection.InternalConnection.ExecuteScalar(this, (AseTransaction)Transaction);
         }
 
         private void LogExecution(string methodName)
@@ -162,8 +172,13 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Not implemented.
         /// </summary>
-        public void Prepare()
+        public override void Prepare()
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
             // Support for prepared statements is not currently implemented. But to make this a drop in replacement for other DB Providers,
             // it's better to treat this call as a no-op, than to throw a NotImplementedException.
         }
@@ -171,34 +186,116 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the Transact-SQL statement, table name or stored procedure to execute at the data source.
         /// </summary>
-        public string CommandText { get; set; }
+        public override string CommandText
+        {
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                return _commandText;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                _commandText = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the wait time before terminating the attempt to execute a command and generating an error.
         /// </summary>
-        public int CommandTimeout { get; set; }
+        public override int CommandTimeout
+        {
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                return _commandTimeout;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                _commandTimeout = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating how the <see cref="CommandText" /> property is to be interpreted.
         /// </summary>
-        public CommandType CommandType { get; set; }
+        public override CommandType CommandType
+        {
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                return _commandType;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                _commandType = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the <see cref="AseConnection" /> used by this instance of the AseCommand.
         /// </summary>
-        IDbConnection IDbCommand.Connection
+        public new AseConnection Connection
+        {
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                return _connection;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                _connection = value;
+            }
+        }
+
+        protected override DbConnection DbConnection
         {
             get => Connection;
-            set => Connection = value as AseConnection;
+            set => Connection = (AseConnection)value;
         }
 
-        /// <summary>
-        /// Gets or sets the <see cref="AseConnection" /> used by this instance of the AseCommand.
-        /// </summary>
-        public AseConnection Connection {
-            get => _connection;
-            set => _connection = value;
+        protected override DbTransaction DbTransaction
+        {
+            get => _transaction;
+            set => _transaction = (AseTransaction)value;
         }
+
+        public override bool DesignTimeVisible { get; set; }
 
         /// <summary>
         /// Governs the default behavior of the AseCommand objects associated with this connection.
@@ -215,39 +312,166 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
         /// </summary>
-        IDataParameterCollection IDbCommand.Parameters
+        protected override DbParameterCollection DbParameterCollection => AseParameters;
+
+        /// <summary>
+        /// Gets or sets how command results are applied to the DataRow when used by the Update method of the DbDataAdapter.
+        /// </summary>
+        public override UpdateRowSource UpdatedRowSource
         {
             get
             {
-                return Parameters;
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                return _updatedRowSource;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                _updatedRowSource = value;
             }
         }
 
-        /// <summary>
-        /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 
-        /// </summary>
-        public AseParameterCollection Parameters => AseParameters;
-
-        /// <summary>
-        /// Gets or sets the <see cref="AseTransaction" /> within which the SqlCommand executes.
-        /// </summary>
-        IDbTransaction IDbCommand.Transaction
+        protected override void Dispose(bool disposing)
         {
-            get => Transaction;
-            set => Transaction = value as AseTransaction;
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
+            _isDisposed = true;
         }
 
-
-        /// <summary>
-        /// Gets or sets the <see cref="AseTransaction" /> within which the SqlCommand executes.
-        /// </summary>
-        private AseTransaction Transaction { get; set; }
-
-        /// <summary>
-        /// Gets or sets how command results are applied to the <see cref="System.Data.DataRow" /> when used by the Update method of the DbDataAdapter.
-        /// </summary>
-        public UpdateRowSource UpdatedRowSource { get; set; }
-
         internal bool HasSendableParameters => AseParameters?.HasSendableParameters ?? false;
+
+        internal void CancelIgnoreFailure()
+        {
+            try
+            {
+                Cancel();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+
+        private Task<T> InternalExecuteAsync<T>(Func<Task<T>> taskFunc, CancellationToken cancellationToken)
+        {
+            var source = new TaskCompletionSource<T>();
+            var registration = new CancellationTokenRegistration();
+            if (cancellationToken.CanBeCanceled)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Logger.Instance?.Write($"{nameof(InternalExecuteAsync)} - cancellation already requested");
+                    source.SetCanceled();
+                    return source.Task;
+                }
+                registration = cancellationToken.Register(s => ((AseCommand)s).CancelIgnoreFailure(), this);
+            }
+
+            try
+            {
+                // ReSharper disable once MethodSupportsCancellation
+                Task.Run(taskFunc)
+                    // ReSharper disable once MethodSupportsCancellation
+                    .ContinueWith(t =>
+                    {
+                        registration.Dispose();
+
+                        if (t.IsFaulted)
+                        {
+                            // Documentation states Exception can't be null if IsFaulted is true
+                            // ReSharper disable PossibleNullReferenceException
+                            // ReSharper disable AssignNullToNotNullAttribute
+                            Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - task faulted: {t.Exception.InnerException}");
+                            source.SetException(t.Exception.InnerException);
+                            // ReSharper restore AssignNullToNotNullAttribute
+                            // ReSharper restore PossibleNullReferenceException
+                        }
+                        else
+                        {
+                            if (t.IsCanceled)
+                            {
+                                Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - task canceled");
+                                source.SetCanceled();
+                            }
+                            else
+                            {
+                                Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - task completed");
+                                source.SetResult(t.Result);
+                            }
+                        }
+                    });
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance?.WriteLine($"{nameof(InternalExecuteAsync)} - exception: {ex}");
+                source.SetException(ex);
+            }
+
+            return source.Task;
+        }
+
+        public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken)
+        {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteNonQueryTaskRunnable(this, (AseTransaction)Transaction), cancellationToken);
+        }
+
+        protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+        {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteReaderTaskRunnable(behavior, this, (AseTransaction)Transaction), cancellationToken);
+        }
+
+        public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
+        {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
+            return ExecuteReaderAsync(cancellationToken)
+                // ReSharper disable once MethodSupportsCancellation
+                .ContinueWith(task =>
+                {
+                    var source = new TaskCompletionSource<object>();
+                    if (task.IsCanceled)
+                    {
+                        source.SetCanceled();
+                    }
+                    else if (task.IsFaulted)
+                    {
+                        // Documentation states Exception can't be null if IsFaulted is true
+                        // ReSharper disable once AssignNullToNotNullAttribute
+                        // ReSharper disable once PossibleNullReferenceException
+                        source.SetException(task.Exception.InnerException);
+                    }
+                    else
+                    {
+                        var reader = task.Result;
+                        source.SetResult(reader.Read() ? reader[0] : null);
+                    }
+
+                    return source.Task;
+                }).Unwrap();
+        }
     }
 }

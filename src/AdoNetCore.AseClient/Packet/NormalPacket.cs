@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
@@ -13,6 +12,7 @@ namespace AdoNetCore.AseClient.Packet
         private readonly IEnumerable<IToken> _tokens;
 
         public BufferType Type => BufferType.TDS_BUF_NORMAL;
+        public BufferStatus Status => BufferStatus.TDS_BUFSTAT_NONE;
 
         public NormalPacket(params IToken[] tokens)
         {

@@ -1,4 +1,4 @@
-﻿#if NETCOREAPP2_0 || NET45
+﻿#if !NETCORE_OLD
 using System;
 using System.Data.Common;
 using System.Security;

@@ -43,7 +43,6 @@ namespace AdoNetCore.AseClient.Enum
         /// The buffer contains a non-expedited attention request.
         /// Refer: 12. Cancel Protocol
         /// </summary>
-        [Obsolete]
         TDS_BUF_ATTN = 6,
         /// <summary>
         /// The buffer contains bulk binary data.

@@ -18,13 +18,14 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public static void Enable(bool toConsole = true, bool toDebug = false)
+        public static void Enable(bool toConsole = true, bool toDebug = false, bool timestamps = false)
         {
 #if DEBUG
             _instance = new Logger
             {
                 ToConsole = toConsole,
-                ToDebug = toDebug
+                ToDebug = toDebug,
+                Timestamps = timestamps
             };
 #endif
         }
@@ -35,9 +36,15 @@ namespace AdoNetCore.AseClient.Internal
         }
 
         private bool ToConsole { get; set; } = true;
-        private bool ToDebug { get; set; } = false;
+        private bool ToDebug { get; set; }
+        private bool Timestamps { get; set; } = true;
+
+        private bool _lineStart = true;
 
         private Logger() { }
+
+        private string Timestamp => _lineStart && Timestamps ? DateTime.UtcNow.ToString("[yyyy-MM-dd HH:mm:ss] ") : string.Empty;
+
 
         public void WriteLine()
         {
@@ -47,14 +54,18 @@ namespace AdoNetCore.AseClient.Internal
 
         public void WriteLine(string line)
         {
-            if (ToConsole) Console.WriteLine(line);
-            if (ToDebug) Debug.WriteLine(line);
+            var formatted = $"{Timestamp}{line}";
+            if (ToConsole) Console.WriteLine(formatted);
+            if (ToDebug) Debug.WriteLine(formatted);
+            _lineStart = true;
         }
 
         public void Write(string value)
         {
-            if(ToConsole) Console.Write(value);
-            if(ToDebug) Debug.Write(value);
+            var formatted = $"{Timestamp}{value}";
+            if (ToConsole) Console.Write(formatted);
+            if(ToDebug) Debug.Write(formatted);
+            _lineStart = false;
         }
     }
 }

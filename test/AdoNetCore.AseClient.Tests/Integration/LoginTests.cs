@@ -18,6 +18,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("big-packetsize")]
         public void Login_Success(string csName)
         {
+            Logger.Enable();
             using (var connection = new AseConnection(_connectionStrings[csName]))
             {
                 connection.Open();

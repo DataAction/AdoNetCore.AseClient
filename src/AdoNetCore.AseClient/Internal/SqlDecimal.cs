@@ -102,7 +102,7 @@ namespace AdoNetCore.AseClient.Internal
         private static readonly double s_DMAX_NUME = 1.0e+38;                  // Max value of numeric
         private static readonly uint s_DBL_DIG = 17;                       // Max decimal digits of double
 
-        private static readonly byte s_cNumeDivScaleMin = 6;     // Minimum result scale of numeric division
+        //private static readonly byte s_cNumeDivScaleMin = 6;     // Minimum result scale of numeric division
 
         // Array of multipliers for lAdjust and Ceiling/Floor.
         private static readonly uint[] s_rgulShiftBase = new uint[9] {

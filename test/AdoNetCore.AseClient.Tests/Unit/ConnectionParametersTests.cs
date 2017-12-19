@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
 
@@ -70,24 +68,24 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         [TestCase("Data Source=myASEserver;Port=5000;Db=a_database;Uid=a_user;Pwd=myPassword;", "a_user")]
         [TestCase("Data Source=myASEserver;Port=5000;Database=a_database;User Id=a_user;Pwd=myPassword;", "a_user")]
-        public void ConnectionParameters_WithAltUserIdSyntax_SetsProperties(string connectionString, string expectedDatabaseName)
+        public void ConnectionParameters_WithAltUserIdSyntax_SetsProperties(string connectionString, string expectedUsername)
         {
             // Act
             var actual = ConnectionParameters.Parse(connectionString);
 
             // Assert
-            Assert.AreEqual(expectedDatabaseName, actual.Username);
+            Assert.AreEqual(expectedUsername, actual.Username);
         }
 
         [TestCase("Data Source=myASEserver;Port=5000;Db=a_database;Uid=a_user;Pwd=myPassword;", "myPassword")]
         [TestCase("Data Source=myASEserver;Port=5000;Database=a_database;User Id=a_user;Password=myPassword;", "myPassword")]
-        public void ConnectionParameters_WithAltPasswordSyntax_SetsProperties(string connectionString, string expectedDatabaseName)
+        public void ConnectionParameters_WithAltPasswordSyntax_SetsProperties(string connectionString, string expectedPassword)
         {
             // Act
             var actual = ConnectionParameters.Parse(connectionString);
 
             // Assert
-            Assert.AreEqual(expectedDatabaseName, actual.Password);
+            Assert.AreEqual(expectedPassword, actual.Password);
         }
 
         [TestCase("Data Source=myASEserver;Port=5000;Db=a_database;Uid=a_user;Pwd=myPassword;ApplicationName=an_application", "an_application")]
@@ -111,8 +109,6 @@ namespace AdoNetCore.AseClient.Tests.Unit
             // Assert
             Assert.AreEqual(expectedConnectionLifetime, actual.ConnectionLifetime);
         }
-
-        // TODO - some tests for the DSUrl property.
 
         [Test]
         public void ConnectionParameters_WithDSURL_SetsProperties()

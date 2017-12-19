@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using AdoNetCore.AseClient.Internal;
 using Dapper;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -32,6 +33,11 @@ begin
 end";
 
         private readonly string _dropProc = @"drop procedure [dbo].[sp_test_echo]";
+
+        public EchoProcedureTests()
+        {
+            Logger.Disable();
+        }
 
         [SetUp]
         public void Setup()

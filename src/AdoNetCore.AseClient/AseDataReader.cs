@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Data;
 using System.Text;
+using System.Data.Common;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
-    public sealed class AseDataReader : IDataReader
+    public sealed class AseDataReader : DbDataReader
     {
         //todo: needs unit tests, feels a bit flimsy
         private readonly TableResult[] _results;
@@ -18,7 +20,7 @@ namespace AdoNetCore.AseClient
             NextResult();
         }
 
-        public bool GetBoolean(int i)
+        public override bool GetBoolean(int i)
         {
             var obj = GetValue(i);
 
@@ -37,7 +39,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToBoolean(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public byte GetByte(int i)
+        public override byte GetByte(int i)
         {
             var obj = GetValue(i);
 
@@ -56,7 +58,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToByte(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferOffset, int length)
+        public override long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferOffset, int length)
         {
             if (IsDBNull(i))
             {
@@ -124,7 +126,7 @@ namespace AdoNetCore.AseClient
             return bytesToRead;
         }
 
-        public char GetChar(int i)
+        public override char GetChar(int i)
         {
             var obj = GetValue(i);
 
@@ -143,7 +145,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToChar(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public long GetChars(int i, long fieldOffset, char[] buffer, int bufferoffset, int length)
+        public override long GetChars(int i, long fieldOffset, char[] buffer, int bufferoffset, int length)
         {
             if (IsDBNull(i))
             {
@@ -205,17 +207,17 @@ namespace AdoNetCore.AseClient
             return charsToRead;
         }
 
-        public IDataReader GetData(int i)
+        public override string GetDataTypeName(int ordinal)
         {
             throw new NotImplementedException();
         }
 
-        public string GetDataTypeName(int i)
+        public override IEnumerator GetEnumerator()
         {
-            throw new NotImplementedException();
+            return new AseDataReaderEnumerator(this);
         }
 
-        public DateTime GetDateTime(int i)
+        public override DateTime GetDateTime(int i)
         {
             var obj = GetValue(i);
 
@@ -248,7 +250,7 @@ namespace AdoNetCore.AseClient
             throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to TimeSpan");
         }
 
-        public decimal GetDecimal(int i)
+        public override decimal GetDecimal(int i)
         {
             var obj = GetValue(i);
 
@@ -267,7 +269,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToDecimal(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public double GetDouble(int i)
+        public override double GetDouble(int i)
         {
             var obj = GetValue(i);
 
@@ -286,9 +288,9 @@ namespace AdoNetCore.AseClient
             return convertible.ToDouble(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public Type GetFieldType(int i) => typeof(object);
+        public override Type GetFieldType(int i) => typeof(object);
 
-        public float GetFloat(int i)
+        public override float GetFloat(int i)
         {
             var obj = GetValue(i);
 
@@ -307,12 +309,32 @@ namespace AdoNetCore.AseClient
             return convertible.ToSingle(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public Guid GetGuid(int i)
+        public override Guid GetGuid(int i)
         {
-            throw new NotSupportedException($"{nameof(AseDataReader)}.{nameof(GetGuid)}({nameof(i)})");
+            if (IsDBNull(i))
+            {
+                return Guid.Empty;
+            }
+
+            var obj = GetValue(i);
+
+            if (obj == null)
+            {
+                return Guid.Empty;
+            }
+            
+            if (obj is byte[] bytes)
+            {
+                if (bytes.Length == 16)
+                {
+                    return new Guid(bytes);
+                }
+            }
+            
+            throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Guid");
         }
 
-        public short GetInt16(int i)
+        public override short GetInt16(int i)
         {
             var obj = GetValue(i);
 
@@ -331,7 +353,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToInt16(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public int GetInt32(int i)
+        public override int GetInt32(int i)
         {
             var obj = GetValue(i);
 
@@ -350,7 +372,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToInt32(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public long GetInt64(int i)
+        public override long GetInt64(int i)
         {
             var obj = GetValue(i);
 
@@ -426,7 +448,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToUInt64(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public string GetString(int i)
+        public override string GetString(int i)
         {
             var obj = GetValue(i);
 
@@ -450,6 +472,11 @@ namespace AdoNetCore.AseClient
             return convertible.ToString(System.Globalization.CultureInfo.CurrentCulture);
         }
 
+        //public AseDecimal GetAseDecimal(int ordinal)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private static void AssertNotDBNull(object obj)
         {
@@ -459,7 +486,7 @@ namespace AdoNetCore.AseClient
             }
         }
 
-        public string GetName(int i)
+        public override string GetName(int i)
         {
             if (_currentResult >= 0
                 && _currentResult < _results.Length
@@ -471,11 +498,13 @@ namespace AdoNetCore.AseClient
             throw new ArgumentOutOfRangeException(nameof(i));
         }
 
-        public int GetOrdinal(string name)
+        public override int GetOrdinal(string name)
         {
             if (!string.IsNullOrEmpty(name) && _currentResult >= 0 && _currentResult < _results.Length)
             {
-                name = name?.TrimStart('[').TrimEnd(']');
+                name = name
+                    .TrimStart('[')
+                    .TrimEnd(']'); // TODO - this should be unnecessary - we should store the value in canonical form.
 
                 var formats = _results[_currentResult].Formats;
                 for (var i = 0; i < formats.Length; i++)
@@ -489,7 +518,7 @@ namespace AdoNetCore.AseClient
 
             throw new ArgumentException();
         }
-        public object GetValue(int i)
+        public override object GetValue(int i)
         {
             if (IsDBNull(i))
             {
@@ -509,7 +538,7 @@ namespace AdoNetCore.AseClient
             throw new ArgumentOutOfRangeException();
         }
 
-        public int GetValues(object[] values)
+        public override int GetValues(object[] values)
         {
             var num = values.Length;
 
@@ -537,7 +566,7 @@ namespace AdoNetCore.AseClient
             return 0;
         }
 
-        public bool IsDBNull(int i)
+        public override bool IsDBNull(int i)
         {
             if (_currentResult >= 0
                 && _currentResult < _results.Length
@@ -554,33 +583,39 @@ namespace AdoNetCore.AseClient
             throw new ArgumentOutOfRangeException();
         }
 
-        public int FieldCount => _currentResult >= 0 && _currentResult < _results.Length
+        public override int FieldCount => _currentResult >= 0 && _currentResult < _results.Length
             ? _results[_currentResult].Formats.Length
             : 0;
 
-        object IDataRecord.this[int i] => GetValue(i);
+        public override bool HasRows => _results.Length > 0;
 
-        object IDataRecord.this[string name] => GetValue(GetOrdinal(name));
+        public override object this[int ordinal] => GetValue(ordinal);
 
-        public void Dispose()
-        {
-            Close();
-        }
+        public override object this[string name] => GetValue(GetOrdinal(name));
 
-        public void Close()
-        {
-        }
+#if NETCORE_OLD
+        public void Close() { }
+#else
+        public override void Close() { }
+#endif
 
+#if NETCORE_OLD
         public DataTable GetSchemaTable()
         {
             throw new NotImplementedException();
         }
+#else
+        public override DataTable GetSchemaTable()
+        {
+            throw new NotImplementedException();
+        }
+#endif
 
         /// <summary>
         /// Advances the reader to the next result set.
         /// </summary>
         /// <returns>true if the reader is pointing at a record set; false otherwise.</returns>
-        public bool NextResult()
+        public override bool NextResult()
         {
             _currentResult++;
 
@@ -599,7 +634,7 @@ namespace AdoNetCore.AseClient
         /// Advance the reader to the next record in the current result set.
         /// </summary>
         /// <returns>true if the reader is pointing at a row of data; false otherwise.</returns>
-        public bool Read()
+        public override bool Read()
         {
             if (_currentResult < 0)
             {
@@ -611,9 +646,9 @@ namespace AdoNetCore.AseClient
             return _results[_currentResult].Rows.Count > _currentRow;
         }
 
-        public int Depth => 0;
-        public bool IsClosed => _currentResult >= _results.Length;
-        public int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
+        public override int Depth => 0;
+        public override bool IsClosed => _currentResult >= _results.Length;
+        public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
             ? _results[_currentResult].Rows.Count
             : 0;
     }

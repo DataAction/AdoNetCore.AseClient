@@ -206,7 +206,6 @@ namespace AdoNetCore.AseClient.Internal
             };
             var remainingLength = length - 1;
             stream.Read(buffer, 16 - remainingLength, remainingLength);
-            //buffer = buffer.Reverse().ToArray();
 
             buffer = new[]
             {

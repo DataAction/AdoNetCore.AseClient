@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Data;
+using System.Data.Common;
+using System.Threading.Tasks;
 
 namespace AdoNetCore.AseClient.Interface
 {
@@ -34,19 +36,47 @@ namespace AdoNetCore.AseClient.Interface
         string Database { get; }
 
         /// <summary>
+        /// Get the current connection/session's data source (server name/address)
+        /// </summary>
+        string DataSource { get; }
+
+        /// <summary>
+        /// Get the current connection/session's server version
+        /// </summary>
+        string ServerVersion { get; }
+
+        /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteNonQuery"/>
         /// </summary>
         int ExecuteNonQuery(AseCommand command, AseTransaction transaction);
+        
+        /// <summary>
+        /// Internal implementation of <see cref="IDbCommand.ExecuteNonQuery"/>,
+        /// but the result is wrapped in a Task to allow the caller to check IsCanceled
+        /// </summary>
+        Task<int> ExecuteNonQueryTaskRunnable(AseCommand command, AseTransaction transaction);
+
 
         /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteReader()"/>
         /// </summary>
-        AseDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
+        DbDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
+
+        /// <summary>
+        /// Internal implementation of <see cref="IDbCommand.ExecuteReader()"/>,
+        /// but the result is wrapped in a Task to allow the caller to check IsCanceled
+        /// </summary>
+        Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
 
         /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteScalar"/>
         /// </summary>
         object ExecuteScalar(AseCommand command, AseTransaction transaction);
+
+        /// <summary>
+        /// Cancel the currently running command
+        /// </summary>
+        void Cancel();
 
         /// <summary>
         /// Set @@textsize, useful if the caller needs to select out very large text data

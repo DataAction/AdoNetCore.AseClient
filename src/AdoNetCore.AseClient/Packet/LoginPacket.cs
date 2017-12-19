@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -59,6 +58,8 @@ namespace AdoNetCore.AseClient.Packet
         private int TDS_PKTLEN = 6;
 
         public BufferType Type => BufferType.TDS_BUF_LOGIN;
+        public BufferStatus Status => BufferStatus.TDS_BUFSTAT_NONE;
+
         public void Write(Stream stream, Encoding enc)
         {
             Logger.Instance?.WriteLine($"Write {Type}");

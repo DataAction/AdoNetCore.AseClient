@@ -59,14 +59,12 @@ namespace AdoNetCore.AseClient.Interface
 
         /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteReader()"/>
-        /// TODO: change return type to AseDataReader
         /// </summary>
         DbDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
 
         /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteReader()"/>,
         /// but the result is wrapped in a Task to allow the caller to check IsCanceled
-        /// TODO: change return type to AseDataReader
         /// </summary>
         Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
 

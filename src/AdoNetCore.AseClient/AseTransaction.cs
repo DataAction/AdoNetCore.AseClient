@@ -58,6 +58,7 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseTransaction));
                 }
+
                 return (AseConnection)_connection;
             }
         }

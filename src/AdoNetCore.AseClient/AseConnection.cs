@@ -312,17 +312,17 @@ namespace AdoNetCore.AseClient
         /// statement or the <see cref="ChangeDatabase(string)" /> method, an informational message is sent and 
         /// the property is updated automatically.
         /// </remarks>
-        public override string Database => _internal?.Database ?? string.Empty;
+        public override string Database => _internal?.Database;
 
         /// <summary>
         /// Gets the name of the current server
         /// </summary>
-        public override string DataSource => _internal?.DataSource ?? string.Empty;
+        public override string DataSource => _internal?.DataSource;
 
         /// <summary>
         /// Gets the version of the current server
         /// </summary>
-        public override string ServerVersion => _internal?.ServerVersion ?? string.Empty;
+        public override string ServerVersion => _internal?.ServerVersion;
 
         /// <summary>
         /// Indicates the state of the <see cref="AseConnection" /> during the most recent network operation 
@@ -580,6 +580,4 @@ namespace AdoNetCore.AseClient
     /// the TraceEnter and TraceExit events.</para>
     /// </remarks>
     public delegate void TraceExitEventHandler(AseConnection connection, object source, string method, object returnValue);
-
-
 }

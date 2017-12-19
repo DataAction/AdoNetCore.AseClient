@@ -72,6 +72,23 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.IsNull(connection.Database);
         }
 
+        [Test]
+        public void ConstructConnection_WithoutOpening_DataSourceIsNull()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+            var connection = new AseConnection(connectionString);
+
+            Assert.IsNull(connection.DataSource);
+        }
+
+        [Test]
+        public void ConstructConnection_WithoutOpening_ServerVersionIsNull()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+            var connection = new AseConnection(connectionString);
+
+            Assert.IsNull(connection.ServerVersion);
+        }
 
         [Test]
         public void OpenConnection_WithInvalidConnectionString_ThrowsArgumentException()

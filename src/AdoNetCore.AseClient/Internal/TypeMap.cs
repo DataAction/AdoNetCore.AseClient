@@ -21,7 +21,6 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.UInt32, (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT4},
             {DbType.Int64, (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT8},
             {DbType.UInt64, (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT8},
-            //todo: switch to using TDS_LONGBINARY with usertype 34/35 (UTF-16 encoding)
             {DbType.String, (value, length) => TdsDataType.TDS_LONGBINARY},
             {DbType.StringFixedLength, (value, length) => TdsDataType.TDS_LONGBINARY},
             {DbType.AnsiString, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},

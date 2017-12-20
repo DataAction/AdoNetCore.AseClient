@@ -307,11 +307,7 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// When true then the ? syntax is not supported, and a name is expected.
         /// </remarks>
-        public bool NamedParameters // TODO - implement
-        {
-            get;
-            set;
-        }
+        public bool NamedParameters { get; set; } // TODO - implement
 
         /// <summary>
         /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 

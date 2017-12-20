@@ -9,7 +9,6 @@ namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader
     {
-        //todo: needs unit tests, feels a bit flimsy
         private readonly TableResult[] _results;
         private int _currentResult = -1;
         private int _currentRow = -1;

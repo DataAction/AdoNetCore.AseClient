@@ -38,7 +38,6 @@ namespace AdoNetCore.AseClient.Internal
 
         public static FormatItem ReadForRow(Stream stream, Encoding enc, TokenType srcTokenType)
         {
-            //todo make use of srcTokenType
             var format = new FormatItem
             {
                 ColumnLabel = stream.ReadByteLengthPrefixedString(enc),

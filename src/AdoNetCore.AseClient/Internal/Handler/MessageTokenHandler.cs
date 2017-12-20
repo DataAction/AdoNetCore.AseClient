@@ -71,7 +71,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         LineNum = error.LineNumber
                     });
                 }
-                errorList.Sort((a, b) => -1 * a.Severity.CompareTo(b.Severity)); //todo: write unit tests for this once the integration/unit project split has occurred
+                errorList.Sort((a, b) => -1 * a.Severity.CompareTo(b.Severity));
                 throw new AseException(errorList.ToArray());
             }
         }

@@ -191,10 +191,15 @@ namespace AdoNetCore.AseClient.Internal
             {TdsDataType.TDS_XML, f => typeof(string)},
         };
 
-        public static Type GetNetType(FormatItem format)
+        public static Type GetNetType(FormatItem format, bool defaultToObject = false)
         {
             if (!TdsToNetMap.ContainsKey(format.DataType))
             {
+                if (defaultToObject)
+                {
+                    return typeof(object);
+                }
+
                 throw new NotSupportedException($"Unsupported dataType {format.DataType}");
             }
 

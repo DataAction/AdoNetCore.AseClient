@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal sealed class ConnectionPoolManager : IConnectionPoolManager
+    internal sealed class ConnectionPoolManager : IConnectionPoolManager, IEnumerable<IConnectionPool>
     {
         private static readonly ConcurrentDictionary<string, IConnectionPool> Pools = new ConcurrentDictionary<string, IConnectionPool>(StringComparer.OrdinalIgnoreCase);
 
@@ -23,6 +25,32 @@ namespace AdoNetCore.AseClient.Internal
             if (Pools.TryGetValue(connectionString, out var pool))
             {
                 pool.Release(connection);
+            }
+        }
+
+        /// <summary>
+        /// Gets a connection by connectionString.
+        /// </summary>
+        public static IConnectionPool GetConnectionPool(string connectionString)
+        {
+            return Pools[connectionString];
+        }
+
+        /// <summary>
+        /// The number of open connections in all of the connection pools.
+        /// </summary>
+        public static int NumberOfOpenConnections
+        {
+            get
+            {
+                var connection = 0;
+
+                foreach (var pool in Pools)
+                {
+                    connection += pool.Value.PoolSize;
+                }
+
+                return connection;
             }
         }
     }

@@ -3,6 +3,9 @@ using System.Collections;
 using System.Data;
 using System.Text;
 using System.Data.Common;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -12,6 +15,7 @@ namespace AdoNetCore.AseClient
         private readonly TableResult[] _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
+        private DataTable _currentSchemaTable;
 
         internal AseDataReader(TableResult[] results)
         {
@@ -586,7 +590,9 @@ namespace AdoNetCore.AseClient
             ? _results[_currentResult].Formats.Length
             : 0;
 
-        public override bool HasRows => _results.Length > 0;
+        public override int VisibleFieldCount => FieldCount;
+
+        public override bool HasRows => _currentResult >= 0 && _currentResult < _results.Length && _results[_currentResult].Rows.Count > 0;
 
         public override object this[int ordinal] => GetValue(ordinal);
 
@@ -601,12 +607,94 @@ namespace AdoNetCore.AseClient
 #if NETCORE_OLD
         public DataTable GetSchemaTable()
         {
-            throw new NotImplementedException();
+            return null;
         }
 #else
         public override DataTable GetSchemaTable()
         {
-            throw new NotImplementedException();
+            EnsureSchemaTable();
+            return _currentSchemaTable;
+        }
+
+        private void EnsureSchemaTable()
+        {
+            //return;
+            if (_currentSchemaTable != null || FieldCount == 0)
+            {
+                return;
+            }
+
+            var table = new DataTable("SchemaTable");
+            var columns = table.Columns;
+
+            var columnName = columns.Add("ColumnName", typeof(string));
+            var columnOrdinal = columns.Add("ColumnOrdinal", typeof(int));
+            var columnSize = columns.Add("ColumnSize", typeof(int));
+            var numericPrecision = columns.Add("NumericPrecision", typeof(int));
+            var numericScale = columns.Add("NumericScale", typeof(int));
+            var isUnique = columns.Add("IsUnique", typeof(bool));
+            var isKey = columns.Add("IsKey", typeof(bool));
+            var baseServerName = columns.Add("BaseServerName", typeof(string));
+            var baseCatalogName = columns.Add("BaseCatalogName", typeof(string));
+            var baseColumnName = columns.Add("BaseColumnName", typeof(string));
+            var baseSchemaName = columns.Add("BaseSchemaName", typeof(string));
+            var baseTableName = columns.Add("BaseTableName", typeof(string));
+            var dataType = columns.Add("DataType", typeof(Type));
+            var allowDBNull = columns.Add("AllowDBNull", typeof(bool));
+            var providerType = columns.Add("ProviderType", typeof(int));
+            var isAliased = columns.Add("IsAliased", typeof(bool));
+            var isExpression = columns.Add("IsExpression", typeof(bool));
+            var isIdentity = columns.Add("IsIdentity", typeof(bool));
+            var isAutoIncrement = columns.Add("IsAutoIncrement", typeof(bool));
+            var isRowVersion = columns.Add("IsRowVersion", typeof(bool));
+            var isHidden = columns.Add("IsHidden", typeof(bool));
+            var isLong = columns.Add("IsLong", typeof(bool));
+            var isReadOnly = columns.Add("IsReadOnly", typeof(bool));
+            columns.Add("ProviderSpecificDataType", typeof(Type));
+            var dataTypeName = columns.Add("DataTypeName", typeof(string));
+            //do we need these?
+            columns.Add("XmlSchemaCollectionDatabase", typeof(string));
+            columns.Add("XmlSchemaCollectionOwningSchema", typeof(string));
+            columns.Add("XmlSchemaCollectionName", typeof(string));
+            columns.Add("UdtAssemblyQualifiedName");
+            columns.Add("NonVersionedProviderType", typeof(int));
+            columns.Add("IsColumnSet");
+
+            var formats = _results[_currentResult].Formats;
+            for(var i = 0; i < formats.Length; i++)
+            {
+                var column = formats[i];
+                var row = table.NewRow();
+
+                row[columnName] = column.ColumnLabel; //todo: ColumnName or ColumnLabel?
+                row[columnOrdinal] = i;
+                row[columnSize] = column.Length ?? -1;
+                row[numericPrecision] = column.Precision ?? -1;
+                row[numericScale] = column.Scale ?? -1;
+                row[isUnique] = false; //todo: Does TDS provide this?
+                row[isKey] = false; //todo: Does TDS provide this?
+                row[baseServerName] = string.Empty;
+                row[baseCatalogName] = column.CatalogName;
+                row[baseColumnName] = column.ColumnName; //todo: ColumnName or ColumnLabel?
+                row[baseSchemaName] = column.SchemaName;
+                row[baseTableName] = column.TableName;
+                row[dataType] = TypeMap.GetNetType(column);
+                row[allowDBNull] = column.IsNullable;
+                row[providerType] = (DbType)column.DataType;
+                row[isAliased] = !string.Equals(column.ColumnLabel, column.ColumnName, StringComparison.OrdinalIgnoreCase); //todo: is this what we're supposed to check?
+                row[isExpression] = false; //todo?
+                row[isIdentity] = false; //todo?
+                row[isAutoIncrement] = false; //todo?
+                row[isRowVersion] = false; //todo?
+                row[isHidden] = false; //todo?
+                row[isLong] = false; //todo?
+                row[isReadOnly] = false; //todo?
+                row[dataTypeName] = $"{column.DataType}";
+
+                table.Rows.Add(row);
+            }
+
+            _currentSchemaTable = table;
         }
 #endif
 
@@ -617,6 +705,7 @@ namespace AdoNetCore.AseClient
         public override bool NextResult()
         {
             _currentResult++;
+            _currentSchemaTable = null;
 
             if (_results.Length > _currentResult)
             {

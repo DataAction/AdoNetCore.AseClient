@@ -36,7 +36,6 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
     * `Failover` - no reason this can't be supported, just hasn't been a priority thus far. As such the following types have not yet been implemented:
         * [AseFailoverException](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409597900.html)
     * `AseDecimal` - no reason this can't be supported, but it's complicated. See also [#10](https://github.com/DataAction/AdoNetCore.AseClient/issues/10).
-        * [AseFailoverException](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409597900.html)
 * The following features are not supported:
     * `Code Access Security` - CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas). For binary compatibility the following stubs have been added in .NET Core 2.0+ but they do nothing:
         * AseClientPermission
@@ -80,47 +79,47 @@ The SAP ASE server is held constant in all of the test cases, and as it is not t
 ## Connection strings
 [connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. In keeping with our objective of being a drop-in replacement for the SAP AseClient, we aim to use identical connection string syntax to the SAP AseClient, however our support for the various properties will be limited. Our support is as follows:
 
-| Property                          | Support   | Notes
-| --------------------------------- |:---------:| -----
-| `AlternateServers`                | X
-| `AnsiNull`                        | TODO
-| `ApplicationName`                 | &#10003;
-| `BufferCacheSize`                 | TODO
-| `Charset`                         | &#10003;
-| `ClientHostName`                  | &#10003;
-| `ClientHostProc`                  | &#10003;
-| `CodePageType`                    | TODO
-| `Connection Lifetime`             | TODO
-| `ConnectionIdleTimeout`           | TODO
-| `CumulativeRecordCount`           | TODO
-| `Database`                        | &#10003;
-| `Data Source`                     | &#10003;
-| `DistributedTransactionProtocol`  | X
-| `DSURL`                           | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
-| `EnableBulkLoad`                  | X
-| `EnableServerPacketSize`          | ? | May not be supported any more by capability bits
-| `Encryption`                      | X
-| `EncryptPassword`                 | ?
-| `Enlist`                          | X
-| `FetchArraySize`                  | TODO
-| `HASession`                       | X
-| `LoginTimeOut`                    | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
-| `Max Pool Size`                   | &#10003;
-| `Min Pool Size`                   | &#10003; | <ul><li>The pool will attempt to prime itself on creation up to this size (in a thread)</li><li>When a connection is killed, the pool will attempt to replace it if the pool size is less than Min</li></ul>
-| `PacketSize`                      | &#10003; | The server can decide to change this value
-| `Ping Server`                     | &#10003;
-| `Pooling`                         | &#10003;
-| `Port`                            | &#10003;
-| `Pwd`                             | &#10003;
-| `RestrictMaximum PacketSize`      | ? | May not be supported any more by capability bits
-| `Secondary Data Source`           | X
-| `Secondary Server Port`           | X
-| `TextSize`                        | &#10003;
-| `TightlyCoupledTransaction`       | X
-| `TrustedFile`                     | X
-| `Uid`                             | &#10003;
-| `UseAseDecimal`                   | X
-| `UseCursor`                       | X
+| Property                                                                                   | Support   | Notes
+| ------------------------------------------------------------------------------------------ |:---------:| -----
+| `AlternateServers`                                                                         | X
+| `AnsiNull`                                                                                 | TODO
+| `ApplicationName` or `Application Name`                                                    | &#10003;
+| `BufferCacheSize`                                                                          | TODO
+| `Charset`                                                                                  | &#10003;
+| `ClientHostName`                                                                           | &#10003;
+| `ClientHostProc`                                                                           | &#10003;
+| `CodePageType`                                                                             | TODO
+| `Connection Lifetime` or `ConnectionLifetime`                                              | TODO
+| `ConnectionIdleTimeout` or `Connection IdleTimeout` or `Connection Idle Timeout`           | TODO
+| `CumulativeRecordCount`                                                                    | TODO
+| `Database` or `Db` or `Initial Catalog`                                                    | &#10003;
+| `Data Source` or `DataSource` or `Address` or `Addr` or `Network Address` or `Server Name` | &#10003;
+| `DistributedTransactionProtocol`                                                           | X
+| `DSURL` or `Directory Service URL`                                                         | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
+| `EnableBulkLoad`                                                                           | X
+| `EnableServerPacketSize`                                                                   | ? | May not be supported any more by capability bits
+| `Encryption`                                                                               | X
+| `EncryptPassword`                                                                          | ?
+| `Enlist`                                                                                   | X
+| `FetchArraySize`                                                                           | TODO
+| `HASession`                                                                                | X
+| `LoginTimeOut` or `Connect Timeout` or `Connection Timeout`                                | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
+| `Max Pool Size`                                                                            | &#10003;
+| `Min Pool Size`                                                                            | &#10003; | <ul><li>The pool will attempt to prime itself on creation up to this size (in a thread)</li><li>When a connection is killed, the pool will attempt to replace it if the pool size is less than Min</li></ul>
+| `PacketSize` or `Packet Size`                        |                                      &#10003; | The server can decide to change this value
+| `Ping Server`                                                                              | &#10003;
+| `Pooling`                                                                                  | &#10003;
+| `Port` or `Server Port`                                                                    | &#10003;
+| `Pwd` or `Password`                                                                        | &#10003;
+| `RestrictMaximum PacketSize`                                                               | ? | May not be supported any more by capability bits
+| `Secondary Data Source`                                                                    | X
+| `Secondary Server Port`                                                                    | X
+| `TextSize`                                                                                 | &#10003;
+| `TightlyCoupledTransaction`                                                                | X
+| `TrustedFile`                                                                              | X
+| `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;
+| `UseAseDecimal`                                                                            | X
+| `UseCursor`                                                                                | X
 
 ## Supported types
 ### Types supported when sending requests to the database

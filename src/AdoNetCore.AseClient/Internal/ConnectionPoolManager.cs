@@ -53,5 +53,15 @@ namespace AdoNetCore.AseClient.Internal
                 return connection;
             }
         }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public IEnumerator<IConnectionPool> GetEnumerator()
+        {
+            return Pools.Values.GetEnumerator();
+        }
     }
 }

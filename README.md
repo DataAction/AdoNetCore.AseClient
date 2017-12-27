@@ -23,6 +23,10 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
     * AseException - in progress
     * AseInfoMessageEventArgs
     * AseInfoMessageEventHandler 
+    * AseRowUpdatedEventArgs - .NET Core 2.0+
+    * AseRowUpdatedEventHandler - .NET Core 2.0+
+    * AseRowUpdatingEventArgs - .NET Core 2.0+
+    * AseRowUpdatingEventHandler - .NET Core 2.0+
     * TraceEnterEventHandler
     * TraceExitEventHandler
 * The following features are not yet supported:
@@ -43,10 +47,6 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
     * [AseConnectionPool](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409558524.html) - TODO - where is this exposed?
     * [AseConnectionPoolManager](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409559633.html) - TODO - where is this exposed?
     * [AseDataAdapter](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409561039.html) - TODO - depends on .NET Core 2.0.
-    * [AseRowUpdatedEventArgs](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409612447.html) - TODO - depends on .NET Core 2.0.
-    * [AseRowUpdatingEventArgs](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409615713.html)  - TODO - depends on .NET Core 2.0.
-    * [AseRowUpdatedEventHandler](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409618604.html)  - TODO - depends on .NET Core 2.0.
-    * [AseRowUpdatingEventHandler](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409618979.html)  - TODO - depends on .NET Core 2.0.
 
 * Performance equivalent to or better than that of `Sybase.AdoNet4.AseClient` provided by SAP. This should be possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
 * Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)

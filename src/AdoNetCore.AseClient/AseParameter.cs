@@ -59,7 +59,7 @@ namespace AdoNetCore.AseClient
             }
             else if (value is uint)
             {
-                AseDbType = AseDbType.UnsignedInteger; // NOTE: - uint is not supported by the SAP AseClient.
+                AseDbType = AseDbType.UnsignedInt; // NOTE: - uint is not supported by the SAP AseClient.
             }
             else if (value is ushort)
             {

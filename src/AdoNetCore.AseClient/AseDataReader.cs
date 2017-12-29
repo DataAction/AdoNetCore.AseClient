@@ -13,15 +13,17 @@ namespace AdoNetCore.AseClient
         private int _currentResult = -1;
         private int _currentRow = -1;
         private readonly AseCommand _command;
+        private readonly CommandBehavior _behavior;
 
 #if !NETCORE_OLD
         private DataTable _currentSchemaTable;
 #endif
 
-        internal AseDataReader(TableResult[] results, AseCommand command)
+        internal AseDataReader(TableResult[] results, AseCommand command, CommandBehavior behavior)
         {
             _results = results;
             _command = command;
+            _behavior = behavior;
             NextResult();
         }
 
@@ -708,54 +710,69 @@ namespace AdoNetCore.AseClient
             }
 
             // Try to load the key info
-            using (var command = _command.Connection.CreateCommand())
+            if ((_behavior & CommandBehavior.KeyInfo) == CommandBehavior.KeyInfo) 
             {
-                command.CommandText = $"{baseCatalogNameValue}..sp_oledb_getindexinfo";
-                command.CommandType = CommandType.StoredProcedure;
-
-                var tableName = command.CreateParameter();
-                tableName.ParameterName = "@table_name";
-                tableName.Value = baseTableNameValue;
-                command.Parameters.Add(tableName);
-
-                var tableOwner = command.CreateParameter();
-                tableOwner.ParameterName = "@table_owner";
-                tableOwner.Value = baseSchemaNameValue;
-                command.Parameters.Add(tableOwner);
-
-                var tableQualifier = command.CreateParameter();
-                tableQualifier.ParameterName = "@table_qualifier";
-                tableQualifier.Value = baseCatalogNameValue;
-                command.Parameters.Add(tableQualifier);
-
-                try
+                if (_command.Connection == null)
                 {
-                    using (var keyInfoDataReader = command.ExecuteReader())
-                    {
-                        while (keyInfoDataReader.Read())
-                        {
-                            var keyColumnName = keyInfoDataReader["COLUMN_NAME"].ToString();
-                            var keySchemaName = keyInfoDataReader["TABLE_SCHEMA"].ToString();
-                            var keyCatalogName = keyInfoDataReader["TABLE_CATALOG"].ToString();
+                    throw new InvalidOperationException("Invalid AseCommand.Connection");
+                }
+                if (_command.Connection.State != ConnectionState.Open)
+                {
+                    throw new InvalidOperationException("Invalid AseCommand.Connection.ConnectionState");
+                }
 
-                            foreach (DataRow row in table.Rows)
+                using (var command = _command.Connection.CreateCommand())
+                {
+                    command.CommandText = $"{baseCatalogNameValue}..sp_oledb_getindexinfo";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var tableName = command.CreateParameter();
+                    tableName.ParameterName = "@table_name";
+                    tableName.Value = baseTableNameValue;
+                    command.Parameters.Add(tableName);
+
+                    var tableOwner = command.CreateParameter();
+                    tableOwner.ParameterName = "@table_owner";
+                    tableOwner.Value = baseSchemaNameValue;
+                    command.Parameters.Add(tableOwner);
+
+                    var tableQualifier = command.CreateParameter();
+                    tableQualifier.ParameterName = "@table_qualifier";
+                    tableQualifier.Value = baseCatalogNameValue;
+                    command.Parameters.Add(tableQualifier);
+
+                    try
+                    {
+                        using (var keyInfoDataReader = command.ExecuteReader())
+                        {
+                            while (keyInfoDataReader.Read())
                             {
-                                // Use the base column name in case the column is aliased.
-                                if (
-                                    string.Equals(keyColumnName, row[baseColumnName].ToString(), StringComparison.OrdinalIgnoreCase) && 
-                                    string.Equals(keySchemaName, row[baseSchemaName].ToString(), StringComparison.OrdinalIgnoreCase)&& 
-                                    string.Equals(keyCatalogName, row[baseCatalogName].ToString(), StringComparison.OrdinalIgnoreCase))
+                                var keyColumnName = keyInfoDataReader["COLUMN_NAME"].ToString();
+                                var keySchemaName = keyInfoDataReader["TABLE_SCHEMA"].ToString();
+                                var keyCatalogName = keyInfoDataReader["TABLE_CATALOG"].ToString();
+
+                                foreach (DataRow row in table.Rows)
                                 {
-                                    row[isKey] = (bool)keyInfoDataReader["PRIMARY_KEY"];
-                                    row[isUnique] = (bool)keyInfoDataReader["UNIQUE"];
+                                    // Use the base column name in case the column is aliased.
+                                    if (
+                                        string.Equals(keyColumnName, row[baseColumnName].ToString(),
+                                            StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(keySchemaName, row[baseSchemaName].ToString(),
+                                            StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(keyCatalogName, row[baseCatalogName].ToString(),
+                                            StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        row[isKey] = (bool) keyInfoDataReader["PRIMARY_KEY"];
+                                        row[isUnique] = (bool) keyInfoDataReader["UNIQUE"];
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                catch
-                {
-                    // ignored
+                    catch
+                    {
+                        // ignored
+                    }
                 }
             }
 
@@ -769,7 +786,22 @@ namespace AdoNetCore.AseClient
         /// <returns>true if the reader is pointing at a record set; false otherwise.</returns>
         public override bool NextResult()
         {
+            // If we have read one row of data, jump to the end.
+            if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
+            {
+                // Jump to the end
+                return false;
+            }
+
+            // If we have read one result set
+            if ((_behavior & CommandBehavior.SingleResult) == CommandBehavior.SingleResult && _currentResult == 0)
+            {
+                // Jump to the end
+                return false;
+            }
+
             _currentResult++;
+
 #if !NETCORE_OLD
             _currentSchemaTable = null;
 #endif
@@ -779,10 +811,8 @@ namespace AdoNetCore.AseClient
                 _currentRow = -1;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <summary>
@@ -796,7 +826,17 @@ namespace AdoNetCore.AseClient
                 return false;
             }
 
-            _currentRow++;
+            // If we have read one row of data, jump to the end.
+            if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
+            {
+                // Jump to the end
+                _currentResult = _results.Length - 1;
+                _currentRow = _results[_currentResult].Rows.Count;
+            }
+            else
+            {
+                _currentRow++;
+            }
 
             return _results[_currentResult].Rows.Count > _currentRow;
         }

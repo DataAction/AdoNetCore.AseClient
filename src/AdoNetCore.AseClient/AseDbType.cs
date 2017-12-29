@@ -16,7 +16,7 @@ namespace AdoNetCore.AseClient
         DateTime = DbType.DateTime,
         Decimal = DbType.Decimal,
         Double = DbType.Double,
-        Float = DbType.Single, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
+        //Float = DbType.Single, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
         Integer = DbType.Int32,
         Image = DbType.Binary,
         LongVarChar = DbType.AnsiString, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm

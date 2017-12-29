@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
@@ -32,6 +33,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_INTN:
                     switch (stream.ReadByte())
                     {
+                        case 0: return DBNull.Value;
                         case 1: return (byte)stream.ReadByte(); //both INTN(1) and UINTN(1) are an INT1. Never an SINT1.
                         case 2: return stream.ReadShort();
                         case 4: return stream.ReadInt();
@@ -41,6 +43,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_UINTN:
                     switch (stream.ReadByte())
                     {
+                        case 0: return DBNull.Value;
                         case 1: return (byte)stream.ReadByte();
                         case 2: return stream.ReadUShort();
                         case 4: return stream.ReadUInt();
@@ -54,6 +57,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_FLTN:
                     switch (stream.ReadByte())
                     {
+                        case 0: return DBNull.Value;
                         case 4: return stream.ReadFloat();
                         case 8: return stream.ReadDouble();
                     }
@@ -97,6 +101,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_MONEYN:
                     switch (stream.ReadByte())
                     {
+                        case 0: return DBNull.Value;
                         case 4:
                             return stream.ReadSmallMoney();
                         case 8:
@@ -110,6 +115,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DATETIMEN:
                     switch (stream.ReadByte())
                     {
+                        case 0: return DBNull.Value;
                         case 4:
                             return stream.ReadShortPartDateTime();
                         case 8:
@@ -121,6 +127,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DATEN:
                     switch (stream.ReadByte())
                     {
+                        case 0: return DBNull.Value;
                         case 4:
                             return stream.ReadDate();
                     }
@@ -130,6 +137,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_TIMEN:
                     switch (stream.ReadByte())
                     {
+                        case 0: return DBNull.Value;
                         case 4:
                             return stream.ReadTime();
                     }
@@ -140,7 +148,7 @@ namespace AdoNetCore.AseClient.Internal
                         var textPtrLen = (byte)stream.ReadByte();
                         if (textPtrLen == 0)
                         {
-                            return null;
+                            return DBNull.Value;
                         }
                         var textPtr = new byte[textPtrLen];
                         stream.Read(textPtr, 0, textPtrLen);
@@ -152,7 +160,7 @@ namespace AdoNetCore.AseClient.Internal
                         var textPtrLen = (byte)stream.ReadByte();
                         if (textPtrLen == 0)
                         {
-                            return null;
+                            return DBNull.Value;
                         }
                         var textPtr = new byte[textPtrLen];
                         stream.Read(textPtr, 0, textPtrLen);
@@ -167,7 +175,7 @@ namespace AdoNetCore.AseClient.Internal
                         var textPtrLen = (byte)stream.ReadByte();
                         if (textPtrLen == 0)
                         {
-                            return null;
+                            return DBNull.Value;
                         }
                         var textPtr = new byte[textPtrLen];
                         stream.Read(textPtr, 0, textPtrLen);

@@ -83,7 +83,7 @@ namespace AdoNetCore.AseClient
             }
             else if (value is float)
             {
-                AseDbType = AseDbType.Float;
+                AseDbType = AseDbType.Real;
             }
             else if (value is double)
             {

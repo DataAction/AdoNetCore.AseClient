@@ -6,6 +6,11 @@ using System.Data.Common;
 
 namespace AdoNetCore.AseClient
 {
+    /// <summary>
+    /// The <see cref="AseCommandBuilder"/> can be used to derive INSERT, UPDATE, and DELETE <see cref="AseCommand"/> instances from a single SELECT <see cref="AseCommand"/>.
+    /// 
+    /// This can reduce the amount of SQL maintained, and make it easier to initialise an <see cref="AseDataAdapter"/> for committing changes in a <see cref="DataTable"/> to the source.
+    /// </summary>
     public sealed class AseCommandBuilder : DbCommandBuilder
     {
         private string _commandText;
@@ -72,7 +77,6 @@ namespace AdoNetCore.AseClient
             {-204, AseDbType.NChar },
             {-205, AseDbType.NVarChar },
             {-202, AseDbType.SmallDateTime },
-            {93, AseDbType.DateTime },
             {5, AseDbType.SmallInt },
             {-201, AseDbType.SmallMoney },
             {-1, AseDbType.Text },
@@ -94,6 +98,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Constructor function for an <see cref="AseCommandBuilder"/> instance.
         /// </summary>
+        // ReSharper disable once MemberCanBePrivate.Global
         public AseCommandBuilder()
         {
             base.QuotePrefix = "[";
@@ -109,6 +114,9 @@ namespace AdoNetCore.AseClient
             DataAdapter = adapter;
         }
 
+        /// <summary>
+        /// Gets the <see cref="AseDataAdapter"/> associated with this <see cref="AseCommandBuilder"/>.
+        /// </summary>
         public new AseDataAdapter DataAdapter
         {
             get => (AseDataAdapter) base.DataAdapter;
@@ -119,6 +127,9 @@ namespace AdoNetCore.AseClient
             }
         }
 
+        /// <summary>
+        /// The prefix to use when quoting identifiers.
+        /// </summary>
         public override string QuotePrefix
         {
             get => base.QuotePrefix;
@@ -137,6 +148,9 @@ namespace AdoNetCore.AseClient
             }
         }
 
+        /// <summary>
+        /// The suffix to use when quoting identifiers.
+        /// </summary>
         public override string QuoteSuffix
         {
             get => base.QuoteSuffix;
@@ -155,17 +169,29 @@ namespace AdoNetCore.AseClient
             }
         }
 
-        public AseCommand GetInsertCommand()
+        /// <summary>
+        /// The INSERT command generated from the given SELECT <see cref="DataAdapter"/>.
+        /// </summary>
+        /// <returns>An <see cref="AseCommand"/> for performing INSERTs.</returns>
+        public new AseCommand GetInsertCommand()
         {
             return (AseCommand) base.GetInsertCommand();
         }
 
-        public AseCommand GetDeleteCommand()
+        /// <summary>
+        /// The DELETE command generated from the given SELECT <see cref="DataAdapter"/>.
+        /// </summary>
+        /// <returns>An <see cref="AseCommand"/> for performing DELETEs.</returns>
+        public new AseCommand GetDeleteCommand()
         {
             return (AseCommand) base.GetDeleteCommand();
         }
 
-        public AseCommand GetUpdateCommand()
+        /// <summary>
+        /// The UPDATE command generated from the given SELECT <see cref="DataAdapter"/>.
+        /// </summary>
+        /// <returns>An <see cref="AseCommand"/> for performing UPDATEs.</returns>
+        public new AseCommand GetUpdateCommand()
         {
             return (AseCommand) base.GetUpdateCommand();
         }
@@ -175,53 +201,63 @@ namespace AdoNetCore.AseClient
             if (_commandText != sourceCommand.CommandText || _schema == null)
             {
                 _commandText = sourceCommand.CommandText;
-                _schema = FillSchemaTable(sourceCommand);
+                _schema = GetSchemaTableWithKeyInfo(sourceCommand);
             }
             return _schema;
         }
 
-        private DataTable FillSchemaTable(DbCommand sourceCommand)
+
+        private static DataTable GetSchemaTableWithKeyInfo(DbCommand sourceCommand)
         {
-            DataTable dataTable;
             using (var aseCommand = (AseCommand) ((ICloneable) sourceCommand).Clone())
             {
-                using (var aseDataReader =
-                    aseCommand.ExecuteReader(CommandBehavior.SchemaOnly | CommandBehavior.KeyInfo))
+                using (var schemaReader = aseCommand.ExecuteReader(CommandBehavior.SchemaOnly | CommandBehavior.KeyInfo))
                 {
-                    dataTable = aseDataReader.GetSchemaTable();
+                    var dataTable = schemaReader.GetSchemaTable();
 
-                    var isKeyColumn = dataTable.Columns["IsKey"];
-                    bool hasKey = false;
-
-                    foreach (DataRow columnDescriptorRow in dataTable.Rows)
+                    if (dataTable != null)
                     {
-                        hasKey |= (bool) columnDescriptorRow[isKeyColumn];
+                        // If there is no primary key on the table, then throw MissingPrimaryKeyException.
+                        var isKeyColumn = dataTable.Columns["IsKey"];
+                        var hasKey = false;
 
-                        if (hasKey)
+                        foreach (DataRow columnDescriptorRow in dataTable.Rows)
                         {
-                            break;
+                            hasKey |= (bool)columnDescriptorRow[isKeyColumn];
+
+                            if (hasKey)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (!hasKey)
+                        {
+                            throw new MissingPrimaryKeyException("Cannot generate SQL statements if there is no unique column in the source command.");
                         }
                     }
 
-                    if (!hasKey) 
-                    {
-                        throw new MissingPrimaryKeyException("Cannot generate SQL statements if there is no unique column in the source command.");
-                    }
+                    return dataTable;
                 }
             }
-            return dataTable;
         }
 
+        /// <summary>
+        /// Retrieves parameter information from the stored procedure specified in the <see cref="AseCommand"/> and populates the 
+        /// <see cref="AseCommand.Parameters"/> collection of the specified <see cref="AseCommand"/> object.
+        /// </summary>
+        /// <param name="command">The <see cref="AseCommand"/> referencing the stored procedure from which the parameter information 
+        /// is to be derived. The derived parameters are added to the <see cref="AseCommand.Parameters"/> collection of the <see cref="AseCommand"/>.</param>
+        /// <exception cref="InvalidOperationException">The command text is not a valid stored procedure name.</exception>
         public static void DeriveParameters(AseCommand command)
         {
             if (command.CommandType != CommandType.StoredProcedure)
             {
-                throw new InvalidOperationException(
-                    "Invalid AseCommand.CommandType. Only CommandType.StoredProcedure is supported");
+                throw new InvalidOperationException("Invalid AseCommand.CommandType. Only CommandType.StoredProcedure is supported");
             }
             if (command.Connection == null)
             {
-                throw new InvalidOperationException("Invalid AseCommnad.Connection");
+                throw new InvalidOperationException("Invalid AseCommand.Connection");
             }
             if (command.CommandText.Length == 0)
             {
@@ -234,154 +270,155 @@ namespace AdoNetCore.AseClient
 
             command.Parameters.Clear();
 
-            var cmdText = "sp_sproc_columns";
-            var commandText = command.CommandText;
-            var owner = (string) null;
-            var database = (string) null;
+            string procedureName;
+            string parameterMetadataCommandText;
+            string owner;
 
-            if (commandText.IndexOf('.') >= 0)
+            var commandParts = command.CommandText.Split('.');
+            switch (commandParts.Length)
             {
-                var commandParts = commandText.Split('.');
-                switch (commandParts.Length)
-                {
-                    // owner.object_name
-                    case 2:
-                        owner = commandParts[0].Trim();
-                        commandText = commandParts[1].Trim();
-                        break;
-                    // database.owner.object_name
-                    case 3:
-                        database = commandParts[0].Trim();
+                // procedure_name
+                case 1:
+                    procedureName = commandParts[0].Trim();
+                    owner = null;
+                    parameterMetadataCommandText = "sp_sproc_columns";
+                    break;
+                // owner.procedure_name
+                case 2:
+                    owner = commandParts[0].Trim();
+                    procedureName = commandParts[1].Trim();
+                    parameterMetadataCommandText = "sp_sproc_columns";
+                    break;
+                // database.owner.procedure_name
+                case 3:
+                    var database = commandParts[0].Trim();
 
-                        owner = commandParts[1].Trim();
-
-                        commandText = commandParts[2].Trim();
-
-                        if (database.Length > 0)
-                        {
-                            cmdText = database + ".." + cmdText;
-                        }
-                        break;
-                    case 4:
-                        string str4 = commandParts[0].Trim();
-                        string str5 = commandParts[1].Trim();
-
-                        owner = commandParts[2].Trim();
-                        commandText = commandParts[3].Trim();
-
-                        if (str4.Length > 0)
-                        {
-                            cmdText = str4 + "." + str5 + ".." + cmdText;
-                            break;
-                        }
-                        if (str5.Length > 0)
-                        {
-                            cmdText = str5 + ".." + cmdText;
-                            break;
-                        }
-                        break;
-                    default:
-                        throw new InvalidOperationException("Invalid AseCommand.CommandText");
-                }
+                    owner = commandParts[1].Trim();
+                    procedureName = commandParts[2].Trim();
+                    parameterMetadataCommandText = database.Length > 0 ? $"{database}..sp_sproc_columns" : "sp_sproc_columns";
+                    break;
+                default:
+                    throw new InvalidOperationException("The command text is not a valid stored procedure name of the form [database].[owner].procedure_name.");
             }
 
-            using (var aseCommand = new AseCommand(command.Connection) {CommandText = cmdText, CommandType = CommandType.StoredProcedure })
+            using (var parameterMetadataCommand = new AseCommand(command.Connection) {CommandText = parameterMetadataCommandText, CommandType = CommandType.StoredProcedure })
             {
-                aseCommand.Parameters.Add("@procedure_name", AseDbType.VarChar).Value = commandText;
+                parameterMetadataCommand.Parameters.Add("@procedure_name", AseDbType.VarChar).Value = procedureName;
 
                 if (owner?.Length > 0)
                 {
-                    aseCommand.Parameters.Add("@procedure_owner", AseDbType.VarChar).Value = owner;
+                    parameterMetadataCommand.Parameters.Add("@procedure_owner", AseDbType.VarChar).Value = owner;
                 }
 
-                try
+                using (var reader = parameterMetadataCommand.ExecuteReader())
                 {
-                    using (var reader = aseCommand.ExecuteReader())
+                    var isFirstParameter = true;
+
+                    var procedureNameOrdinal = reader.GetOrdinal("column_name");
+                    var typeNameOrdinal = reader.GetOrdinal("type_name");
+                    var sqlDataTypeOrdinal = reader.GetOrdinal("sql_data_type");
+                    var nullableOrdinal = reader.GetOrdinal("nullable");
+                    var precisionOrdinal = reader.GetOrdinal("precision");
+                    var lengthOrdinal = reader.GetOrdinal("length");
+                    var scaleOrdinal = reader.GetOrdinal("scale");
+
+                    while (reader.Read())
                     {
-                        var isFirstParameter = true;
+                        var parameterName = reader.GetString(procedureNameOrdinal);
 
-                        while (reader.Read())
+                        if (!parameterName.StartsWith("@"))
                         {
-                            var parameterName = reader.GetString(3);
+                            parameterName = "@" + parameterName;
+                        }
 
-                            if (!parameterName.StartsWith("@"))
+                        var dbType = default(AseDbType);
+
+                        if (!reader.IsDBNull(typeNameOrdinal) && !AseDbTypeNameMap.TryGetValue(reader.GetString(typeNameOrdinal), out dbType))
+                        {
+                            dbType = AseDbTypeCodeMap[reader.GetInt16(sqlDataTypeOrdinal)];
+                        }
+
+                        var isNullable = false;
+                        if (!reader.IsDBNull(nullableOrdinal))
+                        {
+                            isNullable = reader.GetInt16(nullableOrdinal) != 0;
+                        }
+
+                        byte precision = 0;
+                        byte scale = 0;
+
+                        if (HasPrecisionAndScale(dbType))
+                        {
+                            if (!reader.IsDBNull(precisionOrdinal))
                             {
-                                parameterName = "@" + parameterName;
+                                precision = reader.GetByte(precisionOrdinal);
                             }
 
-                            var isNullable = false;
-                            if (!reader.IsDBNull(11))
-                            {
-                                isNullable = reader.GetInt16(11) != 0;
-                            }
-
-                            byte precision = 0;
-                            if (!reader.IsDBNull(7))
-                            {
-                                precision = reader.GetByte(7);
-                            }
-
-                            var size = 0;
-                            if (!reader.IsDBNull(8))
-                            {
-                                size = reader.GetInt16(8);
-                            }
-
-                            byte scale = 0;
-                            if (!reader.IsDBNull(9))
+                            if (!reader.IsDBNull(scaleOrdinal))
                             {
                                 try
                                 {
-                                    scale = reader.GetByte(9);
+                                    scale = reader.GetByte(scaleOrdinal);
                                 }
                                 catch (FormatException)
                                 {
                                     // Swallow the FormatException if it's because the value is "NULL"
-                                    if (!string.Equals(reader.GetString(9).Trim(), "NULL", StringComparison.OrdinalIgnoreCase))
+                                    if (!string.Equals(reader.GetString(scaleOrdinal).Trim(), "NULL", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        throw; 
+                                        throw;
                                     }
                                 }
                             }
-
-                            var dbType = default(AseDbType);
-
-                            if (!reader.IsDBNull(6) && !AseDbTypeNameMap.TryGetValue(reader.GetString(6), out dbType))
-                            {
-                                dbType = AseDbTypeCodeMap[reader.GetInt16(16)];
-                            }
-
-                            var parameter = new AseParameter(parameterName, dbType, size) { IsNullable = isNullable, Precision = precision, Scale = scale };
-
-                            if (isFirstParameter)
-                            {
-                                parameter.Direction = ParameterDirection.ReturnValue;
-                                isFirstParameter = false;
-                            }
-                            else
-                            {
-                                try
-                                {
-                                    if (reader.FieldCount > 21 && !reader.IsDBNull(21))
-                                    {
-                                        if (string.Equals(reader.GetString(21), "out", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            parameter.Direction = ParameterDirection.Output;
-                                        }
-                                    }
-                                }
-                                catch (IndexOutOfRangeException) // TODO - this shouldn't happen with the FieldCount check above.
-                                {
-                                }
-                            }
-                            command.Parameters.Add(parameter);
                         }
+
+                        var size = 0;
+                        if (!reader.IsDBNull(lengthOrdinal))
+                        {
+                            size = reader.GetInt16(lengthOrdinal);
+                        }
+                            
+
+                        var parameter = new AseParameter(parameterName, dbType, size) { IsNullable = isNullable, Precision = precision, Scale = scale };
+
+                        if (isFirstParameter)
+                        {
+                            parameter.Direction = ParameterDirection.ReturnValue;
+                            isFirstParameter = false;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                // Get the mode.
+                                if (reader.FieldCount > 21 && !reader.IsDBNull(21))
+                                {
+                                    if (string.Equals(reader.GetString(21), "out", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        parameter.Direction = ParameterDirection.Output;
+                                    }
+                                }
+                            }
+                            catch (IndexOutOfRangeException) // TODO - this shouldn't happen with the FieldCount check above.
+                            {
+                            }
+                        }
+                        command.Parameters.Add(parameter);
                     }
                 }
-                catch (Exception ex)
-                {
-                    throw ex; // TODO - this doesn't look right. 
-                }
+            }
+        }
+
+        private static bool HasPrecisionAndScale(AseDbType aseDbType)
+        {
+            switch (aseDbType)
+            {
+                case AseDbType.Double:
+                case AseDbType.Decimal:
+                case AseDbType.Money:
+                case AseDbType.Numeric:
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -405,18 +442,19 @@ namespace AdoNetCore.AseClient
 
         protected override string GetParameterName(int parameterOrdinal)
         {
-            if (parameterOrdinal <= 0)
-            {
-                throw new AseException(new AseError { IsError = true, IsFromClient = true, MessageNumber = 30070});
-            }
-            return "@p" + parameterOrdinal;
+            return _GetParameterName(parameterOrdinal);
         }
 
         protected override string GetParameterPlaceholder(int parameterOrdinal)
         {
+            return _GetParameterName(parameterOrdinal);
+        }
+
+        private static string _GetParameterName(int parameterOrdinal)
+        {
             if (parameterOrdinal <= 0)
             {
-                throw new AseException(new AseError { IsError = true, IsFromClient = true, MessageNumber = 30070 });
+                throw new AseException(new AseError {IsError = true, IsFromClient = true, MessageNumber = 30070});
             }
 
             return "@p" + parameterOrdinal;

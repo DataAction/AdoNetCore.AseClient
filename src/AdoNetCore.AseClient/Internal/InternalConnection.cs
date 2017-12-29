@@ -219,7 +219,7 @@ namespace AdoNetCore.AseClient.Internal
                 else
                 {
                     rowsAffectedSource?.SetResult(doneHandler.RowsAffected);
-                    readerSource?.SetResult(new AseDataReader(dataReaderHandler.Results()));
+                    readerSource?.SetResult(new AseDataReader(dataReaderHandler.Results(), command));
                 }
             }
             catch (Exception ex)

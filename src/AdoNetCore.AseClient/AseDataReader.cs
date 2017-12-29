@@ -12,14 +12,16 @@ namespace AdoNetCore.AseClient
         private readonly TableResult[] _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
+        private readonly AseCommand _command;
 
 #if !NETCORE_OLD
         private DataTable _currentSchemaTable;
 #endif
 
-        internal AseDataReader(TableResult[] results)
+        internal AseDataReader(TableResult[] results, AseCommand command)
         {
             _results = results;
+            _command = command;
             NextResult();
         }
 
@@ -661,27 +663,31 @@ namespace AdoNetCore.AseClient
             columns.Add("NonVersionedProviderType", typeof(int));
             columns.Add("IsColumnSet");
 
+            string baseCatalogNameValue = null;
+            string baseSchemaNameValue = null;
+            string baseTableNameValue = null;
+
             for (var i = 0; i < formats.Length; i++)
             {
                 var column = formats[i];
                 var row = table.NewRow();
 
-                row[columnName] = column.ColumnLabel; //todo: ColumnName or ColumnLabel?
+                row[columnName] = string.IsNullOrWhiteSpace(column.ColumnLabel) ? column.ColumnName : column.ColumnLabel;
                 row[columnOrdinal] = i;
                 row[columnSize] = column.Length ?? -1;
                 row[numericPrecision] = column.Precision ?? -1;
                 row[numericScale] = column.Scale ?? -1;
-                row[isUnique] = false; //todo: Does TDS provide this?
-                row[isKey] = false; //todo: Does TDS provide this?
+                row[isUnique] = false; // This gets set below.
+                row[isKey] = false; // This gets set below.
                 row[baseServerName] = string.Empty;
                 row[baseCatalogName] = column.CatalogName;
-                row[baseColumnName] = column.ColumnName; //todo: ColumnName or ColumnLabel?
+                row[baseColumnName] = column.ColumnName;
                 row[baseSchemaName] = column.SchemaName;
                 row[baseTableName] = column.TableName;
                 row[dataType] = TypeMap.GetNetType(column);
                 row[allowDBNull] = column.IsNullable;
                 row[providerType] = (DbType)column.DataType;
-                row[isAliased] = !string.Equals(column.ColumnLabel, column.ColumnName, StringComparison.OrdinalIgnoreCase); //todo: is this what we're supposed to check?
+                row[isAliased] = !string.IsNullOrWhiteSpace(column.ColumnLabel);
                 row[isExpression] = false; //todo?
                 row[isIdentity] = false; //todo?
                 row[isAutoIncrement] = false; //todo?
@@ -692,6 +698,65 @@ namespace AdoNetCore.AseClient
                 row[dataTypeName] = $"{column.DataType}";
 
                 table.Rows.Add(row);
+
+                if (string.IsNullOrEmpty(baseTableNameValue))
+                {
+                    baseTableNameValue = column.TableName;
+                    baseSchemaNameValue = column.SchemaName;
+                    baseCatalogNameValue = column.CatalogName;
+                }
+            }
+
+            // Try to load the key info
+            using (var command = _command.Connection.CreateCommand())
+            {
+                command.CommandText = $"{baseCatalogNameValue}..sp_oledb_getindexinfo";
+                command.CommandType = CommandType.StoredProcedure;
+
+                var tableName = command.CreateParameter();
+                tableName.ParameterName = "@table_name";
+                tableName.Value = baseTableNameValue;
+                command.Parameters.Add(tableName);
+
+                var tableOwner = command.CreateParameter();
+                tableOwner.ParameterName = "@table_owner";
+                tableOwner.Value = baseSchemaNameValue;
+                command.Parameters.Add(tableOwner);
+
+                var tableQualifier = command.CreateParameter();
+                tableQualifier.ParameterName = "@table_qualifier";
+                tableQualifier.Value = baseCatalogNameValue;
+                command.Parameters.Add(tableQualifier);
+
+                try
+                {
+                    using (var keyInfoDataReader = command.ExecuteReader())
+                    {
+                        while (keyInfoDataReader.Read())
+                        {
+                            var keyColumnName = keyInfoDataReader["COLUMN_NAME"].ToString();
+                            var keySchemaName = keyInfoDataReader["TABLE_SCHEMA"].ToString();
+                            var keyCatalogName = keyInfoDataReader["TABLE_CATALOG"].ToString();
+
+                            foreach (DataRow row in table.Rows)
+                            {
+                                // Use the base column name in case the column is aliased.
+                                if (
+                                    string.Equals(keyColumnName, row[baseColumnName].ToString(), StringComparison.OrdinalIgnoreCase) && 
+                                    string.Equals(keySchemaName, row[baseSchemaName].ToString(), StringComparison.OrdinalIgnoreCase)&& 
+                                    string.Equals(keyCatalogName, row[baseCatalogName].ToString(), StringComparison.OrdinalIgnoreCase))
+                                {
+                                    row[isKey] = (bool)keyInfoDataReader["PRIMARY_KEY"];
+                                    row[isUnique] = (bool)keyInfoDataReader["UNIQUE"];
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignored
+                }
             }
 
             _currentSchemaTable = table;

@@ -189,10 +189,24 @@ namespace AdoNetCore.AseClient
                     aseCommand.ExecuteReader(CommandBehavior.SchemaOnly | CommandBehavior.KeyInfo))
                 {
                     dataTable = aseDataReader.GetSchemaTable();
-//                    if (aseDataReader._missingKey != null) // TODO - this depends on the DataSet branch where schema is loaded.
-//                    {
-//                        throw new MissingPrimaryKeyException(aseDataReader._missingKey);
-//                    }
+
+                    var isKeyColumn = dataTable.Columns["IsKey"];
+                    bool hasKey = false;
+
+                    foreach (DataRow columnDescriptorRow in dataTable.Rows)
+                    {
+                        hasKey |= (bool) columnDescriptorRow[isKeyColumn];
+
+                        if (hasKey)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (!hasKey) 
+                    {
+                        throw new MissingPrimaryKeyException("Cannot generate SQL statements if there is no unique column in the source command.");
+                    }
                 }
             }
             return dataTable;

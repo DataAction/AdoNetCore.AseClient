@@ -13,7 +13,9 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
     * AseClientPermission - Stubs only in .NET Core 2.0+. CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
     * AseClientPermissionAttribute - Stubs only in .NET Core 2.0+. CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas).
     * AseCommand - in progress
+    * AseCommandBuilder
     * AseConnection - in progress
+    * AseDataAdapter
     * AseParameter
     * AseParameterCollection
     * AseDataReader - in progress
@@ -43,10 +45,8 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
         * [AseFailoverException](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409597900.html)
 * The following types are not yet supported:
     * [AseClientFactory](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409534226.html) - waiting on .NET Core 2.1 for this type to be supported.
-    * [AseCommandBuilder](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409546398.html) - TODO - depends on .NET Core 2.0.
     * [AseConnectionPool](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409558524.html) - TODO - where is this exposed?
     * [AseConnectionPoolManager](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409559633.html) - TODO - where is this exposed?
-    * [AseDataAdapter](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409561039.html) - TODO - depends on .NET Core 2.0.
 
 * Performance equivalent to or better than that of `Sybase.AdoNet4.AseClient` provided by SAP. This should be possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
 * Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)

@@ -2,7 +2,6 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Text;
 
 namespace AdoNetCore.AseClient
 {
@@ -41,91 +40,91 @@ namespace AdoNetCore.AseClient
             Value = value ?? throw new ArgumentNullException();
             ParameterName = parameterName;
 
-            if (value == DBNull.Value)
-            {
-                // Do nothing.
-            }
-            else if (value is int)
-            {
-                AseDbType = AseDbType.Integer;
-            }
-            else if (value is short)
-            {
-                AseDbType = AseDbType.SmallInt;
-            }
-            else if (value is long)
-            {
-                AseDbType = AseDbType.BigInt; // NOTE: - long is not supported by the SAP AseClient.
-            }
-            else if (value is uint)
-            {
-                AseDbType = AseDbType.UnsignedInt; // NOTE: - uint is not supported by the SAP AseClient.
-            }
-            else if (value is ushort)
-            {
-                AseDbType = AseDbType.UnsignedSmallInt; // NOTE: - ushort is not supported by the SAP AseClient.
-            }
-            else if (value is ulong)
-            {
-                AseDbType = AseDbType.UnsignedBigInt; // NOTE: - ulong is not supported by the SAP AseClient.
-            }
-            else if (value is byte)
-            {
-                AseDbType = AseDbType.TinyInt;
-            }
-            else if (value is sbyte)
-            {
-                AseDbType = AseDbType.TinyInt;
-            }
-            else if (value is bool)
-            {
-                AseDbType = AseDbType.Bit;
-            }
-            else if (value is float)
-            {
-                AseDbType = AseDbType.Real;
-            }
-            else if (value is double)
-            {
-                AseDbType = AseDbType.Double;
-            }
-            else if (value is decimal)
-            {
-                AseDbType = AseDbType.Decimal;
-            }
-            else if (value is Guid)
-            {
-                AseDbType = AseDbType.Binary;
-                Size = 16;
-            }
-            else if (value is DateTime)
-            {
-                AseDbType = AseDbType.DateTime;
-            }
-            else if (value is byte[])
-            {
-                AseDbType = AseDbType.Binary;
-                Size = ((byte[])value).Length;
-            }
-            else if (value is char) // NOTE: - char is not supported by the SAP AseClient.
-            {
-                AseDbType = AseDbType.UniChar;
-                Size = Encoding.Unicode.GetByteCount(new[] { (char)value });
-            }
-            else if (value is char[]) // NOTE: - char[] is not supported by the SAP AseClient.
-            {
-                AseDbType = AseDbType.UniChar;
-                Size = Encoding.Unicode.GetByteCount((char[])value);
-            }
-            else if (value is string)
-            {
-                AseDbType = AseDbType.UniChar;
-                Size = Encoding.Unicode.GetByteCount((string)value);
-            }
-            else // AnsiString, AnsiStringFixedLength, Xml, Date, DateTime2, DateTimeOffset, Time, VarNumeric, Guid, Currency, Object.
-            {
-                throw new NotSupportedException("Inference of data type not supported, add the parameter explicitly.");
-            }
+            //if (value == DBNull.Value)
+            //{
+            //    // Do nothing.
+            //}
+            //else if (value is int)
+            //{
+            //    AseDbType = AseDbType.Integer;
+            //}
+            //else if (value is short)
+            //{
+            //    AseDbType = AseDbType.SmallInt;
+            //}
+            //else if (value is long)
+            //{
+            //    AseDbType = AseDbType.BigInt; // NOTE: - long is not supported by the SAP AseClient.
+            //}
+            //else if (value is uint)
+            //{
+            //    AseDbType = AseDbType.UnsignedInt; // NOTE: - uint is not supported by the SAP AseClient.
+            //}
+            //else if (value is ushort)
+            //{
+            //    AseDbType = AseDbType.UnsignedSmallInt; // NOTE: - ushort is not supported by the SAP AseClient.
+            //}
+            //else if (value is ulong)
+            //{
+            //    AseDbType = AseDbType.UnsignedBigInt; // NOTE: - ulong is not supported by the SAP AseClient.
+            //}
+            //else if (value is byte)
+            //{
+            //    AseDbType = AseDbType.TinyInt;
+            //}
+            //else if (value is sbyte)
+            //{
+            //    AseDbType = AseDbType.TinyInt;
+            //}
+            //else if (value is bool)
+            //{
+            //    AseDbType = AseDbType.Bit;
+            //}
+            //else if (value is float)
+            //{
+            //    AseDbType = AseDbType.Real;
+            //}
+            //else if (value is double)
+            //{
+            //    AseDbType = AseDbType.Double;
+            //}
+            //else if (value is decimal)
+            //{
+            //    AseDbType = AseDbType.Decimal;
+            //}
+            //else if (value is Guid)
+            //{
+            //    AseDbType = AseDbType.Binary;
+            //    Size = 16;
+            //}
+            //else if (value is DateTime)
+            //{
+            //    AseDbType = AseDbType.DateTime;
+            //}
+            //else if (value is byte[])
+            //{
+            //    AseDbType = AseDbType.Binary;
+            //    Size = ((byte[])value).Length;
+            //}
+            //else if (value is char) // NOTE: - char is not supported by the SAP AseClient.
+            //{
+            //    AseDbType = AseDbType.UniChar;
+            //    Size = Encoding.Unicode.GetByteCount(new[] { (char)value });
+            //}
+            //else if (value is char[]) // NOTE: - char[] is not supported by the SAP AseClient.
+            //{
+            //    AseDbType = AseDbType.UniChar;
+            //    Size = Encoding.Unicode.GetByteCount((char[])value);
+            //}
+            //else if (value is string)
+            //{
+            //    AseDbType = AseDbType.UniChar;
+            //    Size = Encoding.Unicode.GetByteCount((string)value);
+            //}
+            //else // AnsiString, AnsiStringFixedLength, Xml, Date, DateTime2, DateTimeOffset, Time, VarNumeric, Guid, Currency, Object.
+            //{
+            //    throw new NotSupportedException("Inference of data type not supported, add the parameter explicitly.");
+            //}
         }
 
         /// <summary>

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Data;
 using System.Text;
 using System.Data.Common;
+using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -31,8 +32,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is bool i1)
             {
                 return i1;
@@ -49,8 +48,6 @@ namespace AdoNetCore.AseClient
         public override byte GetByte(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is byte i1)
             {
@@ -136,8 +133,6 @@ namespace AdoNetCore.AseClient
         public override char GetChar(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is char i1)
             {
@@ -228,8 +223,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is DateTime i1)
             {
                 return i1;
@@ -247,8 +240,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is TimeSpan i1)
             {
                 return i1;
@@ -260,8 +251,6 @@ namespace AdoNetCore.AseClient
         public override decimal GetDecimal(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is decimal i1)
             {
@@ -279,8 +268,6 @@ namespace AdoNetCore.AseClient
         public override double GetDouble(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is double i1)
             {
@@ -306,8 +293,6 @@ namespace AdoNetCore.AseClient
         public override float GetFloat(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is float i1)
             {
@@ -351,8 +336,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is short i1)
             {
                 return i1;
@@ -369,8 +352,6 @@ namespace AdoNetCore.AseClient
         public override int GetInt32(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is int i1)
             {
@@ -389,8 +370,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is long i1)
             {
                 return i1;
@@ -407,8 +386,6 @@ namespace AdoNetCore.AseClient
         public ushort GetUInt16(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is ushort i1)
             {
@@ -427,8 +404,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is uint i1)
             {
                 return i1;
@@ -446,8 +421,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is ulong i1)
             {
                 return i1;
@@ -464,8 +437,6 @@ namespace AdoNetCore.AseClient
         public override string GetString(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is string s)
             {
@@ -489,15 +460,6 @@ namespace AdoNetCore.AseClient
         //{
         //    throw new NotImplementedException();
         //}
-
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        private static void AssertNotDBNull(object obj)
-        {
-            if (obj == DBNull.Value)
-            {
-                throw new AseException(new AseError { IsError = true, IsFromClient = true, IsFromServer = false, IsInformation = false, IsWarning = false, Message = "Cannot read DBNull as type." });
-            }
-        }
 
         public override string GetName(int i)
         {
@@ -616,7 +578,6 @@ namespace AdoNetCore.AseClient
 
         private void EnsureSchemaTable()
         {
-            //return;
             if (_currentSchemaTable != null || FieldCount == 0)
             {
                 return;
@@ -680,23 +641,23 @@ namespace AdoNetCore.AseClient
                 row[numericPrecision] = column.Precision ?? -1;
                 row[numericScale] = column.Scale ?? -1;
                 row[isUnique] = false; // This gets set below.
-                row[isKey] = false; // This gets set below.
+                row[isKey] = false; // This gets set below - no idea why TDS_ROW_KEY is never set.
                 row[baseServerName] = string.Empty;
                 row[baseCatalogName] = column.CatalogName;
                 row[baseColumnName] = column.ColumnName;
                 row[baseSchemaName] = column.SchemaName;
                 row[baseTableName] = column.TableName;
                 row[dataType] = TypeMap.GetNetType(column);
-                row[allowDBNull] = column.IsNullable;
+                row[allowDBNull] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_NULLALLOWED);
                 row[providerType] = (DbType)column.DataType;
                 row[isAliased] = !string.IsNullOrWhiteSpace(column.ColumnLabel);
-                row[isExpression] = false; //todo?
-                row[isIdentity] = false; //todo?
-                row[isAutoIncrement] = false; //todo?
-                row[isRowVersion] = false; //todo?
-                row[isHidden] = false; //todo?
-                row[isLong] = false; //todo?
-                row[isReadOnly] = false; //todo?
+                row[isExpression] = false; // It doesn't seem to matter that this isn't supported. The column gets flagged as TDS_ROW_UPDATABLE|TDS_ROW_NULLALLOWED so it doesn't cause an issue when an insert/update ignores it.
+                row[isIdentity] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_IDENTITY); 
+                row[isAutoIncrement] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_IDENTITY);
+                row[isRowVersion] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_VERSION);
+                row[isHidden] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_HIDDEN);
+                row[isLong] = Array.IndexOf(new[] {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT}, column.DataType) >= 0;
+                row[isReadOnly] = !column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_UPDATABLE);
                 row[dataTypeName] = $"{column.DataType}";
 
                 table.Rows.Add(row);
@@ -710,7 +671,7 @@ namespace AdoNetCore.AseClient
             }
 
             // Try to load the key info
-            if ((_behavior & CommandBehavior.KeyInfo) == CommandBehavior.KeyInfo) 
+            //if ((_behavior & CommandBehavior.KeyInfo) == CommandBehavior.KeyInfo) 
             {
                 if (_command.Connection == null)
                 {

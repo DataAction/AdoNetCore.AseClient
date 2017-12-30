@@ -1,146 +1,361 @@
 ﻿#if !NETCORE_OLD
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 
 namespace AdoNetCore.AseClient
 {
-    // TODO - merge the two adapters.
-    // TODO - tests.
 
+    /// <summary>
+    /// This types helps commit INSERT/UPDATE/DELETE operations from a <see cref="DataSet"/> or <see cref="DataTable"/> to the databae.
+    /// </summary>
     public sealed class AseDataAdapter : DbDataAdapter, IDbDataAdapter
     {
-        private readonly Hashtable _cmdList = new Hashtable();
-        private readonly AseDataAdapter2 _oldAdapter;
+        /// <summary>
+        /// The commands that will be batached up for execution.
+        /// </summary>
+        private readonly List<AseCommand> _cmdList = new List<AseCommand>();
 
+        /// <summary>
+        /// Whether or not this is disposed.
+        /// </summary>
+        private bool _isDisposed;
+
+        /// <summary>
+        /// The DELETE command template.
+        /// </summary>
+        private AseCommand _deleteCmd;
+
+        /// <summary>
+        /// The INSERT command template.
+        /// </summary>
+        private AseCommand _insertCmd;
+
+        /// <summary>
+        /// The SELECT command.
+        /// </summary>
+        private AseCommand _selectCmd;
+
+        /// <summary>
+        /// The UPDATE command template.
+        /// </summary>
+        private AseCommand _updateCmd;
+
+        /// <summary>
+        /// An optional <see cref="AseCommandBuilder"/> for use when generating the <see cref="DeleteCommand"/>, <see cref="InsertCommand"/>, and <see cref="UpdateCommand"/> respectively.
+        /// </summary>
+        private AseCommandBuilder _builder;
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseDataAdapter"/> instance.
+        /// </summary>
         public AseDataAdapter()
         {
-            _oldAdapter = new AseDataAdapter2(this);
-            _oldAdapter.RowUpdated += oldAdapter_RowUpdated;
-            _oldAdapter.RowUpdating += oldAdapter_RowUpdating;
         }
 
+        /// <summary>
+        /// Constructor function for an <see cref="AseDataAdapter"/> instance.
+        /// </summary>
+        /// <param name="selectCommand">The SELECT command to initiaise with.</param>
+        // ReSharper disable once UnusedMember.Global
         public AseDataAdapter(AseCommand selectCommand)
         {
-            _oldAdapter = new AseDataAdapter2(this, selectCommand);
-            _oldAdapter.RowUpdated += oldAdapter_RowUpdated;
-            _oldAdapter.RowUpdating += oldAdapter_RowUpdating;
+            SelectCommand = selectCommand;
         }
 
+        /// <summary>
+        /// Constructor function for an <see cref="AseDataAdapter"/> instance.
+        /// </summary>
+        /// <param name="selectCommandText">The SELECT command to initiaise with.</param>
+        /// <param name="selectConnection">The <see cref="AseConnection"/> to load data with.</param>
         public AseDataAdapter(string selectCommandText, AseConnection selectConnection)
         {
-            _oldAdapter = new AseDataAdapter2(this, selectCommandText, selectConnection);
-            _oldAdapter.RowUpdated += oldAdapter_RowUpdated;
-            _oldAdapter.RowUpdating += oldAdapter_RowUpdating;
+            SelectCommand = new AseCommand(selectConnection) { CommandText = selectCommandText };
         }
 
+        /// <summary>
+        /// Constructor function for an <see cref="AseDataAdapter"/> instance.
+        /// </summary>
+        /// <param name="selectCommandText">The SELECT command to initiaise with.</param>
+        /// <param name="selectConnectionString">The connection to load data with.</param>
+        // ReSharper disable once UnusedMember.Global
         public AseDataAdapter(string selectCommandText, string selectConnectionString)
         {
-            _oldAdapter = new AseDataAdapter2(this, selectCommandText, selectConnectionString);
-            _oldAdapter.RowUpdated += oldAdapter_RowUpdated;
-            _oldAdapter.RowUpdating += oldAdapter_RowUpdating;
+            SelectCommand = new AseCommand(new AseConnection(selectConnectionString)) { CommandText = selectCommandText };
         }
 
-        private void oldAdapter_RowUpdated(object obj, AseRowUpdatedEventArgs args)
+        /// <summary>
+        /// Desctructor function for an <see cref="AseDataAdapter"/> instance.
+        /// </summary>
+        ~AseDataAdapter()
         {
-            OnRowUpdated(args);
+            Dispose(false);
         }
 
-        private void oldAdapter_RowUpdating(object obj, AseRowUpdatingEventArgs args)
+        protected override void Dispose(bool disposing)
         {
-            OnRowUpdating(args);
+            if (_isDisposed)
+            {
+                return;
+            }
+            if (disposing)
+            {
+                _deleteCmd?.Dispose();
+                _insertCmd?.Dispose();
+                _selectCmd?.Dispose();
+                _updateCmd?.Dispose();
+
+                RowUpdated = null;
+                RowUpdating = null;
+
+                base.Dispose(true);
+            }
+            _isDisposed = true;
         }
 
+        /// <summary>
+        /// The DELETE command template.
+        /// </summary>
         public new AseCommand DeleteCommand
         {
-            get => _oldAdapter.DeleteCommand;
-            set => _oldAdapter.DeleteCommand = value;
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                return _deleteCmd ?? _builder?.GetDeleteCommand();
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                _deleteCmd = value;
+
+                if (_deleteCmd == null || _deleteCmd.Connection != null || _selectCmd == null)
+                {
+                    return;
+                }
+
+                _deleteCmd.Connection = _selectCmd.Connection;
+            }
         }
 
+        /// <summary>
+        /// The DELETE command template.
+        /// </summary>
         IDbCommand IDbDataAdapter.DeleteCommand
         {
             get => DeleteCommand;
             set => DeleteCommand = (AseCommand) value;
         }
 
+        /// <summary>
+        /// The INSERT command template.
+        /// </summary>
         public new AseCommand InsertCommand
         {
-            get => _oldAdapter.InsertCommand;
-            set => _oldAdapter.InsertCommand = value;
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                return _insertCmd ?? _builder?.GetInsertCommand();
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                _insertCmd = value;
+
+                if (_insertCmd == null || _insertCmd.Connection != null || _selectCmd == null)
+                {
+                    return;
+                }
+
+                _insertCmd.Connection = _selectCmd.Connection;
+            }
         }
 
+        /// <summary>
+        /// The INSERT command template.
+        /// </summary>
         IDbCommand IDbDataAdapter.InsertCommand
         {
             get => InsertCommand;
             set => InsertCommand = (AseCommand) value;
         }
 
+        /// <summary>
+        /// The SELECT command.
+        /// </summary>
         public new AseCommand SelectCommand
         {
-            get => _oldAdapter.SelectCommand;
-            set => _oldAdapter.SelectCommand = value;
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                return _selectCmd;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                _selectCmd = value;
+            }
         }
 
+        /// <summary>
+        /// The SELECT command.
+        /// </summary>
         IDbCommand IDbDataAdapter.SelectCommand
         {
             get => SelectCommand;
             set => SelectCommand = (AseCommand) value;
         }
 
+        /// <summary>
+        /// The UPDATE command template.
+        /// </summary>
         public new AseCommand UpdateCommand
         {
-            get => _oldAdapter.UpdateCommand;
-            set => _oldAdapter.UpdateCommand = value;
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                return _updateCmd ?? _builder?.GetUpdateCommand();
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                _updateCmd = value;
+
+                if (_updateCmd == null || _updateCmd.Connection != null || _selectCmd == null)
+                {
+                    return;
+                }
+
+                _updateCmd.Connection = _selectCmd.Connection;
+            }
         }
 
+        /// <summary>
+        /// The UPDATE command template.
+        /// </summary>
         IDbCommand IDbDataAdapter.UpdateCommand
         {
             get => UpdateCommand;
             set => UpdateCommand = (AseCommand) value;
         }
 
+        /// <summary>
+        /// An optional <see cref="AseCommandBuilder"/> for use when generating the <see cref="DeleteCommand"/>, <see cref="InsertCommand"/>, and <see cref="UpdateCommand"/> respectively.
+        /// </summary>
         public AseCommandBuilder CommandBuilder
         {
-            get => _oldAdapter.CommandBuilder;
-            set => _oldAdapter.CommandBuilder = value;
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                return _builder;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseDataAdapter));
+                }
+
+                _builder = value;
+
+                if (_builder == null || _builder.DataAdapter == this)
+                {
+                    return;
+                }
+
+                _builder.DataAdapter = this;
+            }
         }
 
+        /// <summary>
+        /// Gets or sets the number of rows that are processed in each round-trip to the server.
+        /// </summary>
         public override int UpdateBatchSize { get; set; } = 1;
 
         protected override int AddToBatch(IDbCommand command)
         {
-            int count = _cmdList.Count;
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
 
             var aseCommand = (AseCommand) ((ICloneable) command).Clone();
 
-            _cmdList.Add(count, aseCommand);
+            _cmdList.Add(aseCommand);
 
-            return count;
+            return _cmdList.Count - 1;
         }
 
         protected override void ClearBatch()
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
+
             _cmdList.Clear();
         }
 
         protected override int ExecuteBatch()
         {
-            var values = _cmdList.Values;
-            var num = 0;
-
-            foreach (DbCommand dbCommand in values)
+            if (_isDisposed)
             {
-                dbCommand.ExecuteNonQuery();
-                ++num;
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
+            
+            // NOTE - naive implementation - this should be a single execution - not a loop.
+            foreach (var command in _cmdList)
+            {
+                command.ExecuteNonQuery();
             }
 
-            return num;
+            return _cmdList.Count;
         }
 
         protected override IDataParameter GetBatchedParameter(int commandIdentifier, int parameterIndex)
         {
-            return ((AseCommand) _cmdList[commandIdentifier]).Parameters[parameterIndex];
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
+
+            return _cmdList[commandIdentifier].Parameters[parameterIndex];
         }
 
         protected override void InitializeBatching()
@@ -154,17 +369,32 @@ namespace AdoNetCore.AseClient
         protected override RowUpdatedEventArgs CreateRowUpdatedEvent(DataRow dataRow, IDbCommand command,
             StatementType statementType, DataTableMapping tableMapping)
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
+
             return new AseRowUpdatedEventArgs(dataRow, command, statementType, tableMapping);
         }
 
         protected override RowUpdatingEventArgs CreateRowUpdatingEvent(DataRow dataRow, IDbCommand command,
             StatementType statementType, DataTableMapping tableMapping)
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
+
             return new AseRowUpdatingEventArgs(dataRow, command, statementType, tableMapping);
         }
 
         protected override void OnRowUpdated(RowUpdatedEventArgs value)
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
+
             if (RowUpdated == null)
             {
                 return;
@@ -180,6 +410,11 @@ namespace AdoNetCore.AseClient
 
         protected override void OnRowUpdating(RowUpdatingEventArgs value)
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseDataAdapter));
+            }
+
             if (RowUpdating == null)
             {
                 return;
@@ -193,193 +428,10 @@ namespace AdoNetCore.AseClient
             RowUpdating(this, e);
         }
 
+        // ReSharper disable once EventNeverSubscribedTo.Global
         public event AseRowUpdatedEventHandler RowUpdated;
 
         public event AseRowUpdatingEventHandler RowUpdating;
-    }
-
-    internal sealed class AseDataAdapter2
-    {
-        private readonly AseDataAdapter _thisAdapter;
-        private bool _disposed;
-        private AseCommand _deleteCmd;
-        private AseCommand _insertCmd;
-        private AseCommand _selectCmd;
-        private AseCommand _updateCmd;
-        private AseCommandBuilder _builder;
-
-        internal AseDataAdapter2(AseDataAdapter realAdapter)
-        {
-            _thisAdapter = realAdapter;
-        }
-
-        internal AseDataAdapter2(AseDataAdapter realAdapter, AseCommand selectCommand)
-        {
-            SelectCommand = selectCommand;
-            _thisAdapter = realAdapter;
-        }
-
-        internal AseDataAdapter2(AseDataAdapter realAdapter, string selectCommandText, AseConnection selectConnection)
-        {
-            SelectCommand = new AseCommand(selectConnection) {CommandText = selectCommandText};
-            _thisAdapter = realAdapter;
-        }
-
-        internal AseDataAdapter2(AseDataAdapter realAdapter, string selectCommandText, string selectConnectionString)
-        {
-            SelectCommand = new AseCommand(new AseConnection(selectConnectionString)) {CommandText = selectCommandText};
-            _thisAdapter = realAdapter;
-        }
-
-        ~AseDataAdapter2()
-        {
-            Dispose(false);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (_disposed)
-            {
-                return;
-            }
-            if (disposing)
-            {
-                _deleteCmd?.Dispose();
-                _insertCmd?.Dispose();
-                _selectCmd?.Dispose();
-                _updateCmd?.Dispose();
-            }
-            _disposed = true;
-        }
-
-        internal AseCommand DeleteCommand
-        {
-            get => _deleteCmd ?? _builder?.GetDeleteCommand();
-            set
-            {
-                _deleteCmd = value;
-                if (_deleteCmd == null || _deleteCmd.Connection != null || _selectCmd == null)
-                    return;
-                _deleteCmd.Connection = _selectCmd.Connection;
-            }
-        }
-
-        internal AseCommand InsertCommand
-        {
-            get => _insertCmd ?? _builder?.GetInsertCommand();
-            set
-            {
-                _insertCmd = value;
-                if (_insertCmd == null || _insertCmd.Connection != null || _selectCmd == null)
-                {
-                    return;
-                }
-
-                _insertCmd.Connection = _selectCmd.Connection;
-            }
-        }
-
-        internal AseCommand SelectCommand
-        {
-            get => _selectCmd;
-            set => _selectCmd = value;
-        }
-
-        internal AseCommand UpdateCommand
-        {
-            get
-            {
-                AseCommand aseCommand = null;
-                try
-                {
-                    if (_updateCmd != null)
-                    {
-                        aseCommand = _updateCmd;
-                    }
-
-                    if (_builder != null)
-                    {
-                        aseCommand = _builder.GetUpdateCommand();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-                return aseCommand;
-            }
-            set
-            {
-                _updateCmd = value;
-                if (_updateCmd == null || _updateCmd.Connection != null || _selectCmd == null)
-                {
-                    return;
-                }
-
-                _updateCmd.Connection = _selectCmd.Connection;
-            }
-        }
-
-        internal AseCommandBuilder CommandBuilder
-        {
-            get => _builder;
-            set
-            {
-                _builder = value;
-                if (_builder == null || _builder.DataAdapter == _thisAdapter)
-                {
-                    return;
-                }
-
-                _builder.DataAdapter = _thisAdapter;
-            }
-        }
-
-        internal RowUpdatedEventArgs CreateRowUpdatedEvent(DataRow dataRow, IDbCommand command,
-            StatementType statementType, DataTableMapping tableMapping)
-        {
-            return new AseRowUpdatedEventArgs(dataRow, command, statementType, tableMapping);
-        }
-
-        internal RowUpdatingEventArgs CreateRowUpdatingEvent(DataRow dataRow, IDbCommand command,
-            StatementType statementType, DataTableMapping tableMapping)
-        {
-            return new AseRowUpdatingEventArgs(dataRow, command, statementType, tableMapping);
-        }
-
-        internal void OnRowUpdated(RowUpdatedEventArgs value)
-        {
-            if (RowUpdated == null)
-            {
-                return;
-            }
-
-            if (!(value is AseRowUpdatedEventArgs e))
-            {
-                return;
-            }
-
-            RowUpdated(_thisAdapter, e);
-        }
-
-        internal void OnRowUpdating(RowUpdatingEventArgs value)
-        {
-            if (RowUpdating == null)
-            {
-                return;
-            }
-
-            if (!(value is AseRowUpdatingEventArgs e))
-            {
-                return;
-            }
-
-            RowUpdating(_thisAdapter, e);
-        }
-
-        internal event AseRowUpdatedEventHandler RowUpdated;
-
-        internal event AseRowUpdatingEventHandler RowUpdating;
     }
 }
 #endif

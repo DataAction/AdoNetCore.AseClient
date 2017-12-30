@@ -12,8 +12,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
     {
         private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
 
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
+        [SetUp]
+        public void SetUp()
         {
             // Use SqlCommandBuilder.
             using (var connnection = new AseConnection(_connectionStrings["default"]))
@@ -29,7 +29,7 @@ BEGIN
 END";
                     command.ExecuteNonQuery();
 
-                    command.CommandText = "CREATE TABLE AseDataAdapterTests_Table1(ColumnId INT IDENTITY PRIMARY KEY, ColumnDescription VARCHAR(256) NOT NULL)";
+                    command.CommandText = "CREATE TABLE AseDataAdapterTests_Table1(ColumnId INT IDENTITY PRIMARY KEY, ColumnDescription VARCHAR(256) NOT NULL, ColumnNullable VARCHAR(256) NULL)";
                     command.ExecuteNonQuery();
 
                     for (var i = 0; i < 5; i++)
@@ -127,8 +127,8 @@ END";
             }
         }
 
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
+        [TearDown]
+        public void TearDown()
         {
             // Use SqlCommandBuilder.
             using (var connnection = new AseConnection(_connectionStrings["default"]))
@@ -158,7 +158,6 @@ END";
         [Test]
         public void AseAdapter_WithAseCommandBuilder_HasInsertUpdateDeleteCommands()
         {
-            // Use SqlCommandBuilder.
             using (var connnection = new AseConnection(_connectionStrings["default"]))
             {
                 connnection.Open();
@@ -214,6 +213,57 @@ END";
                     Assert.AreEqual(55, command.Parameters.Count);
                     Assert.AreEqual(ParameterDirection.ReturnValue, command.Parameters["@RETURN_VALUE"].Direction);
                     Assert.AreEqual(ParameterDirection.Output, command.Parameters["@o1"].Direction);
+                }
+            }
+        }
+
+        [Test]
+        public void AseAdapter_WithAseCommandBuilder_CanInsertUpdateAndDelete()
+        {
+            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            {
+                connnection.Open();
+
+                using (var adapter = new AseDataAdapter("SELECT ColumnId, ColumnDescription, ColumnNullable, COALESCE(ColumnNullable, 'Foo') AS ColumnCalculated FROM AseDataAdapterTests_Table1", connnection))
+                {
+                    using (new AseCommandBuilder(adapter))
+                    {
+                        var original = new DataTable("AseDataAdapterTests_Table1");
+                        adapter.FillSchema(original, SchemaType.Mapped);
+                        adapter.Fill(original);
+
+                        Assert.AreEqual(5, original.Rows.Count); // SELECT
+
+                        var updateRow = original.Rows.Find(1);
+                        Assert.IsNotNull(updateRow, "Did not find a row in AseDataAdapterTests_Table1 for update with ColumnId=1");
+                        updateRow["ColumnDescription"] = "an updated value"; // UPDATE
+
+                        var deleteRow = original.Rows.Find(3);
+                        Assert.IsNotNull(deleteRow, "Did not find a row in AseDataAdapterTests_Table1 for delete with ColumnId=3");
+                        deleteRow.Delete(); // DELETE
+
+                        original.Rows.Add(-1, "an inserted value"); // INSERT
+
+                        // Commit the changes to the database.
+                        adapter.Update(original);
+                        original.AcceptChanges();
+
+                        var fresh = new DataTable("AseDataAdapterTests_Table1");
+                        adapter.FillSchema(fresh, SchemaType.Mapped);
+                        adapter.Fill(fresh);
+
+                        Assert.AreEqual(5, fresh.Rows.Count); // SELECT
+
+                        updateRow = fresh.Rows.Find(1);
+                        Assert.IsNotNull(updateRow, "Did not find a row in AseDataAdapterTests_Table1 for update with ColumnId=1");
+                        Assert.AreEqual(updateRow["ColumnDescription"], "an updated value");
+
+                        deleteRow = fresh.Rows.Find(3);
+                        Assert.IsNull(deleteRow);
+
+                        var insertRow = fresh.Rows.Find(6); // Next identity value.
+                        Assert.IsNotNull(insertRow);
+                    }
                 }
             }
         }

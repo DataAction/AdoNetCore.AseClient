@@ -10,5 +10,15 @@
         /// Release a used internal connection back into the pool for reuse or replacement
         /// </summary>
         void Release(IInternalConnection connection);
+
+        /// <summary>
+        /// The number of connections in the pool.
+        /// </summary>
+        int PoolSize { get; }
+
+        /// <summary>
+        /// The number of connections available in the pool.
+        /// </summary>
+        int Available { get; }
     }
 }

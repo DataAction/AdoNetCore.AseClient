@@ -12,11 +12,21 @@ namespace AdoNetCore.AseClient.Internal
         //concurrency-related members
         private readonly object _mutex = new object();
         private readonly BlockingCollection<IInternalConnection> _available;
+
+        /// <summary>
+        /// The number of connections in the pool.
+        /// </summary>
         public int PoolSize { get; private set; }
+
 
         //regular members
         private readonly IConnectionParameters _parameters;
         private readonly IInternalConnectionFactory _connectionFactory;
+
+        /// <summary>
+        /// The number of connections available in the pool.
+        /// </summary>
+        public int Available => _available.Count;
 
         public ConnectionPool(IConnectionParameters parameters, IInternalConnectionFactory connectionFactory)
         {

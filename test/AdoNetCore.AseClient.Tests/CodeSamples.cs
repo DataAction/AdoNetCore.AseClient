@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
+using Dapper;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -63,6 +65,80 @@ BEGIN
     RETURN 0
 END";
                     command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"IF OBJECT_ID('CreateCustomer') IS NOT NULL 
+BEGIN 
+    DROP PROCEDURE CreateCustomer
+END";
+                    command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"CREATE PROCEDURE CreateCustomer
+(
+    @firstName VARCHAR(256),
+    @lastName VARCHAR(256)
+)
+AS 
+BEGIN 
+    INSERT INTO Customer
+    (
+        FirstName, 
+        LastName
+    ) 
+    VALUES 
+    (
+        @firstName,
+        @lastName
+    )
+
+    RETURN 0
+END";
+                    command.ExecuteNonQuery();
+
+
+                    command.CommandText =
+@"IF OBJECT_ID('CountCustomer') IS NOT NULL 
+BEGIN 
+    DROP PROCEDURE CountCustomer
+END";
+                    command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"CREATE PROCEDURE CountCustomer
+AS 
+BEGIN 
+    SELECT COUNT(1) FROM Customer
+
+    RETURN 0
+END";
+                    command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"IF OBJECT_ID('GetCustomerFirstName') IS NOT NULL 
+BEGIN 
+    DROP PROCEDURE GetCustomerFirstName
+END";
+                    command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"CREATE PROCEDURE GetCustomerFirstName
+( 
+    @lastName VARCHAR(256),
+    @firstName VARCHAR(256) OUTPUT
+)
+AS 
+BEGIN 
+    SELECT TOP 1 
+        @firstName = FirstName 
+    FROM 
+        Customer 
+    WHERE 
+        LastName = @lastName
+
+    RETURN 42
+END";
+                    command.ExecuteNonQuery();
                 }
             }
         }
@@ -88,6 +164,27 @@ END";
 @"IF OBJECT_ID('GetCustomer') IS NOT NULL 
 BEGIN 
     DROP PROCEDURE GetCustomer
+END";
+                    command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"IF OBJECT_ID('CreateCustomer') IS NOT NULL 
+BEGIN 
+    DROP PROCEDURE CreateCustomer
+END";
+                    command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"IF OBJECT_ID('CountCustomer') IS NOT NULL 
+BEGIN 
+    DROP PROCEDURE CountCustomer
+END";
+                    command.ExecuteNonQuery();
+
+                    command.CommandText =
+@"IF OBJECT_ID('GetCustomerFirstName') IS NOT NULL 
+BEGIN 
+    DROP PROCEDURE GetCustomerFirstName
 END";
                     command.ExecuteNonQuery();
                 }
@@ -171,7 +268,7 @@ END";
             }
         }
 
-        [Test, Ignore("This is throwing a NullReferenceException - requires investigation.")]
+        [Test]
         public void UseInputOutputAndReturnParametersWithASQLQuery()
         {
             var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
@@ -187,13 +284,15 @@ END";
                         Environment.NewLine +
                         "RETURN 42";
 
-                    command.Parameters.AddWithValue("@lastName", "Flintstone"); // Input parameter.
+                    command.Parameters.AddWithValue("@lastName", "Rubble"); // Input parameter.
 
                     var outputParameter = command.Parameters.Add("@firstName", AseDbType.VarChar);
                     outputParameter.Direction = ParameterDirection.Output;
 
                     var returnParameter = command.Parameters.Add("@returnValue", AseDbType.Integer);
-                    outputParameter.Direction = ParameterDirection.ReturnValue;
+                    outputParameter.Direction = ParameterDirection.ReturnValue; 
+
+                    Assert.Fail("BUG - this causes a NullReferenceException - the null value is attempted to be written to the TDS stream. Could be a more general issue with null. But DBNull.Value != null...");
 
                     command.ExecuteNonQuery();
 
@@ -201,6 +300,132 @@ END";
                     Console.WriteLine(returnParameter.Value); // 42
                 }
             }
+        }
+
+        [Test]
+        public void ExecuteAStoredProcedureAndReadResponseData()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "GetCustomer";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    command.Parameters.AddWithValue("@lastName", "Rubble");
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        // Get the results.
+                        while (reader.Read())
+                        {
+                            var firstName = reader.GetString(0);
+                            var lastName = reader.GetString(1);
+
+                            // Do something with the data...
+                        }
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void ExecuteAStoredProcedureThatReturnsNoResults()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CreateCustomer";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    command.Parameters.AddWithValue("@firstName", "Fred");
+                    command.Parameters.AddWithValue("@lastName", "Flintstone");
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+
+        [Test]
+        public void ExecuteAStoredProcedureThatReturnsAScalarValue()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CountCustomer";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var result = command.ExecuteScalar();
+                }
+            }
+        }
+
+        [Test]
+        public void UseInputOutputAndReturnParametersWithAStoredProcedure()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "GetCustomerFirstName";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    command.Parameters.AddWithValue("@lastName", "Rubble"); // Input parameter.
+
+                    var outputParameter = command.Parameters.Add("@firstName", AseDbType.VarChar);
+                    outputParameter.Direction = ParameterDirection.Output;
+
+                    var returnParameter = command.Parameters.Add("@returnValue", AseDbType.Integer);
+                    outputParameter.Direction = ParameterDirection.ReturnValue;
+
+                    Assert.Fail("BUG - this causes a NullReferenceException - the null value is attempted to be written to the TDS stream. Could be a more general issue with null. But DBNull.Value != null...");
+
+                    command.ExecuteNonQuery();
+
+                    Console.WriteLine(outputParameter.Value); // Fred
+                    Console.WriteLine(returnParameter.Value); // 42
+                }
+            }
+        }
+
+        [Test]
+        public void ExecuteAStoredProcedureAndReadResponseDataUsingDapper()
+        {
+            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                connection.Open();
+
+                var barneyRubble = connection.Query<Customer>("GetCustomer", new {lastName = "Rubble"}, commandType: CommandType.StoredProcedure).First();
+
+                // Do something with the result...
+            }
+        }
+
+        private sealed class Customer
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
         }
     }
 }

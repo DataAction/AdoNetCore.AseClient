@@ -230,21 +230,35 @@ using (var connection = new AseConnection(connectionString))
 
 ### Execute a SQL statement that returns no results
 ```C#
-using(var command = connection.CreateCommand())
-{
-    command.CommandText = "INSERT INTO Customer (FirstName, LastName) VALUES ('Fred', 'Flintstone')";
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
 
-    var recordsModified = command.ExecuteNonQuery();
+using (var connection = new AseConnection(connectionString))
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "INSERT INTO Customer (FirstName, LastName) VALUES ('Fred', 'Flintstone')";
+
+        var recordsModified = command.ExecuteNonQuery();
+    }
 }
 ```
 
 ### Execute a SQL statement that returns a scalar value
 ```C#
-using(var command = connection.CreateCommand())
-{
-    command.CommandText = "SELECT COUNT(*) FROM Customer";
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
 
-    var result = command.ExecuteScalar();
+using (var connection = new AseConnection(connectionString))
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "SELECT COUNT(*) FROM Customer";
+
+        var result = command.ExecuteScalar();
+    }
 }
 ```
 
@@ -255,17 +269,71 @@ using(var command = connection.CreateCommand())
 
 ### Execute a stored procedure and read response data
 ```C#
-// TODO 
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+using (var connection = new AseConnection(connectionString)
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "GetCustomer";
+        command.CommandType = CommandType.StoredProcedure;
+
+        command.Parameters.AddWithValue("@lastName", "Rubble");
+
+        using (var reader = command.ExecuteReader())
+        {
+            // Get the results.
+            while (reader.Read())
+            {
+                var firstName = reader.GetString(0);
+                var lastName = reader.GetString(1);
+
+                // Do something with the data...
+            }
+        }
+    }
+}
 ```
 
 ### Execute a stored procedure that returns no results
 ```C#
-// TODO 
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+using (var connection = new AseConnection(connectionString))
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "CreateCustomer";
+        command.CommandType = CommandType.StoredProcedure;
+
+        command.Parameters.AddWithValue("@firstName", "Fred");
+        command.Parameters.AddWithValue("@lastName", "Flintstone");
+
+        command.ExecuteNonQuery();
+    }
+}
 ```
 
 ### Execute a stored procedure that returns a scalar value
 ```C#
-// TODO 
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+using (var connection = new AseConnection(connectionString))
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "CountCustomer";
+        command.CommandType = CommandType.StoredProcedure;
+
+        var result = command.ExecuteScalar();
+    }
+}
 ```
 
 ### Use input, output, and return parameters with a stored procedure
@@ -273,7 +341,16 @@ using(var command = connection.CreateCommand())
 // TODO 
 ```
 
-### Dapper examples for all of the above
+### Execute a stored procedure and read response data with [Dapper](https://github.com/StackExchange/Dapper)
 ```C#
-// TODO 
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+using (var connection = new AseConnection(connectionString))
+{
+    connection.Open();
+
+    var barneyRubble = connection.Query<Customer>("GetCustomer", new {lastName = "Rubble"}, commandType: CommandType.StoredProcedure).First();
+
+    // Do something with the result...
+}
 ```

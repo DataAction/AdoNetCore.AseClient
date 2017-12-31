@@ -117,6 +117,16 @@ namespace AdoNetCore.AseClient
             return IndexOf(value) >= 0;
         }
 
+        /// <summary>
+        /// Determines whether the specified <see cref="AseParameter" /> is in this <see cref="AseParameterCollection" />.
+        /// </summary>
+        /// <param name="value">The <see cref="AseParameter" />.</param>
+        /// <returns><b>true</b> if the <see cref="AseParameterCollection" /> contains the value; otherwise <b>false</b>.</returns>
+        public bool Contains(AseParameter value)
+        {
+            return IndexOf(value) >= 0;
+        }
+
         public new AseParameter this[string parameterName]
         {
             get => (AseParameter) GetParameter(parameterName);
@@ -182,7 +192,7 @@ namespace AdoNetCore.AseClient
 
             return Add(parameter);
         }
-        
+
         /// <summary>
         /// Adds an <see cref="AseParameter" /> to the <see cref="AseParameterCollection" /> given the parameter name and the data type.
         /// </summary>
@@ -252,20 +262,87 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="parameter">The <see cref="AseParameter" /> to add.</param>
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
-        public AseParameter Add(AseParameter parameter) 
+        public AseParameter Add(AseParameter parameter)
         {
-            if(parameter != null)
+            if (parameter != null)
             {
                 _parameters.Add(parameter);
             }
             return parameter;
         }
 
+
+
+
+
+
+
+        /// <summary>
+        /// Adds an <see cref="AseParameter" /> to the <see cref="AseParameterCollection" /> given the parameter name and the data type.
+        /// </summary>
+        /// <param name="index">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <returns>A new <see cref="AseParameter" /> object.</returns>
+        public AseParameter Add(int index, AseDbType dbType)
+        {
+            return Add(new AseParameter(index, dbType));
+        }
+
+        /// <summary>
+        /// Adds a value to the end of the <see cref="AseParameterCollection" />.
+        /// </summary>
+        /// <param name="index">The index of the parameter to add.</param>
+        /// <param name="parameterValue">The value to be added. Use <see cref="DBNull.Value" /> instead of null, to indicate a null value.</param>
+        /// <returns>An <see cref="AseParameter" /> object.</returns>
+        public AseParameter Add(int index, object parameterValue)
+        {
+            return Add(new AseParameter(index, parameterValue));
+        }
+
+        /// <summary>
+        /// Adds an <see cref="AseParameter" /> to the <see cref="AseParameterCollection" /> given the parameter name and the data type.
+        /// </summary>
+        /// <param name="index">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="Int32" />.</param>
+        /// <returns>A new <see cref="AseParameter" /> object.</returns>
+        /// <remarks>This overload is useful when you are adding a parameter of a variable-length data type such as <b>varchar</b> or <b>binary</b>.</remarks>
+        public AseParameter Add(int index, AseDbType dbType, int size)
+        {
+            return Add(new AseParameter(index, dbType, size));
+        }
+
+        /// <summary>
+        /// Adds an <see cref="AseParameter" /> to the <see cref="AseParameterCollection" /> given the parameter name and the data type.
+        /// </summary>
+        /// <param name="index">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="Int32" />.</param>
+        /// <param name="sourceColumn">The name of the source column.</param>
+        /// <returns>A new <see cref="AseParameter" /> object.</returns>
+        /// <remarks>This overload is useful when you are adding a parameter of a variable-length data type such as <b>varchar</b> or <b>binary</b>.</remarks>
+        public AseParameter Add(int index, AseDbType dbType, int size, string sourceColumn)
+        {
+            return Add(new AseParameter(index, dbType, size, sourceColumn));
+        }
+
         /// <summary>
         /// Adds an <see cref="Array"/> of <see cref="AseParameter"/> to the <see cref="AseParameterCollection"/>.
         /// </summary>
-        /// <param name="values"></param>
+        /// <param name="values">The items to add.</param>
         public override void AddRange(Array values)
+        {
+            foreach (var obj in values)
+            {
+                Add(obj);
+            }
+
+        }
+        /// <summary>
+        /// Adds an array of <see cref="AseParameter"/> to the <see cref="AseParameterCollection"/>.
+        /// </summary>
+        /// <param name="values">The items to add.</param>
+        public void AddRange(AseParameter[] values)
         {
             foreach (var obj in values)
             {
@@ -277,12 +354,26 @@ namespace AdoNetCore.AseClient
         /// Adds a value to the end of the <see cref="AseParameterCollection" />.
         /// </summary>
         /// <param name="parameterName">The name of the parameter.</param>
-        /// <param name="value">The value to be added. Use <see cref="DBNull.Value" /> instead of null, to indicate a null value.</param>
+        /// <param name="parameterValue">The value to be added. Use <see cref="DBNull.Value" /> instead of null, to indicate a null value.</param>
         /// <returns>An <see cref="AseParameter" /> object.</returns>
-        public AseParameter Add(string parameterName, object value) 
+        public AseParameter Add(string parameterName, object parameterValue) 
         {
-            var parameter = new AseParameter(parameterName, value);
+            var parameter = new AseParameter(parameterName, parameterValue);
             
+            return Add(parameter);
+        }
+
+        /// <summary>
+        /// Adds a value to the end of the <see cref="AseParameterCollection" />.
+        /// </summary>
+        /// <param name="parameterName">The name of the parameter.</param>
+        /// <param name="parameterValue">The value to be added. Use <see cref="DBNull.Value" /> instead of null, to indicate a null value.</param>
+        /// <returns>An <see cref="AseParameter" /> object.</returns>
+        // ReSharper disable once UnusedMember.Global
+        public AseParameter AddWithValue(string parameterName, object parameterValue)
+        {
+            var parameter = new AseParameter(parameterName, parameterValue);
+
             return Add(parameter);
         }
 
@@ -347,13 +438,45 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
+        /// Gets the location of the specified <see cref="AseParameter" />.
+        /// </summary>
+        /// <param name="value">The <see cref="AseParameter" />.</param>
+        /// <returns>The zero-based location of the specified <see cref="AseParameter" />. 
+        /// Returns -1 when the object does not exist in the <see cref="AseParameterCollection" />.</returns>
+        public int IndexOf(AseParameter value)
+        {
+            if (value != null)
+            {
+                for (var i = 0; i < _parameters.Count; i++)
+                {
+                    if (value == _parameters[i])
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>
         /// Inserts an <see cref="AseParameter" /> in the collection at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index where the parameter is to be inserted within the collection.</param>
-        /// <param name="value">The <see cref="AseParameter" /> object to add to the collection.</param>
-        public override void Insert(int index, object value)
+        /// <param name="parameter">The <see cref="AseParameter" /> object to add to the collection.</param>
+        public override void Insert(int index, object parameter)
         {
-            ((IList)_parameters).Insert(index, value);
+            ((IList)_parameters).Insert(index, parameter);
+        }
+
+        /// <summary>
+        /// Inserts an <see cref="AseParameter" /> in the collection at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index where the parameter is to be inserted within the collection.</param>
+        /// <param name="parameter">The <see cref="AseParameter" /> object to add to the collection.</param>
+        public void Insert(int index, AseParameter parameter)
+        {
+            ((IList)_parameters).Insert(index, parameter);
         }
 
         /// <summary>
@@ -361,6 +484,15 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="value">The <see cref="AseParameter" /> object to remove from the collection.</param>
         public override void Remove(object value)
+        {
+            ((IList)_parameters).Remove(value);
+        }
+
+        /// <summary>
+        /// Removes the <see cref="AseParameter" /> from the <see cref="AseParameterCollection" />.
+        /// </summary>
+        /// <param name="value">The <see cref="AseParameter" /> object to remove from the collection.</param>
+        public void Remove(AseParameter value)
         {
             ((IList)_parameters).Remove(value);
         }
@@ -395,6 +527,16 @@ namespace AdoNetCore.AseClient
         /// <param name="array">The array into which to copy the AseParameter objects.</param>
         /// <param name="index">The starting index of the array.</param>
         public override void CopyTo(Array array, int index)
+        {
+            ((IList)_parameters).CopyTo(array, index);
+        }
+
+        /// <summary>
+        /// Copies <see cref="AseParameter" /> objects from the <see cref="AseParameterCollection" /> to the specified array.
+        /// </summary>
+        /// <param name="array">The array into which to copy the AseParameter objects.</param>
+        /// <param name="index">The starting index of the array.</param>
+        public void CopyTo(AseParameter[] array, int index)
         {
             ((IList)_parameters).CopyTo(array, index);
         }

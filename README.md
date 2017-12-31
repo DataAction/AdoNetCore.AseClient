@@ -203,13 +203,27 @@ using(var connection = new AseConnection(connectionString))
 
 ### Execute a SQL statement and read response data
 ```C#
-using(var command = connection.CreateCommand())
-{
-    command.CommandText = "SELECT FirstName, LastName FROM Customer";
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
 
-    using(var reader = command.ExecuteReader())
+using (var connection = new AseConnection(connectionString))
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
     {
-        // Get the results.
+        command.CommandText = "SELECT FirstName, LastName FROM Customer";
+
+        using (var reader = command.ExecuteReader())
+        {
+            // Get the results.
+            while (reader.Read())
+            {
+                var firstName = reader.GetString(0);
+                var lastName = reader.GetString(1);
+
+                // Do something with the data...
+            }
+        }
     }
 }
 ```

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient
@@ -14,12 +15,16 @@ namespace AdoNetCore.AseClient
     /// </summary>
     public sealed class AseCommandBuilder : DbCommandBuilder
     {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _commandText;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private DataTable _schema;
 
         /// <summary>
         /// A mapping of ASE type names to the AseDbType enumeration.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly IDictionary<string, AseDbType> AseDbTypeNameMap = new Dictionary<string, AseDbType>(StringComparer.OrdinalIgnoreCase)
         {
             {"binary", AseDbType.Binary },
@@ -61,6 +66,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// A mapping of ASE type codes to the AseDbType enumeration.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly IDictionary<short, AseDbType> AseDbTypeCodeMap = new Dictionary<short, AseDbType>
         {
             {-2, AseDbType.Binary },

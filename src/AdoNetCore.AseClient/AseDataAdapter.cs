@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 
 namespace AdoNetCore.AseClient
 {
@@ -15,36 +16,43 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// The commands that will be batached up for execution.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly List<AseCommand> _cmdList = new List<AseCommand>();
 
         /// <summary>
         /// Whether or not this is disposed.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _isDisposed;
 
         /// <summary>
         /// The DELETE command template.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseCommand _deleteCmd;
 
         /// <summary>
         /// The INSERT command template.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseCommand _insertCmd;
 
         /// <summary>
         /// The SELECT command.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseCommand _selectCmd;
 
         /// <summary>
         /// The UPDATE command template.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseCommand _updateCmd;
 
         /// <summary>
         /// An optional <see cref="AseCommandBuilder"/> for use when generating the <see cref="DeleteCommand"/>, <see cref="InsertCommand"/>, and <see cref="UpdateCommand"/> respectively.
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseCommandBuilder _builder;
 
         /// <summary>

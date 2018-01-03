@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -78,7 +76,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
     CAST(NULL AS TIME) AS [NULL_TIME]
 ";
 
-        private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
+        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
 
         [TestCase("INT")]
         [TestCase("BIGINT")]

@@ -5,18 +5,17 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
 using Dapper;
-using Newtonsoft.Json;
 using NUnit.Framework;
+#pragma warning disable 219
 
 namespace AdoNetCore.AseClient.Tests
 {
     [TestFixture]
     internal sealed class CodeSamples
     {
-        private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
+        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
 
         [SetUp]
         public void SetUp()
@@ -316,7 +315,8 @@ END";
                     command.CommandText = "GetCustomer";
                     command.CommandType = CommandType.StoredProcedure;
 
-                    command.Parameters.AddWithValue("@lastName", "Rubble");
+                    var x = command.Parameters.AddWithValue("@lastName", "Rubble");
+                    var y = command.Parameters.AddWithValue("@y", 5);
 
                     using (var reader = command.ExecuteReader())
                     {

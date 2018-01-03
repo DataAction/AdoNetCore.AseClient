@@ -37,6 +37,28 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN : TdsDataType.TDS_TIME}
         };
 
+        private static readonly Dictionary<Type, Func<object, int, TdsDataType>> NetTypeToTdsMap = new Dictionary<Type, Func<object, int, TdsDataType>>
+        {
+            {typeof(bool), (value, length) => TdsDataType.TDS_BIT},
+            {typeof(byte), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT1},
+            {typeof(sbyte), (value, length) => TdsDataType.TDS_INTN},
+            {typeof(short), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT2},
+            {typeof(ushort), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT2},
+            {typeof(int), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT4},
+            {typeof(uint), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT4},
+            {typeof(long), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT8},
+            {typeof(ulong), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT8},
+            {typeof(char), (value, length) => TdsDataType.TDS_CHAR},
+            {typeof(char[]), (value, length) => TdsDataType.TDS_CHAR},
+            {typeof(string), (value, length) => TdsDataType.TDS_LONGBINARY},
+            {typeof(byte[]), (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
+            {typeof(Guid), (value, length) => TdsDataType.TDS_BINARY},
+            {typeof(decimal), (value, length) => TdsDataType.TDS_DECN},
+            {typeof(float), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
+            {typeof(double), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
+            {typeof(DateTime), (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME}
+        };
+
         public static int? GetFormatLength(DbType dbType, AseParameter parameter, Encoding enc)
         {
             if (parameter.Size > 0)
@@ -74,7 +96,7 @@ namespace AdoNetCore.AseClient.Internal
                     {
                         case byte[] ba:
                             return ba.Length;
-                        case byte b:
+                        case byte _:
                             return 1;
                         default:
                             return 0;
@@ -113,13 +135,21 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public static TdsDataType GetTdsDataType(DbType dbType, object value, int? length)
+        public static TdsDataType GetTdsDataType(DbType dbType, bool isDbTypeSetExplicitly, object value, int? length)
         {
-            if (!DbToTdsMap.ContainsKey(dbType))
+            // If the consumer has explicitly set a type, then rely on that.
+            if (isDbTypeSetExplicitly && DbToTdsMap.TryGetValue(dbType, out var result))
             {
-                throw new NotSupportedException($"Unsupported data type {dbType}");
+                return result(value, length ?? 0);
             }
-            return DbToTdsMap[dbType](value, length ?? 0);
+
+            // If that is not set, then we should try to infer the type;
+            if (NetTypeToTdsMap.TryGetValue(value.GetType(), out result))
+            {
+                return result(value, length ?? 0);
+            }
+
+            throw new NotSupportedException($"Unsupported data type {dbType}");
         }
 
         private static readonly Dictionary<TdsDataType, Func<FormatItem, Type>> TdsToNetMap = new Dictionary<TdsDataType, Func<FormatItem, Type>>

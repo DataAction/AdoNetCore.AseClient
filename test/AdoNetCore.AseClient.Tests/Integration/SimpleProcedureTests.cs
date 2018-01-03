@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using Dapper;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -10,7 +8,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class SimpleProcedureTests
     {
-        private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
+        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
+
         private readonly string _createProc = @"create procedure [dbo].[sp_test_simple] as begin return end";
         private readonly string _dropProc = @"drop procedure [dbo].[sp_test_simple]";
 

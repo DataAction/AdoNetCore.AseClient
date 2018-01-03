@@ -187,7 +187,7 @@ namespace AdoNetCore.AseClient.Internal
                     break;
             }
 
-            return null;
+            return DBNull.Value; // Catch-all.
         }
     }
 }

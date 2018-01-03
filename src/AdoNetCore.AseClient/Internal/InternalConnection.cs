@@ -441,12 +441,13 @@ SET FMTONLY OFF";
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var parameterType = (DbType)parameter.AseDbType;
+                var parameterType = parameter.DbType;
+                var isDbTypeSetExplicitly = parameter.IsDbTypeSetExplicitly;
                 var length = TypeMap.GetFormatLength(parameterType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(parameterType, parameter.Value, length),
+                    DataType = TypeMap.GetTdsDataType(parameterType, isDbTypeSetExplicitly, parameter.Value, length),
                     IsOutput = parameter.IsOutput,
                     IsNullable = parameter.IsNullable,
                     Length = length

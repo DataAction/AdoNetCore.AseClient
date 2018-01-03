@@ -1,8 +1,7 @@
 ﻿#if !NETCORE_OLD
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -10,13 +9,13 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class AseDataAdapterTests
     {
-        private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
+        private static readonly IDictionary<string, string> ConnectionStrings = ConnectionStringLoader.Load();
 
         [SetUp]
         public void SetUp()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings["default"]))
             {
                 connnection.Open();
 
@@ -131,7 +130,7 @@ END";
         public void TearDown()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings["default"]))
             {
                 connnection.Open();
 
@@ -158,7 +157,7 @@ END";
         [Test]
         public void AseAdapter_WithAseCommandBuilder_HasInsertUpdateDeleteCommands()
         {
-            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings["default"]))
             {
                 connnection.Open();
 
@@ -192,15 +191,17 @@ END";
                 }
             }
         }
+        
+        [Test]
+        public void Test()
+        {
 
-        [TestCase("AseDataAdapterTests_Proc1")]
-        [TestCase("dbo.AseDataAdapterTests_Proc1")]
-        [TestCase("pubs2.dbo.AseDataAdapterTests_Proc1")]
-        [TestCase("pubs2..AseDataAdapterTests_Proc1")]
+        }
+
+        [TestCaseSource(nameof(DeriveParametersTestCases))]
         public void AseCommandBuilder_DeriveParameters_SetsParametersOnCommand(string procedureName)
         {
-            // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings["default"]))
             {
                 connnection.Open();
 
@@ -217,10 +218,36 @@ END";
             }
         }
 
+        /// <summary>
+        /// Dynamic test case depending on the name of the database in use.
+        /// </summary>
+        /// <returns>Test cases with different variants of the same proc name.</returns>
+        private static IEnumerable<TestCaseData> DeriveParametersTestCases()
+        {
+            var connectionString = ConnectionStrings["default"];
+            var match = Regex.Match(connectionString, @"(((Database)|(Db)|(Initial Catalog))\s*=\s*(?<database>[^;]+))", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+
+            string database = null;
+            if (match.Success)
+            {
+                database = match.Groups["database"].Value;
+            }
+
+            if (string.IsNullOrWhiteSpace(database))
+            {
+                throw new AssertionException("The 'default' connection string does not specify a 'Database' property.");
+            }
+
+            yield return new TestCaseData("AseDataAdapterTests_Proc1");
+            yield return new TestCaseData("dbo.AseDataAdapterTests_Proc1");
+            yield return new TestCaseData($"{database}.dbo.AseDataAdapterTests_Proc1");
+            yield return new TestCaseData($"{database}..AseDataAdapterTests_Proc1");
+        }
+
         [Test]
         public void AseAdapter_WithAseCommandBuilder_CanInsertUpdateAndDelete()
         {
-            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings["default"]))
             {
                 connnection.Open();
 

@@ -22,7 +22,7 @@ namespace AdoNetCore.AseClient
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseDbType _type;
-
+        
         /// <summary>
         /// Constructor function for an <see cref="AseParameter" />instance.
         /// </summary>
@@ -112,7 +112,7 @@ namespace AdoNetCore.AseClient
         /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
         public AseParameter(string parameterName, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, byte precision, byte scale,
-            string sourceColumn, DataRowVersion sourceVersion, object value)
+            string sourceColumn, DataRowVersion sourceVersion, object value) : this()
         {
             ParameterName = parameterName;
             AseDbType = dbType;
@@ -140,7 +140,7 @@ namespace AdoNetCore.AseClient
         /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
         public AseParameter(string parameterName, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, int precision, int scale,
-            string sourceColumn, DataRowVersion sourceVersion, object value)
+            string sourceColumn, DataRowVersion sourceVersion, object value) : this()
         {
             ParameterName = parameterName;
             AseDbType = dbType;
@@ -163,7 +163,7 @@ namespace AdoNetCore.AseClient
         /// <param name="isNullable"> true if the value of the field can be null; otherwise, false.</param>
         /// <param name="precision">The total number of digits to the left and right of the decimal point to which Value is resolved.</param>
         /// <param name="scale">The total number of decimal places to which Value is resolved.</param>
-        public AseParameter(string parameterName, AseDbType dbType, int size, bool isNullable, int precision, int scale)
+        public AseParameter(string parameterName, AseDbType dbType, int size, bool isNullable, int precision, int scale) : this()
         {
             ParameterName = parameterName;
             AseDbType = dbType;
@@ -178,7 +178,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="parameterIndex">The index of the parameter to add.</param>
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
-        public AseParameter(int parameterIndex, AseDbType dbType)
+        public AseParameter(int parameterIndex, AseDbType dbType) : this()
         {
             ParameterIndex = parameterIndex;
             AseDbType = dbType;
@@ -189,7 +189,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="parameterIndex">The index of the parameter to add.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
-        public AseParameter(int parameterIndex, object value)
+        public AseParameter(int parameterIndex, object value) : this()
         {
             ParameterIndex = parameterIndex;
             Value = value;
@@ -201,7 +201,7 @@ namespace AdoNetCore.AseClient
         /// <param name="parameterIndex">The index of the parameter to add.</param>
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
         /// <param name="size">The size as <see cref="int" />.</param>
-        public AseParameter(int parameterIndex, AseDbType dbType, int size)
+        public AseParameter(int parameterIndex, AseDbType dbType, int size) : this()
         {
             ParameterIndex = parameterIndex;
             AseDbType = dbType;
@@ -215,7 +215,7 @@ namespace AdoNetCore.AseClient
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
         /// <param name="size">The size as <see cref="int" />.</param>
         /// <param name="sourceColumn">The name of the source column.</param>
-        public AseParameter(int parameterIndex, AseDbType dbType, int size, string sourceColumn)
+        public AseParameter(int parameterIndex, AseDbType dbType, int size, string sourceColumn) : this()
         {
             ParameterIndex = parameterIndex;
             AseDbType = dbType;
@@ -236,7 +236,7 @@ namespace AdoNetCore.AseClient
         /// <param name="sourceColumn">The name of the source column.</param>
         /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
-        public AseParameter(int parameterIndex, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, byte precision, byte scale, string sourceColumn, DataRowVersion sourceVersion, object value)
+        public AseParameter(int parameterIndex, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, byte precision, byte scale, string sourceColumn, DataRowVersion sourceVersion, object value) : this()
         {
             ParameterIndex = parameterIndex;
             AseDbType = dbType;
@@ -263,7 +263,7 @@ namespace AdoNetCore.AseClient
         /// <param name="sourceColumn">The name of the source column.</param>
         /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
-        public AseParameter(int parameterIndex, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, int precision, int scale, string sourceColumn, DataRowVersion sourceVersion, object value)
+        public AseParameter(int parameterIndex, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, int precision, int scale, string sourceColumn, DataRowVersion sourceVersion, object value) : this()
         {
             ParameterIndex = parameterIndex;
             AseDbType = dbType;
@@ -280,6 +280,8 @@ namespace AdoNetCore.AseClient
         public override void ResetDbType()
         {
             // Do nothing.
+            DbType = default(DbType);
+            IsDbTypeSetExplicitly = false;
         }
 
         /// <summary>
@@ -289,7 +291,11 @@ namespace AdoNetCore.AseClient
         public override DbType DbType
         {
             get => (DbType)_type;
-            set => _type = (AseDbType)value;
+            set
+            {
+                _type = (AseDbType) value;
+                IsDbTypeSetExplicitly = true;
+            }
         }
 
         /// <summary>
@@ -301,7 +307,16 @@ namespace AdoNetCore.AseClient
         public AseDbType AseDbType
         {
             get => _type;
-            set => _type = value;
+            set {
+                _type = value;
+                IsDbTypeSetExplicitly = true;
+            }
+        }
+
+        internal bool IsDbTypeSetExplicitly
+        {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -455,8 +470,8 @@ namespace AdoNetCore.AseClient
         {
             var clone = new AseParameter
             {
-                DbType = DbType,
-                AseDbType = AseDbType,
+                _type = AseDbType,
+                IsDbTypeSetExplicitly = IsDbTypeSetExplicitly,
                 Direction = Direction,
                 IsNullable = IsNullable,
                 ParameterName = ParameterName,

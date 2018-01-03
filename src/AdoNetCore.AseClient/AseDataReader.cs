@@ -689,16 +689,19 @@ namespace AdoNetCore.AseClient
 
                     var tableName = command.CreateParameter();
                     tableName.ParameterName = "@table_name";
+                    tableName.AseDbType = AseDbType.VarChar;
                     tableName.Value = baseTableNameValue;
                     command.Parameters.Add(tableName);
 
                     var tableOwner = command.CreateParameter();
                     tableOwner.ParameterName = "@table_owner";
+                    tableOwner.AseDbType = AseDbType.VarChar;
                     tableOwner.Value = baseSchemaNameValue;
                     command.Parameters.Add(tableOwner);
 
                     var tableQualifier = command.CreateParameter();
                     tableQualifier.ParameterName = "@table_qualifier";
+                    tableQualifier.AseDbType = AseDbType.VarChar;
                     tableQualifier.Value = baseCatalogNameValue;
                     command.Parameters.Add(tableQualifier);
 

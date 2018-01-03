@@ -8,7 +8,6 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
-    [DebuggerDisplay("{" + nameof(ParameterName) + "}")]
     public sealed class AseParameter : DbParameter
 #if NETCOREAPP2_0 || NET45 || NET46
         , ICloneable
@@ -461,7 +460,7 @@ namespace AdoNetCore.AseClient
 
         public override string ToString()
         {
-            return ParameterName;
+            return ParameterName ?? ParameterIndex.ToString();
         }
 
 

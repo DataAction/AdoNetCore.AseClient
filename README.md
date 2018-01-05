@@ -56,25 +56,58 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
 
 ## Performance benchmarks
 
-### TODO - test methodology
-We've optimised this driver so that it performs well (pull requests to optimise further are accepted of course). We have benchmarked the .NET Core AseClient against the SAP AseClient in the following ways:
-1. Fetch a single row from a simple database table without connection pooling enabled.
-2. Fetch a single row from a simple database table with connection pooling enabled.
-3. Fetch multiple rows using a single query from a simple database table without connection pooling enabled.
-4. Fetch multiple rows using a single query from a simple database table with connection pooling enabled.
-5. Fetch multiple rows using multiple queries from a simple database table without connection pooling enabled.
-6. Fetch multiple rows using multiple queries from a simple database table with connection pooling enabled.
-7. Fetch multiple rows using multiple queries from simple database table without connection pooling enabled. Then we update the data, and update the database one record at a time.
-8. Fetch multiple rows using multiple queries from simple database table with connection pooling enabled. Then we update the data, and update the database one record at a time.
+### Test methodology
+We've optimised this driver so that it performs well. 
 
-We perform these tests for .NET Core 1.0, 2.0, and .NET Standard 4.6 using the AdoNetCore AseClient. For comparison, we also perform these tests on .NET Standard 4.6 using the SAP AseClient.
+To help adopt the AdoNetCore.AseClient, we have benchmarked it against the Sybase.Data.AseClient. See the wiki for how to [run the benchmarks yourself](https://github.com/DataAction/AdoNetCore.AseClient/wiki/Running-the-benchmarks).
 
-Our test machine has the following spec: TODO.
+The goal of the benchmarking is not to establish the absolute performance of the driver or the ASE Server, but to show its equivalence as a substitute. As such, the test client and database server have been held constant in all tests.
+
+####Server:
+Adaptive Server Enterprise/16.0 SP03 PL02/EBF 27413 SMP/P/AMD64/Windows 2008 R2 SP1/ase160sp03pl02x/0/64-bit/FBO/Fri Oct 06 14:34:03 2017
+
+####Client:
+BenchmarkDotNet=v0.10.11, OS=Windows 10 Redstone 2 [1703, Creators Update] (10.0.15063.726)
+Processor=Intel Core i7-6700 CPU 3.40GHz (Skylake), ProcessorCount=8
+Frequency=3328123 Hz, Resolution=300.4697 ns, Timer=TSC
+.NET Core SDK=2.1.3
+  [Host]     : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
+  DefaultJob : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
+
+We have benchmarked the .NET Core AseClient against the SAP AseClient in the following ways:
+#### Single read, without pooling
+Open a connection (unpooled) and invoke AseCommand.ExecuteReader(...) once and read back one row of data.
+
+#### Single read, with pooling
+Open a connection (pooled) and invoke AseCommand.ExecuteReader(...) once and read back one row of data.
+
+#### Multiple reads, without pooling
+Open a connection (unpooled) and invoke AseCommand.ExecuteReader(...) once and read back 12 rows of data.
+
+#### Multiple reads, with pooling
+Open a connection (pooled) and invoke AseCommand.ExecuteReader(...) once and read back 12 rows of data.
+
+#### Multiple reads, multiple times, without pooling
+Open a connection (unpooled) and invoke AseCommand.ExecuteReader(...) 9 times, and read back 11-12 rows of data each time.
+
+#### Multiple reads, multiple times, with pooling
+Open a connection (pooled) and invoke AseCommand.ExecuteReader(...) 9 times, and read back 11-12 rows of data each time.
+
+#### Multiple reads, multiple writes, without pooling
+Open a connection (unpooled) and invoke AseCommand.ExecuteReader(...) once, reading back 56 rows of data. Prepare a new AseCommand and invoke AseCommand.ExecuteNonQuery(...) for each of the 56 rows to update the database.
+
+#### Multiple reads, multiple writes, with pooling
+Open a connection (pooled) and invoke AseCommand.ExecuteReader(...) once, reading back 56 rows of data. Prepare a new AseCommand and invoke AseCommand.ExecuteNonQuery(...) for each of the 56 rows to update the database.
+
+
+We perform these tests for .NET Core 1.1, 2.0, and .NET Standard 4.6 using the AdoNetCore.AseClient. For comparison, we also perform these tests on .NET Standard 4.6 using the Sybase.Data.AseClient from SAP.
+
+These benchmarks are not int Our test machine has the following spec: TODO.
 
 The SAP ASE server is held constant in all of the test cases, and as it is not the subject of the tests, it is therefore not documented. You should be able to get similar results on your own platform.
 
-### TODO - test results
-![Long story short, our speed is a stampede](http://via.placeholder.com/1024x496?text=Run%20Forrest,%20run! "Some sick chart")
+### Test results
+![AdoNetCore.AseClient vs Sybase.Data.AseClient](benchmarks.png "AdoNetCore.AseClient vs Sybase.Data.AseClient")
 
 ## Connection strings
 [connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. In keeping with our objective of being a drop-in replacement for the SAP AseClient, we aim to use identical connection string syntax to the SAP AseClient, however our support for the various properties will be limited. Our support is as follows:

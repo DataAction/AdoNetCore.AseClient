@@ -2,14 +2,14 @@
 
 SAP (formerly Sybase) has supported accessing the ASE database management system from ADO.NET for many years. Unfortunately SAP has not yet made a driver available to support .NET Core, so this project enables product teams that are dependent upon ASE to keep moving their application stack forwards.
 
-The current .NET 4 version of SAP's AseClient driver is a .NET Framework managed wrapper around SAP's unmanged [ADO DB provider](https://en.wikipedia.org/wiki/ActiveX_Data_Objects) and is dependent upon [COM](https://en.wikipedia.org/wiki/Component_Object_Model). COM is a Windows-only technology and will never be available to .NET Core, making it difficult to port the existing SAP driver.
+The current .NET 4 version of SAP's `Sybase.Data.AseClient` driver is a .NET Framework managed wrapper around SAP's unmanged [ADO DB provider](https://en.wikipedia.org/wiki/ActiveX_Data_Objects) and is dependent upon [COM](https://en.wikipedia.org/wiki/Component_Object_Model). COM is a Windows-only technology and will never be available to .NET Core, making it difficult to port the existing SAP driver.
 
 Under the hood, ASE (and Microsoft Sql Server for that matter) relies on an application-layer protocol called [Tabular Data Stream](https://en.wikipedia.org/wiki/Tabular_Data_Stream) to transfer data between the database server and the client application. ASE uses TDS 5.0.
 
 This project provides a .NET Core native implementation of the TDS 5.0 protocol via an ADO.NET DB Provider, making SAP ASE accessible from .NET Core applications hosted on Windows, Linux, Docker and also serverless platforms like [AWS Lambda](https://aws.amazon.com/lambda/).
 
 ## Objectives
-* Functional parity with the `Sybase.AdoNet4.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the SAP AseClient (with some namespace changes). The following types are supported:
+* Functional parity with the `Sybase.Data.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the `Sybase.Data.AseClient` (with some namespace changes). The following types are supported:
     * AseCommand - in progress
     * AseCommandBuilder
     * AseConnection - in progress
@@ -46,20 +46,20 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
     * `Code Access Security` - CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas). For binary compatibility the following stubs have been added in .NET Core 2.0+ but they do nothing:
         * AseClientPermission
         * AseClientPermissionAttribute
-    * `ASE Functions` - The SAP AseClient provides an `AseFunctions` type filled with utility functions that aren't implemented. This type will not be supported as it doesn't do anything. Consumers should remove references to this type.
+    * `ASE Functions` - The SAP `Sybase.Data.AseClient` provides an `AseFunctions` type filled with utility functions that aren't implemented. This type will not be supported as it doesn't do anything. Consumers should remove references to this type.
 * The following types are not yet supported:
     * [AseClientFactory](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409534226.html) - waiting on .NET Core 2.1 for this type to be supported.
 
-* Performance equivalent to or better than that of `Sybase.AdoNet4.AseClient` provided by SAP. This should be possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
+* Performance equivalent to or better than that of `Sybase.Data.AseClient` provided by SAP. This is possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
 * Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)
-* Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the .NET 4 client
+* Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the `Sybase.Data.AseClient`
 
 ## Performance benchmarks
 
 ### Test methodology
-To help adopt the AdoNetCore.AseClient, we have benchmarked it against the Sybase.Data.AseClient. See the wiki for how to [run the benchmarks yourself](https://github.com/DataAction/AdoNetCore.AseClient/wiki/Running-the-benchmarks).
+To help adopt the `AdoNetCore.AseClient`, we have benchmarked it against the `Sybase.Data.AseClient`. See the wiki for how to [run the benchmarks yourself](https://github.com/DataAction/AdoNetCore.AseClient/wiki/Running-the-benchmarks).
 
-We have benchmarked the .NET Core AseClient against the SAP AseClient in the following ways:
+We have benchmarked the `AdoNetCore.AseClient` against the `Sybase.Data.AseClient` in the following ways:
 
 #### Single read, without pooling
 Open a connection (unpooled) and invoke AseCommand.ExecuteReader(...) once and read back one row of data.
@@ -85,7 +85,7 @@ Open a connection (unpooled) and invoke AseCommand.ExecuteReader(...) once, read
 #### Multiple reads, multiple writes, with pooling
 Open a connection (pooled) and invoke AseCommand.ExecuteReader(...) once, reading back 56 rows of data. Prepare a new AseCommand and invoke AseCommand.ExecuteNonQuery(...) for each of the 56 rows to update the database.
 
-We perform these tests for .NET Core 1.1, .NET Core 2.0, and .NET Standard 4.6 using the AdoNetCore.AseClient. For comparison, we also perform these tests on .NET Standard 4.6 using the Sybase.Data.AseClient from SAP.
+We perform these tests for .NET Core 1.1, .NET Core 2.0, and .NET Standard 4.6 using the `AdoNetCore.AseClient`. For comparison, we also perform these tests on .NET Standard 4.6 using the `Sybase.Data.AseClient` from SAP.
 
 ### Environment 
 The goal of the benchmarking is not to establish the absolute performance of the driver or the ASE Server, but to show its equivalence as a substitute. As such, the test client and database server have been held constant in all tests.
@@ -102,10 +102,12 @@ Frequency=3328123 Hz, Resolution=300.4697 ns, Timer=TSC
   DefaultJob : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
 
 ### Test results
+In all of the test cases the `AdoNetCore.AseClient` better or equivalent to the `Sybase.Data.AseClient`.
+
 ![AdoNetCore.AseClient vs Sybase.Data.AseClient](benchmarks.png "AdoNetCore.AseClient vs Sybase.Data.AseClient")
 
 ## Connection strings
-[connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. In keeping with our objective of being a drop-in replacement for the SAP AseClient, we aim to use identical connection string syntax to the SAP AseClient, however our support for the various properties will be limited. Our support is as follows:
+[connectionstrings.com](https://www.connectionstrings.com/sybase-adaptive/) lists the following connection string properties for the ASE ADO.NET Data Provider. In keeping with our objective of being a drop-in replacement for the `Sybase.Data.AseClient`, we aim to use identical connection string syntax to the `Sybase.Data.AseClient`, however our support for the various properties will be limited. Our support is as follows:
 
 | Property                                                                                   | Support   | Notes
 | ------------------------------------------------------------------------------------------ |:---------:| -----

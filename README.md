@@ -87,12 +87,13 @@ Open a connection (pooled) and invoke AseCommand.ExecuteReader(...) once, readin
 
 We perform these tests for .NET Core 1.1, .NET Core 2.0, and .NET Standard 4.6 using the AdoNetCore.AseClient. For comparison, we also perform these tests on .NET Standard 4.6 using the Sybase.Data.AseClient from SAP.
 
+### Environment 
 The goal of the benchmarking is not to establish the absolute performance of the driver or the ASE Server, but to show its equivalence as a substitute. As such, the test client and database server have been held constant in all tests.
 
-###Server:
+#### Server:
 Adaptive Server Enterprise/16.0 SP03 PL02/EBF 27413 SMP/P/AMD64/Windows 2008 R2 SP1/ase160sp03pl02x/0/64-bit/FBO/Fri Oct 06 14:34:03 2017
 
-###Client:
+#### Client:
 BenchmarkDotNet=v0.10.11, OS=Windows 10 Redstone 2 [1703, Creators Update] (10.0.15063.726)
 Processor=Intel Core i7-6700 CPU 3.40GHz (Skylake), ProcessorCount=8
 Frequency=3328123 Hz, Resolution=300.4697 ns, Timer=TSC

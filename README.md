@@ -102,7 +102,7 @@ Frequency=3328123 Hz, Resolution=300.4697 ns, Timer=TSC
   DefaultJob : .NET Core 2.0.4 (Framework 4.6.25921.01), 64bit RyuJIT
 
 ### Test results
-In all of the test cases the `AdoNetCore.AseClient` better or equivalent to the `Sybase.Data.AseClient`.
+In all of the test cases the `AdoNetCore.AseClient` performed better or equivalent to the `Sybase.Data.AseClient`.
 
 ![AdoNetCore.AseClient vs Sybase.Data.AseClient](benchmarks.png "AdoNetCore.AseClient vs Sybase.Data.AseClient")
 

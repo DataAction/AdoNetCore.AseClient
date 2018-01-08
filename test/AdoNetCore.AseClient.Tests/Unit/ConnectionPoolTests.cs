@@ -77,7 +77,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var parameters = new TestConnectionParameters
             {
                 MaxPoolSize = size,
-                LoginTimeout = 1
+                LoginTimeout = 3
             };
 
             var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));

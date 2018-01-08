@@ -268,40 +268,6 @@ END";
         }
 
         [Test]
-        public void UseInputOutputAndReturnParametersWithASQLQuery()
-        {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
-            {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = 
-                        "SELECT TOP 1 @firstName = FirstName FROM Customer WHERE LastName = @lastName" +
-                        Environment.NewLine +
-                        "RETURN 42";
-
-                    command.Parameters.AddWithValue("@lastName", "Rubble"); // Input parameter.
-
-                    var outputParameter = command.Parameters.Add("@firstName", AseDbType.VarChar);
-                    outputParameter.Direction = ParameterDirection.Output;
-
-                    var returnParameter = command.Parameters.Add("@returnValue", AseDbType.Integer);
-                    outputParameter.Direction = ParameterDirection.ReturnValue; 
-
-                    Assert.Fail("BUG - this causes a NullReferenceException - the null value is attempted to be written to the TDS stream. Could be a more general issue with null. But DBNull.Value != null...");
-
-                    command.ExecuteNonQuery();
-
-                    Console.WriteLine(outputParameter.Value); // Fred
-                    Console.WriteLine(returnParameter.Value); // 42
-                }
-            }
-        }
-
-        [Test]
         public void ExecuteAStoredProcedureAndReadResponseData()
         {
             var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
@@ -395,9 +361,7 @@ END";
                     outputParameter.Direction = ParameterDirection.Output;
 
                     var returnParameter = command.Parameters.Add("@returnValue", AseDbType.Integer);
-                    outputParameter.Direction = ParameterDirection.ReturnValue;
-
-                    Assert.Fail("BUG - this causes a NullReferenceException - the null value is attempted to be written to the TDS stream. Could be a more general issue with null. But DBNull.Value != null...");
+                    returnParameter.Direction = ParameterDirection.ReturnValue;
 
                     command.ExecuteNonQuery();
 

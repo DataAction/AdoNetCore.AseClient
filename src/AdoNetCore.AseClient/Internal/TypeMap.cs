@@ -135,10 +135,10 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public static TdsDataType GetTdsDataType(DbType dbType, bool isDbTypeSetExplicitly, object value, int? length)
+        public static TdsDataType GetTdsDataType(DbType dbType, bool dbTypeIsKnown, object value, int? length)
         {
             // If the consumer has explicitly set a type, then rely on that.
-            if (isDbTypeSetExplicitly && DbToTdsMap.TryGetValue(dbType, out var result))
+            if (dbTypeIsKnown && DbToTdsMap.TryGetValue(dbType, out var result))
             {
                 return result(value, length ?? 0);
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Data.Common;
@@ -10,6 +11,8 @@ namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader
     {
+        private static readonly HashSet<TdsDataType> LongTdsTypes = new HashSet<TdsDataType> {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT};
+
         private readonly TableResult[] _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
@@ -593,38 +596,39 @@ namespace AdoNetCore.AseClient
             var table = new DataTable("SchemaTable");
             var columns = table.Columns;
 
-            var columnName = columns.Add("ColumnName", typeof(string));
-            var columnOrdinal = columns.Add("ColumnOrdinal", typeof(int));
-            var columnSize = columns.Add("ColumnSize", typeof(int));
-            var numericPrecision = columns.Add("NumericPrecision", typeof(int));
-            var numericScale = columns.Add("NumericScale", typeof(int));
-            var isUnique = columns.Add("IsUnique", typeof(bool));
-            var isKey = columns.Add("IsKey", typeof(bool));
-            var baseServerName = columns.Add("BaseServerName", typeof(string));
-            var baseCatalogName = columns.Add("BaseCatalogName", typeof(string));
-            var baseColumnName = columns.Add("BaseColumnName", typeof(string));
-            var baseSchemaName = columns.Add("BaseSchemaName", typeof(string));
-            var baseTableName = columns.Add("BaseTableName", typeof(string));
-            var dataType = columns.Add("DataType", typeof(Type));
-            var allowDBNull = columns.Add("AllowDBNull", typeof(bool));
-            var providerType = columns.Add("ProviderType", typeof(int));
-            var isAliased = columns.Add("IsAliased", typeof(bool));
-            var isExpression = columns.Add("IsExpression", typeof(bool));
+            var columnName = columns.Add(SchemaTableColumn.ColumnName, typeof(string));
+            var columnOrdinal = columns.Add(SchemaTableColumn.ColumnOrdinal, typeof(int));
+            var columnSize = columns.Add(SchemaTableColumn.ColumnSize, typeof(int));
+            var numericPrecision = columns.Add(SchemaTableColumn.NumericPrecision, typeof(int));
+            var numericScale = columns.Add(SchemaTableColumn.NumericScale, typeof(int));
+            var isUnique = columns.Add(SchemaTableColumn.IsUnique, typeof(bool));
+            var isKey = columns.Add(SchemaTableColumn.IsKey, typeof(bool));
+            var baseServerName = columns.Add(SchemaTableOptionalColumn.BaseServerName, typeof(string));
+            var baseCatalogName = columns.Add(SchemaTableOptionalColumn.BaseCatalogName, typeof(string));
+            var baseColumnName = columns.Add(SchemaTableColumn.BaseColumnName, typeof(string));
+            var baseSchemaName = columns.Add(SchemaTableColumn.BaseSchemaName, typeof(string));
+            var baseTableName = columns.Add(SchemaTableColumn.BaseTableName, typeof(string));
+            var dataType = columns.Add(SchemaTableColumn.DataType, typeof(Type));
+            var allowDBNull = columns.Add(SchemaTableColumn.AllowDBNull, typeof(bool));
+            var providerType = columns.Add(SchemaTableColumn.ProviderType, typeof(int));
+            var isAliased = columns.Add(SchemaTableColumn.IsAliased, typeof(bool));
+            var isExpression = columns.Add(SchemaTableColumn.IsExpression, typeof(bool));
             var isIdentity = columns.Add("IsIdentity", typeof(bool));
-            var isAutoIncrement = columns.Add("IsAutoIncrement", typeof(bool));
-            var isRowVersion = columns.Add("IsRowVersion", typeof(bool));
-            var isHidden = columns.Add("IsHidden", typeof(bool));
-            var isLong = columns.Add("IsLong", typeof(bool));
-            var isReadOnly = columns.Add("IsReadOnly", typeof(bool));
-            columns.Add("ProviderSpecificDataType", typeof(Type));
+            var isAutoIncrement = columns.Add(SchemaTableOptionalColumn.IsAutoIncrement, typeof(bool));
+            var isRowVersion = columns.Add(SchemaTableOptionalColumn.IsRowVersion, typeof(bool));
+            var isHidden = columns.Add(SchemaTableOptionalColumn.IsHidden, typeof(bool));
+            var isLong = columns.Add(SchemaTableColumn.IsLong, typeof(bool));
+            var isReadOnly = columns.Add(SchemaTableOptionalColumn.IsReadOnly, typeof(bool));
+            columns.Add(SchemaTableOptionalColumn.ProviderSpecificDataType, typeof(Type));
             var dataTypeName = columns.Add("DataTypeName", typeof(string));
             //do we need these?
             columns.Add("XmlSchemaCollectionDatabase", typeof(string));
             columns.Add("XmlSchemaCollectionOwningSchema", typeof(string));
             columns.Add("XmlSchemaCollectionName", typeof(string));
             columns.Add("UdtAssemblyQualifiedName");
-            columns.Add("NonVersionedProviderType", typeof(int));
-            columns.Add("IsColumnSet");
+            columns.Add(SchemaTableColumn.NonVersionedProviderType, typeof(int));
+            //means "is column [a sparse] set", not "is column set [to a value]"
+            columns.Add("IsColumnSet", typeof(bool));
 
             string baseCatalogNameValue = null;
             string baseSchemaNameValue = null;
@@ -634,6 +638,7 @@ namespace AdoNetCore.AseClient
             {
                 var column = formats[i];
                 var row = table.NewRow();
+                var aseDbType = TypeMap.GetAseDbType(column);
 
                 row[columnName] = string.IsNullOrWhiteSpace(column.ColumnLabel) ? column.ColumnName : column.ColumnLabel;
                 row[columnOrdinal] = i;
@@ -649,16 +654,16 @@ namespace AdoNetCore.AseClient
                 row[baseTableName] = column.TableName;
                 row[dataType] = TypeMap.GetNetType(column);
                 row[allowDBNull] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_NULLALLOWED);
-                row[providerType] = (DbType)column.DataType;
+                row[providerType] = aseDbType;
                 row[isAliased] = !string.IsNullOrWhiteSpace(column.ColumnLabel);
                 row[isExpression] = false; // It doesn't seem to matter that this isn't supported. The column gets flagged as TDS_ROW_UPDATABLE|TDS_ROW_NULLALLOWED so it doesn't cause an issue when an insert/update ignores it.
                 row[isIdentity] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_IDENTITY); 
                 row[isAutoIncrement] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_IDENTITY);
                 row[isRowVersion] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_VERSION);
                 row[isHidden] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_HIDDEN);
-                row[isLong] = Array.IndexOf(new[] {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT}, column.DataType) >= 0;
+                row[isLong] = LongTdsTypes.Contains(column.DataType);
                 row[isReadOnly] = !column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_UPDATABLE);
-                row[dataTypeName] = $"{column.DataType}";
+                row[dataTypeName] = $"{aseDbType}";
 
                 table.Rows.Add(row);
 

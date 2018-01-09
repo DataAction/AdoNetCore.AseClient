@@ -432,95 +432,9 @@ namespace AdoNetCore.AseClient
         protected override void ApplyParameterInfo(DbParameter parameter, DataRow row, StatementType statementType, bool whereClause)
         {
             var aseParameter = (AseParameter) parameter;
-            aseParameter.AseDbType = GetAseDbTypeFromTdsName(row["DataTypeName"].ToString());
-            //aseParameter.AseDbType = (AseDbType) row[SchemaTableColumn.ProviderType];
+            aseParameter.AseDbType = (AseDbType) row[SchemaTableColumn.ProviderType];
             aseParameter.Precision = (byte) (int) row[SchemaTableColumn.NumericPrecision];
             aseParameter.Scale = (byte) (int) row[SchemaTableColumn.NumericScale];
-        }
-
-        private static AseDbType GetAseDbTypeFromTdsName(string tdsName)
-        {
-            var tdsDataType = System.Enum.Parse(typeof(TdsDataType), tdsName, true);
-
-            switch (tdsDataType)
-            {
-                case TdsDataType.TDS_BINARY:
-                    return AseDbType.Binary;
-                case TdsDataType.TDS_BIT:
-                    return AseDbType.Bit;
-                case TdsDataType.TDS_BLOB:
-                    return AseDbType.Image;
-                case TdsDataType.TDS_CHAR:
-                    return AseDbType.Char;
-                case TdsDataType.TDS_DATE:
-                case TdsDataType.TDS_DATEN:
-                    return AseDbType.Date;
-                case TdsDataType.TDS_DATETIME:
-                case TdsDataType.TDS_DATETIMEN:
-                    return AseDbType.DateTime;
-                case TdsDataType.TDS_DECN:
-                    return AseDbType.Decimal;
-                case TdsDataType.TDS_FLTN:
-                case TdsDataType.TDS_FLT4:
-                    return AseDbType.Real;
-                case TdsDataType.TDS_FLT8:
-                    return AseDbType.Double;
-                case TdsDataType.TDS_IMAGE:
-                    return AseDbType.Image;
-                case TdsDataType.TDS_SINT1:
-                case TdsDataType.TDS_INT1:
-                    return AseDbType.TinyInt;
-                case TdsDataType.TDS_INT2:
-                    return AseDbType.SmallInt;
-                case TdsDataType.TDS_INTN:
-                case TdsDataType.TDS_INT4:
-                    return AseDbType.Integer;
-                case TdsDataType.TDS_INT8:
-                    return AseDbType.BigInt;
-                case TdsDataType.TDS_LONGBINARY:
-                    return AseDbType.Binary;
-                case TdsDataType.TDS_LONGCHAR:
-                    return AseDbType.LongVarChar;
-                case TdsDataType.TDS_MONEY:
-                case TdsDataType.TDS_MONEYN:
-                    return AseDbType.Money;
-                case TdsDataType.TDS_SHORTDATE:
-                    return AseDbType.SmallDateTime;
-                case TdsDataType.TDS_SHORTMONEY:
-                    return AseDbType.SmallMoney;
-                case TdsDataType.TDS_TEXT:
-                    return AseDbType.Text;
-                case TdsDataType.TDS_TIME:
-                case TdsDataType.TDS_TIMEN:
-                    return AseDbType.Time;
-                case TdsDataType.TDS_UINT2:
-                    return AseDbType.UnsignedSmallInt;
-                case TdsDataType.TDS_UINTN:
-                case TdsDataType.TDS_UINT4:
-                    return AseDbType.UnsignedInt;
-                case TdsDataType.TDS_UINT8:
-                    return AseDbType.UnsignedBigInt;
-                case TdsDataType.TDS_UNITEXT:
-                    return AseDbType.Unitext;
-                case TdsDataType.TDS_VARBINARY:
-                    return AseDbType.VarBinary;
-                case TdsDataType.TDS_XML:
-                case TdsDataType.TDS_VARCHAR:
-                    return AseDbType.VarChar;
-                case TdsDataType.TDS_INTERVAL:
-                    return AseDbType.TimeStamp;
-                case TdsDataType.TDS_NUMN:
-                    return AseDbType.Numeric;
-                //case TdsDataType.TDS_SENSITIVITY:
-                //    break;
-                //case TdsDataType.TDS_VOID:
-                //    break;
-                //case TdsDataType.TDS_BOUNDARY:
-                //    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
         }
 
         protected override string GetParameterName(string parameterName)

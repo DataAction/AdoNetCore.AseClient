@@ -235,5 +235,85 @@ namespace AdoNetCore.AseClient.Internal
 
             return TdsToNetMap[format.DataType](format);
         }
+
+        private static readonly Dictionary<TdsDataType, Func<FormatItem, AseDbType>> TdsToAseMap = new Dictionary<TdsDataType, Func<FormatItem, AseDbType>>
+        {
+            {TdsDataType.TDS_BINARY, f => AseDbType.Binary},
+            {TdsDataType.TDS_BIT, f => AseDbType.Bit},
+            {TdsDataType.TDS_BLOB, f => AseDbType.Image},
+            //{TdsDataType.TDS_BOUNDARY, f => typeof()},
+            {TdsDataType.TDS_CHAR, f => AseDbType.Char},
+            {TdsDataType.TDS_DATE, f => AseDbType.Date},
+            {TdsDataType.TDS_DATEN, f => AseDbType.Date},
+            {TdsDataType.TDS_DATETIME, f => AseDbType.DateTime},
+            {TdsDataType.TDS_DATETIMEN, f => AseDbType.DateTime},
+            {TdsDataType.TDS_DECN, f => AseDbType.Decimal},
+            {TdsDataType.TDS_FLT4, f => AseDbType.Real},
+            {TdsDataType.TDS_FLT8, f => AseDbType.Double},
+            {
+                TdsDataType.TDS_FLTN, f => f.Length == 8
+                    ? AseDbType.Double
+                    : AseDbType.Real
+            },
+            {TdsDataType.TDS_IMAGE, f => AseDbType.Image},
+            {TdsDataType.TDS_INT1, f => AseDbType.TinyInt},
+            {TdsDataType.TDS_INT2, f => AseDbType.SmallInt},
+            {TdsDataType.TDS_INT4, f => AseDbType.Integer},
+            {TdsDataType.TDS_INT8, f =>AseDbType.BigInt},
+            //{TdsDataType.TDS_INTERVAL, f => typeof()},
+            {
+                TdsDataType.TDS_INTN, f => f.Length == 8
+                    ? AseDbType.BigInt
+                    : f.Length == 4
+                        ? AseDbType.Integer
+                        : f.Length == 2
+                            ? AseDbType.SmallInt
+                            : AseDbType.TinyInt
+            },
+            {
+                TdsDataType.TDS_LONGBINARY, f => f.UserType == 34
+                                                 ? AseDbType.UniChar : f.UserType == 35
+                    ? AseDbType.UniVarChar
+                    : AseDbType.Binary
+            },
+            {TdsDataType.TDS_LONGCHAR, f => AseDbType.LongVarChar},
+            {TdsDataType.TDS_MONEY, f => AseDbType.Money},
+            {TdsDataType.TDS_MONEYN, f => f.Length == 8 ? AseDbType.Money : AseDbType.SmallMoney},
+            {TdsDataType.TDS_NUMN, f => AseDbType.Numeric},
+            //{TdsDataType.TDS_SENSITIVITY,f =>  typeof()},
+            {TdsDataType.TDS_SHORTDATE, f => AseDbType.SmallDateTime},
+            {TdsDataType.TDS_SHORTMONEY, f => AseDbType.SmallMoney},
+            {TdsDataType.TDS_SINT1, f => AseDbType.TinyInt},
+            {TdsDataType.TDS_TEXT, f => AseDbType.Text},
+            {TdsDataType.TDS_TIME, f => AseDbType.Time},
+            {TdsDataType.TDS_TIMEN, f => AseDbType.Time},
+            {TdsDataType.TDS_UINT2, f => AseDbType.UnsignedSmallInt},
+            {TdsDataType.TDS_UINT4, f => AseDbType.UnsignedInt},
+            {TdsDataType.TDS_UINT8, f => AseDbType.UnsignedBigInt},
+            {
+                TdsDataType.TDS_UINTN, f => f.Length == 8
+                    ? AseDbType.UnsignedBigInt
+                    : f.Length == 4
+                        ? AseDbType.UnsignedInt
+                        : f.Length == 2
+                            ? AseDbType.UnsignedSmallInt
+                            : AseDbType.TinyInt
+            },
+            {TdsDataType.TDS_UNITEXT, f => AseDbType.Unitext},
+            {TdsDataType.TDS_VARBINARY, f => AseDbType.VarBinary},
+            {TdsDataType.TDS_VARCHAR, f => AseDbType.VarChar},
+            //{TdsDataType.TDS_VOID,f =>  typeof()},
+            {TdsDataType.TDS_XML, f => AseDbType.VarChar},
+        };
+
+        public static AseDbType GetAseDbType(FormatItem format)
+        {
+            if (!TdsToAseMap.ContainsKey(format.DataType))
+            {
+                throw new NotSupportedException($"Unsupported dataType {format.DataType}");
+            }
+
+            return TdsToAseMap[format.DataType](format);
+        }
     }
 }

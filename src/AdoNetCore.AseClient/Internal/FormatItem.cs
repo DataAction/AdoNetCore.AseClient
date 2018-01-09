@@ -144,7 +144,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public void WriteForParameter(Stream stream, Encoding enc, TokenType srcTokenType)
         {
-            Logger.Instance?.WriteLine($"  -> {ParameterName}: {DataType} ({Length}) (ut:{UserType})");
+            Logger.Instance?.WriteLine($"  -> {ParameterName}: {DataType} ({Precision ?? Length}{(Scale.HasValue ? "," + Scale : "")}) (ut:{UserType})");
             if (string.IsNullOrWhiteSpace(ParameterName) || string.Equals("@", ParameterName))
             {
                 stream.WriteByte(0);

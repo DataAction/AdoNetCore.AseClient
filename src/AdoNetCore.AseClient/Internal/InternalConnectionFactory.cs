@@ -50,6 +50,10 @@ namespace AdoNetCore.AseClient.Internal
                 connection.Login();
                 return connection;
             }
+            catch (AseException)
+            {
+                throw;
+            }
             catch (OperationCanceledException)
             {
                 Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");

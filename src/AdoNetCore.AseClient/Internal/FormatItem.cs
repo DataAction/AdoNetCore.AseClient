@@ -186,6 +186,8 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DATETIME:
                 case TdsDataType.TDS_DATE:
                 case TdsDataType.TDS_TIME:
+                case TdsDataType.TDS_MONEY:
+                case TdsDataType.TDS_SHORTMONEY:
                     break;
                 case TdsDataType.TDS_VARCHAR:
                 case TdsDataType.TDS_VARBINARY:
@@ -196,6 +198,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DATETIMEN:
                 case TdsDataType.TDS_DATEN:
                 case TdsDataType.TDS_TIMEN:
+                case TdsDataType.TDS_MONEYN:
                     stream.WriteByte((byte)(Length ?? 0));
                     break;
                 case TdsDataType.TDS_LONGCHAR:

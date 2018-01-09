@@ -173,5 +173,21 @@ namespace AdoNetCore.AseClient.Internal
             var time = (int)((double)value.Ticks / TimeSpan.TicksPerMillisecond * SqlTicksPerMillisecond + 0.5);
             stream.WriteInt(time);
         }
+
+        /// <summary>
+        /// Write a money value to the stream
+        /// Note: will always write the 8-byte TDS equivalent (long)
+        /// </summary>
+        public static void WriteMoney(this Stream stream, decimal value)
+        {
+            var buf = BitConverter.GetBytes(Convert.ToInt64(decimal.Truncate(value * 10000m)));
+            buf = new[]
+            {
+                buf[4], buf[5], buf[6], buf[7],
+                buf[0], buf[1], buf[2], buf[3]
+            };
+            stream.WriteByte(8);
+            stream.Write(buf, 0, buf.Length);
+        }
     }
 }

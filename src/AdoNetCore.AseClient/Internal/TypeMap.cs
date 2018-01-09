@@ -28,7 +28,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Binary, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
             {DbType.Guid, (value, length) => TdsDataType.TDS_BINARY},
             {DbType.Decimal, (value, length) => TdsDataType.TDS_DECN},
-            {DbType.Currency, (value, length) => TdsDataType.TDS_DECN},
+            {DbType.Currency, (value, length) => TdsDataType.TDS_MONEYN},
             {DbType.VarNumeric, (value, length) => TdsDataType.TDS_NUMN},
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
             {DbType.Double, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
@@ -102,7 +102,6 @@ namespace AdoNetCore.AseClient.Internal
                             return 0;
                     }
                 case DbType.Decimal:
-                case DbType.Currency:
                 case DbType.VarNumeric:
                     return 17; //1 byte pos/neg, 16 bytes data
                 case DbType.Boolean:
@@ -130,6 +129,8 @@ namespace AdoNetCore.AseClient.Internal
                     return 4;
                 case DbType.Guid:
                     return 16;
+                case DbType.Currency:
+                    return 8;
                 default:
                     return null;
             }

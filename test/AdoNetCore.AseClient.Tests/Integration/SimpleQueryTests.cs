@@ -606,6 +606,8 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(0m);
             yield return new TestCaseData(1m);
             yield return new TestCaseData(1.1111m);
+            yield return new TestCaseData(922337203685477.5807m); //max money value
+            yield return new TestCaseData(-922337203685477.5808m); //min money value
         }
 
         [TestCase("null", null)]

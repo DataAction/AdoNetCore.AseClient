@@ -241,6 +241,12 @@ namespace AdoNetCore.AseClient.Internal
                         stream.WriteTime(Cast<TimeSpan>(value, format));
                     }
                     break;
+                case TdsDataType.TDS_MONEYN:
+                    if (!stream.TryWriteBytePrefixedNull(value))
+                    {
+                        stream.WriteMoney(Cast<decimal>(value, format));
+                    }
+                    break;
                 default:
                     Debug.Assert(false, $"Unsupported data type {format.DataType}");
                     break;

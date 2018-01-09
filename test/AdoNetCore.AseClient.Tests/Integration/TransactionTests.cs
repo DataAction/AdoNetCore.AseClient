@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using Dapper;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -10,7 +8,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class TransactionTests
     {
-        private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
+        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
 
         private IDbConnection GetConnection()
         {

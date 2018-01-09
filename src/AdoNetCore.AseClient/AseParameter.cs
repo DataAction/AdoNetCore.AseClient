@@ -2,14 +2,12 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Text;
 
 namespace AdoNetCore.AseClient
 {
     /// <summary>
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
-    [DebuggerDisplay("{" + nameof(ParameterName) + "}")]
     public sealed class AseParameter : DbParameter
 #if NETCOREAPP2_0 || NET45 || NET46
         , ICloneable
@@ -19,7 +17,13 @@ namespace AdoNetCore.AseClient
         private string _parameterName;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private int _parameterIndex;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseDbType _type;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private bool _isDbTypeSetExplicitly;
 
         /// <summary>
         /// Constructor function for an <see cref="AseParameter" />instance.
@@ -40,92 +44,6 @@ namespace AdoNetCore.AseClient
         {
             Value = value ?? throw new ArgumentNullException();
             ParameterName = parameterName;
-
-            if (value == DBNull.Value)
-            {
-                // Do nothing.
-            }
-            else if (value is int)
-            {
-                AseDbType = AseDbType.Integer;
-            }
-            else if (value is short)
-            {
-                AseDbType = AseDbType.SmallInt;
-            }
-            else if (value is long)
-            {
-                AseDbType = AseDbType.BigInt; // NOTE: - long is not supported by the SAP AseClient.
-            }
-            else if (value is uint)
-            {
-                AseDbType = AseDbType.UnsignedInteger; // NOTE: - uint is not supported by the SAP AseClient.
-            }
-            else if (value is ushort)
-            {
-                AseDbType = AseDbType.UnsignedSmallInt; // NOTE: - ushort is not supported by the SAP AseClient.
-            }
-            else if (value is ulong)
-            {
-                AseDbType = AseDbType.UnsignedBigInt; // NOTE: - ulong is not supported by the SAP AseClient.
-            }
-            else if (value is byte)
-            {
-                AseDbType = AseDbType.TinyInt;
-            }
-            else if (value is sbyte)
-            {
-                AseDbType = AseDbType.TinyInt;
-            }
-            else if (value is bool)
-            {
-                AseDbType = AseDbType.Bit;
-            }
-            else if (value is float)
-            {
-                AseDbType = AseDbType.Float;
-            }
-            else if (value is double)
-            {
-                AseDbType = AseDbType.Double;
-            }
-            else if (value is decimal)
-            {
-                AseDbType = AseDbType.Decimal;
-            }
-            else if (value is Guid)
-            {
-                AseDbType = AseDbType.Binary;
-                Size = 16;
-            }
-            else if (value is DateTime)
-            {
-                AseDbType = AseDbType.DateTime;
-            }
-            else if (value is byte[])
-            {
-                AseDbType = AseDbType.Binary;
-                Size = ((byte[])value).Length;
-            }
-            else if (value is char) // NOTE: - char is not supported by the SAP AseClient.
-            {
-                AseDbType = AseDbType.UniChar;
-                Size = Encoding.Unicode.GetByteCount(new[] { (char)value });
-            }
-            else if (value is char[]) // NOTE: - char[] is not supported by the SAP AseClient.
-            {
-                AseDbType = AseDbType.UniChar;
-                Size = Encoding.Unicode.GetByteCount((char[])value);
-            }
-            else if (value is string)
-            {
-                AseDbType = AseDbType.UniChar;
-                Size = Encoding.Unicode.GetByteCount((string)value);
-            }
-            else // AnsiString, AnsiStringFixedLength, Xml, Date, DateTime2, DateTimeOffset, Time, VarNumeric, Guid, Currency, Object.
-            {
-                throw new NotSupportedException("Inference of data type not supported, add the parameter explicitly.");
-            }
         }
 
         /// <summary>
@@ -137,6 +55,21 @@ namespace AdoNetCore.AseClient
         {
             ParameterName = parameterName;
             AseDbType = dbType;
+
+            if (dbType == AseDbType.Money)
+            {
+                Precision = 20;
+                Scale = 4;
+            }
+            else
+            {
+                if (dbType != AseDbType.SmallMoney)
+                {
+                    return;
+                }
+                Precision = 12;
+                Scale = 4;
+            }
         }
 
         /// <summary>
@@ -181,7 +114,7 @@ namespace AdoNetCore.AseClient
         /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
         /// <param name="value">An object that is the value of the parameter.</param>
         public AseParameter(string parameterName, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, byte precision, byte scale,
-            string sourceColumn, DataRowVersion sourceVersion, object value)
+            string sourceColumn, DataRowVersion sourceVersion, object value) : this()
         {
             ParameterName = parameterName;
             AseDbType = dbType;
@@ -194,10 +127,162 @@ namespace AdoNetCore.AseClient
             SourceVersion = sourceVersion;
             Value = value;
         }
+        
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterName">The name of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="int" />.</param>
+        /// <param name="direction">One of the <see cref="ParameterDirection" /> values.</param>
+        /// <param name="isNullable"> true if the value of the field can be null; otherwise, false.</param>
+        /// <param name="precision">The total number of digits to the left and right of the decimal point to which Value is resolved.</param>
+        /// <param name="scale">The total number of decimal places to which Value is resolved.</param>
+        /// <param name="sourceColumn">The name of the source column.</param>
+        /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
+        /// <param name="value">An object that is the value of the parameter.</param>
+        public AseParameter(string parameterName, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, int precision, int scale,
+            string sourceColumn, DataRowVersion sourceVersion, object value) : this()
+        {
+            ParameterName = parameterName;
+            AseDbType = dbType;
+            Size = size;
+            Direction = direction;
+            IsNullable = isNullable;
+            Precision = (byte)precision;
+            Scale = (byte)scale;
+            SourceColumn = sourceColumn;
+            SourceVersion = sourceVersion;
+            Value = value;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterName">The name of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="int" />.</param>
+        /// <param name="isNullable"> true if the value of the field can be null; otherwise, false.</param>
+        /// <param name="precision">The total number of digits to the left and right of the decimal point to which Value is resolved.</param>
+        /// <param name="scale">The total number of decimal places to which Value is resolved.</param>
+        public AseParameter(string parameterName, AseDbType dbType, int size, bool isNullable, int precision, int scale) : this()
+        {
+            ParameterName = parameterName;
+            AseDbType = dbType;
+            Size = size;
+            IsNullable = isNullable;
+            Precision = (byte)precision;
+            Scale = (byte)scale;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterIndex">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        public AseParameter(int parameterIndex, AseDbType dbType) : this()
+        {
+            ParameterIndex = parameterIndex;
+            AseDbType = dbType;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterIndex">The index of the parameter to add.</param>
+        /// <param name="value">An object that is the value of the parameter.</param>
+        public AseParameter(int parameterIndex, object value) : this()
+        {
+            ParameterIndex = parameterIndex;
+            Value = value;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterIndex">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="int" />.</param>
+        public AseParameter(int parameterIndex, AseDbType dbType, int size) : this()
+        {
+            ParameterIndex = parameterIndex;
+            AseDbType = dbType;
+            Size = size;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterIndex">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="int" />.</param>
+        /// <param name="sourceColumn">The name of the source column.</param>
+        public AseParameter(int parameterIndex, AseDbType dbType, int size, string sourceColumn) : this()
+        {
+            ParameterIndex = parameterIndex;
+            AseDbType = dbType;
+            Size = size;
+            SourceColumn = sourceColumn;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterIndex">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="int" />.</param>
+        /// <param name="direction">One of the <see cref="ParameterDirection" /> values.</param>
+        /// <param name="isNullable"> true if the value of the field can be null; otherwise, false.</param>
+        /// <param name="precision">The total number of digits to the left and right of the decimal point to which Value is resolved.</param>
+        /// <param name="scale">The total number of decimal places to which Value is resolved.</param>
+        /// <param name="sourceColumn">The name of the source column.</param>
+        /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
+        /// <param name="value">An object that is the value of the parameter.</param>
+        public AseParameter(int parameterIndex, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, byte precision, byte scale, string sourceColumn, DataRowVersion sourceVersion, object value) : this()
+        {
+            ParameterIndex = parameterIndex;
+            AseDbType = dbType;
+            Size = size;
+            Direction = direction;
+            IsNullable = isNullable;
+            Precision = precision;
+            Scale = scale;
+            SourceColumn = sourceColumn;
+            SourceVersion = sourceVersion;
+            Value = value;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseParameter" />instance.
+        /// </summary>
+        /// <param name="parameterIndex">The index of the parameter to add.</param>
+        /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
+        /// <param name="size">The size as <see cref="int" />.</param>
+        /// <param name="direction">One of the <see cref="ParameterDirection" /> values.</param>
+        /// <param name="isNullable"> true if the value of the field can be null; otherwise, false.</param>
+        /// <param name="precision">The total number of digits to the left and right of the decimal point to which Value is resolved.</param>
+        /// <param name="scale">The total number of decimal places to which Value is resolved.</param>
+        /// <param name="sourceColumn">The name of the source column.</param>
+        /// <param name="sourceVersion">One of the <see cref="DataRowVersion" /> values.</param>
+        /// <param name="value">An object that is the value of the parameter.</param>
+        public AseParameter(int parameterIndex, AseDbType dbType, int size, ParameterDirection direction, bool isNullable, int precision, int scale, string sourceColumn, DataRowVersion sourceVersion, object value) : this()
+        {
+            ParameterIndex = parameterIndex;
+            AseDbType = dbType;
+            Size = size;
+            Direction = direction;
+            IsNullable = isNullable;
+            Precision = (byte)precision;
+            Scale = (byte)scale;
+            SourceColumn = sourceColumn;
+            SourceVersion = sourceVersion;
+            Value = value;
+        }
 
         public override void ResetDbType()
         {
-            //todo: implement? doesn't seem like we need to
+            DbType = default(DbType);
+            _isDbTypeSetExplicitly = false;
         }
 
         /// <summary>
@@ -207,17 +292,34 @@ namespace AdoNetCore.AseClient
         public override DbType DbType
         {
             get => (DbType)_type;
-            set => _type = (AseDbType)value;
+            set
+            {
+                _type = (AseDbType) value;
+                _isDbTypeSetExplicitly = true;
+            }
         }
 
         /// <summary>
         /// Gets or sets the <see cref="AseDbType" /> of the parameter.
         /// </summary>
+#if !NETCORE_OLD
+        [DbProviderSpecificTypeProperty(true)]
+#endif
         public AseDbType AseDbType
         {
             get => _type;
-            set => _type = value;
+            set {
+                _type = value;
+                _isDbTypeSetExplicitly = true;
+            }
         }
+
+        /// <summary>
+        /// Indicates if the DbType is known, or if we need to infer it
+        /// </summary>
+        internal bool DbTypeIsKnown => _isDbTypeSetExplicitly ||
+                                       //DbType default is AnsiString (0), so if Value is string/char, that's good enough. If the user requires unicode strings, they should explicitly specify an appropriate DbType
+                                       (DbType == default(DbType) && (Value is string || Value is char));
 
         /// <summary>
         /// Gets or sets a value that indicates whether the parameter is input-only, output-only, 
@@ -251,6 +353,16 @@ namespace AdoNetCore.AseClient
         {
             get => _parameterName;
             set => _parameterName = value == null || value.StartsWith("@") ? value : $"@{value}";
+        }
+
+
+        /// <summary>
+        /// Gets or sets the index of the <see cref="AseParameter" />.
+        /// </summary>
+        public int ParameterIndex
+        {
+            get => _parameterIndex;
+            set => _parameterIndex = value;
         }
 
         /// <summary>
@@ -351,7 +463,7 @@ namespace AdoNetCore.AseClient
 
         public override string ToString()
         {
-            return ParameterName;
+            return ParameterName ?? ParameterIndex.ToString();
         }
 
 
@@ -360,11 +472,12 @@ namespace AdoNetCore.AseClient
         {
             var clone = new AseParameter
             {
-                DbType = DbType,
-                AseDbType = AseDbType,
+                _type = AseDbType,
+                _isDbTypeSetExplicitly = _isDbTypeSetExplicitly,
                 Direction = Direction,
                 IsNullable = IsNullable,
                 ParameterName = ParameterName,
+                ParameterIndex = ParameterIndex,
                 Precision = Precision,
                 Scale = Scale,
                 Size = Size,

@@ -130,6 +130,7 @@ namespace AdoNetCore.AseClient.Internal
                     continue;
                 }
 
+                Logger.Instance?.WriteLine($"{nameof(FetchIdlePooledConnection)} returned idle connection");
                 return connection;
             }
 
@@ -155,9 +156,17 @@ namespace AdoNetCore.AseClient.Internal
         private IInternalConnection WaitForPooledConnection(CancellationToken cancellationToken)
         {
             Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} start");
-            var conn = _available.Take(cancellationToken);
-            Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} found connection");
-            return conn;
+            try
+            {
+                var conn = _available.Take(cancellationToken);
+                Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} found connection");
+                return conn;
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} timed out waiting for connection");
+                throw;
+            }
         }
 
         private async Task TryFillPoolToMinSize()

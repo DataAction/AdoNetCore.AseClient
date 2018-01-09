@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -78,7 +76,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
     CAST(NULL AS TIME) AS [NULL_TIME]
 ";
 
-        private readonly Dictionary<string, string> _connectionStrings = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText("ConnectionStrings.json"));
+        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
 
         [TestCase("INT")]
         [TestCase("BIGINT")]
@@ -611,6 +609,47 @@ namespace AdoNetCore.AseClient.Tests.Integration
         private void GetHelper_WithNullValue_TCastSuccessfully<T>(string columnName, Func<AseDataReader, int, T> testMethod, T expectedValue)
         {
             GetHelper_WithValue_TCastSuccessfully($"NULL_{columnName}", testMethod, expectedValue);
+        }
+
+        [TestCase(CommandBehavior.Default, 5)]
+        [TestCase(CommandBehavior.SingleResult, 3)]
+        [TestCase(CommandBehavior.SingleRow, 1)]
+        public void ExecuteReader_WithCommandBehavior_ReturnsTheCorrectNumberOfRows(CommandBehavior behavior, int expectedNumberOfRows)
+        {
+            using (var connection = new AseConnection(_connectionStrings["default"]))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+ @"SELECT 1 AS MyColumn 
+UNION ALL
+SELECT 2
+UNION ALL
+SELECT 3
+
+SELECT 4 AS MyOtherColumn 
+UNION ALL
+SELECT 5";
+
+                    using (var reader = command.ExecuteReader(behavior))
+                    {
+                        var recordCount = 0;
+
+                        do
+                        {
+                            while (reader.Read())
+                            {
+                                recordCount++;
+                            }
+                        } while (reader.NextResult());
+
+
+                        Assert.AreEqual(expectedNumberOfRows, recordCount);
+                    }
+                }
+            }
         }
     }
 }

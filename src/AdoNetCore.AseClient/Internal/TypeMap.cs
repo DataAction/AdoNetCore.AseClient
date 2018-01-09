@@ -37,6 +37,28 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN : TdsDataType.TDS_TIME}
         };
 
+        private static readonly Dictionary<Type, Func<object, int, TdsDataType>> NetTypeToTdsMap = new Dictionary<Type, Func<object, int, TdsDataType>>
+        {
+            {typeof(bool), (value, length) => TdsDataType.TDS_BIT},
+            {typeof(byte), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT1},
+            {typeof(sbyte), (value, length) => TdsDataType.TDS_INTN},
+            {typeof(short), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT2},
+            {typeof(ushort), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT2},
+            {typeof(int), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT4},
+            {typeof(uint), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT4},
+            {typeof(long), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT8},
+            {typeof(ulong), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT8},
+            {typeof(char), (value, length) => TdsDataType.TDS_CHAR},
+            {typeof(char[]), (value, length) => TdsDataType.TDS_CHAR},
+            {typeof(string), (value, length) => TdsDataType.TDS_LONGBINARY},
+            {typeof(byte[]), (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
+            {typeof(Guid), (value, length) => TdsDataType.TDS_BINARY},
+            {typeof(decimal), (value, length) => TdsDataType.TDS_DECN},
+            {typeof(float), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
+            {typeof(double), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
+            {typeof(DateTime), (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME}
+        };
+
         public static int? GetFormatLength(DbType dbType, AseParameter parameter, Encoding enc)
         {
             if (parameter.Size > 0)
@@ -74,7 +96,7 @@ namespace AdoNetCore.AseClient.Internal
                     {
                         case byte[] ba:
                             return ba.Length;
-                        case byte b:
+                        case byte _:
                             return 1;
                         default:
                             return 0;
@@ -113,13 +135,185 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public static TdsDataType GetTdsDataType(DbType dbType, object value, int? length)
+        public static TdsDataType GetTdsDataType(DbType dbType, bool dbTypeIsKnown, object value, int? length)
         {
-            if (!DbToTdsMap.ContainsKey(dbType))
+            // If the consumer has explicitly set a type, then rely on that.
+            if (dbTypeIsKnown && DbToTdsMap.TryGetValue(dbType, out var result))
             {
-                throw new NotSupportedException($"Unsupported data type {dbType}");
+                return result(value, length ?? 0);
             }
-            return DbToTdsMap[dbType](value, length ?? 0);
+
+            // If that is not set, then we should try to infer the type;
+            if (NetTypeToTdsMap.TryGetValue(value.GetType(), out result))
+            {
+                return result(value, length ?? 0);
+            }
+
+            throw new NotSupportedException($"Unsupported data type {dbType}");
+        }
+
+        private static readonly Dictionary<TdsDataType, Func<FormatItem, Type>> TdsToNetMap = new Dictionary<TdsDataType, Func<FormatItem, Type>>
+        {
+            {TdsDataType.TDS_BINARY, f => typeof(byte[])},
+            {TdsDataType.TDS_BIT, f => typeof(bool)},
+            {TdsDataType.TDS_BLOB, f => typeof(byte[])},
+            //{TdsDataType.TDS_BOUNDARY, f => typeof()},
+            {TdsDataType.TDS_CHAR, f => typeof(string)},
+            {TdsDataType.TDS_DATE, f => typeof(DateTime)},
+            {TdsDataType.TDS_DATEN, f => typeof(DateTime?)},
+            {TdsDataType.TDS_DATETIME, f => typeof(DateTime)},
+            {TdsDataType.TDS_DATETIMEN, f => typeof(DateTime?)},
+            {TdsDataType.TDS_DECN, f => typeof(decimal?)},
+            {TdsDataType.TDS_FLT4, f => typeof(float)},
+            {TdsDataType.TDS_FLT8, f => typeof(double)},
+            {
+                TdsDataType.TDS_FLTN, f => f.Length == 8
+                    ? typeof(double?)
+                    : typeof(float?)
+            },
+            {TdsDataType.TDS_IMAGE, f => typeof(byte[])},
+            {TdsDataType.TDS_INT1, f => typeof(byte)},
+            {TdsDataType.TDS_INT2, f => typeof(short)},
+            {TdsDataType.TDS_INT4, f => typeof(int)},
+            {TdsDataType.TDS_INT8, f => typeof(long)},
+            //{TdsDataType.TDS_INTERVAL, f => typeof()},
+            {
+                TdsDataType.TDS_INTN, f => f.Length == 8
+                    ? typeof(long?)
+                    : f.Length == 4
+                        ? typeof(int?)
+                        : f.Length == 2
+                            ? typeof(short?)
+                            : typeof(byte?)
+            },
+            {
+                TdsDataType.TDS_LONGBINARY, f => f.UserType == 34 || f.UserType == 35
+                    ? typeof(string)
+                    : typeof(byte[])
+            },
+            {TdsDataType.TDS_LONGCHAR, f => typeof(string)},
+            {TdsDataType.TDS_MONEY, f => typeof(decimal)},
+            {TdsDataType.TDS_MONEYN, f => typeof(decimal?)},
+            {TdsDataType.TDS_NUMN, f => typeof(decimal?)},
+            //{TdsDataType.TDS_SENSITIVITY,f =>  typeof()},
+            {TdsDataType.TDS_SHORTDATE, f => typeof(DateTime)},
+            {TdsDataType.TDS_SHORTMONEY, f => typeof(decimal)},
+            {TdsDataType.TDS_SINT1, f => typeof(sbyte)},
+            {TdsDataType.TDS_TEXT, f => typeof(string)},
+            {TdsDataType.TDS_TIME, f => typeof(TimeSpan)},
+            {TdsDataType.TDS_TIMEN, f => typeof(TimeSpan?)},
+            {TdsDataType.TDS_UINT2, f => typeof(ushort)},
+            {TdsDataType.TDS_UINT4, f => typeof(uint)},
+            {TdsDataType.TDS_UINT8, f => typeof(ulong)},
+            {
+                TdsDataType.TDS_UINTN, f => f.Length == 8
+                    ? typeof(ulong?)
+                    : f.Length == 4
+                        ? typeof(uint?)
+                        : f.Length == 2
+                            ? typeof(ushort?)
+                            : typeof(byte?)
+            },
+            {TdsDataType.TDS_UNITEXT, f => typeof(string)},
+            {TdsDataType.TDS_VARBINARY, f => typeof(byte[])},
+            {TdsDataType.TDS_VARCHAR, f => typeof(string)},
+            //{TdsDataType.TDS_VOID,f =>  typeof()},
+            {TdsDataType.TDS_XML, f => typeof(string)},
+        };
+
+        public static Type GetNetType(FormatItem format, bool defaultToObject = false)
+        {
+            if (!TdsToNetMap.ContainsKey(format.DataType))
+            {
+                if (defaultToObject)
+                {
+                    return typeof(object);
+                }
+
+                throw new NotSupportedException($"Unsupported dataType {format.DataType}");
+            }
+
+            return TdsToNetMap[format.DataType](format);
+        }
+
+        private static readonly Dictionary<TdsDataType, Func<FormatItem, AseDbType>> TdsToAseMap = new Dictionary<TdsDataType, Func<FormatItem, AseDbType>>
+        {
+            {TdsDataType.TDS_BINARY, f => AseDbType.Binary},
+            {TdsDataType.TDS_BIT, f => AseDbType.Bit},
+            {TdsDataType.TDS_BLOB, f => AseDbType.Image},
+            //{TdsDataType.TDS_BOUNDARY, f => typeof()},
+            {TdsDataType.TDS_CHAR, f => AseDbType.Char},
+            {TdsDataType.TDS_DATE, f => AseDbType.Date},
+            {TdsDataType.TDS_DATEN, f => AseDbType.Date},
+            {TdsDataType.TDS_DATETIME, f => AseDbType.DateTime},
+            {TdsDataType.TDS_DATETIMEN, f => AseDbType.DateTime},
+            {TdsDataType.TDS_DECN, f => AseDbType.Decimal},
+            {TdsDataType.TDS_FLT4, f => AseDbType.Real},
+            {TdsDataType.TDS_FLT8, f => AseDbType.Double},
+            {
+                TdsDataType.TDS_FLTN, f => f.Length == 8
+                    ? AseDbType.Double
+                    : AseDbType.Real
+            },
+            {TdsDataType.TDS_IMAGE, f => AseDbType.Image},
+            {TdsDataType.TDS_INT1, f => AseDbType.TinyInt},
+            {TdsDataType.TDS_INT2, f => AseDbType.SmallInt},
+            {TdsDataType.TDS_INT4, f => AseDbType.Integer},
+            {TdsDataType.TDS_INT8, f =>AseDbType.BigInt},
+            //{TdsDataType.TDS_INTERVAL, f => typeof()},
+            {
+                TdsDataType.TDS_INTN, f => f.Length == 8
+                    ? AseDbType.BigInt
+                    : f.Length == 4
+                        ? AseDbType.Integer
+                        : f.Length == 2
+                            ? AseDbType.SmallInt
+                            : AseDbType.TinyInt
+            },
+            {
+                TdsDataType.TDS_LONGBINARY, f => f.UserType == 34
+                                                 ? AseDbType.UniChar : f.UserType == 35
+                    ? AseDbType.UniVarChar
+                    : AseDbType.Binary
+            },
+            {TdsDataType.TDS_LONGCHAR, f => AseDbType.LongVarChar},
+            {TdsDataType.TDS_MONEY, f => AseDbType.Money},
+            {TdsDataType.TDS_MONEYN, f => f.Length == 8 ? AseDbType.Money : AseDbType.SmallMoney},
+            {TdsDataType.TDS_NUMN, f => AseDbType.Numeric},
+            //{TdsDataType.TDS_SENSITIVITY,f =>  typeof()},
+            {TdsDataType.TDS_SHORTDATE, f => AseDbType.SmallDateTime},
+            {TdsDataType.TDS_SHORTMONEY, f => AseDbType.SmallMoney},
+            {TdsDataType.TDS_SINT1, f => AseDbType.TinyInt},
+            {TdsDataType.TDS_TEXT, f => AseDbType.Text},
+            {TdsDataType.TDS_TIME, f => AseDbType.Time},
+            {TdsDataType.TDS_TIMEN, f => AseDbType.Time},
+            {TdsDataType.TDS_UINT2, f => AseDbType.UnsignedSmallInt},
+            {TdsDataType.TDS_UINT4, f => AseDbType.UnsignedInt},
+            {TdsDataType.TDS_UINT8, f => AseDbType.UnsignedBigInt},
+            {
+                TdsDataType.TDS_UINTN, f => f.Length == 8
+                    ? AseDbType.UnsignedBigInt
+                    : f.Length == 4
+                        ? AseDbType.UnsignedInt
+                        : f.Length == 2
+                            ? AseDbType.UnsignedSmallInt
+                            : AseDbType.TinyInt
+            },
+            {TdsDataType.TDS_UNITEXT, f => AseDbType.Unitext},
+            {TdsDataType.TDS_VARBINARY, f => AseDbType.VarBinary},
+            {TdsDataType.TDS_VARCHAR, f => AseDbType.VarChar},
+            //{TdsDataType.TDS_VOID,f =>  typeof()},
+            {TdsDataType.TDS_XML, f => AseDbType.VarChar},
+        };
+
+        public static AseDbType GetAseDbType(FormatItem format)
+        {
+            if (!TdsToAseMap.ContainsKey(format.DataType))
+            {
+                throw new NotSupportedException($"Unsupported dataType {format.DataType}");
+            }
+
+            return TdsToAseMap[format.DataType](format);
         }
     }
 }

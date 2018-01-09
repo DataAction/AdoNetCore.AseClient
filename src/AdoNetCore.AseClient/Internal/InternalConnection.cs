@@ -183,13 +183,13 @@ namespace AdoNetCore.AseClient.Internal
         public string DataSource => $"{_parameters.Server},{_parameters.Port}";
         public string ServerVersion { get; private set; }
 
-        private void InternalExecuteAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<int> rowsAffectedSource = null, TaskCompletionSource<DbDataReader> readerSource = null)
+        private void InternalExecuteAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<int> rowsAffectedSource = null, TaskCompletionSource<DbDataReader> readerSource = null, CommandBehavior behavior = CommandBehavior.Default)
         {
             AssertExecutionStart();
 
             try
             {
-                SendPacket(new NormalPacket(BuildCommandTokens(command)));
+                SendPacket(new NormalPacket(BuildCommandTokens(command, behavior)));
 
                 var doneHandler = new DoneTokenHandler();
                 var messageHandler = new MessageTokenHandler();
@@ -219,7 +219,7 @@ namespace AdoNetCore.AseClient.Internal
                 else
                 {
                     rowsAffectedSource?.SetResult(doneHandler.RowsAffected);
-                    readerSource?.SetResult(new AseDataReader(dataReaderHandler.Results()));
+                    readerSource?.SetResult(new AseDataReader(dataReaderHandler.Results(), command, behavior));
                 }
             }
             catch (Exception ex)
@@ -269,7 +269,7 @@ namespace AdoNetCore.AseClient.Internal
         public Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
         {
             var readerSource = new TaskCompletionSource<DbDataReader>();
-            InternalExecuteAsync(command, transaction, null, readerSource);
+            InternalExecuteAsync(command, transaction, null, readerSource, behavior);
             return readerSource.Task;
         }
 
@@ -383,7 +383,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public bool IsDisposed { get; private set; }
 
-        private IEnumerable<IToken> BuildCommandTokens(AseCommand command)
+        private IEnumerable<IToken> BuildCommandTokens(AseCommand command, CommandBehavior behavior)
         {
             if (command.CommandType == CommandType.TableDirect)
             {
@@ -391,8 +391,8 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             yield return command.CommandType == CommandType.StoredProcedure
-                ? BuildRpcToken(command)
-                : BuildLanguageToken(command);
+                ? BuildRpcToken(command, behavior)
+                : BuildLanguageToken(command, behavior);
 
             foreach (var token in BuildParameterTokens(command.AseParameters, command.NamedParameters))
             {
@@ -400,22 +400,37 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private IToken BuildLanguageToken(AseCommand command)
+        private IToken BuildLanguageToken(AseCommand command, CommandBehavior behavior)
         {
             return new LanguageToken
             {
-                CommandText = command.CommandText,
+                CommandText = MakeCommand(command.CommandText, behavior),
                 HasParameters = command.HasSendableParameters
             };
         }
 
-        private IToken BuildRpcToken(AseCommand command)
+        private IToken BuildRpcToken(AseCommand command, CommandBehavior behavior)
         {
             return new DbRpcToken
             {
-                ProcedureName = command.CommandText,
+                ProcedureName = MakeCommand(command.CommandText, behavior),
                 HasParameters = command.HasSendableParameters
             };
+        }
+
+        private string MakeCommand(string commandText, CommandBehavior behavior)
+        {
+            var result = commandText;
+
+            if ((behavior & CommandBehavior.SchemaOnly) == CommandBehavior.SchemaOnly)
+            {
+                result = 
+$@"SET FMTONLY ON
+{commandText}
+SET FMTONLY OFF";
+            }
+
+            return result;
         }
 
         // TODO - if namedParameters is false, then look for ? characters in the command, and bind the parameters by position.
@@ -426,12 +441,12 @@ namespace AdoNetCore.AseClient.Internal
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var parameterType = (DbType)parameter.AseDbType;
+                var parameterType = parameter.DbType;
                 var length = TypeMap.GetFormatLength(parameterType, parameter, _environment.Encoding);
                 var formatItem = new FormatItem
                 {
                     ParameterName = parameter.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(parameterType, parameter.Value, length),
+                    DataType = TypeMap.GetTdsDataType(parameterType, parameter.DbTypeIsKnown, parameter.Value, length),
                     IsOutput = parameter.IsOutput,
                     IsNullable = parameter.IsNullable,
                     Length = length
@@ -461,7 +476,7 @@ namespace AdoNetCore.AseClient.Internal
                 parameterItems.Add(new ParametersToken.Parameter
                 {
                     Format = formatItem,
-                    Value = parameter.Value
+                    Value = parameter.Value ?? DBNull.Value
                 });
             }
 

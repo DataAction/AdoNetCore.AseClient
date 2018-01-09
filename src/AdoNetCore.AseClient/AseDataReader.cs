@@ -1,29 +1,39 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Data.Common;
+using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader
     {
+        private static readonly HashSet<TdsDataType> LongTdsTypes = new HashSet<TdsDataType> {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT};
+
         private readonly TableResult[] _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
+        private readonly AseCommand _command;
+        private readonly CommandBehavior _behavior;
 
-        internal AseDataReader(TableResult[] results)
+#if !NETCORE_OLD
+        private DataTable _currentSchemaTable;
+#endif
+
+        internal AseDataReader(TableResult[] results, AseCommand command, CommandBehavior behavior)
         {
             _results = results;
+            _command = command;
+            _behavior = behavior;
             NextResult();
         }
 
         public override bool GetBoolean(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is bool i1)
             {
@@ -41,8 +51,6 @@ namespace AdoNetCore.AseClient
         public override byte GetByte(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is byte i1)
             {
@@ -128,8 +136,6 @@ namespace AdoNetCore.AseClient
         public override char GetChar(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is char i1)
             {
@@ -220,8 +226,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is DateTime i1)
             {
                 return i1;
@@ -239,8 +243,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is TimeSpan i1)
             {
                 return i1;
@@ -252,8 +254,6 @@ namespace AdoNetCore.AseClient
         public override decimal GetDecimal(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is decimal i1)
             {
@@ -272,8 +272,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is double i1)
             {
                 return i1;
@@ -287,13 +285,17 @@ namespace AdoNetCore.AseClient
             return convertible.ToDouble(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public override Type GetFieldType(int i) => typeof(object);
+        public override Type GetFieldType(int i)
+        {
+            var format = GetFormat(i);
+            return format == null
+                ? typeof(object)
+                : TypeMap.GetNetType(format, true);
+        }
 
         public override float GetFloat(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is float i1)
             {
@@ -321,7 +323,7 @@ namespace AdoNetCore.AseClient
             {
                 return Guid.Empty;
             }
-            
+
             if (obj is byte[] bytes)
             {
                 if (bytes.Length == 16)
@@ -329,15 +331,13 @@ namespace AdoNetCore.AseClient
                     return new Guid(bytes);
                 }
             }
-            
+
             throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Guid");
         }
 
         public override short GetInt16(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is short i1)
             {
@@ -356,8 +356,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is int i1)
             {
                 return i1;
@@ -374,8 +372,6 @@ namespace AdoNetCore.AseClient
         public override long GetInt64(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is long i1)
             {
@@ -394,8 +390,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is ushort i1)
             {
                 return i1;
@@ -412,8 +406,6 @@ namespace AdoNetCore.AseClient
         public uint GetUInt32(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is uint i1)
             {
@@ -432,8 +424,6 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetValue(i);
 
-            AssertNotDBNull(obj);
-
             if (obj is ulong i1)
             {
                 return i1;
@@ -450,8 +440,6 @@ namespace AdoNetCore.AseClient
         public override string GetString(int i)
         {
             var obj = GetValue(i);
-
-            AssertNotDBNull(obj);
 
             if (obj is string s)
             {
@@ -476,117 +464,98 @@ namespace AdoNetCore.AseClient
         //    throw new NotImplementedException();
         //}
 
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        private static void AssertNotDBNull(object obj)
-        {
-            if (obj == DBNull.Value)
-            {
-                throw new AseException(new AseError {IsError = true, IsFromClient = true, IsFromServer = false, IsInformation = false, IsWarning = false, Message = "Cannot read DBNull as type."});
-            }
-        }
-
         public override string GetName(int i)
         {
-            if (_currentResult >= 0
-                && _currentResult < _results.Length
-                && i < _results[_currentResult].Formats.Length)
+            var format = GetFormat(i);
+            if (format == null)
             {
-                return _results[_currentResult].Formats[i].ColumnName;
+                throw new ArgumentOutOfRangeException(nameof(i));
             }
 
-            throw new ArgumentOutOfRangeException(nameof(i));
+            return format.ColumnName;
         }
 
         public override int GetOrdinal(string name)
         {
-            if (!string.IsNullOrEmpty(name) && _currentResult >= 0 && _currentResult < _results.Length)
+            if (string.IsNullOrEmpty(name))
             {
-                name = name
-                    .TrimStart('[')
-                    .TrimEnd(']'); // TODO - this should be unnecessary - we should store the value in canonical form.
+                throw new ArgumentException();
+            }
 
-                var formats = _results[_currentResult].Formats;
-                for (var i = 0; i < formats.Length; i++)
+            var formats = CurrentResultSet?.Formats;
+
+            if (formats == null)
+            {
+                throw new ArgumentException();
+            }
+
+            name = name
+                .TrimStart('[')
+                .TrimEnd(']'); // TODO - this should be unnecessary - we should store the value in canonical form.
+
+            for (var i = 0; i < formats.Length; i++)
+            {
+                if (string.Equals(formats[i].ColumnName?.TrimStart('[').TrimEnd(']'), name, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (string.Equals(formats[i].ColumnName?.TrimStart('[').TrimEnd(']'), name, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return i;
-                    }
+                    return i;
                 }
             }
 
             throw new ArgumentException();
         }
+
         public override object GetValue(int i)
         {
-            if (IsDBNull(i))
+            if (!ValueExists(i))
             {
-                return DBNull.Value;
+                throw new ArgumentOutOfRangeException();
             }
 
-            if (_currentResult >= 0
-                && _currentResult < _results.Length
-                && _currentRow >= 0
-                && _currentRow < _results[_currentResult].Rows.Count
-                && i >= 0
-                && i < _results[_currentResult].Rows[_currentRow].Items.Length)
-            {
-                return _results[_currentResult].Rows[_currentRow].Items[i];
-            }
-
-            throw new ArgumentOutOfRangeException();
+            return IsDBNull(i)
+                ? DBNull.Value
+                : CurrentRow.Items[i];
         }
 
         public override int GetValues(object[] values)
         {
             var num = values.Length;
+            var items = CurrentRow?.Items;
 
-            if (_currentResult >= 0
-                && _currentResult < _results.Length
-                && _currentRow >= 0
-                && _currentRow < _results[_currentResult].Rows.Count)
+            if (items == null)
             {
-                var items = _results[_currentResult].Rows[_currentRow].Items;
-
-                if (num > items.Length)
-                {
-                    num = items.Length;
-                }
-
-                Array.Copy(items, 0, values, 0, num); // TODO - check how DBNull.Value goes back.
-
-                if (num < values.Length)
-                {
-                    Array.Clear(values, num, values.Length - num); // Clear any extra values to avoid confusion.
-                }
-                return num;
+                return 0;
             }
 
-            return 0;
+            if (num > items.Length)
+            {
+                num = items.Length;
+            }
+
+            Array.Copy(items, 0, values, 0, num); // TODO - check how DBNull.Value goes back.
+
+            if (num < values.Length)
+            {
+                Array.Clear(values, num, values.Length - num); // Clear any extra values to avoid confusion.
+            }
+            return num;
+
         }
 
         public override bool IsDBNull(int i)
         {
-            if (_currentResult >= 0
-                && _currentResult < _results.Length
-                && _currentRow >= 0
-                && _currentRow < _results[_currentResult].Rows.Count
-                && i >= 0
-                && i < _results[_currentResult].Rows[_currentRow].Items.Length)
+            if (!ValueExists(i))
             {
-                var value = _results[_currentResult].Rows[_currentRow].Items[i];
-
-                return value == DBNull.Value; // TODO - don't think this is right. Test with a debugger.
+                throw new ArgumentOutOfRangeException();
             }
 
-            throw new ArgumentOutOfRangeException();
+            return CurrentRow.Items[i] == DBNull.Value;
         }
 
-        public override int FieldCount => _currentResult >= 0 && _currentResult < _results.Length
-            ? _results[_currentResult].Formats.Length
-            : 0;
+        public override int FieldCount => CurrentResultSet?.Formats?.Length ?? 0;
 
-        public override bool HasRows => _results.Length > 0;
+        public override int VisibleFieldCount => FieldCount;
+
+        public override bool HasRows => CurrentRowCount > 0;
 
         public override object this[int ordinal] => GetValue(ordinal);
 
@@ -601,12 +570,182 @@ namespace AdoNetCore.AseClient
 #if NETCORE_OLD
         public DataTable GetSchemaTable()
         {
-            throw new NotImplementedException();
+            return null;
         }
 #else
         public override DataTable GetSchemaTable()
         {
-            throw new NotImplementedException();
+            EnsureSchemaTable();
+            return _currentSchemaTable;
+        }
+
+        private void EnsureSchemaTable()
+        {
+            if (_currentSchemaTable != null || FieldCount == 0)
+            {
+                return;
+            }
+
+            var formats = CurrentResultSet?.Formats;
+
+            if (formats == null)
+            {
+                return;
+            }
+
+            var table = new DataTable("SchemaTable");
+            var columns = table.Columns;
+
+            var columnName = columns.Add(SchemaTableColumn.ColumnName, typeof(string));
+            var columnOrdinal = columns.Add(SchemaTableColumn.ColumnOrdinal, typeof(int));
+            var columnSize = columns.Add(SchemaTableColumn.ColumnSize, typeof(int));
+            var numericPrecision = columns.Add(SchemaTableColumn.NumericPrecision, typeof(int));
+            var numericScale = columns.Add(SchemaTableColumn.NumericScale, typeof(int));
+            var isUnique = columns.Add(SchemaTableColumn.IsUnique, typeof(bool));
+            var isKey = columns.Add(SchemaTableColumn.IsKey, typeof(bool));
+            var baseServerName = columns.Add(SchemaTableOptionalColumn.BaseServerName, typeof(string));
+            var baseCatalogName = columns.Add(SchemaTableOptionalColumn.BaseCatalogName, typeof(string));
+            var baseColumnName = columns.Add(SchemaTableColumn.BaseColumnName, typeof(string));
+            var baseSchemaName = columns.Add(SchemaTableColumn.BaseSchemaName, typeof(string));
+            var baseTableName = columns.Add(SchemaTableColumn.BaseTableName, typeof(string));
+            var dataType = columns.Add(SchemaTableColumn.DataType, typeof(Type));
+            var allowDBNull = columns.Add(SchemaTableColumn.AllowDBNull, typeof(bool));
+            var providerType = columns.Add(SchemaTableColumn.ProviderType, typeof(int));
+            var isAliased = columns.Add(SchemaTableColumn.IsAliased, typeof(bool));
+            var isExpression = columns.Add(SchemaTableColumn.IsExpression, typeof(bool));
+            var isIdentity = columns.Add("IsIdentity", typeof(bool));
+            var isAutoIncrement = columns.Add(SchemaTableOptionalColumn.IsAutoIncrement, typeof(bool));
+            var isRowVersion = columns.Add(SchemaTableOptionalColumn.IsRowVersion, typeof(bool));
+            var isHidden = columns.Add(SchemaTableOptionalColumn.IsHidden, typeof(bool));
+            var isLong = columns.Add(SchemaTableColumn.IsLong, typeof(bool));
+            var isReadOnly = columns.Add(SchemaTableOptionalColumn.IsReadOnly, typeof(bool));
+            columns.Add(SchemaTableOptionalColumn.ProviderSpecificDataType, typeof(Type));
+            var dataTypeName = columns.Add("DataTypeName", typeof(string));
+            //do we need these?
+            columns.Add("XmlSchemaCollectionDatabase", typeof(string));
+            columns.Add("XmlSchemaCollectionOwningSchema", typeof(string));
+            columns.Add("XmlSchemaCollectionName", typeof(string));
+            columns.Add("UdtAssemblyQualifiedName");
+            columns.Add(SchemaTableColumn.NonVersionedProviderType, typeof(int));
+            //means "is column [a sparse] set", not "is column set [to a value]"
+            columns.Add("IsColumnSet", typeof(bool));
+
+            string baseCatalogNameValue = null;
+            string baseSchemaNameValue = null;
+            string baseTableNameValue = null;
+
+            for (var i = 0; i < formats.Length; i++)
+            {
+                var column = formats[i];
+                var row = table.NewRow();
+                var aseDbType = TypeMap.GetAseDbType(column);
+
+                row[columnName] = string.IsNullOrWhiteSpace(column.ColumnLabel) ? column.ColumnName : column.ColumnLabel;
+                row[columnOrdinal] = i;
+                row[columnSize] = column.Length ?? -1;
+                row[numericPrecision] = column.Precision ?? -1;
+                row[numericScale] = column.Scale ?? -1;
+                row[isUnique] = false; // This gets set below.
+                row[isKey] = false; // This gets set below - no idea why TDS_ROW_KEY is never set.
+                row[baseServerName] = string.Empty;
+                row[baseCatalogName] = column.CatalogName;
+                row[baseColumnName] = column.ColumnName;
+                row[baseSchemaName] = column.SchemaName;
+                row[baseTableName] = column.TableName;
+                row[dataType] = TypeMap.GetNetType(column);
+                row[allowDBNull] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_NULLALLOWED);
+                row[providerType] = aseDbType;
+                row[isAliased] = !string.IsNullOrWhiteSpace(column.ColumnLabel);
+                row[isExpression] = false; // It doesn't seem to matter that this isn't supported. The column gets flagged as TDS_ROW_UPDATABLE|TDS_ROW_NULLALLOWED so it doesn't cause an issue when an insert/update ignores it.
+                row[isIdentity] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_IDENTITY); 
+                row[isAutoIncrement] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_IDENTITY);
+                row[isRowVersion] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_VERSION);
+                row[isHidden] = column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_HIDDEN);
+                row[isLong] = LongTdsTypes.Contains(column.DataType);
+                row[isReadOnly] = !column.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_UPDATABLE);
+                row[dataTypeName] = $"{aseDbType}";
+
+                table.Rows.Add(row);
+
+                if (string.IsNullOrEmpty(baseTableNameValue))
+                {
+                    baseTableNameValue = column.TableName;
+                    baseSchemaNameValue = column.SchemaName;
+                    baseCatalogNameValue = column.CatalogName;
+                }
+            }
+
+            // Try to load the key info
+            //if ((_behavior & CommandBehavior.KeyInfo) == CommandBehavior.KeyInfo) 
+            {
+                if (_command.Connection == null)
+                {
+                    throw new InvalidOperationException("Invalid AseCommand.Connection");
+                }
+                if (_command.Connection.State != ConnectionState.Open)
+                {
+                    throw new InvalidOperationException("Invalid AseCommand.Connection.ConnectionState");
+                }
+
+                using (var command = _command.Connection.CreateCommand())
+                {
+                    command.CommandText = $"{baseCatalogNameValue}..sp_oledb_getindexinfo";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var tableName = command.CreateParameter();
+                    tableName.ParameterName = "@table_name";
+                    tableName.AseDbType = AseDbType.VarChar;
+                    tableName.Value = baseTableNameValue;
+                    command.Parameters.Add(tableName);
+
+                    var tableOwner = command.CreateParameter();
+                    tableOwner.ParameterName = "@table_owner";
+                    tableOwner.AseDbType = AseDbType.VarChar;
+                    tableOwner.Value = baseSchemaNameValue;
+                    command.Parameters.Add(tableOwner);
+
+                    var tableQualifier = command.CreateParameter();
+                    tableQualifier.ParameterName = "@table_qualifier";
+                    tableQualifier.AseDbType = AseDbType.VarChar;
+                    tableQualifier.Value = baseCatalogNameValue;
+                    command.Parameters.Add(tableQualifier);
+
+                    try
+                    {
+                        using (var keyInfoDataReader = command.ExecuteReader())
+                        {
+                            while (keyInfoDataReader.Read())
+                            {
+                                var keyColumnName = keyInfoDataReader["COLUMN_NAME"].ToString();
+                                var keySchemaName = keyInfoDataReader["TABLE_SCHEMA"].ToString();
+                                var keyCatalogName = keyInfoDataReader["TABLE_CATALOG"].ToString();
+
+                                foreach (DataRow row in table.Rows)
+                                {
+                                    // Use the base column name in case the column is aliased.
+                                    if (
+                                        string.Equals(keyColumnName, row[baseColumnName].ToString(),
+                                            StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(keySchemaName, row[baseSchemaName].ToString(),
+                                            StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(keyCatalogName, row[baseCatalogName].ToString(),
+                                            StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        row[isKey] = (bool) keyInfoDataReader["PRIMARY_KEY"];
+                                        row[isUnique] = (bool) keyInfoDataReader["UNIQUE"];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+            }
+
+            _currentSchemaTable = table;
         }
 #endif
 
@@ -616,17 +755,33 @@ namespace AdoNetCore.AseClient
         /// <returns>true if the reader is pointing at a record set; false otherwise.</returns>
         public override bool NextResult()
         {
+            // If we have read one row of data, jump to the end.
+            if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
+            {
+                // Jump to the end
+                return false;
+            }
+
+            // If we have read one result set
+            if ((_behavior & CommandBehavior.SingleResult) == CommandBehavior.SingleResult && _currentResult == 0)
+            {
+                // Jump to the end
+                return false;
+            }
+
             _currentResult++;
+
+#if !NETCORE_OLD
+            _currentSchemaTable = null;
+#endif
 
             if (_results.Length > _currentResult)
             {
                 _currentRow = -1;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <summary>
@@ -640,7 +795,17 @@ namespace AdoNetCore.AseClient
                 return false;
             }
 
-            _currentRow++;
+            // If we have read one row of data, jump to the end.
+            if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
+            {
+                // Jump to the end
+                _currentResult = _results.Length - 1;
+                _currentRow = _results[_currentResult].Rows.Count;
+            }
+            else
+            {
+                _currentRow++;
+            }
 
             return _results[_currentResult].Rows.Count > _currentRow;
         }
@@ -650,5 +815,51 @@ namespace AdoNetCore.AseClient
         public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
             ? _results[_currentResult].Rows.Count
             : 0;
+
+        /// <summary>
+        /// Confirm that the reader is pointing at a result set
+        /// </summary>
+        private bool WithinResultSet => _currentResult >= 0 && _currentResult < _results.Length;
+
+        /// <summary>
+        /// Confirm that the reader is pointing at a row within a result set
+        /// </summary>
+        private bool WithinRow => WithinResultSet && _currentRow >= 0 && _currentRow < CurrentResultSet.Rows.Count;
+
+        /// <summary>
+        /// Confirm that there is a value at the supplied index (does not confirm whether value is null or set)
+        /// </summary>
+        private bool ValueExists(int i)
+        {
+            var cr = CurrentRow;
+            return cr != null && i >= 0 && i < cr.Items.Length;
+        }
+
+        /// <summary>
+        /// From the current result set, get the FormatItem at the specified index.
+        /// </summary>
+        /// <returns>Returns the specified format item, or null</returns>
+        private FormatItem GetFormat(int i)
+        {
+            var formats = CurrentResultSet?.Formats;
+            return formats != null && i >= 0 && i < formats.Length
+                ? formats[i]
+                : null;
+        }
+
+        /// <summary>
+        /// Get the number of rows in the current result set, or 0 if there is no result set.
+        /// </summary>
+        private int CurrentRowCount => CurrentResultSet?.Rows?.Count ?? 0;
+
+        /// <summary>
+        /// Get the current result set, or null if there is none
+        /// </summary>
+        private TableResult CurrentResultSet => WithinResultSet ? _results[_currentResult] : null;
+
+        /// <summary>
+        /// Get the current row, or null if there is none
+        /// </summary>
+        private RowResult CurrentRow => WithinRow ? CurrentResultSet.Rows[_currentRow] : null;
     }
 }

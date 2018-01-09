@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Data;
+using System.Data.Common;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Interface;
@@ -32,7 +35,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             {
                 MinPoolSize = 10
             };
-            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory());
 
             Task.Delay(1000).Wait();
 
@@ -47,7 +50,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 MaxPoolSize = 1,
                 LoginTimeout = 1
             };
-            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory());
 
             var c1 = pool.Reserve();
             Assert.Throws<AseException>(() => pool.Reserve());
@@ -72,33 +75,42 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [TestCase(1, 10)]
         [TestCase(10, 10)]
         [TestCase(100, 10)]
-        public void PoolSpam_Waves(short size, int runs)
+        public void PoolSpam_Waves(short size, int waves)
         {
             var parameters = new TestConnectionParameters
             {
                 MaxPoolSize = size,
-                LoginTimeout = 3
+                LoginTimeout = 1
             };
 
-            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory());
 
+            Console.WriteLine($"Wave 0 (primer) of {waves}");
             var connections = Enumerable.Repeat<Func<IInternalConnection>>(() => pool.Reserve(), size).Select(f => f()).ToArray();
 
-            for (var run = 0; run < runs; run++)
+            for (var wave = 0; wave < waves; wave++)
             {
-                Console.WriteLine($"Run {run + 1} of {runs}");
-                var reserveTasks = Enumerable.Repeat<Func<Task<IInternalConnection>>>(() => Task.Run(() => pool.Reserve()), size).Select(f => f()).ToArray();
-                var releaseTasks = connections.Select(c => Task.Run(() => pool.Release(c))).ToArray();
+                Console.WriteLine($"Wave {wave + 1} of {waves}");
 
-                Task.WaitAll(releaseTasks);
-                // ReSharper disable once CoVariantArrayConversion
-                Task.WaitAll(reserveTasks);
+                var closureConnections = connections; //access to modified closure warning
+                var reserveTask = Task.Run(() => Enumerable.Repeat<Func<IInternalConnection>>(() => pool.Reserve(), size).AsParallel().Select(f => f()).ToArray());
+                var releaseTask = Task.Run(() => Parallel.ForEach(closureConnections, pool.Release));
 
-                Assert.IsTrue(reserveTasks.All(t => t.IsCompleted));
-                Assert.IsTrue(reserveTasks.All(t => t.Result != null));
-
-                connections = reserveTasks.Select(t => t.Result).ToArray();
+                try
+                {
+                    Task.WaitAll(releaseTask, reserveTask);
+                }
+                catch (AggregateException ae)
+                {
+                    ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                    throw;
+                }
+                
+                connections = reserveTask.Result;
             }
+
+            Console.WriteLine("Cleanup");
+            Parallel.ForEach(connections, pool.Release);
         }
 
         /// <summary>
@@ -120,7 +132,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 LoginTimeout = 1
             };
 
-            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(parameters));
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory());
 
             var result = Parallel.ForEach(
                 Enumerable.Repeat(1, threads),
@@ -139,17 +151,56 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class ImmediateConnectionFactory : IInternalConnectionFactory
         {
-            private readonly TestConnectionParameters _parameters;
-
-            public ImmediateConnectionFactory(TestConnectionParameters parameters)
-            {
-                _parameters = parameters;
-            }
-
             public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
             {
-                return new InternalConnection(_parameters, null);
+                return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection());
             }
+        }
+
+        private class DoNothingInternalConnection : IInternalConnection
+        {
+            public void Dispose() { }
+            public DateTime Created { get; }
+            public DateTime LastActive { get; }
+
+            public bool Ping()
+            {
+                return true;
+            }
+
+            public void ChangeDatabase(string databaseName) { }
+            public string Database { get; }
+            public string DataSource { get; }
+            public string ServerVersion { get; }
+            public int ExecuteNonQuery(AseCommand command, AseTransaction transaction)
+            {
+                return 0;
+            }
+
+            public Task<int> ExecuteNonQueryTaskRunnable(AseCommand command, AseTransaction transaction)
+            {
+                return Task.FromResult(0);
+            }
+
+            public DbDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
+            {
+                return null;
+            }
+
+            public Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
+            {
+                return Task.FromResult<DbDataReader>(null);
+            }
+
+            public object ExecuteScalar(AseCommand command, AseTransaction transaction)
+            {
+                return null;
+            }
+
+            public void Cancel() { }
+            public void SetTextSize(int textSize) { }
+            public bool IsDoomed { get; set; }
+            public bool IsDisposed { get; }
         }
 
         private class SlowConnectionFactory : IInternalConnectionFactory

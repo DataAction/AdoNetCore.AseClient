@@ -130,6 +130,7 @@ namespace AdoNetCore.AseClient.Internal
                     continue;
                 }
 
+                Logger.Instance?.WriteLine($"{nameof(FetchIdlePooledConnection)} returned idle connection");
                 return connection;
             }
 

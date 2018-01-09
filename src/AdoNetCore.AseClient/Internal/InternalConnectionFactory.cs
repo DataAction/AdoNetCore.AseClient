@@ -20,6 +20,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
         {
+            Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} start");
             Socket socket = null;
             InternalConnection connection = null;
 
@@ -51,13 +52,14 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (OperationCanceledException)
             {
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
                 connection?.Dispose();
                 socket?.Dispose();
                 throw;
             }
             catch(Exception ex)
             {
-                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)} encountered exception: {ex}");
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} encountered exception: {ex}");
                 connection?.Dispose();
                 socket?.Dispose();
                 throw new OperationCanceledException();

@@ -140,8 +140,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 var buffer = new byte[length];
                 Array.Copy(bytes, buffer, length);
-                Logger.Instance?.Write(Environment.NewLine);
-                Logger.Instance?.Write(HexDump.Dump(bytes));
+                DumpBytes(buffer);
             }
         }
 

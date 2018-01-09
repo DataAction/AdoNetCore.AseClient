@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using AdoNetCore.AseClient.Internal;
 using Dapper;
 using NUnit.Framework;
 
@@ -561,6 +562,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData("0.9999", 0.9999m);
             yield return new TestCaseData("1", 1m);
             yield return new TestCaseData("-1", -1m);
+            yield return new TestCaseData("1.1111", 1.1111m);
             yield return new TestCaseData("922337203685477.5807", 922337203685477.5807m);
             yield return new TestCaseData("-922337203685477.5808", -922337203685477.5808m);
         }

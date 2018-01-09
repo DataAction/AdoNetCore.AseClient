@@ -33,7 +33,9 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         public static IConnectionPool GetConnectionPool(string connectionString)
         {
-            return Pools[connectionString];
+            return Pools.ContainsKey(connectionString)
+                ? Pools[connectionString]
+                : null;
         }
 
         /// <summary>

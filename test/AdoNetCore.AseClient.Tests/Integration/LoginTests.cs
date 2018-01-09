@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
@@ -12,6 +14,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
     {
         private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
 
+        private string BlitzConn(int size) => _connectionStrings["pooled"] + $";Max Pool Size={size};ConnectionLifetime=1";
+        
         [TestCase("default")]
         [TestCase("big-packetsize")]
         public void Login_Success(string csName)
@@ -51,19 +55,29 @@ namespace AdoNetCore.AseClient.Tests.Integration
             Logger.Disable();
             var parallelism = size * 2;
 
-            var result = Parallel.ForEach(
-                Enumerable.Repeat(1, threads),
-                new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = parallelism
-                },
-                (_, __) =>
-                {
-                    using (var connection = new AseConnection(_connectionStrings["pooled"] + $";Max Pool Size={size};ConnectionLifetime=1"))
+            ParallelLoopResult result;
+
+            try
+            {
+                result = Parallel.ForEach(
+                    Enumerable.Repeat(1, threads),
+                    new ParallelOptions
                     {
-                        connection.Open();
-                    }
-                });
+                        MaxDegreeOfParallelism = parallelism
+                    },
+                    (_, __) =>
+                    {
+                        using (var connection = new AseConnection(BlitzConn(size)))
+                        {
+                            connection.Open();
+                        }
+                    });
+            }
+            catch(AggregateException ae)
+            {
+                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                throw;
+            }
 
             Assert.IsTrue(result.IsCompleted);
         }

@@ -15,9 +15,6 @@
     <ProjectReference Include="..\..\src\AdoNetCore.AseClient\AdoNetCore.AseClient.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="ConnectionStrings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="DatabaseLoginDetails.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

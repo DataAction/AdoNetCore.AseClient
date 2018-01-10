@@ -766,6 +766,22 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static readonly double _log256 = Math.Log10(256);
+
+        /// <summary>
+        /// get the number of bytes required to represent the value (caller should add 1 byte to represent sign byte)
+        /// </summary>
+        public int BytesRequired
+        {
+            get
+            {
+                if (IsNull)
+                    //throw new SqlNullValueException();
+                    throw new NullReferenceException();
+                return Convert.ToInt32(Math.Ceiling(_bPrec / _log256));
+            }
+        }
+
         public int[] Data
         {
             get

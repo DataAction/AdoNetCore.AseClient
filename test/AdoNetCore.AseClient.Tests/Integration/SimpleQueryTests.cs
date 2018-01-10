@@ -483,6 +483,57 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             }
         }
 
+        /*[TestCaseSource(nameof(SelectAseDecimal_Parameter_ShouldWork_Cases))]
+        public void SelectAseDecimal_Parameter_ShouldWork(AseDecimal expected)
+        {
+            using (var connection = GetConnection("asedecimal-on"))
+            using (var command = connection.CreateCommand())
+            {
+                var pExpected = command.CreateParameter();
+                pExpected.DbType = DbType.Decimal;
+                pExpected.ParameterName = "@expected";
+                pExpected.Value = expected;
+
+                command.Parameters.Add(pExpected);
+
+                command.CommandType = CommandType.Text;
+                command.CommandText = "select @expected";
+
+                connection.Open();
+                var result = (AseDecimal)command.ExecuteScalar();
+                Assert.AreEqual(expected, result);
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectAseDecimal_Parameter_ShouldWork_Cases()
+        {
+            yield return new TestCaseData(AseDecimal.Parse("99999999999999999999999999999999999999")); //10^38 - 1
+            yield return new TestCaseData(AseDecimal.Parse("-99999999999999999999999999999999999999")); //-10^38 - 1
+            //yield return new TestCaseData(AseDecimal.Parse("-100000000000000000000000000000000000000")); //-10^38: should throw IndexOutOfRangeException when trying to bind the parameter
+        }
+
+
+        [TestCaseSource(nameof(SelectAseDecimal_Literal_ShouldWork_Cases))]
+        public void SelectAseDecimal_Literal_ShouldWork(string input, AseDecimal expected)
+        {
+            using (var connection = GetConnection("asedecimal-on"))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = $"select {input}";
+
+                connection.Open();
+                var result = (AseDecimal)command.ExecuteScalar();
+                Assert.AreEqual(expected, result);
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectAseDecimal_Literal_ShouldWork_Cases()
+        {
+            yield return new TestCaseData("99999999999999999999999999999999999999", AseDecimal.Parse("99999999999999999999999999999999999999")); //10^38 - 1
+            yield return new TestCaseData("-100000000000000000000000000000000000000", AseDecimal.Parse("-100000000000000000000000000000000000000")); //-10^38
+        }*/
+
         public static IEnumerable<TestCaseData> SelectDecimal_Parameter_ShouldWork_Cases()
         {
             yield return new TestCaseData(null);
@@ -495,6 +546,9 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(-987654321.0123456789m);
             yield return new TestCaseData(32109876543210.0123456789m);
             yield return new TestCaseData(-32109876543210.0123456789m);
+            yield return new TestCaseData(79228162514264337593543950335m); //max .net decimal value
+            yield return new TestCaseData(-79228162514264337593543950335m); //min .net decimal value
+            //yield return new TestCaseData(AseDecimal.Parse(""))
         }
 
         [TestCaseSource(nameof(SelectDecimal_OtherTypedParameter_ShouldWork_Cases))]
@@ -590,12 +644,23 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         }
 
         [TestCaseSource(nameof(SelectMoney_Parameter_ShouldWork_Cases))]
-        public void SelectMoney_Parameter_ShouldWork(decimal? expected)
+        public void SelectMoney_CurrencyParameter_ShouldWork(decimal? expected)
         {
             using (var connection = GetConnection())
             {
                 var p = new DynamicParameters();
                 p.Add("@expected", expected, DbType.Currency);
+                Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>("select convert(money, @expected)", p));
+            }
+        }
+
+        [TestCaseSource(nameof(SelectMoney_Parameter_ShouldWork_Cases))]
+        public void SelectMoney_DecmalParameter_ShouldWork(decimal? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", expected, DbType.Decimal);
                 Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>("select convert(money, @expected)", p));
             }
         }

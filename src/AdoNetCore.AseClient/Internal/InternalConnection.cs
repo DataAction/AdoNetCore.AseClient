@@ -441,37 +441,7 @@ SET FMTONLY OFF";
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var parameterType = parameter.DbType;
-                var length = TypeMap.GetFormatLength(parameterType, parameter, _environment.Encoding);
-                var formatItem = new FormatItem
-                {
-                    ParameterName = parameter.ParameterName,
-                    DataType = TypeMap.GetTdsDataType(parameterType, parameter.DbTypeIsKnown, parameter.Value, length),
-                    IsOutput = parameter.IsOutput,
-                    IsNullable = parameter.IsNullable,
-                    Length = length
-                };
-
-                if ((parameterType == DbType.Decimal
-                    || parameterType == DbType.VarNumeric
-                    || parameterType == DbType.Currency
-                ) && parameter.Value is decimal)
-                {
-                    var sqlDecimal = (SqlDecimal)(decimal)parameter.Value;
-                    formatItem.Precision = sqlDecimal.Precision;
-                    formatItem.Scale = sqlDecimal.Scale;
-                }
-
-                if (parameterType == DbType.String)
-                {
-                    formatItem.UserType = 35;
-                }
-
-                if (parameterType == DbType.StringFixedLength)
-                {
-                    formatItem.UserType = 34;
-                }
-
+                var formatItem = FormatItem.CreateForParameter(parameter, _environment.Encoding);
                 formatItems.Add(formatItem);
                 parameterItems.Add(new ParametersToken.Parameter
                 {

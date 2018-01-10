@@ -27,7 +27,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.AnsiStringFixedLength, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
             {DbType.Binary, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
             {DbType.Guid, (value, length) => TdsDataType.TDS_BINARY},
-            {DbType.Decimal, (value, length) => TdsDataType.TDS_DECN},
+            {DbType.Decimal, (value, length) => TdsDataType.TDS_NUMN},
             {DbType.Currency, (value, length) => TdsDataType.TDS_MONEYN},
             {DbType.VarNumeric, (value, length) => TdsDataType.TDS_NUMN},
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -35,6 +36,49 @@ namespace AdoNetCore.AseClient.Internal
         /// Relates to TDS_BLOB
         /// </summary>
         public string ClassId { get; set; }
+
+        public static FormatItem CreateForParameter(AseParameter parameter, Encoding enc)
+        {
+            var dbType = parameter.DbType;
+            var format = new FormatItem
+            {
+                ParameterName = parameter.ParameterName,
+                IsOutput = parameter.IsOutput,
+                IsNullable = parameter.IsNullable,
+                Length = TypeMap.GetFormatLength(dbType, parameter, enc)
+            };
+
+            if (dbType == DbType.Decimal || dbType == DbType.VarNumeric)
+            {
+                if (parameter.Value == null || parameter.Value == DBNull.Value)
+                {
+                    format.Precision = 1;
+                    format.Scale = 0;
+                    format.Length = 1;
+                }
+                else
+                {
+                    var sqlDecimal = (SqlDecimal) Convert.ToDecimal(parameter.Value);
+                    format.Precision = sqlDecimal.Precision;
+                    format.Scale = sqlDecimal.Scale;
+                    format.Length = sqlDecimal.BytesRequired + 1;
+                }
+            }
+
+            format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.Value, format.Length);
+            
+            if (dbType == DbType.String)
+            {
+                format.UserType = 35;
+            }
+
+            if (dbType == DbType.StringFixedLength)
+            {
+                format.UserType = 34;
+            }
+
+            return format;
+        }
 
         public static FormatItem ReadForRow(Stream stream, Encoding enc, TokenType srcTokenType)
         {

@@ -12,26 +12,27 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class LoginTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
-        private string BlitzConn(int size) => _connectionStrings["pooled"] + $";Max Pool Size={size};ConnectionLifetime=1";
-        
-        [TestCase("default")]
-        [TestCase("big-packetsize")]
-        public void Login_Success(string csName)
+        [TestCaseSource(nameof(Login_Success_Cases))]
+        public void Login_Success(string cs)
         {
             Logger.Enable();
-            using (var connection = new AseConnection(_connectionStrings[csName]))
+            using (var connection = new AseConnection(cs))
             {
                 connection.Open();
                 Assert.IsTrue(connection.State == ConnectionState.Open, "Connection state should be Open after calling Open()");
             }
         }
 
+        public static IEnumerable<TestCaseData> Login_Success_Cases()
+        {
+            yield return new TestCaseData(ConnectionStrings.Default);
+            yield return new TestCaseData(ConnectionStrings.BigPacketSize);
+        }
+
         [Test]
         public void Login_Failure()
         {
-            using (var connection = new AseConnection(_connectionStrings["badpass"]))
+            using (var connection = new AseConnection(ConnectionStrings.BadPass))
             {
                 Assert.Throws<AseException>(() => connection.Open());
             }
@@ -46,10 +47,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
-        [TestCase(10, 100)]
-        [TestCase(100, 1000)]
-        [TestCase(100, 10000)]
-        public void Login_Blitz(short size, int threads)
+        [TestCaseSource(nameof(Login_Blitz_Cases))]
+        public void Login_Blitz(int size, int threads, string cs)
         {
             //need to add some counters so we can see what's going on
             Logger.Disable();
@@ -67,7 +66,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
                     },
                     (_, __) =>
                     {
-                        using (var connection = new AseConnection(BlitzConn(size)))
+                        using (var connection = new AseConnection(cs))
                         {
                             connection.Open();
                         }
@@ -80,6 +79,13 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
 
             Assert.IsTrue(result.IsCompleted);
+        }
+
+        public static IEnumerable<TestCaseData> Login_Blitz_Cases()
+        {
+            yield return new TestCaseData(10, 100, ConnectionStrings.Pooled10);
+            yield return new TestCaseData(100, 1000, ConnectionStrings.Pooled100);
+            yield return new TestCaseData(100, 10000, ConnectionStrings.Pooled100);
         }
     }
 }

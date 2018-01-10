@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
+using AdoNetCore.AseClient.Internal;
 using Dapper;
 using NUnit.Framework;
 
@@ -8,12 +8,10 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class StringTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         private IDbConnection GetConnection()
         {
-            Internal.Logger.Enable();
-            return new AseConnection(_connectionStrings["pooled"]);
+            Logger.Enable();
+            return new AseConnection(ConnectionStrings.Pooled);
         }
 
         [Test]

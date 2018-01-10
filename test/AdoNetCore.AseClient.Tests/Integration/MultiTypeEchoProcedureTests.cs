@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using AdoNetCore.AseClient.Internal;
 using Dapper;
@@ -10,8 +9,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class MultiTypeEchoProcedureTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         private readonly string _createProc = @"
 create procedure [dbo].[sp_multitype_output]
     @echoChar char(1) = null output,
@@ -26,7 +23,7 @@ end";
         [SetUp]
         public void Setup()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_createProc);
             }
@@ -36,7 +33,7 @@ end";
         public void Simple_Procedure_ShouldExecute()
         {
             Logger.Enable();
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 var p = new DynamicParameters();
                 p.Add("@echoChar", null, DbType.String, ParameterDirection.Output, 2);
@@ -53,7 +50,7 @@ end";
         [TearDown]
         public void Teardown()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_dropProc);
             }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,8 +10,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class CancelTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         public CancelTests()
         {
             Logger.Enable(timestamps: true);
@@ -21,7 +18,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteNonQueryAsync_NoCancel_Succeeds()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -36,7 +33,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteNonQueryAsync_AlreadyCanceled_Cancels()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -54,7 +51,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteNonQueryAsync_DelayedCancel_Cancels()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -73,7 +70,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteQuickNonQueryAsync_DelayedCancel_DoesNothing()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -91,7 +88,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteScalarAsync_NoCancel_Succeeds()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -108,7 +105,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteScalarAsync_AlreadyCanceled_Cancels()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -126,7 +123,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteScalarAsync_DelayedCancel_Cancels()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -145,7 +142,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ExecuteQuickScalarAsync_DelayedCancel_DoesNothing()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())

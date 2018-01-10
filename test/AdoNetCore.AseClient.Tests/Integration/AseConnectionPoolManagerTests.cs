@@ -1,17 +1,14 @@
-﻿using System.Collections.Generic;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
     public class AseConnectionPoolManagerTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         [Test]
         public void NumberOfOpenConnections_NewConnectionWithUnpooledConnectionString_ReturnsZero()
         {
-            var unpooledConnectionString = _connectionStrings["default"] + ";Pooling=false;UniqueID={BB44E31D-E62E-4F30-A340-D42E6258EB68}";
+            var unpooledConnectionString = ConnectionStrings.DefaultUnique;
             var originalNumberOfOpenConnections = AseConnectionPoolManager.NumberOfOpenConnections;
 
             using (var connection = new AseConnection(unpooledConnectionString))
@@ -30,7 +27,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void GetConnectionPool_NewConnectionWithUnpooledConnectionString_ReturnsPoolWithSizeZero()
         {
-            var unpooledConnectionString = _connectionStrings["default"] + ";Pooling=false;UniqueID={62E59F3E-C4FF-4434-A1EE-17EF052F3206}";
+            var unpooledConnectionString = ConnectionStrings.DefaultUnique;
 
             using (var connection = new AseConnection(unpooledConnectionString))
             {
@@ -48,7 +45,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void NumberOfOpenConnections_NewConnectionWithPooledConnectionString_ReturnsOne()
         {
-            var unpooledConnectionString = _connectionStrings["default"] + ";Pooling=true;UniqueID={644A002D-FEDF-4F11-9AB3-A88709E7ED0A}";
+            var unpooledConnectionString = ConnectionStrings.PooledUnique;
             var originalNumberOfOpenConnections = AseConnectionPoolManager.NumberOfOpenConnections;
 
             using (var connection = new AseConnection(unpooledConnectionString))
@@ -67,7 +64,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void GetConnectionPool_NewConnectionWithPooledConnectionString_ReturnsPoolWithSizeOne()
         {
-            var unpooledConnectionString = _connectionStrings["default"] + ";Pooling=true;UniqueID={C43098E5-3708-4E1A-A58D-B1C77D5C94C3}";
+            var unpooledConnectionString = ConnectionStrings.PooledUnique;
 
             using (var connection = new AseConnection(unpooledConnectionString))
             {
@@ -85,7 +82,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void GetConnectionPool_NewConnectionWithPooledConnectionString_ReturnsPoolWithAvailable()
         {
-            var unpooledConnectionString = _connectionStrings["default"] + ";Pooling=true;UniqueID={5BDD8727-BA64-46AF-B933-9EEB70E6E322}";
+            var unpooledConnectionString = ConnectionStrings.PooledUnique;
 
             using (var connection = new AseConnection(unpooledConnectionString))
             {

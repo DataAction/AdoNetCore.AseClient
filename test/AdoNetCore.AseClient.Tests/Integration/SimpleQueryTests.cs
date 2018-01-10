@@ -11,17 +11,14 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class SimpleQueryTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
+        public SimpleQueryTests()
+        {
+            Logger.Enable();
+        }
 
         private IDbConnection GetConnection()
         {
-            return GetConnection("big-packetsize"); //"default", "pooled", "big-packetsize"
-        }
-
-        private IDbConnection GetConnection(string csName)
-        {
-            Internal.Logger.Enable();
-            return new AseConnection(_connectionStrings[csName]);
+            return new AseConnection(ConnectionStrings.BigPacketSize);
         }
 
         [TestCase("null", null)]
@@ -288,7 +285,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         public void SelectLongString_Literal_ShouldWork(int count)
         {
             var expected = new string('1', count);
-            using (var connection = GetConnection("big-textsize"))
+            using (var connection = new AseConnection(ConnectionStrings.BigTextSize))
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>($"select '{expected}'"));
             }
@@ -303,7 +300,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         public void SelectLongString_Parameter_ShouldWork(int count)
         {
             var expected = new string('1', count);
-            using (var connection = GetConnection("big-textsize"))
+            using (var connection = new AseConnection(ConnectionStrings.BigTextSize))
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<string>("select @expected", new { expected }));
             }

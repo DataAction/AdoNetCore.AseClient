@@ -9,13 +9,11 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class AseDataAdapterTests
     {
-        private static readonly IDictionary<string, string> ConnectionStrings = ConnectionStringLoader.Load();
-
         [SetUp]
         public void SetUp()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(ConnectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings.Default))
             {
                 connnection.Open();
 
@@ -130,7 +128,7 @@ END";
         public void TearDown()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(ConnectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings.Default))
             {
                 connnection.Open();
 
@@ -157,7 +155,7 @@ END";
         [Test]
         public void AseAdapter_WithAseCommandBuilder_HasInsertUpdateDeleteCommands()
         {
-            using (var connnection = new AseConnection(ConnectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings.Default))
             {
                 connnection.Open();
 
@@ -201,7 +199,7 @@ END";
         [TestCaseSource(nameof(DeriveParametersTestCases))]
         public void AseCommandBuilder_DeriveParameters_SetsParametersOnCommand(string procedureName)
         {
-            using (var connnection = new AseConnection(ConnectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings.Default))
             {
                 connnection.Open();
 
@@ -224,7 +222,7 @@ END";
         /// <returns>Test cases with different variants of the same proc name.</returns>
         private static IEnumerable<TestCaseData> DeriveParametersTestCases()
         {
-            var connectionString = ConnectionStrings["default"];
+            var connectionString = ConnectionStrings.Default;
             var match = Regex.Match(connectionString, @"(((Database)|(Db)|(Initial Catalog))\s*=\s*(?<database>[^;]+))", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
             string database = null;
@@ -247,7 +245,7 @@ END";
         [Test]
         public void AseAdapter_WithAseCommandBuilder_CanInsertUpdateAndDelete()
         {
-            using (var connnection = new AseConnection(ConnectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings.Default))
             {
                 connnection.Open();
 

@@ -1,6 +1,5 @@
 ﻿#if NETCOREAPP2_0
 using System;
-using System.Collections.Generic;
 using System.Data;
 using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
@@ -10,13 +9,11 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class DataSetTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         [Test]
         public void SingleTable_Load_Succeeds()
         {
             Logger.Enable();
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             using (var command = connection.CreateCommand())
             {
                 connection.Open();

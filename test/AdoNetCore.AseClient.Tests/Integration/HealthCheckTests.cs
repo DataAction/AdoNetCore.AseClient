@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -7,12 +6,10 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [SetUpFixture]
     public class HealthCheckTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         [OneTimeSetUp]
         public void HealthCheckBefore()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             using (var command = connection.CreateCommand())
             {
                 connection.Open();

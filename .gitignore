@@ -1,4 +1,5 @@
 ConnectionStrings.json
+DatabaseLoginDetails.json
 *.suo
 *.user
 *.userosscache

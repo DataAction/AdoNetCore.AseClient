@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using Dapper;
 using NUnit.Framework;
 
@@ -8,8 +7,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class RaiserrorProcedureTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         private readonly string _createProc = @"
 create procedure [dbo].[sp_test_raiseerror]
 as
@@ -23,7 +20,7 @@ end";
         [SetUp]
         public void Setup()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_createProc);
             }
@@ -32,7 +29,7 @@ end";
         [Test]
         public void RaiserrorProcedure_ThrowsAseException()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 var ex = Assert.Throws<AseException>(() => connection.Execute("sp_test_raiseerror", commandType: CommandType.StoredProcedure));
                 var error = ex.Errors[0];
@@ -48,7 +45,7 @@ end";
         [TearDown]
         public void Teardown()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_dropProc);
             }

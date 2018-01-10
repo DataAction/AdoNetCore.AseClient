@@ -3,7 +3,6 @@
 // ReSharper disable InconsistentNaming
 
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Dapper;
@@ -15,13 +14,11 @@ namespace AdoNetCore.AseClient.Tests
     [TestFixture]
     internal sealed class CodeSamples
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         [SetUp]
         public void SetUp()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings.Default))
             {
                 connnection.Open();
 
@@ -146,7 +143,7 @@ END";
         public void TearDown()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(_connectionStrings["default"]))
+            using (var connnection = new AseConnection(ConnectionStrings.Default))
             {
                 connnection.Open();
 
@@ -193,9 +190,7 @@ END";
         [Test]
         public void OpenADatabaseConnection()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -206,9 +201,7 @@ END";
         [Test]
         public void ExecuteASQStatementAndReadResponseData()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -234,9 +227,7 @@ END";
         [Test]
         public void ExecuteASQLStatementThatReturnsNoResults()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -252,9 +243,7 @@ END";
         [Test]
         public void ExecuteASQLStatementThatReturnsAScalarValue()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -270,9 +259,7 @@ END";
         [Test]
         public void ExecuteAStoredProcedureAndReadResponseData()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -304,7 +291,7 @@ END";
         {
             var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
 
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -327,7 +314,7 @@ END";
         {
             var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
 
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -344,9 +331,7 @@ END";
         [Test]
         public void UseInputOutputAndReturnParametersWithAStoredProcedure()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -374,14 +359,13 @@ END";
         [Test]
         public void ExecuteAStoredProcedureAndReadResponseDataUsingDapper()
         {
-            var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
-
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
                 var barneyRubble = connection.Query<Customer>("GetCustomer", new {lastName = "Rubble"}, commandType: CommandType.StoredProcedure).First();
-
+                Assert.IsNotNull(barneyRubble.FirstName);
+                Assert.IsNotNull(barneyRubble.LastName);
                 // Do something with the result...
             }
         }

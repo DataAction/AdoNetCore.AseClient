@@ -16,8 +16,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture]
     public class EchoProcedureTests
     {
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
-
         private readonly string _createProc = @"
 create procedure [dbo].[sp_test_echo]
   @nEchoValue int,
@@ -40,7 +38,7 @@ end";
         [SetUp]
         public void Setup()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_createProc);
             }
@@ -49,23 +47,28 @@ end";
         [Test]
         public void Echo_Procedure_ShouldExecute()
         {
-            ExecuteProcedure(_connectionStrings["pooled"]);
+            ExecuteProcedure(ConnectionStrings.Pooled);
         }
 
-        [TestCase(1000, 20, "pooled")]
-        [TestCase(5000, 20, "pooled")]
-        //note: if you run a nonpooled test too frequenly,
-        //you'll consume all the free ports windows normally makes available (port range ~1000-5000)
-        //[TestCase(1000, 20, "nonpooled")]
+        [TestCaseSource(nameof(MultiThreaded_Echo_Procedure_ShouldExecute_WithoutCrosstalk_Cases))]
         public void MultiThreaded_Echo_Procedure_ShouldExecute_WithoutCrosstalk(int threads, int parallelism, string csName)
         {
-            var connectionString = _connectionStrings[csName];
+            var connectionString = ConnectionStrings.Pooled;
             ExecuteProcedure(connectionString);
             var sw = Stopwatch.StartNew();
             var result = Parallel.ForEach(Enumerable.Repeat(1, threads), new ParallelOptions { MaxDegreeOfParallelism = parallelism }, (_, __) => ExecuteProcedure(connectionString));
             sw.Stop();
             Assert.True(result.IsCompleted);
             Console.WriteLine($"Stopwatch reports: {sw.ElapsedMilliseconds} ms");
+        }
+
+        public static IEnumerable<TestCaseData> MultiThreaded_Echo_Procedure_ShouldExecute_WithoutCrosstalk_Cases()
+        {
+            yield return new TestCaseData(1000, 20, ConnectionStrings.Pooled);
+            yield return new TestCaseData(5000, 20, ConnectionStrings.Pooled);
+            //note: if you run a nonpooled test too frequenly,
+            //you'll consume all the free ports windows normally makes available (port range ~1000-5000)
+            //yield return new TestCaseData(5000, 20, ConnectionStrings.NonPooled);
         }
 
         private void ExecuteProcedure(string connectionString)
@@ -98,7 +101,7 @@ end";
         [TearDown]
         public void Teardown()
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_dropProc);
             }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using NUnit.Framework;
 
@@ -75,8 +74,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
     CAST('23:59:59:997' AS TIME) AS [TIME],
     CAST(NULL AS TIME) AS [NULL_TIME]
 ";
-
-        private readonly IDictionary<string, string> _connectionStrings = ConnectionStringLoader.Load();
 
         [TestCase("INT")]
         [TestCase("BIGINT")]
@@ -308,7 +305,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("IMAGE")]
         public void GetBytes_WithNullValue_ReturnsNull(string aseType)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -548,7 +545,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         private void GetHelper_WithValue_TCastSuccessfully<T>(string columnName, Func<AseDataReader, int, T> testMethod, T expectedValue)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -586,7 +583,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         private void GetHelper_WithNullValue_ThrowsInvalidCastException<T>(string columnName, Func<AseDataReader, int, T> testMethod)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 
@@ -616,7 +613,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase(CommandBehavior.SingleRow, 1)]
         public void ExecuteReader_WithCommandBehavior_ReturnsTheCorrectNumberOfRows(CommandBehavior behavior, int expectedNumberOfRows)
         {
-            using (var connection = new AseConnection(_connectionStrings["default"]))
+            using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
 

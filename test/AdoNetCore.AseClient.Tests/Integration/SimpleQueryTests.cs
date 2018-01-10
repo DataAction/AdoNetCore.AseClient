@@ -508,7 +508,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         public static IEnumerable<TestCaseData> SelectAseDecimal_Parameter_ShouldWork_Cases()
         {
             yield return new TestCaseData(AseDecimal.Parse("99999999999999999999999999999999999999")); //10^38 - 1
-            yield return new TestCaseData(AseDecimal.Parse("-99999999999999999999999999999999999999")); //-10^38 - 1
+            yield return new TestCaseData(AseDecimal.Parse("-99999999999999999999999999999999999999")); //-10^38 + 1
             //yield return new TestCaseData(AseDecimal.Parse("-100000000000000000000000000000000000000")); //-10^38: should throw IndexOutOfRangeException when trying to bind the parameter
         }
 
@@ -530,8 +530,10 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
 
         public static IEnumerable<TestCaseData> SelectAseDecimal_Literal_ShouldWork_Cases()
         {
-            yield return new TestCaseData("99999999999999999999999999999999999999", AseDecimal.Parse("99999999999999999999999999999999999999")); //10^38 - 1
-            yield return new TestCaseData("-100000000000000000000000000000000000000", AseDecimal.Parse("-100000000000000000000000000000000000000")); //-10^38
+            //10^77 - 1
+            yield return new TestCaseData(AseDecimal.Parse("99999999999999999999999999999999999999999999999999999999999999999999999999999"), "99999999999999999999999999999999999999999999999999999999999999999999999999999");
+            //-10^77 + 1
+            yield return new TestCaseData(AseDecimal.Parse("-99999999999999999999999999999999999999999999999999999999999999999999999999999"), "-99999999999999999999999999999999999999999999999999999999999999999999999999999");
         }*/
 
         public static IEnumerable<TestCaseData> SelectDecimal_Parameter_ShouldWork_Cases()

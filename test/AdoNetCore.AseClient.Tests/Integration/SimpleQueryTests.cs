@@ -483,7 +483,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         /*[TestCaseSource(nameof(SelectAseDecimal_Parameter_ShouldWork_Cases))]
         public void SelectAseDecimal_Parameter_ShouldWork(AseDecimal expected)
         {
-            using (var connection = GetConnection("asedecimal-on"))
+            using (var connection = new AseConnection(ConnectionStrings.AseDecimalOn))
             using (var command = connection.CreateCommand())
             {
                 var pExpected = command.CreateParameter();
@@ -513,7 +513,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCaseSource(nameof(SelectAseDecimal_Literal_ShouldWork_Cases))]
         public void SelectAseDecimal_Literal_ShouldWork(string input, AseDecimal expected)
         {
-            using (var connection = GetConnection("asedecimal-on"))
+            using (var connection = new AseConnection(ConnectionStrings.AseDecimalOn))
             using (var command = connection.CreateCommand())
             {
                 command.CommandType = CommandType.Text;

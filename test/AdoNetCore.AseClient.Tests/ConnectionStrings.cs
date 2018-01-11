@@ -37,7 +37,7 @@ namespace AdoNetCore.AseClient.Tests
 
             try
             {
-                fileText = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseLoginDetails.json"));
+                fileText = File.ReadAllText("DatabaseLoginDetails.json");
             }
             catch (Exception e)
             {

@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
-    [SetUpFixture]
+    //[SetUpFixture]
     public class HealthCheckTests
     {
         [OneTimeSetUp]

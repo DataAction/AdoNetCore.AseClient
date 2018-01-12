@@ -480,7 +480,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             }
         }
 
-        /*[TestCaseSource(nameof(SelectAseDecimal_Parameter_ShouldWork_Cases))]
+        [TestCaseSource(nameof(SelectAseDecimal_Parameter_ShouldWork_Cases))]
         public void SelectAseDecimal_Parameter_ShouldWork(AseDecimal expected)
         {
             using (var connection = new AseConnection(ConnectionStrings.AseDecimalOn))
@@ -531,7 +531,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             yield return new TestCaseData(AseDecimal.Parse("99999999999999999999999999999999999999999999999999999999999999999999999999999"), "99999999999999999999999999999999999999999999999999999999999999999999999999999");
             //-10^77 + 1
             yield return new TestCaseData(AseDecimal.Parse("-99999999999999999999999999999999999999999999999999999999999999999999999999999"), "-99999999999999999999999999999999999999999999999999999999999999999999999999999");
-        }*/
+        }
 
         public static IEnumerable<TestCaseData> SelectDecimal_Parameter_ShouldWork_Cases()
         {

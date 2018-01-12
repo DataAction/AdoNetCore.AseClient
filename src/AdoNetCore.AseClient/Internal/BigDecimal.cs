@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Text;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -21,9 +22,19 @@ namespace AdoNetCore.AseClient.Internal
         /// Sets the maximum precision of division operations.
         /// If AlwaysTruncate is set to true all operations are affected.
         /// </summary>
-        public static int Precision = 50;
+        public static int MaxTruncationPrecision = 77;
 
+        /// <summary>
+        /// Underlying value, stored as a bigint.
+        /// </summary>
         public BigInteger Mantissa { get; set; }
+
+        /// <summary>
+        /// Exponent associated with the underlying value.
+        /// Should always be 0 or negative
+        /// Used to translate the BigInteger back into something with decimal places using formula Mantissa * 10^Exponent.
+        /// e.g. 9999 * 10^-3 => 9.999
+        /// </summary>
         public int Exponent { get; set; }
 
         public BigDecimal(BigInteger mantissa, int exponent) : this()
@@ -78,7 +89,7 @@ namespace AdoNetCore.AseClient.Internal
             // save some time because the number of digits is not needed to remove trailing zeros
             shortened.Normalize();
             // remove the least significant digits, as long as the number of digits is higher than the given Precision
-            while (NumberOfDigits(shortened.Mantissa) > precision)
+            while (NumberOfMantissaDigits(shortened.Mantissa) > precision)
             {
                 shortened.Mantissa /= 10;
                 shortened.Exponent++;
@@ -90,20 +101,46 @@ namespace AdoNetCore.AseClient.Internal
 
         public BigDecimal Truncate()
         {
-            return Truncate(Precision);
+            return Truncate(MaxTruncationPrecision);
         }
 
         public BigDecimal Floor()
         {
-            return Truncate(NumberOfDigits(Mantissa) + Exponent);
+            return Truncate(NumberOfMantissaDigits(Mantissa) + Exponent);
         }
 
-        public static int NumberOfDigits(BigInteger value)
+        private static int NumberOfMantissaDigits(BigInteger value)
         {
+            //todo: fix. May need to do looping/binary search to figure out the value.
+            //Could store a const readonly array of 10^n values (for n=0 to 78) and search based on that
             // do not count the sign
-            //return (value * value.Sign).ToString().Length;
-            // faster version
-            return (int)Math.Ceiling(BigInteger.Log10(value * value.Sign));
+            return (value * value.Sign).ToString().Length;
+            // faster version --these don't work for some large numbers due to double precision and rounding.
+            // e.g. log10(9999999999999999999) should be 18.99999999999999999995657055180967481723271563569882323263 but ends up being 19, breaking calculations.
+            //return (int)Math.Ceiling(BigInteger.Log10(value * value.Sign));
+            //return (int) Math.Floor(BigInteger.Log10(value * value.Sign) + 1);
+        }
+
+        public int NumberOfDigits()
+        {
+            if (this == 0)
+            {
+                return 1;
+            }
+
+            var mantissaDigits = NumberOfMantissaDigits(Mantissa);
+            mantissaDigits = mantissaDigits == 0
+                ? 1
+                : mantissaDigits;
+
+            Logger.Instance?.WriteLine($"mantissaDigits: {mantissaDigits}; Exponent: {Exponent}");
+
+            if (mantissaDigits < Math.Abs(Exponent))
+            {
+                return Math.Abs(Exponent) + mantissaDigits;
+            }
+
+            return mantissaDigits;
         }
 
         #region Conversions
@@ -166,6 +203,36 @@ namespace AdoNetCore.AseClient.Internal
             return (uint)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
         }
 
+        public static explicit operator long(BigDecimal value)
+        {
+            return (long)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
+        public static explicit operator ulong(BigDecimal value)
+        {
+            return (ulong)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
+        public static explicit operator short(BigDecimal value)
+        {
+            return (short)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
+        public static explicit operator ushort(BigDecimal value)
+        {
+            return (ushort)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
+        public static explicit operator sbyte(BigDecimal value)
+        {
+            return (sbyte)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
+        public static explicit operator byte(BigDecimal value)
+        {
+            return (byte)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+        }
+
         #endregion
 
         #region Operators
@@ -215,7 +282,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public static BigDecimal operator /(BigDecimal dividend, BigDecimal divisor)
         {
-            var exponentChange = Precision - (NumberOfDigits(dividend.Mantissa) - NumberOfDigits(divisor.Mantissa));
+            var exponentChange = MaxTruncationPrecision - (NumberOfMantissaDigits(dividend.Mantissa) - NumberOfMantissaDigits(divisor.Mantissa));
             if (exponentChange < 0)
             {
                 exponentChange = 0;
@@ -300,7 +367,43 @@ namespace AdoNetCore.AseClient.Internal
 
         public override string ToString()
         {
-            return string.Concat(Mantissa.ToString(), "E", Exponent);
+            var sb = new StringBuilder((Mantissa * Mantissa.Sign).ToString());
+
+            PadIfNecessary(sb);
+            InsertDecimalPoint(sb);
+            InsertSign(sb);
+
+            return sb.ToString();
+        }
+
+        private void PadIfNecessary(StringBuilder sb)
+        {
+            var expectedDigits = Math.Abs(Exponent) + 1;
+            var paddingRequired = expectedDigits - NumberOfMantissaDigits(Mantissa);
+
+            if (paddingRequired > 0)
+            {
+                sb.Insert(0, new string('0', paddingRequired));
+            }
+        }
+
+        /// <summary>
+        /// Once the string is of the correct length (padded with 0s if necessary), then insert the decimal point
+        /// </summary>
+        private void InsertDecimalPoint(StringBuilder sb)
+        {
+            if (Exponent < 0)
+            {
+                sb.Insert(sb.Length + Exponent, '.');
+            }
+        }
+
+        private void InsertSign(StringBuilder sb)
+        {
+            if (Mantissa.Sign < 0)
+            {
+                sb.Insert(0, '-');
+            }
         }
 
         public bool Equals(BigDecimal other)

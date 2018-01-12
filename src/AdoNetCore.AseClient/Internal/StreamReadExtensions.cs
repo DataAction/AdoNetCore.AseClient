@@ -215,15 +215,16 @@ namespace AdoNetCore.AseClient.Internal
                 buffer[3], buffer[2], buffer[1], buffer[0],
             };
 
-            var bits = new[]
+            /*var bits = new[]
             {
                 BitConverter.ToInt32(buffer, 0),
                 BitConverter.ToInt32(buffer, 4),
                 BitConverter.ToInt32(buffer, 8),
                 BitConverter.ToInt32(buffer, 12)
-            };
+            };*/
 
-            return (decimal) new SqlDecimal(precision, scale, isPositive, bits);
+            //return (decimal) new SqlDecimal(precision, scale, isPositive, bits);
+            return new AseDecimal(precision, scale, isPositive, buffer).ToDecimal();
         }
 
         public static decimal ReadMoney(this Stream stream)

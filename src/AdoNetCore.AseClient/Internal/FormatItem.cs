@@ -58,10 +58,10 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 else
                 {
-                    var sqlDecimal = (SqlDecimal) Convert.ToDecimal(parameter.Value);
-                    format.Precision = sqlDecimal.Precision;
-                    format.Scale = sqlDecimal.Scale;
-                    format.Length = sqlDecimal.BytesRequired + 1;
+                    var aseDecimal = parameter.Value is AseDecimal d ? d : new AseDecimal(Convert.ToDecimal(parameter.Value));
+                    format.Precision = (byte) aseDecimal.Precision;
+                    format.Scale = (byte) aseDecimal.Scale;
+                    format.Length = aseDecimal.BytesRequired + 1;
                 }
             }
 

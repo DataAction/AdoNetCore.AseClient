@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Numerics;
 using AdoNetCore.AseClient.Internal;
 
@@ -54,29 +55,20 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public static readonly AseDecimal Zero = new AseDecimal(0m);
 
-        private BigDecimal _backing;
+        internal BigDecimal Backing;
 
         /// <summary>
         /// Initializes a new instance of the AseDecimal structure.
         /// </summary>
         /// <param name="precision">An Int32 value of the target precision.</param>
         /// <param name="scale">An Int32 value of the target scale.</param>
-        public AseDecimal(int precision, int scale)
-        {
-            _backing = new BigDecimal
-            {
-                Exponent = scale
-            };
-        }
+        public AseDecimal(int precision, int scale) : this(new BigDecimal(BigInteger.Zero, -scale)) { }
 
         /// <summary>
         /// Initializes a new instance of the AseDecimal structure.
         /// </summary>
         /// <param name="aseDecimal">An AseDecimal structure to initialize the value of the new AseDecimal.</param>
-        public AseDecimal(AseDecimal aseDecimal)
-        {
-            _backing = new BigDecimal(new BigInteger(aseDecimal._backing.Mantissa.ToByteArray()), aseDecimal._backing.Exponent);
-        }
+        public AseDecimal(AseDecimal aseDecimal) : this(new BigDecimal(new BigInteger(aseDecimal.Backing.Mantissa.ToByteArray()), aseDecimal.Backing.Exponent)) { }
 
         /// <summary>
         /// Initializes a new instance of the AseDecimal structure.
@@ -86,12 +78,29 @@ namespace AdoNetCore.AseClient
         /// <param name="value">The target value array in bytes.</param>
         public AseDecimal(int precision, int scale, byte[] value)
         {
-            _backing = new BigDecimal(new BigInteger(value), scale);
+            Debug.Assert(null != value);
+            Debug.Assert(value.Length > 0);
+
+            var data = new byte[value.Length - 1];
+            Array.Copy(value, 1, data, 0, data.Length);
+            var bigInt = new BigInteger(data);
+
+            Backing = value[0] != 0 //ase uses sign byte + big integer bytes, we need to translate to + or - bigInt
+                ? new BigDecimal(-bigInt, -scale)
+                : new BigDecimal(bigInt, -scale);
         }
 
-        private AseDecimal(BigDecimal backing)
+        internal AseDecimal(int precision, int scale, bool isPositive, byte[] value)
         {
-            _backing = backing;
+            var bigInt = new BigInteger(value);
+            Backing = isPositive
+                ? new BigDecimal(bigInt, -scale)
+                : new BigDecimal(-bigInt, -scale);
+        }
+
+        internal AseDecimal(BigDecimal backing)
+        {
+            Backing = backing;
         }
 
         /// <summary>
@@ -100,26 +109,7 @@ namespace AdoNetCore.AseClient
         /// <param name="value">A decimal structure to initialize the value of the new AseDecimal.</param>
         public AseDecimal(decimal value)
         {
-            // Adapted from https://stackoverflow.com/a/764102/242311
-            var bits = decimal.GetBits(value);
-            uint bits0, bits1, bits2, bits3;
-            unchecked
-            {
-
-                bits0 = (uint)bits[0];
-                bits1 = (uint)bits[1];
-                bits2 = (uint)bits[2];
-                bits3 = (uint)bits[3];
-            }
-
-            var decimalPlaces = (bits3 >> 16) & 31;
-            var isNegative = (bits3 & 0x80000000) == 0x80000000;
-
-            var mantissa = (bits2 * 4294967296m * 4294967296m) +
-                           (bits1 * 4294967296m) +
-                           bits0;
-
-            _backing = new BigDecimal(new BigInteger(isNegative ? -1 * mantissa : mantissa), (int)decimalPlaces);
+            Backing = value;
         }
 
         /// <summary>
@@ -142,7 +132,39 @@ namespace AdoNetCore.AseClient
         /// <param name="value">The object being tested for equality.</param>
         public override bool Equals(object value)
         {
-            return _backing.Equals(value);
+            return Backing.Equals(value);
+        }
+
+        internal byte[] BinData
+        {
+            get
+            {
+                var result = new byte[BytesRequired];
+                var mantissaBytes = (Backing.Mantissa * Backing.Mantissa.Sign).ToByteArray();
+
+                Logger.Instance?.WriteLine($"Exponent: {Backing.Exponent}, Mantissa: {Backing.Mantissa}");
+                Logger.Instance?.WriteLine($"Expecting {result.Length} bytes; Mantissa is {mantissaBytes.Length} bytes");
+                Logger.Instance?.Write(HexDump.Dump(mantissaBytes));
+
+                Debug.Assert(result.Length <= mantissaBytes.Length); //in theory this should be ==, but bigint seems to export an extra byte (0x00) at the end for some values :s
+                Array.Copy(mantissaBytes, 0, result, 0, result.Length);
+                return result;
+            }
+        }
+
+        private static readonly double Log256 = Math.Log10(256);
+
+        /// <summary>
+        /// get the number of bytes required to represent the value (caller should add 1 byte to represent sign byte)
+        /// </summary>
+        public int BytesRequired
+        {
+            get
+            {
+                if (IsNull)
+                    throw new NullReferenceException();
+                return Convert.ToInt32(Math.Ceiling(Precision / Log256));
+            }
         }
 
         /// <summary>
@@ -151,12 +173,12 @@ namespace AdoNetCore.AseClient
         /// <returns>True if the values are equal.</returns>
         public static bool operator ==(AseDecimal a, AseDecimal b)
         {
-            return a._backing == b._backing;
+            return a.Backing == b.Backing;
         }
 
         public static bool operator !=(AseDecimal a, AseDecimal b)
         {
-            return a._backing != b._backing;
+            return a.Backing != b.Backing;
         }
 
         /// <summary>
@@ -165,7 +187,7 @@ namespace AdoNetCore.AseClient
         /// <returns>True if a is less than or equal to b.</returns>
         public static bool operator <=(AseDecimal a, AseDecimal b)
         {
-            return a._backing <= b._backing;
+            return a.Backing <= b.Backing;
         }
 
         /// <summary>
@@ -174,7 +196,7 @@ namespace AdoNetCore.AseClient
         /// <returns>True if a is greater than or equal to b.</returns>
         public static bool operator >=(AseDecimal a, AseDecimal b)
         {
-            return a._backing >= b._backing;
+            return a.Backing >= b.Backing;
         }
 
         /// <summary>
@@ -183,7 +205,7 @@ namespace AdoNetCore.AseClient
         /// <returns>True if a is less than b.</returns>
         public static bool operator <(AseDecimal a, AseDecimal b)
         {
-            return a._backing < b._backing;
+            return a.Backing < b.Backing;
         }
 
         /// <summary>
@@ -192,7 +214,7 @@ namespace AdoNetCore.AseClient
         /// <returns>True if a is greater than b.</returns>
         public static bool operator >(AseDecimal a, AseDecimal b)
         {
-            return a._backing > b._backing;
+            return a.Backing > b.Backing;
         }
 
         /// <summary>
@@ -203,11 +225,10 @@ namespace AdoNetCore.AseClient
         public static AseDecimal Parse(string s)
         {
             var dpIndex = s.LastIndexOf('.');
-            var scale = dpIndex < s.Length ? s.Length - dpIndex : 0;
-            return new AseDecimal
-            {
-                _backing = new BigDecimal(BigInteger.Parse(s.Replace(".", string.Empty)), scale)
-            };
+            var scale = dpIndex >= 0 && dpIndex < s.Length
+                ? s.Length - dpIndex
+                : 0;
+            return new AseDecimal(new BigDecimal(BigInteger.Parse(s.Replace(".", string.Empty)), -scale));
         }
 
         public static bool TryParse(string s, out AseDecimal result)
@@ -231,7 +252,7 @@ namespace AdoNetCore.AseClient
         public override int GetHashCode()
         {
             // ReSharper disable once NonReadonlyMemberInGetHashCode
-            return _backing.GetHashCode();
+            return Backing.GetHashCode();
         }
 
         /// <summary>
@@ -239,7 +260,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public int CompareTo(object value)
         {
-            return _backing.CompareTo(value);
+            return Backing.CompareTo(value);
         }
 
         /// <summary>
@@ -247,34 +268,22 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public int CompareTo(AseDecimal value)
         {
-            return _backing.CompareTo(value._backing);
+            return Backing.CompareTo(value.Backing);
         }
 
-        public int Precision
-        {
-            get
-            {
-                if (_backing == 0)
-                {
-                    return 1;
-                }
+        public int Precision => Backing.NumberOfDigits();
 
-                //return (int)Math.Floor(BigInteger.Log10(BigInteger.Abs(_backing.Mantissa)) + 1);
-                return (int)Math.Ceiling(BigInteger.Log10(BigInteger.Abs(_backing.Mantissa)));
-            }
-        }
-
-        public int Scale => _backing.Exponent;
+        public int Scale => Math.Abs(Backing.Exponent);
 
         /// <summary>
         /// Returns true if this AseDecimal is a null value.
         /// </summary>
-        public bool IsNull { get { throw new NotImplementedException(); } }
+        public bool IsNull => false;
 
         /// <summary>
         /// Returns true if this AseDecimal is a negative value.
         /// </summary>
-        public bool IsNegative => _backing.Mantissa.Sign == -1;
+        public bool IsNegative => Backing.Mantissa.Sign == -1;
 
         /// <summary>
         /// Returns true if this AseDecimal is a positive value.
@@ -295,51 +304,72 @@ namespace AdoNetCore.AseClient
         /// <returns>A string representation of this AseDecimal.</returns>
         public override string ToString()
         {
-            return _backing.Mantissa.ToString();
+            return Backing.ToString();
         }
 
         public sbyte ToSByte()
         {
-            return (sbyte) _backing.Mantissa;
+            return (sbyte)Backing;
         }
 
-        public byte ToByte() { return (byte)_backing.Mantissa; }
+        public byte ToByte()
+        {
+            return (byte)Backing;
+        }
 
-        public short ToInt16() { return (short)_backing.Mantissa; }
+        public short ToInt16()
+        {
+            return (short)Backing;
+        }
 
-        public ushort ToUInt16() { return (ushort)_backing.Mantissa; }
+        public ushort ToUInt16()
+        {
+            return (ushort)Backing;
+        }
 
-        public uint ToUInt32() { return (uint)_backing.Mantissa; }
+        public uint ToUInt32()
+        {
+            return (uint)Backing;
+        }
 
-        public ulong ToUInt64() { return (ulong)_backing.Mantissa; }
+        public ulong ToUInt64()
+        {
+            return (ulong)Backing;
+        }
 
-        public int ToInt32() { return (int)_backing.Mantissa; }
+        public int ToInt32()
+        {
+            return (int)Backing;
+        }
 
-        public long ToInt64() { return (long)_backing.Mantissa; }
+        public long ToInt64()
+        {
+            return (long)Backing;
+        }
 
         public float ToSingle()
         {
-            return Convert.ToSingle(ToDouble());
+            return (float)Backing;
         }
 
         public double ToDouble()
         {
-            if (Scale == 0)
-            {
-                return (double)_backing.Mantissa;
-            }
+            return (double)Backing;
+        }
 
-            return (double) _backing.Mantissa / Math.Pow(1, Scale);
+        public decimal ToDecimal()
+        {
+            return (decimal)Backing;
         }
 
         public static AseDecimal Floor(AseDecimal n)
         {
-            return new AseDecimal(n._backing.Floor());
+            return new AseDecimal(n.Backing.Floor());
         }
 
         public static AseDecimal Truncate(AseDecimal n, int position)
         {
-            return new AseDecimal(n._backing.Truncate(position));
+            return new AseDecimal(n.Backing.Truncate(position));
         }
 
         public static AseDecimal Round(AseDecimal n, int position)

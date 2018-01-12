@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
 
@@ -18,9 +19,9 @@ namespace AdoNetCore.AseClient.Tests.Unit
         {
             var aseDecimal = new AseDecimal(input);
 
-            Assert.AreEqual(pExpected, aseDecimal.Precision);
-            Assert.AreEqual(sExpected, aseDecimal.Scale);
-            
+            Assert.AreEqual(pExpected, aseDecimal.Precision, "Precision");
+            Assert.AreEqual(sExpected, aseDecimal.Scale, "Scale");
+
             Assert.AreEqual(input < 0, aseDecimal.IsNegative, $"IsNegative should be {input < 0}");
             Assert.AreEqual(input >= 0, aseDecimal.IsPositive, $"IsPositive should be {input >= 0}");
         }
@@ -38,6 +39,12 @@ namespace AdoNetCore.AseClient.Tests.Unit
             yield return new TestCaseData(-99.9m, 3, 1);
             yield return new TestCaseData(999m, 3, 0);
             yield return new TestCaseData(-999m, 3, 0);
+            yield return new TestCaseData(1000m, 4, 0);
+            yield return new TestCaseData(-1000m, 4, 0);
+            yield return new TestCaseData(.0001m, 5, 4);
+            yield return new TestCaseData(-.0001m, 5, 4);
+            yield return new TestCaseData(1000.0001m, 8, 4);
+            yield return new TestCaseData(-1000.0001m, 8, 4);
             yield return new TestCaseData(decimal.MaxValue, 29, 0);
             yield return new TestCaseData(decimal.MinValue, 29, 0);
             yield return new TestCaseData(decimal.MaxValue / 10m, 29, 1);
@@ -105,6 +112,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var rs = result.ToString();
             Console.WriteLine($"({input.Length}): {input}");
             Console.WriteLine($"({rs.Length}): {rs}");
+            Console.WriteLine($"(exponent): {result.Backing.Exponent}");
             Assert.AreEqual(input, rs);
             Assert.AreEqual(input.Replace("-", string.Empty).Replace(".", string.Empty).Length, result.Precision);
         }
@@ -265,6 +273,45 @@ namespace AdoNetCore.AseClient.Tests.Unit
             yield return new TestCaseData("-9999999999999999999999999999999999999999999999999999999999999999999999999999");
             yield return new TestCaseData("99999999999999999999999999999999999999999999999999999999999999999999999999999");
             yield return new TestCaseData("-99999999999999999999999999999999999999999999999999999999999999999999999999999");
+        }
+
+        [TestCaseSource(nameof(AseDecimal_ToString_Cases))]
+        public void AseDecimal_ToString(decimal input)
+        {
+            Assert.AreEqual(input.ToString(CultureInfo.InvariantCulture), new AseDecimal(input).ToString());
+        }
+
+        public static IEnumerable<TestCaseData> AseDecimal_ToString_Cases()
+        {
+            yield return new TestCaseData(0m);
+            yield return new TestCaseData(1m);
+            yield return new TestCaseData(-1m);
+            yield return new TestCaseData(0.1m);
+            yield return new TestCaseData(-0.1m);
+            yield return new TestCaseData(0.0000001m);
+            yield return new TestCaseData(-0.0000001m);
+            yield return new TestCaseData(9.999999m);
+            yield return new TestCaseData(-9.999999m);
+            yield return new TestCaseData(99.9m);
+            yield return new TestCaseData(-99.9m);
+            yield return new TestCaseData(99.99m);
+            yield return new TestCaseData(-99.99m);
+            yield return new TestCaseData(1000m);
+            yield return new TestCaseData(-1000m);
+            yield return new TestCaseData(1000.0001m);
+            yield return new TestCaseData(-1000.0001m);
+        }
+
+        [TestCaseSource(nameof(AseDecimal_GetBytes_Cases))]
+        public void AseDecimal_GetBytes(AseDecimal input, byte[] expected)
+        {
+            Assert.AreEqual(expected, input.BinData);
+        }
+
+        public static IEnumerable<TestCaseData> AseDecimal_GetBytes_Cases()
+        {
+            yield return new TestCaseData(new AseDecimal(1m), new byte[] { 1 });
+            yield return new TestCaseData(new AseDecimal(-1m), new byte[] { 1 }); //the sign is handled elsewhere
         }
     }
 }

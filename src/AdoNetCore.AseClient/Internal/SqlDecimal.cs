@@ -42,6 +42,7 @@ namespace AdoNetCore.AseClient.Internal
     /// Represents a fixed precision and scale numeric value between -10<superscript term='38'/>
     /// -1 and 10<superscript term='38'/> -1 to be stored in or retrieved from a database.
     /// </summary>
+    [Obsolete("Use AseDecimal instead", true)]
     internal struct SqlDecimal
     {
         private static class SQLResource

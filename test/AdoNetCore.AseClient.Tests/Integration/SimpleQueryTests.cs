@@ -513,6 +513,7 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         [TestCaseSource(nameof(SelectAseDecimal_Literal_ShouldWork_Cases))]
         public void SelectAseDecimal_Literal_ShouldWork(string input, AseDecimal expected)
         {
+            Console.WriteLine($"Mantissa bytes: {HexDump.Dump(expected.Backing.Mantissa.ToByteArray())}");
             using (var connection = new AseConnection(ConnectionStrings.AseDecimalOn))
             using (var command = connection.CreateCommand())
             {

@@ -417,7 +417,9 @@ namespace AdoNetCore.AseClient.Internal
             {
                 return false;
             }
-            return obj is BigDecimal && Equals((BigDecimal)obj);
+
+            return obj is BigDecimal bigDecimal &&
+                   Equals(bigDecimal);
         }
 
         public override int GetHashCode()

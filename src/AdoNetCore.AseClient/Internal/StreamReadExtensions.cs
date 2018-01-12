@@ -197,25 +197,14 @@ namespace AdoNetCore.AseClient.Internal
                 return null;
             }
             var isPositive = stream.ReadByte() == 0;
-            var buffer = new byte[]
-            {
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0
-            };
             var remainingLength = length - 1;
-            stream.Read(buffer, 16 - remainingLength, remainingLength);
+            var buf = new byte[length];
 
-            buffer = new[]
-            {
-                buffer[15], buffer[14], buffer[13], buffer[12],
-                buffer[11], buffer[10], buffer[9], buffer[8],
-                buffer[7], buffer[6], buffer[5], buffer[4],
-                buffer[3], buffer[2], buffer[1], buffer[0],
-            };
-
-            return new AseDecimal(precision, scale, isPositive, buffer);
+            stream.Read(buf, 1, remainingLength);
+            
+            Array.Reverse(buf);
+            
+            return new AseDecimal(precision, scale, isPositive, buf);
         }
 
         public static decimal ReadMoney(this Stream stream)

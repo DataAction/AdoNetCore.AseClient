@@ -92,6 +92,7 @@ namespace AdoNetCore.AseClient
 
         internal AseDecimal(int precision, int scale, bool isPositive, byte[] value)
         {
+            Logger.Instance?.Write($"Construct AseDecimal from {HexDump.Dump(value)}");
             var bigInt = new BigInteger(value);
             Backing = isPositive
                 ? new BigDecimal(bigInt, -scale)
@@ -132,7 +133,13 @@ namespace AdoNetCore.AseClient
         /// <param name="value">The object being tested for equality.</param>
         public override bool Equals(object value)
         {
-            return Backing.Equals(value);
+            if (ReferenceEquals(null, value))
+            {
+                return false;
+            }
+
+            return value is AseDecimal aseDecimal &&
+                   Backing.Equals(aseDecimal.Backing);
         }
 
         internal byte[] BinData

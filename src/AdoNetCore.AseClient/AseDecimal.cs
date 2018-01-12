@@ -139,7 +139,7 @@ namespace AdoNetCore.AseClient
             }
 
             return value is AseDecimal aseDecimal &&
-                   Backing.Equals(aseDecimal.Backing);
+                   Backing == aseDecimal.Backing;
         }
 
         internal byte[] BinData
@@ -233,11 +233,19 @@ namespace AdoNetCore.AseClient
         /// <returns>An AseDecimal structure representing the parsed string.</returns>
         public static AseDecimal Parse(string s)
         {
+            var isNegative = s.StartsWith("-");
+            s = s.Replace("-", string.Empty).TrimEnd('0');
             var dpIndex = s.LastIndexOf('.');
             var scale = dpIndex >= 0 && dpIndex < s.Length
-                ? s.Length - dpIndex
+                ? s.Length - dpIndex - 1
                 : 0;
-            return new AseDecimal(new BigDecimal(BigInteger.Parse(s.Replace(".", string.Empty)), -scale));
+
+            Logger.Instance?.WriteLine($"s: {s}");
+            Logger.Instance?.WriteLine($"isNegative: {isNegative}, dpIndex: {dpIndex}, s.Length: {s.Length}, scale: {scale}");
+
+            var parsed = BigInteger.Parse(s.Replace(".", string.Empty));
+
+            return new AseDecimal(new BigDecimal(isNegative ? -parsed : parsed, -scale));
         }
 
         public static bool TryParse(string s, out AseDecimal result)
@@ -318,57 +326,57 @@ namespace AdoNetCore.AseClient
 
         public sbyte ToSByte()
         {
-            return (sbyte)Backing;
+            return (sbyte)this;
         }
 
         public byte ToByte()
         {
-            return (byte)Backing;
+            return (byte)this;
         }
 
         public short ToInt16()
         {
-            return (short)Backing;
+            return (short)this;
         }
 
         public ushort ToUInt16()
         {
-            return (ushort)Backing;
+            return (ushort)this;
         }
 
         public uint ToUInt32()
         {
-            return (uint)Backing;
+            return (uint)this;
         }
 
         public ulong ToUInt64()
         {
-            return (ulong)Backing;
+            return (ulong)this;
         }
 
         public int ToInt32()
         {
-            return (int)Backing;
+            return (int)this;
         }
 
         public long ToInt64()
         {
-            return (long)Backing;
+            return (long)this;
         }
 
         public float ToSingle()
         {
-            return (float)Backing;
+            return (float)this;
         }
 
         public double ToDouble()
         {
-            return (double)Backing;
+            return (double)this;
         }
 
         public decimal ToDecimal()
         {
-            return (decimal)Backing;
+            return (decimal)this;
         }
 
         public static AseDecimal Floor(AseDecimal n)
@@ -384,6 +392,76 @@ namespace AdoNetCore.AseClient
         public static AseDecimal Round(AseDecimal n, int position)
         {
             throw new NotImplementedException();
+        }
+
+        public static explicit operator AseDecimal(int value)
+        {
+            return new AseDecimal((BigDecimal) value);
+        }
+
+        public static explicit operator AseDecimal(double value)
+        {
+            return new AseDecimal((BigDecimal) value);
+        }
+
+        public static explicit operator AseDecimal(decimal value)
+        {
+            return new AseDecimal((BigDecimal) value);
+        }
+
+        public static explicit operator double(AseDecimal value)
+        {
+            return (double)value.Backing;
+        }
+
+        public static explicit operator float(AseDecimal value)
+        {
+            return (float)value.Backing;
+        }
+
+        public static explicit operator decimal(AseDecimal value)
+        {
+            return (decimal)value.Backing;
+        }
+
+        public static explicit operator int(AseDecimal value)
+        {
+            return (int)value.Backing;
+        }
+
+        public static explicit operator uint(AseDecimal value)
+        {
+            return (uint)value.Backing;
+        }
+
+        public static explicit operator long(AseDecimal value)
+        {
+            return (long)value.Backing;
+        }
+
+        public static explicit operator ulong(AseDecimal value)
+        {
+            return (ulong)value.Backing;
+        }
+
+        public static explicit operator short(AseDecimal value)
+        {
+            return (short)value.Backing;
+        }
+
+        public static explicit operator ushort(AseDecimal value)
+        {
+            return (ushort)value.Backing;
+        }
+
+        public static explicit operator sbyte(AseDecimal value)
+        {
+            return (sbyte)value.Backing;
+        }
+
+        public static explicit operator byte(AseDecimal value)
+        {
+            return (byte)value.Backing;
         }
     }
 }

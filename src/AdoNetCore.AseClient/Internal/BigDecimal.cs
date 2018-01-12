@@ -135,9 +135,9 @@ namespace AdoNetCore.AseClient.Internal
 
             Logger.Instance?.WriteLine($"mantissaDigits: {mantissaDigits}; Exponent: {Exponent}");
 
-            if (mantissaDigits < Math.Abs(Exponent))
+            if (mantissaDigits <= Math.Abs(Exponent))
             {
-                return Math.Abs(Exponent) + mantissaDigits;
+                return Math.Abs(Exponent) + 1; // +1 because of the '0.'
             }
 
             return mantissaDigits;
@@ -378,8 +378,12 @@ namespace AdoNetCore.AseClient.Internal
 
         private void PadIfNecessary(StringBuilder sb)
         {
-            var expectedDigits = Math.Abs(Exponent) + 1;
-            var paddingRequired = expectedDigits - NumberOfMantissaDigits(Mantissa);
+            Logger.Instance?.WriteLine($"{nameof(PadIfNecessary)}({sb})");
+            var expectedDigits = NumberOfDigits();
+            var mantissaDigits = sb.Length;
+            var paddingRequired = expectedDigits - mantissaDigits;
+
+            Logger.Instance?.WriteLine($"expected digits: {expectedDigits}, mantissa digits: {mantissaDigits}, paddingRequired: {paddingRequired}, total digits: {NumberOfDigits()}");
 
             if (paddingRequired > 0)
             {
@@ -392,14 +396,24 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         private void InsertDecimalPoint(StringBuilder sb)
         {
+            Logger.Instance?.WriteLine($"{nameof(InsertDecimalPoint)}({sb})");
             if (Exponent < 0)
             {
-                sb.Insert(sb.Length + Exponent, '.');
+                var targetIndex = sb.Length + Exponent;
+                if (targetIndex == 0)
+                {
+                    sb.Insert(targetIndex, "0.");
+                }
+                else
+                {
+                    sb.Insert(targetIndex, '.');
+                }
             }
         }
 
         private void InsertSign(StringBuilder sb)
         {
+            Logger.Instance?.WriteLine($"{nameof(InsertSign)}({sb})");
             if (Mantissa.Sign < 0)
             {
                 sb.Insert(0, '-');

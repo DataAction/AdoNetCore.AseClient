@@ -37,7 +37,7 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     using (var ms = new MemoryStream())
                     {
-                        packet.Write(ms, env.Encoding);
+                        packet.Write(ms, env);
 
                         ms.Seek(0, SeekOrigin.Begin);
 
@@ -124,7 +124,7 @@ namespace AdoNetCore.AseClient.Internal
                 ms.Seek(0, SeekOrigin.Begin);
 
                 LastActive = DateTime.UtcNow;
-                return _parser.Parse(ms, env.Encoding);
+                return _parser.Parse(ms, env);
             }
         }
 

@@ -8,7 +8,7 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueReader
     {
-        public static object Read(Stream stream, FormatItem format, Encoding enc)
+        public static object Read(Stream stream, FormatItem format, DbEnvironment env)
         {
             switch (format.DataType)
             {
@@ -66,12 +66,12 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_VARCHAR:
                 case TdsDataType.TDS_BOUNDARY:
                 case TdsDataType.TDS_SENSITIVITY:
-                    return stream.ReadNullableByteLengthPrefixedString(enc);
+                    return stream.ReadNullableByteLengthPrefixedString(env.Encoding);
                 case TdsDataType.TDS_BINARY:
                 case TdsDataType.TDS_VARBINARY:
                     return stream.ReadNullableByteLengthPrefixedByteArray();
                 case TdsDataType.TDS_LONGCHAR:
-                    return stream.ReadNullableIntLengthPrefixedString(enc);
+                    return stream.ReadNullableIntLengthPrefixedString(env.Encoding);
                 /*
                  * TDS_LONGBINARY serialization 55 serialized java object or instance (i.e. java object)
                  * TDS_LONGBINARY serialized java class 56 serialized java class (i.e. byte code)
@@ -93,7 +93,15 @@ namespace AdoNetCore.AseClient.Internal
                     }
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
-                    return stream.ReadDecimal(format.Precision ?? 1, format.Scale ?? 0);
+                    {
+                        var aseDecimal = stream.ReadDecimal(format.Precision ?? 1, format.Scale ?? 0);
+
+                        return aseDecimal.HasValue
+                            ? env.UseAseDecimal
+                                ? (object) aseDecimal.Value
+                                : aseDecimal.Value.ToDecimal()
+                            : DBNull.Value;
+                    }
                 case TdsDataType.TDS_MONEY:
                     return stream.ReadMoney();
                 case TdsDataType.TDS_SHORTMONEY:
@@ -153,7 +161,7 @@ namespace AdoNetCore.AseClient.Internal
                         var textPtr = new byte[textPtrLen];
                         stream.Read(textPtr, 0, textPtrLen);
                         stream.ReadULong(); //timestamp
-                        return stream.ReadNullableIntLengthPrefixedString(enc);
+                        return stream.ReadNullableIntLengthPrefixedString(env.Encoding);
                     }
                 case TdsDataType.TDS_IMAGE:
                     {

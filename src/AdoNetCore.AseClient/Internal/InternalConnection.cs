@@ -61,6 +61,7 @@ namespace AdoNetCore.AseClient.Internal
             _parameters = parameters;
             _socket = socket;
             _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
+            _environment.UseAseDecimal = parameters.UseAseDecimal;
         }
 
         private void SendPacket(IPacket packet)

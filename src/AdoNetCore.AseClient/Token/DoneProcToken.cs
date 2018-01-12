@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
+using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
@@ -9,10 +9,10 @@ namespace AdoNetCore.AseClient.Token
     {
         public TokenType Type => TokenType.TDS_DONEPROC;
 
-        public static DoneProcToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static DoneProcToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new DoneProcToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

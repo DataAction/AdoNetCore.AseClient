@@ -233,6 +233,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public bool PingServer { get; }
             public ushort PacketSize { get; }
             public int TextSize { get; }
+            public bool UseAseDecimal { get; } = false;
         }
     }
 }

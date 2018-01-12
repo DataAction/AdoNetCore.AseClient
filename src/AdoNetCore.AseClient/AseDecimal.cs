@@ -143,11 +143,13 @@ namespace AdoNetCore.AseClient
                 var mantissaBytes = (Backing.Mantissa * Backing.Mantissa.Sign).ToByteArray();
 
                 Logger.Instance?.WriteLine($"Exponent: {Backing.Exponent}, Mantissa: {Backing.Mantissa}");
-                Logger.Instance?.WriteLine($"Expecting {result.Length} bytes; Mantissa is {mantissaBytes.Length} bytes");
+                Logger.Instance?.WriteLine($"Expecting {BytesRequired} bytes; Mantissa is {mantissaBytes.Length} bytes");
+                Logger.Instance?.WriteLine($"Mantissa bytes:");
                 Logger.Instance?.Write(HexDump.Dump(mantissaBytes));
 
-                Debug.Assert(result.Length <= mantissaBytes.Length); //in theory this should be ==, but bigint seems to export an extra byte (0x00) at the end for some values :s
-                Array.Copy(mantissaBytes, 0, result, 0, result.Length);
+                Array.Copy(mantissaBytes, 0, result, 0, Math.Min(result.Length, mantissaBytes.Length));
+                Logger.Instance?.WriteLine($"Result bytes:");
+                Logger.Instance?.Write(HexDump.Dump(result));
                 return result;
             }
         }

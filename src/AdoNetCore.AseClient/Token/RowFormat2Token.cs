@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -12,12 +11,12 @@ namespace AdoNetCore.AseClient.Token
     {
         public TokenType Type => TokenType.TDS_ROWFMT2;
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
         {
             Logger.Instance?.WriteLine($"<- {Type}");
             var remainingLength = stream.ReadUInt();
@@ -28,17 +27,17 @@ namespace AdoNetCore.AseClient.Token
 
                 for (var i = 0; i < columnCount; i++)
                 {
-                    formats.Add(FormatItem.ReadForRow(ts, enc, Type));
+                    formats.Add(FormatItem.ReadForRow(ts, env.Encoding, Type));
                 }
 
                 Formats = formats.ToArray();
             }
         }
 
-        public static RowFormat2Token Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static RowFormat2Token Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new RowFormat2Token();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
 

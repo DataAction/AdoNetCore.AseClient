@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Token;
@@ -10,12 +9,12 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal class TokenParser : ITokenParser
     {
-        public IToken[] Parse(Stream stream, Encoding enc)
+        public IToken[] Parse(Stream stream, DbEnvironment env)
         {
-            return new List<IToken>(ParseInternal(stream, enc)).ToArray();
+            return new List<IToken>(ParseInternal(stream, env)).ToArray();
         }
 
-        private IEnumerable<IToken> ParseInternal(Stream stream, Encoding enc)
+        private IEnumerable<IToken> ParseInternal(Stream stream, DbEnvironment env)
         {
             IFormatToken previousFormatToken = null;
             while (stream.Position < stream.Length)
@@ -24,7 +23,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (Readers.ContainsKey(tokenType))
                 {
-                    var t = Readers[tokenType](stream, enc, previousFormatToken);
+                    var t = Readers[tokenType](stream, env, previousFormatToken);
 
                     if (t is IFormatToken token)
                     {
@@ -38,13 +37,13 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     Logger.Instance?.WriteLine($"!!! Hit unknown token type {tokenType} !!!");
                     var t = new CatchAllToken(tokenType);
-                    t.Read(stream, enc, previousFormatToken);
+                    t.Read(stream, env, previousFormatToken);
                     yield return t;
                 }
             }
         }
 
-        private static readonly Dictionary<TokenType, Func<Stream, Encoding, IFormatToken, IToken>> Readers = new Dictionary<TokenType, Func<Stream, Encoding, IFormatToken, IToken>>
+        private static readonly Dictionary<TokenType, Func<Stream, DbEnvironment, IFormatToken, IToken>> Readers = new Dictionary<TokenType, Func<Stream, DbEnvironment, IFormatToken, IToken>>
         {
             {TokenType.TDS_ENVCHANGE, EnvironmentChangeToken.Create},
             {TokenType.TDS_EED, EedToken.Create },

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -24,11 +23,11 @@ namespace AdoNetCore.AseClient.Token
         public string ProcedureName { get; set; }
         public bool HasParameters { get; set; }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"-> {Type}: {ProcedureName}");
 
-            var rpcNameBytes = enc.GetBytes(ProcedureName);
+            var rpcNameBytes = env.Encoding.GetBytes(ProcedureName);
             var rpcLength = (byte) rpcNameBytes.Length;
 
             stream.WriteByte((byte)Type);
@@ -40,7 +39,7 @@ namespace AdoNetCore.AseClient.Token
                 : DbRpcOptions.TDS_RPC_UNUSED));
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             throw new NotImplementedException();
         }

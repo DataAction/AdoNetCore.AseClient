@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -19,7 +18,7 @@ namespace AdoNetCore.AseClient.Token
 
         private OptionCommandToken() { }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.Write($"-> {Type}: {Command}, {Option},");
             foreach (var b in Arguments)
@@ -33,7 +32,7 @@ namespace AdoNetCore.AseClient.Token
             stream.WriteBytePrefixedByteArray(Arguments);
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
         {
             var remainingLength = stream.ReadShort();
             using (var ts = new ReadablePartialStream(stream, remainingLength))
@@ -44,10 +43,10 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public static OptionCommandToken Create(Stream stream, Encoding enc, IFormatToken previousFormatToken)
+        public static OptionCommandToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new OptionCommandToken();
-            t.Read(stream, enc, previousFormatToken);
+            t.Read(stream, env, previous);
             return t;
         }
 

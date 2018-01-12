@@ -24,12 +24,12 @@ namespace AdoNetCore.AseClient.Packet
             _tokens = tokens;
         }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"Write {Type}");
             foreach (var token in _tokens)
             {
-                token.Write(stream, enc);
+                token.Write(stream, env);
             }
         }
     }

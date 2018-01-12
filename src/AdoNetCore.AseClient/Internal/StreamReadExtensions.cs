@@ -189,7 +189,7 @@ namespace AdoNetCore.AseClient.Internal
             return SqlDateTimeEpoch.AddMilliseconds(sqlTicks / SqlTicksPerMillisecond) - SqlDateTimeEpoch;
         }
 
-        public static decimal? ReadDecimal(this Stream stream, byte precision, byte scale)
+        public static AseDecimal? ReadDecimal(this Stream stream, byte precision, byte scale)
         {
             var length = stream.ReadByte();
             if (length == 0)
@@ -215,16 +215,7 @@ namespace AdoNetCore.AseClient.Internal
                 buffer[3], buffer[2], buffer[1], buffer[0],
             };
 
-            /*var bits = new[]
-            {
-                BitConverter.ToInt32(buffer, 0),
-                BitConverter.ToInt32(buffer, 4),
-                BitConverter.ToInt32(buffer, 8),
-                BitConverter.ToInt32(buffer, 12)
-            };*/
-
-            //return (decimal) new SqlDecimal(precision, scale, isPositive, bits);
-            return new AseDecimal(precision, scale, isPositive, buffer).ToDecimal();
+            return new AseDecimal(precision, scale, isPositive, buffer);
         }
 
         public static decimal ReadMoney(this Stream stream)

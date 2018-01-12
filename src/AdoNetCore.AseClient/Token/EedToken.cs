@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -32,12 +31,12 @@ namespace AdoNetCore.AseClient.Token
         public int State { get; set; }
         public byte[] SqlState { get; set; }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var remainingLength = stream.ReadUShort();
 
@@ -51,17 +50,17 @@ namespace AdoNetCore.AseClient.Token
                 ts.Read(SqlState, 0, sqlStateLen);
                 Status = (EedStatus)ts.ReadByte();
                 TransactionStatus = (TranState)ts.ReadUShort();
-                Message = ts.ReadShortLengthPrefixedString(enc);
-                ServerName = ts.ReadByteLengthPrefixedString(enc);
-                ProcedureName = ts.ReadByteLengthPrefixedString(enc);
+                Message = ts.ReadShortLengthPrefixedString(env.Encoding);
+                ServerName = ts.ReadByteLengthPrefixedString(env.Encoding);
+                ProcedureName = ts.ReadByteLengthPrefixedString(env.Encoding);
                 LineNumber = ts.ReadUShort();
             }
         }
 
-        public static EedToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static EedToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new EedToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

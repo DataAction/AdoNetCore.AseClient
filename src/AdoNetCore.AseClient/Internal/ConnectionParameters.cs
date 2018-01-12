@@ -131,6 +131,21 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     result.TextSize = Convert.ToInt32(item.PropertyValue);
                 }
+                else if (item.PropertyName.Equals("UseAseDecimal", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (bool.TryParse(item.PropertyValue, out var parsedBool))
+                    {
+                        result.UseAseDecimal = parsedBool;
+                    }
+                    else if (int.TryParse(item.PropertyValue, out var parsedInt))
+                    {
+                        result.UseAseDecimal = parsedInt != 0;
+                    }
+                    else
+                    {
+                        result.UseAseDecimal = Convert.ToBoolean(item.PropertyValue);
+                    }
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(dsUrl))
@@ -248,5 +263,6 @@ namespace AdoNetCore.AseClient.Internal
         public bool PingServer { get; private set; } = true; //in pooling, ping the server before returning from the pool
         public ushort PacketSize { get; private set; } = 512;
         public int TextSize { get; private set; } = 32768;
+        public bool UseAseDecimal { get; private set; } = false;
     }
 }

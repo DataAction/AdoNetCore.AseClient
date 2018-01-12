@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -60,13 +59,13 @@ namespace AdoNetCore.AseClient.Packet
         public BufferType Type => BufferType.TDS_BUF_LOGIN;
         public BufferStatus Status => BufferStatus.TDS_BUFSTAT_NONE;
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"Write {Type}");
-            stream.WritePaddedString(Hostname, TDS_MAXNAME, enc); //lhostname
-            stream.WritePaddedString(Username, TDS_MAXNAME, enc); //lussername
-            stream.WritePaddedString(Password, TDS_MAXNAME, enc); //lpw
-            stream.WritePaddedString(ProcessId, TDS_MAXNAME, enc); //lhostproc
+            stream.WritePaddedString(Hostname, TDS_MAXNAME, env.Encoding); //lhostname
+            stream.WritePaddedString(Username, TDS_MAXNAME, env.Encoding); //lussername
+            stream.WritePaddedString(Password, TDS_MAXNAME, env.Encoding); //lpw
+            stream.WritePaddedString(ProcessId, TDS_MAXNAME, env.Encoding); //lhostproc
 
             stream.Write(new byte[]
             {
@@ -83,16 +82,16 @@ namespace AdoNetCore.AseClient.Packet
                 0, 0, 0, //lspare
             });
 
-            stream.WritePaddedString(ApplicationName, TDS_MAXNAME, enc); //lappname
-            stream.WritePaddedString(ServerName, TDS_MAXNAME, enc); //lservname
+            stream.WritePaddedString(ApplicationName, TDS_MAXNAME, env.Encoding); //lappname
+            stream.WritePaddedString(ServerName, TDS_MAXNAME, env.Encoding); //lservname
 
             //spec's a bit weird when it comes to this bit... following ADO.net driver
             //lrempw, lrempwlen
-            stream.WriteWeirdPasswordString(Password, TDS_RPLEN, enc);
+            stream.WriteWeirdPasswordString(Password, TDS_RPLEN, env.Encoding);
 
             //ltds version
             stream.Write(new byte[] { 5, 0, 0, 0 });
-            stream.WritePaddedString(ClientLibrary, TDS_PROGNLEN, enc);
+            stream.WritePaddedString(ClientLibrary, TDS_PROGNLEN, env.Encoding);
             stream.Write(new byte[] { 0x0f, 0x07, 0x00, 0x0d }); //lprogvers //doesn't matter what this value is really
 
             stream.Write(new[]
@@ -102,7 +101,7 @@ namespace AdoNetCore.AseClient.Packet
                 (byte) LDate4
             });
 
-            stream.WritePaddedString(Language, TDS_MAXNAME, enc);//llanguage
+            stream.WritePaddedString(Language, TDS_MAXNAME, env.Encoding);//llanguage
 
             stream.Write(new byte[]
             {
@@ -110,9 +109,9 @@ namespace AdoNetCore.AseClient.Packet
                 0,0,0,0,8,0,0,0,0,0,0,0,0//loldsecure, lseclogin, lsecbulk, lhalogin, lhasessionid, lsecspare
             });
 
-            stream.WritePaddedString(Charset, TDS_MAXNAME, enc); //lcharset
+            stream.WritePaddedString(Charset, TDS_MAXNAME, env.Encoding); //lcharset
             stream.WriteByte((byte)LSetCharset); //lsetcharset
-            stream.WritePaddedString(PacketSize.ToString(), TDS_PKTLEN, enc);//lpacketsize
+            stream.WritePaddedString(PacketSize.ToString(), TDS_PKTLEN, env.Encoding);//lpacketsize
             //ldummy
             stream.Write(new byte[]
             {
@@ -120,7 +119,7 @@ namespace AdoNetCore.AseClient.Packet
                 0x00, 0x00, 0x00, 0x00
             });
 
-            Capability.Write(stream, enc);
+            Capability.Write(stream, env);
         }
     }
 }

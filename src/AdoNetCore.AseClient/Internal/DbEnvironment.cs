@@ -9,5 +9,6 @@ namespace AdoNetCore.AseClient.Internal
         public Encoding Encoding { get; set; } = Encoding.ASCII;
         public string Database { get; set; }
         public int TextSize { get; set; }
+        public bool UseAseDecimal { get; set; } = false;
     }
 }

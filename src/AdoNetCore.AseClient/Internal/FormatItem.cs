@@ -37,7 +37,7 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         public string ClassId { get; set; }
 
-        public static FormatItem CreateForParameter(AseParameter parameter, Encoding enc)
+        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
         {
             var dbType = parameter.DbType;
             var format = new FormatItem
@@ -45,7 +45,7 @@ namespace AdoNetCore.AseClient.Internal
                 ParameterName = parameter.ParameterName,
                 IsOutput = parameter.IsOutput,
                 IsNullable = parameter.IsNullable,
-                Length = TypeMap.GetFormatLength(dbType, parameter, enc)
+                Length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding)
             };
 
             if (dbType == DbType.Decimal || dbType == DbType.VarNumeric)
@@ -56,12 +56,19 @@ namespace AdoNetCore.AseClient.Internal
                     format.Scale = 0;
                     format.Length = 1;
                 }
-                else
+                else if(env.UseAseDecimal)
                 {
                     var aseDecimal = parameter.Value is AseDecimal d ? d : new AseDecimal(Convert.ToDecimal(parameter.Value));
                     format.Precision = (byte) aseDecimal.Precision;
                     format.Scale = (byte) aseDecimal.Scale;
                     format.Length = aseDecimal.BytesRequired + 1;
+                }
+                else
+                {
+                    var sqlDecimal = (SqlDecimal) Convert.ToDecimal(parameter.Value);
+                    format.Precision = sqlDecimal.Precision;
+                    format.Scale = sqlDecimal.Scale;
+                    format.Length = sqlDecimal.BytesRequired + 1;
                 }
             }
 

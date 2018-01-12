@@ -442,7 +442,7 @@ SET FMTONLY OFF";
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var formatItem = FormatItem.CreateForParameter(parameter, _environment.Encoding);
+                var formatItem = FormatItem.CreateForParameter(parameter, _environment);
                 formatItems.Add(formatItem);
                 parameterItems.Add(new ParametersToken.Parameter
                 {

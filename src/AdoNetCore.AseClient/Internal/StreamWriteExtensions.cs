@@ -190,7 +190,7 @@ namespace AdoNetCore.AseClient.Internal
             stream.Write(buf, 0, buf.Length);
         }
 
-        /*public static void WriteDecimal(this Stream stream, SqlDecimal value)
+        public static void WriteDecimal(this Stream stream, SqlDecimal value)
         {
             var requiredBytes = value.BytesRequired;
             stream.WriteByte((byte)(1 + requiredBytes));
@@ -205,7 +205,7 @@ namespace AdoNetCore.AseClient.Internal
                 buf[iBuf] = data[iData];
             }
             stream.Write(buf, 0, buf.Length);
-        }*/
+        }
 
         public static void WriteDecimal(this Stream stream, AseDecimal value)
         {

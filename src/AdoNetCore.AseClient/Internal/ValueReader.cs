@@ -94,13 +94,20 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
                     {
-                        var aseDecimal = stream.ReadDecimal(format.Precision ?? 1, format.Scale ?? 0);
+                        var precision = format.Precision ?? 1;
+                        var scale = format.Scale ?? 0;
+                        if (env.UseAseDecimal)
+                        {
+                            var aseDecimal = stream.ReadAseDecimal(precision, scale);
 
-                        return aseDecimal.HasValue
-                            ? env.UseAseDecimal
-                                ? (object) aseDecimal.Value
-                                : aseDecimal.Value.ToDecimal()
-                            : DBNull.Value;
+                            return aseDecimal.HasValue
+                                ? env.UseAseDecimal
+                                    ? (object)aseDecimal.Value
+                                    : aseDecimal.Value.ToDecimal()
+                                : DBNull.Value;
+                        }
+
+                        return (object)stream.ReadDecimal(precision, scale) ?? DBNull.Value;
                     }
                 case TdsDataType.TDS_MONEY:
                     return stream.ReadMoney();

@@ -206,7 +206,7 @@ namespace AdoNetCore.AseClient.Internal
                                 stream.WriteDecimal(ad);
                                 break;
                             default:
-                                stream.WriteDecimal(new AseDecimal(Cast<decimal>(value, format)));
+                                stream.WriteDecimal((SqlDecimal) Cast<decimal>(value, format));
                                 break;
                         }
                     }

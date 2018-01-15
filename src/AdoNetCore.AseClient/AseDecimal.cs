@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Numerics;
-using System.Text.RegularExpressions;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -269,7 +268,9 @@ namespace AdoNetCore.AseClient
                 ? s.Length - dpIndex - 1
                 : 0;
 
-            if (BigInteger.TryParse(s.Replace(".", string.Empty), out BigInteger parsed))
+            s = s.Replace(".", string.Empty);
+
+            if (BigInteger.TryParse(s, out BigInteger parsed))
             {
                 return new AseDecimal(new BigDecimal(isNegative ? -parsed : parsed, -scale));
             }
@@ -278,8 +279,7 @@ namespace AdoNetCore.AseClient
             {
                 return Zero;
             }
-                
-            Logger.Instance?.WriteLine($"Invalid format: {s.Replace(".", string.Empty)}");
+
             throw new FormatException("The String to parse is not in the expected Format");
         }
 
@@ -312,7 +312,12 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public int CompareTo(object value)
         {
-            return Backing.CompareTo(value);
+            if (ReferenceEquals(value, null) || !(value is AseDecimal))
+            {
+                throw new ArgumentException();
+            }
+
+            return CompareTo((AseDecimal) value);
         }
 
         /// <summary>

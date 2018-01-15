@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient.Internal
     /// Based on https://stackoverflow.com/a/4524254
     /// Author: Jan Christoph Bernack (contact: jc.bernack at gmail.com)
     /// </summary>
-    public struct BigDecimal : IComparable, IComparable<BigDecimal>
+    internal struct BigDecimal : IComparable, IComparable<BigDecimal>
     {
         /// <summary>
         /// Specifies whether the significant digits should be truncated to the given precision after each operation.
@@ -224,42 +224,42 @@ namespace AdoNetCore.AseClient.Internal
 
         public static explicit operator int(BigDecimal value)
         {
-            return (int)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (int)(decimal)value;
         }
 
         public static explicit operator uint(BigDecimal value)
         {
-            return (uint)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (uint)(decimal)value;
         }
 
         public static explicit operator long(BigDecimal value)
         {
-            return (long)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (long)(decimal)value;
         }
 
         public static explicit operator ulong(BigDecimal value)
         {
-            return (ulong)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (ulong)(decimal)value;
         }
 
         public static explicit operator short(BigDecimal value)
         {
-            return (short)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (short)(decimal)value;
         }
 
         public static explicit operator ushort(BigDecimal value)
         {
-            return (ushort)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (ushort)(decimal)value;
         }
 
         public static explicit operator sbyte(BigDecimal value)
         {
-            return (sbyte)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (sbyte)(decimal)value;
         }
 
         public static explicit operator byte(BigDecimal value)
         {
-            return (byte)(value.Mantissa * BigInteger.Pow(10, value.Exponent));
+            return (byte)(decimal)value;
         }
 
         #endregion

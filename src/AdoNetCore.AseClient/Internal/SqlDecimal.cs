@@ -30,6 +30,7 @@ SOFTWARE.
 
 //note: This is a cut-down version adapted for use in our driver.
 //Would prefer to use the real thing, but it's only available in .net core 2.0
+//Would also be nice if this supported up to 10^77-1 - -10^77+1, but SQL Server does not
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -42,7 +43,6 @@ namespace AdoNetCore.AseClient.Internal
     /// Represents a fixed precision and scale numeric value between -10<superscript term='38'/>
     /// -1 and 10<superscript term='38'/> -1 to be stored in or retrieved from a database.
     /// </summary>
-    [Obsolete("Use AseDecimal instead", false)]
     internal struct SqlDecimal
     {
         private static class SQLResource

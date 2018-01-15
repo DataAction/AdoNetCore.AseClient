@@ -645,46 +645,57 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         public static IEnumerable<TestCaseData> AseDecimal_ToAseDecimal_Cases()
         {
+            yield return new TestCaseData("-5.5444", 5, 0, "-5");
+            yield return new TestCaseData("-5.5444", 5, 1, "-5.5");
+            yield return new TestCaseData("-5.5444", 5, 3, "-5.544");
+            yield return new TestCaseData("-5.5555", 5, 0, "-5");
+            yield return new TestCaseData("-5.5555", 5, 1, "-5.5");
+            yield return new TestCaseData("-5.5555", 5, 3, "-5.555");
+            yield return new TestCaseData("-5.5666", 5, 0, "-5");
+            yield return new TestCaseData("-5.5666", 5, 1, "-5.5");
+            yield return new TestCaseData("-5.5666", 5, 3, "-5.566");
             yield return new TestCaseData("5", 1, 0, "5");
             yield return new TestCaseData("5", 2, 0, "50");
             yield return new TestCaseData("5", 2, 1, "5");
-
-            yield return new TestCaseData("5.1", 2, 1, "5.1");
-            yield return new TestCaseData("5.9", 2, 1, "5.9");
-            yield return new TestCaseData("5.1", 1, 0, "0"); //?
-            yield return new TestCaseData("5.9", 1, 0, "0"); //?
-
-            yield return new TestCaseData("55.9", 3, 1, "55.9");
-            yield return new TestCaseData("55.9", 2, 1, "5.5");
-            yield return new TestCaseData("55.9", 1, 0, "0"); //?
-
-            yield return new TestCaseData("5", 1, 0, "5");
-            yield return new TestCaseData("55", 1, 0, "5");
+            yield return new TestCaseData("5", 4, 0, "5000");
             yield return new TestCaseData("5.1", 1, 0, "0");
-            yield return new TestCaseData("5.5", 1, 0, "0");
             yield return new TestCaseData("5.1", 2, 1, "5.1");
+            yield return new TestCaseData("5.5", 1, 0, "0");
+            yield return new TestCaseData("5.5444", 5, 0, "5");
+            yield return new TestCaseData("5.5444", 5, 1, "5.5");
+            yield return new TestCaseData("5.5444", 5, 3, "5.544");
+            yield return new TestCaseData("5.5555", 5, 0, "5");
+            yield return new TestCaseData("5.5555", 5, 1, "5.5");
+            yield return new TestCaseData("5.5555", 5, 3, "5.555");
+            yield return new TestCaseData("5.5666", 5, 0, "5");
+            yield return new TestCaseData("5.5666", 5, 1, "5.5");
+            yield return new TestCaseData("5.5666", 5, 3, "5.566");
+            yield return new TestCaseData("5.9", 1, 0, "0");
+            yield return new TestCaseData("5.9", 2, 1, "5.9");
+            yield return new TestCaseData("55", 1, 0, "5");
+            yield return new TestCaseData("55", 3, 1, "55");
             yield return new TestCaseData("55.1", 1, 0, "0");
             yield return new TestCaseData("55.1", 2, 0, "5");
             yield return new TestCaseData("55.1", 2, 1, "5.5");
+            yield return new TestCaseData("55.9", 1, 0, "0");
+            yield return new TestCaseData("55.9", 2, 1, "5.5");
+            yield return new TestCaseData("55.9", 3, 1, "55.9");
+            yield return new TestCaseData("555.1", 4, 0, "555");
             yield return new TestCaseData("56.1", 2, 1, "5.6");
-            yield return new TestCaseData("5.5555", 5, 0, "5");
-            yield return new TestCaseData("5.5444", 5, 0, "5");
-            yield return new TestCaseData("5.5666", 5, 0, "5");
-            yield return new TestCaseData("5.5555", 5, 1, "5.5");
-            yield return new TestCaseData("5.5444", 5, 1, "5.5");
-            yield return new TestCaseData("5.5666", 5, 1, "5.5");
-            yield return new TestCaseData("5.5555", 5, 3, "5.555");
-            yield return new TestCaseData("5.5444", 5, 3, "5.544");
-            yield return new TestCaseData("5.5666", 5, 3, "5.566");
-            yield return new TestCaseData("-5.5555", 5, 0, "-5");
-            yield return new TestCaseData("-5.5444", 5, 0, "-5");
-            yield return new TestCaseData("-5.5666", 5, 0, "-5");
-            yield return new TestCaseData("-5.5555", 5, 1, "-5.5");
-            yield return new TestCaseData("-5.5444", 5, 1, "-5.5");
-            yield return new TestCaseData("-5.5666", 5, 1, "-5.5");
-            yield return new TestCaseData("-5.5555", 5, 3, "-5.555");
-            yield return new TestCaseData("-5.5444", 5, 3, "-5.544");
-            yield return new TestCaseData("-5.5666", 5, 3, "-5.566");
+        }
+
+        [TestCaseSource(nameof(AseDecimal_ToAseDecimal_WouldCauseDataOverflow_ThrowsAseException_Cases))]
+        public void AseDecimal_ToAseDecimal_WouldCauseDataOverflow_ThrowsAseException(string input, int p, int s)
+        {
+            var ex = Assert.Throws<AseException>(() => AseDecimal.Parse(input).ToAseDecimal(p, s));
+
+            Assert.AreEqual("Data overflow. Increase specified column size or buffer size", ex.Message);
+            Assert.AreEqual(30128, ex.Errors[0].MessageNumber);
+        }
+
+        public static IEnumerable<TestCaseData> AseDecimal_ToAseDecimal_WouldCauseDataOverflow_ThrowsAseException_Cases()
+        {
+            yield return new TestCaseData("55", 2, 1);
         }
 
         [TestCaseSource(nameof(AseDecimal_ParseInvalidInput_ThrowsFormatException_Cases))]

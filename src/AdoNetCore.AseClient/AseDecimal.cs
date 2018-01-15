@@ -102,7 +102,6 @@ namespace AdoNetCore.AseClient
 
         internal AseDecimal(int precision, int scale, bool isPositive, byte[] value)
         {
-            Logger.Instance?.Write($"Construct AseDecimal from {HexDump.Dump(value)}");
             var bigInt = new BigInteger(value);
             Backing = isPositive
                 ? new BigDecimal(bigInt, -scale)
@@ -159,14 +158,7 @@ namespace AdoNetCore.AseClient
                 var result = new byte[BytesRequired];
                 var mantissaBytes = (Backing.Mantissa * Backing.Mantissa.Sign).ToByteArray();
 
-                Logger.Instance?.WriteLine($"Exponent: {Backing.Exponent}, Mantissa: {Backing.Mantissa}");
-                Logger.Instance?.WriteLine($"Expecting {BytesRequired} bytes; Mantissa is {mantissaBytes.Length} bytes");
-                Logger.Instance?.WriteLine($"Mantissa bytes:");
-                Logger.Instance?.Write(HexDump.Dump(mantissaBytes));
-
                 Array.Copy(mantissaBytes, 0, result, 0, Math.Min(result.Length, mantissaBytes.Length));
-                Logger.Instance?.WriteLine($"Result bytes:");
-                Logger.Instance?.Write(HexDump.Dump(result));
                 return result;
             }
         }
@@ -176,15 +168,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// get the number of bytes required to represent the value (caller should add 1 byte to represent sign byte)
         /// </summary>
-        public int BytesRequired
-        {
-            get
-            {
-                if (IsNull)
-                    throw new NullReferenceException();
-                return Convert.ToInt32(Math.Ceiling(Precision / Log256));
-            }
-        }
+        public int BytesRequired => Convert.ToInt32(Math.Ceiling(Precision / Log256));
 
         /// <summary>
         /// Returns a value indicating whether two instances of AseDecimal are equal.
@@ -292,7 +276,7 @@ namespace AdoNetCore.AseClient
             }
             catch
             {
-                result = new AseDecimal();
+                result = Zero;
                 return false;
             }
         }
@@ -358,6 +342,11 @@ namespace AdoNetCore.AseClient
             if (outputPrecision == Precision && outputScale == Scale)
             {
                 return new AseDecimal(new BigDecimal(Backing.Mantissa, Backing.Exponent));
+            }
+
+            if (outputPrecision == Precision && outputScale > Scale)
+            {
+                throw new AseException("Data overflow. Increase specified column size or buffer size", 30128);
             }
 
             var mantissa = Backing.Mantissa;
@@ -462,7 +451,6 @@ namespace AdoNetCore.AseClient
         {
             if (outputScale < 0)
             {
-                Logger.Instance?.WriteLine($"Invalid outputScale {outputScale}");
                 throw new AseException("Invalid value.", 30037);
             }
 

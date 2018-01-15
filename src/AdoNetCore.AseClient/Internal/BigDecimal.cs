@@ -89,7 +89,8 @@ namespace AdoNetCore.AseClient.Internal
             // save some time because the number of digits is not needed to remove trailing zeros
             shortened.Normalize();
             // remove the least significant digits, as long as the number of digits is higher than the given Precision
-            while (NumberOfMantissaDigits(shortened.Mantissa) > precision)
+            Logger.Instance?.WriteLine($"Truncate: {NumberOfMantissaDigits(shortened.Mantissa)}, {precision}");
+            while (shortened.Mantissa != 0 && NumberOfMantissaDigits(shortened.Mantissa) > precision)
             {
                 shortened.Mantissa /= 10;
                 shortened.Exponent++;
@@ -116,7 +117,7 @@ namespace AdoNetCore.AseClient.Internal
             var shortened = this;
             shortened.Normalize();
             var negative = shortened.Mantissa.Sign < 0;
-            while (NumberOfMantissaDigits(shortened.Mantissa) > precision)
+            while (shortened.Mantissa != 0 && NumberOfMantissaDigits(shortened.Mantissa) > precision)
             {
                 var div10 = shortened.Mantissa / 10;
                 var mul10 = div10 * 10;
@@ -148,6 +149,7 @@ namespace AdoNetCore.AseClient.Internal
             // e.g. log10(9999999999999999999) should be 18.99999999999999999995657055180967481723271563569882323263 but ends up being 19, breaking calculations.
             //return (int)Math.Ceiling(BigInteger.Log10(value * value.Sign));
             //return (int) Math.Floor(BigInteger.Log10(value * value.Sign) + 1);
+            //return (int) Math.Round(BigInteger.Log10(value * value.Sign));
         }
 
         public int NumberOfDigits()
@@ -161,8 +163,6 @@ namespace AdoNetCore.AseClient.Internal
             mantissaDigits = mantissaDigits == 0
                 ? 1
                 : mantissaDigits;
-
-            Logger.Instance?.WriteLine($"mantissaDigits: {mantissaDigits}; Exponent: {Exponent}");
 
             if (mantissaDigits <= Math.Abs(Exponent))
             {
@@ -407,12 +407,9 @@ namespace AdoNetCore.AseClient.Internal
 
         private void PadIfNecessary(StringBuilder sb)
         {
-            Logger.Instance?.WriteLine($"{nameof(PadIfNecessary)}({sb})");
             var expectedDigits = NumberOfDigits();
             var mantissaDigits = sb.Length;
             var paddingRequired = expectedDigits - mantissaDigits;
-
-            Logger.Instance?.WriteLine($"expected digits: {expectedDigits}, mantissa digits: {mantissaDigits}, paddingRequired: {paddingRequired}, total digits: {NumberOfDigits()}");
 
             if (paddingRequired > 0)
             {
@@ -425,7 +422,6 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         private void InsertDecimalPoint(StringBuilder sb)
         {
-            Logger.Instance?.WriteLine($"{nameof(InsertDecimalPoint)}({sb})");
             if (Exponent < 0)
             {
                 var targetIndex = sb.Length + Exponent;
@@ -442,7 +438,6 @@ namespace AdoNetCore.AseClient.Internal
 
         private void InsertSign(StringBuilder sb)
         {
-            Logger.Instance?.WriteLine($"{nameof(InsertSign)}({sb})");
             if (Mantissa.Sign < 0)
             {
                 sb.Insert(0, '-');

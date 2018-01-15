@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Text.RegularExpressions;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -54,6 +55,16 @@ namespace AdoNetCore.AseClient
         /// Zero is 0
         /// </summary>
         public static readonly AseDecimal Zero = new AseDecimal(0m);
+        
+        /// <summary>
+        /// 1
+        /// </summary>
+        internal static readonly AseDecimal PositiveOne = new AseDecimal(1m);
+        
+        /// <summary>
+        /// -1
+        /// </summary>
+        internal static readonly AseDecimal NegativeOne = new AseDecimal(-1m);
 
         internal BigDecimal Backing;
 
@@ -233,19 +244,43 @@ namespace AdoNetCore.AseClient
         /// <returns>An AseDecimal structure representing the parsed string.</returns>
         public static AseDecimal Parse(string s)
         {
+            if (s == null)
+            {
+                return Zero;
+            }
+
+            s = s.Replace(" ", string.Empty);
+
+            if (s.Length == 0)
+            {
+                return Zero;
+            }
+
             var isNegative = s.StartsWith("-");
-            s = s.Replace("-", string.Empty).TrimEnd('0');
+            s = s.Replace("-", string.Empty).Replace("+", string.Empty);
             var dpIndex = s.LastIndexOf('.');
+
+            if (dpIndex >= 0)
+            {
+                s = s.TrimEnd('0');
+            }
+
             var scale = dpIndex >= 0 && dpIndex < s.Length
                 ? s.Length - dpIndex - 1
                 : 0;
 
-            Logger.Instance?.WriteLine($"s: {s}");
-            Logger.Instance?.WriteLine($"isNegative: {isNegative}, dpIndex: {dpIndex}, s.Length: {s.Length}, scale: {scale}");
+            if (BigInteger.TryParse(s.Replace(".", string.Empty), out BigInteger parsed))
+            {
+                return new AseDecimal(new BigDecimal(isNegative ? -parsed : parsed, -scale));
+            }
 
-            var parsed = BigInteger.Parse(s.Replace(".", string.Empty));
-
-            return new AseDecimal(new BigDecimal(isNegative ? -parsed : parsed, -scale));
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                return Zero;
+            }
+                
+            Logger.Instance?.WriteLine($"Invalid format: {s.Replace(".", string.Empty)}");
+            throw new FormatException("The String to parse is not in the expected Format");
         }
 
         public static bool TryParse(string s, out AseDecimal result)
@@ -313,7 +348,41 @@ namespace AdoNetCore.AseClient
         /// <param name="outputPrecision">The target precision for the output</param>
         /// <param name="outputScale">The target scale for the output.</param>
         /// <returns>An AseDecimal structure with the specified precision and scale.</returns>
-        public AseDecimal ToAseDecimal(int outputPrecision, int outputScale) { throw new NotImplementedException(); }
+        public AseDecimal ToAseDecimal(int outputPrecision, int outputScale)
+        {
+            if (outputPrecision == Precision && outputScale == Scale)
+            {
+                return new AseDecimal(new BigDecimal(Backing.Mantissa, Backing.Exponent));
+            }
+
+            var mantissa = Backing.Mantissa;
+
+            if (outputPrecision != Precision)
+            {
+                var precisionDifference = Precision - outputPrecision;
+
+                if (precisionDifference < 0)
+                {
+                    mantissa *= BigInteger.Pow(10, -precisionDifference);
+                }
+                else if (precisionDifference > 0)
+                {
+                    mantissa /= BigInteger.Pow(10, precisionDifference);
+                }
+            }
+
+            if (outputScale != Scale)
+            {
+                var scaleDifference = Scale - outputScale;
+
+                if (scaleDifference < 0)
+                {
+                    mantissa /= BigInteger.Pow(10, -scaleDifference);
+                }
+            }
+
+            return Truncate(new AseDecimal(new BigDecimal(mantissa, Backing.Exponent)), outputScale);
+        }
 
         /// <summary>
         /// Returns a string representation of this AseDecimal.
@@ -384,22 +453,37 @@ namespace AdoNetCore.AseClient
             return new AseDecimal(n.Backing.Floor());
         }
 
-        public static AseDecimal Truncate(AseDecimal n, int position)
+        public static AseDecimal Truncate(AseDecimal n, int outputScale)
         {
-            if (position < 0)
+            if (outputScale < 0)
             {
+                Logger.Instance?.WriteLine($"Invalid outputScale {outputScale}");
                 throw new AseException("Invalid value.", 30037);
             }
-            return new AseDecimal(n.Backing.Truncate(n.Precision - n.Scale + position));
+
+            //handles cases where the number is 0 < x < 1
+            if (n < PositiveOne && n > NegativeOne)
+            {
+                outputScale -= 1;
+            }
+
+            return new AseDecimal(n.Backing.Truncate(n.Precision - n.Scale + outputScale));
         }
 
-        public static AseDecimal Round(AseDecimal n, int position)
+        public static AseDecimal Round(AseDecimal n, int outputScale)
         {
-            if (position < 0)
+            if (outputScale < 0)
             {
                 throw new AseException("Invalid value.", 30037);
             }
-            return new AseDecimal(n.Backing.Round(n.Precision - n.Scale + position));
+
+            //handles cases where the number is 0 < x < 1
+            if (n < PositiveOne && n > NegativeOne)
+            {
+                outputScale -= 1;
+            }
+
+            return new AseDecimal(n.Backing.Round(n.Precision - n.Scale + outputScale));
         }
 
         public static explicit operator AseDecimal(int value)

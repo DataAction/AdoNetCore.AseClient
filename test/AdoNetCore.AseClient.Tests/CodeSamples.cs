@@ -329,6 +329,24 @@ END";
         }
 
         [Test]
+        public void UseInputParameterWithASQLQuery()
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+                        "SELECT TOP 1 FirstName FROM Customer WHERE LastName = @lastName";
+
+                    command.Parameters.AddWithValue("@lastName", "Rubble"); // Input parameter.
+                    var result = command.ExecuteScalar();
+                }
+            }
+        }
+
+        [Test]
         public void UseInputOutputAndReturnParametersWithAStoredProcedure()
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))

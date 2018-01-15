@@ -386,12 +386,20 @@ namespace AdoNetCore.AseClient
 
         public static AseDecimal Truncate(AseDecimal n, int position)
         {
-            return new AseDecimal(n.Backing.Truncate(position));
+            if (position < 0)
+            {
+                throw new AseException("Invalid value.", 30037);
+            }
+            return new AseDecimal(n.Backing.Truncate(n.Precision - n.Scale + position));
         }
 
         public static AseDecimal Round(AseDecimal n, int position)
         {
-            throw new NotImplementedException();
+            if (position < 0)
+            {
+                throw new AseException("Invalid value.", 30037);
+            }
+            return new AseDecimal(n.Backing.Round(n.Precision - n.Scale + position));
         }
 
         public static explicit operator AseDecimal(int value)

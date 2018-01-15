@@ -106,10 +106,39 @@ namespace AdoNetCore.AseClient.Internal
 
         public BigDecimal Floor()
         {
-            return Truncate(NumberOfMantissaDigits(Mantissa) + Exponent);
+            return Mantissa < 0
+                ? Truncate(NumberOfMantissaDigits(Mantissa) + Exponent) - 1
+                : Truncate(NumberOfMantissaDigits(Mantissa) + Exponent);
         }
 
-        private static int NumberOfMantissaDigits(BigInteger value)
+        public BigDecimal Round(int precision)
+        {
+            var shortened = this;
+            shortened.Normalize();
+            var negative = shortened.Mantissa.Sign < 0;
+            while (NumberOfMantissaDigits(shortened.Mantissa) > precision)
+            {
+                var div10 = shortened.Mantissa / 10;
+                var mul10 = div10 * 10;
+
+                if (!negative && shortened.Mantissa - mul10 >= 5)
+                {
+                    div10 += 1;
+                }
+                else if (negative && shortened.Mantissa - mul10 <= -5)
+                {
+                    div10 -= 1;
+                }
+
+                shortened.Mantissa = div10;
+                shortened.Exponent++;
+            }
+
+            shortened.Normalize();
+            return shortened;
+        }
+
+        internal static int NumberOfMantissaDigits(BigInteger value)
         {
             //todo: fix. May need to do looping/binary search to figure out the value.
             //Could store a const readonly array of 10^n values (for n=0 to 78) and search based on that

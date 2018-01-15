@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
@@ -467,6 +468,109 @@ namespace AdoNetCore.AseClient.Tests.Unit
         {
             yield return new TestCaseData(new AseDecimal(1m), new byte[] { 1 });
             yield return new TestCaseData(new AseDecimal(-1m), new byte[] { 1 }); //the sign is handled elsewhere
+        }
+
+        [Test]
+        public void AseDecimal_Round_NegativePosition_ThrowsAseException()
+        {
+            var ex = Assert.Throws<AseException>(() => AseDecimal.Round(new AseDecimal(), -1));
+            Assert.AreEqual("Invalid value.", ex.Message);
+            Assert.AreEqual(30037, ex.Errors[0].MessageNumber);
+        }
+
+        [TestCaseSource(nameof(AseDecimal_Round_Cases))]
+        public void AseDecimal_Round(string input, string expected)
+        {
+            var truncated = AseDecimal.Round(AseDecimal.Parse(input), 1);
+            var parsedExpected = AseDecimal.Parse(expected);
+
+            Assert.AreEqual(parsedExpected, truncated);
+        }
+
+        public static IEnumerable<TestCaseData> AseDecimal_Round_Cases()
+        {
+            yield return new TestCaseData("5.5111", "5.5");
+            yield return new TestCaseData("5.5222", "5.5");
+            yield return new TestCaseData("5.5333", "5.5");
+            yield return new TestCaseData("5.5444", "5.5");
+            yield return new TestCaseData("5.5555", "5.6");
+            yield return new TestCaseData("5.5666", "5.6");
+            yield return new TestCaseData("5.5777", "5.6");
+            yield return new TestCaseData("5.5888", "5.6");
+            yield return new TestCaseData("5.5999", "5.6");
+            yield return new TestCaseData("4.5111", "4.5");
+            yield return new TestCaseData("4.5222", "4.5");
+            yield return new TestCaseData("4.5333", "4.5");
+            yield return new TestCaseData("4.5444", "4.5");
+            yield return new TestCaseData("4.5555", "4.6");
+            yield return new TestCaseData("4.5666", "4.6");
+            yield return new TestCaseData("4.5777", "4.6");
+            yield return new TestCaseData("4.5888", "4.6");
+            yield return new TestCaseData("4.5999", "4.6");
+            yield return new TestCaseData("-5.5111", "-5.5");
+            yield return new TestCaseData("-5.5222", "-5.5");
+            yield return new TestCaseData("-5.5333", "-5.5");
+            yield return new TestCaseData("-5.5444", "-5.5");
+            yield return new TestCaseData("-5.5555", "-5.6");
+            yield return new TestCaseData("-5.5666", "-5.6");
+            yield return new TestCaseData("-5.5777", "-5.6");
+            yield return new TestCaseData("-5.5888", "-5.6");
+            yield return new TestCaseData("-5.5999", "-5.6");
+            yield return new TestCaseData("-4.5111", "-4.5");
+            yield return new TestCaseData("-4.5222", "-4.5");
+            yield return new TestCaseData("-4.5333", "-4.5");
+            yield return new TestCaseData("-4.5444", "-4.5");
+            yield return new TestCaseData("-4.5555", "-4.6");
+            yield return new TestCaseData("-4.5666", "-4.6");
+            yield return new TestCaseData("-4.5777", "-4.6");
+            yield return new TestCaseData("-4.5888", "-4.6");
+            yield return new TestCaseData("-4.5999", "-4.6");
+        }
+
+        [Test]
+        public void AseDecimal_Truncate_NegativePosition_ThrowsAseException()
+        {
+            var ex = Assert.Throws<AseException>(() => AseDecimal.Truncate(new AseDecimal(), -1));
+            Assert.AreEqual("Invalid value.", ex.Message);
+            Assert.AreEqual(30037, ex.Errors[0].MessageNumber);
+        }
+
+        [TestCaseSource(nameof(AseDecimal_Truncate_Cases))]
+        public void AseDecimal_Truncate(string input, string expected)
+        {
+            var truncated = AseDecimal.Truncate(AseDecimal.Parse(input), 1);
+            var parsedExpected = AseDecimal.Parse(expected);
+
+            Assert.AreEqual(parsedExpected, truncated);
+        }
+
+        public static IEnumerable<TestCaseData> AseDecimal_Truncate_Cases()
+        {
+            yield return new TestCaseData("5.5555", "5.5");
+            yield return new TestCaseData("5.5444", "5.5");
+            yield return new TestCaseData("5.5666", "5.5");
+            yield return new TestCaseData("-5.5555", "-5.5");
+            yield return new TestCaseData("-5.5444", "-5.5");
+            yield return new TestCaseData("-5.5666", "-5.5");
+        }
+
+        [TestCaseSource(nameof(AseDecimal_Floor_Cases))]
+        public void AseDecimal_Floor(string input, string expected)
+        {
+            var truncated = AseDecimal.Floor(AseDecimal.Parse(input));
+            var parsedExpected = AseDecimal.Parse(expected);
+
+            Assert.AreEqual(parsedExpected, truncated);
+        }
+
+        public static IEnumerable<TestCaseData> AseDecimal_Floor_Cases()
+        {
+            yield return new TestCaseData("5.5555", "5");
+            yield return new TestCaseData("5.5444", "5");
+            yield return new TestCaseData("5.5666", "5");
+            yield return new TestCaseData("-5.5555", "-6");
+            yield return new TestCaseData("-5.5444", "-6");
+            yield return new TestCaseData("-5.5666", "-6");
         }
     }
 }

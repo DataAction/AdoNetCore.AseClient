@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.0;netcoreapp1.1;netcoreapp2.0;net46</TargetFrameworks>
-    <PackageVersion>0.1.0</PackageVersion>
-    <Authors>Data Action</Authors>
+    <VersionPrefix>0.9.0</VersionPrefix>
+    <Authors>dataaction</Authors>
     <Description>.NET Core data provider for Sybase ASE</Description>
-    <PackageTags>Sybase ASE Adaptive</PackageTags>
+    <PackageTags>Sybase ASE Adaptive SAP AseClient DbProvider</PackageTags>
     <PackageProjectUrl>https://github.com/DataAction/AdoNetCore.AseClient</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/LICENSE</PackageLicenseUrl>
+    <PackageReleaseNotes>Beta release -- all major types supported</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp1.1'">
     <DefineConstants>$(DefineConstants);NETCORE_OLD</DefineConstants>

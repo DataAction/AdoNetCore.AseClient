@@ -21,5 +21,6 @@
         bool PingServer { get; } //in pooling, ping the server before returning from the pool
         ushort PacketSize { get; }
         int TextSize { get; }
+        bool UseAseDecimal { get; }
     }
 }

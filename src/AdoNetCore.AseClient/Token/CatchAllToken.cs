@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -16,12 +15,12 @@ namespace AdoNetCore.AseClient.Token
             Type = type;
         }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
 
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             //var remainingLength = stream.ReadShort();
             var remainingLength = CalculateRemainingLength(Type, stream);
@@ -37,7 +36,7 @@ namespace AdoNetCore.AseClient.Token
         /// The token's length or the length of its remaining length indicator is encoded in the token's type.
         /// </summary>
         /// <param name="stream"></param>
-        /// <param name="tokenType"></param>
+        /// <param name="type"></param>
         /// <returns></returns>
         private ulong CalculateRemainingLength(TokenType type, Stream stream)
         {

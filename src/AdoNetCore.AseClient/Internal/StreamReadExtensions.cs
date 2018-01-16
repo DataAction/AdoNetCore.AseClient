@@ -223,7 +223,25 @@ namespace AdoNetCore.AseClient.Internal
                 BitConverter.ToInt32(buffer, 12)
             };
 
-            return (decimal) new SqlDecimal(precision, scale, isPositive, bits);
+            return (decimal)new SqlDecimal(precision, scale, isPositive, bits);
+        }
+
+        public static AseDecimal? ReadAseDecimal(this Stream stream, byte precision, byte scale)
+        {
+            var length = stream.ReadByte();
+            if (length == 0)
+            {
+                return null;
+            }
+            var isPositive = stream.ReadByte() == 0;
+            var remainingLength = length - 1;
+            var buf = new byte[length];
+
+            stream.Read(buf, 1, remainingLength);
+            
+            Array.Reverse(buf);
+            
+            return new AseDecimal(precision, scale, isPositive, buf);
         }
 
         public static decimal ReadMoney(this Stream stream)

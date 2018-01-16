@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -14,22 +12,22 @@ namespace AdoNetCore.AseClient.Token
         public string CommandText { get; set; }
         public bool HasParameters { get; set; }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"Write {Type}: '{CommandText}'");
             stream.WriteByte((byte)Type);
-            var commandText = enc.GetBytes(CommandText);
+            var commandText = env.Encoding.GetBytes(CommandText);
             stream.WriteInt(1 + commandText.Length);
             stream.WriteByte((byte)(HasParameters ? 1 : 0));
             stream.Write(commandText, 0, commandText.Length);
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var remainingLength = stream.ReadInt();
             var status = stream.ReadByte();
             HasParameters = (status & 1) > 0;
-            CommandText = stream.ReadString(remainingLength - 1, enc);
+            CommandText = stream.ReadString(remainingLength - 1, env.Encoding);
         }
     }
 }

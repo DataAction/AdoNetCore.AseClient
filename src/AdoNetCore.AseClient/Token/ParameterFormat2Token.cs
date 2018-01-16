@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
+using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
@@ -9,10 +9,10 @@ namespace AdoNetCore.AseClient.Token
     {
         public ParameterFormat2Token() : base(TokenType.TDS_PARAMFMT2) { }
 
-        public static ParameterFormat2Token Create(Stream stream, Encoding enc, IFormatToken previousFormatToken)
+        public static ParameterFormat2Token Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new ParameterFormat2Token();
-            t.Read(stream, enc, previousFormatToken);
+            t.Read(stream, env, previous);
             return t;
         }
     }

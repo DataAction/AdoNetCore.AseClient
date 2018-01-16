@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -60,12 +59,12 @@ namespace AdoNetCore.AseClient.Token
         public TranState TransactionState { get; set; }
         public int Count { get; set; }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             Status = (DoneStatus) stream.ReadUShort();
             TransactionState = (TranState) stream.ReadUShort();
@@ -73,10 +72,10 @@ namespace AdoNetCore.AseClient.Token
             Logger.Instance?.WriteLine($"<- {Type}: {Status} ({Count})");
         }
 
-        public static DoneToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static DoneToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new DoneToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

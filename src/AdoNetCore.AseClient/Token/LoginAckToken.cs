@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -37,12 +36,12 @@ namespace AdoNetCore.AseClient.Token
         public string ProgramName { get; set; }
         public string ProgramVersion { get; set; }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var remainingLength = stream.ReadUShort();
             using (var ts = new ReadablePartialStream(stream, remainingLength))
@@ -52,7 +51,7 @@ namespace AdoNetCore.AseClient.Token
                 ts.Read(versionBuffer, 0, 4);
                 TdsVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}.{versionBuffer[3]}";
 
-                ProgramName = ts.ReadByteLengthPrefixedString(enc);
+                ProgramName = ts.ReadByteLengthPrefixedString(env.Encoding);
 
                 ts.Read(versionBuffer, 0, 4);
                 ProgramVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}"; //Sybase driver only reports the first 3 version numbers, eg: 15.0.0
@@ -60,10 +59,10 @@ namespace AdoNetCore.AseClient.Token
             Logger.Instance?.WriteLine($"<- {Type}: TDS {TdsVersion}, {ProgramName} {ProgramVersion}");
         }
 
-        public static LoginAckToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static LoginAckToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new LoginAckToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

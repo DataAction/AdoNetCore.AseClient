@@ -200,7 +200,15 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_NUMN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteDecimal(Cast<decimal>(value, format));
+                        switch (value)
+                        {
+                            case AseDecimal ad:
+                                stream.WriteDecimal(ad);
+                                break;
+                            default:
+                                stream.WriteDecimal((SqlDecimal) Cast<decimal>(value, format));
+                                break;
+                        }
                     }
                     break;
                 case TdsDataType.TDS_DATETIME:

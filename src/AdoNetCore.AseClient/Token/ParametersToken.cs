@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -23,17 +21,17 @@ namespace AdoNetCore.AseClient.Token
 
         public Parameter[] Parameters { get; set; }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"-> {Type}: {Parameters.Length} parameters");
             stream.WriteByte((byte)Type);
             foreach (var parameter in Parameters)
             {
-                ValueWriter.Write(parameter.Value, stream, parameter.Format, enc);
+                ValueWriter.Write(parameter.Value, stream, parameter.Format, env.Encoding);
             }
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var parameters = new List<Parameter>();
             foreach(var format in previous.Formats)
@@ -41,17 +39,17 @@ namespace AdoNetCore.AseClient.Token
                 var p = new Parameter
                 {
                     Format = format,
-                    Value = ValueReader.Read(stream, format, enc)
+                    Value = ValueReader.Read(stream, format, env)
                 };
                 parameters.Add(p);
             }
             Parameters = parameters.ToArray();
         }
 
-        public static ParametersToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static ParametersToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new ParametersToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

@@ -44,7 +44,7 @@ namespace AdoNetCore.AseClient.Token
 
         public TokenType Type => TokenType.TDS_ENVCHANGE;
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"Write {Type}");
             stream.WriteByte((byte)Type);
@@ -53,7 +53,7 @@ namespace AdoNetCore.AseClient.Token
             {
                 foreach (var c in Changes)
                 {
-                    c.Write(ms, enc);
+                    c.Write(ms, env.Encoding);
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);
@@ -62,7 +62,7 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var remainingLength = stream.ReadShort();
             using (var ts = new ReadablePartialStream(stream, remainingLength))
@@ -74,8 +74,8 @@ namespace AdoNetCore.AseClient.Token
                     var change = new EnvironmentChange
                     {
                         Type = (ChangeType)ts.ReadByte(),
-                        NewValue = ts.ReadByteLengthPrefixedString(enc),
-                        OldValue = ts.ReadByteLengthPrefixedString(enc)
+                        NewValue = ts.ReadByteLengthPrefixedString(env.Encoding),
+                        OldValue = ts.ReadByteLengthPrefixedString(env.Encoding)
                     };
                     changes.Add(change);
                 }
@@ -83,10 +83,10 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public static EnvironmentChangeToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static EnvironmentChangeToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new EnvironmentChangeToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

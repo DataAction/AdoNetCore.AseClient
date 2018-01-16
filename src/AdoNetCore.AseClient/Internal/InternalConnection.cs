@@ -61,6 +61,7 @@ namespace AdoNetCore.AseClient.Internal
             _parameters = parameters;
             _socket = socket;
             _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
+            _environment.UseAseDecimal = parameters.UseAseDecimal;
         }
 
         private void SendPacket(IPacket packet)
@@ -441,7 +442,7 @@ SET FMTONLY OFF";
 
             foreach (var parameter in parameters.SendableParameters)
             {
-                var formatItem = FormatItem.CreateForParameter(parameter, _environment.Encoding);
+                var formatItem = FormatItem.CreateForParameter(parameter, _environment);
                 formatItems.Add(formatItem);
                 parameterItems.Add(new ParametersToken.Parameter
                 {

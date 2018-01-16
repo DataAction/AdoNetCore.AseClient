@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -11,12 +10,12 @@ namespace AdoNetCore.AseClient.Token
     {
         public TokenType Type => TokenType.TDS_CONTROL;
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             Logger.Instance?.WriteLine($"<- {Type}");
             var remainingLength = stream.ReadUShort();
@@ -24,7 +23,7 @@ namespace AdoNetCore.AseClient.Token
             {
                 for (var i = 0; i < previous.Formats.Length; i++)
                 {
-                    var customFormatInfo = ts.ReadByteLengthPrefixedString(enc);
+                    var customFormatInfo = ts.ReadByteLengthPrefixedString(env.Encoding);
                     if (!string.IsNullOrWhiteSpace(customFormatInfo))
                     {
                         Logger.Instance?.WriteLine($"  <- Fmt: {customFormatInfo}");
@@ -33,10 +32,10 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public static ControlToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static ControlToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new ControlToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

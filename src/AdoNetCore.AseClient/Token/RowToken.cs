@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -16,26 +15,26 @@ namespace AdoNetCore.AseClient.Token
         public TokenType Type => TokenType.TDS_ROW;
         public object[] Values { get; set; }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
         {
             Logger.Instance?.WriteLine($"<- {Type}");
             var values = new List<object>();
             foreach (var format in previousFormatToken.Formats)
             {
-                values.Add(ValueReader.Read(stream, format, enc));
+                values.Add(ValueReader.Read(stream, format, env));
             }
             Values = values.ToArray();
         }
 
-        public static RowToken Create(Stream stream, Encoding enc, IFormatToken previousFormatToken)
+        public static RowToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new RowToken();
-            t.Read(stream, enc, previousFormatToken);
+            t.Read(stream, env, previous);
             return t;
         }
     }

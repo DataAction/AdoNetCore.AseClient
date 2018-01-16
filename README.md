@@ -10,19 +10,20 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
 
 ## Objectives
 * Functional parity with the `Sybase.Data.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the `Sybase.Data.AseClient` (with some namespace changes). The following types are supported:
-    * AseCommand - in progress
+    * AseCommand
     * AseCommandBuilder
-    * AseConnection - in progress
+    * AseConnection
     * AseDataAdapter
     * AseConnectionPool
     * AseConnectionPoolManager
     * AseParameter
     * AseParameterCollection
-    * AseDataReader - in progress
+    * AseDataReader
     * AseDbType
+    * AseDecimal
     * AseError
     * AseErrorCollection
-    * AseException - in progress
+    * AseException
     * AseInfoMessageEventArgs
     * AseInfoMessageEventHandler 
     * AseRowUpdatedEventArgs - .NET Core 2.0+
@@ -41,7 +42,6 @@ This project provides a .NET Core native implementation of the TDS 5.0 protocol 
         * [AseRowsCopiedEventHandler](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409612103.html)
     * `Failover` - no reason this can't be supported, just hasn't been a priority thus far. As such the following types have not yet been implemented:
         * [AseFailoverException](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409597900.html)
-    * `AseDecimal` - no reason this can't be supported, but it's complicated. See also [#10](https://github.com/DataAction/AdoNetCore.AseClient/issues/10).
 * The following features are not supported:
     * `Code Access Security` - CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas). For binary compatibility the following stubs have been added in .NET Core 2.0+ but they do nothing:
         * AseClientPermission
@@ -148,7 +148,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `TightlyCoupledTransaction`                                                                | X
 | `TrustedFile`                                                                              | X
 | `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;
-| `UseAseDecimal`                                                                            | X
+| `UseAseDecimal`                                                                            | &#10003;
 | `UseCursor`                                                                                | X
 
 ## Supported types
@@ -294,9 +294,24 @@ using (var connection = new AseConnection(connectionString))
 }
 ```
 
-### Use input, output, and return parameters with a SQL query
+### Use input parameters with a SQL query
+Note: ASE only allows `Output`, `InputOutput`, and `ReturnValue` parameters with stored procedures
 ```C#
-// TODO 
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+using (var connection = new AseConnection(connectionString)
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "SELECT TOP 1 FirstName FROM Customer WHERE LastName = @lastName";
+
+        command.Parameters.AddWithValue("@lastName", "Rubble");
+
+        var result = command.ExecuteScalar();
+    }
+}
 ```
 
 ### Execute a stored procedure and read response data
@@ -370,7 +385,30 @@ using (var connection = new AseConnection(connectionString))
 
 ### Use input, output, and return parameters with a stored procedure
 ```C#
-// TODO 
+var connectionString = "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;";
+
+using (var connection = new AseConnection(connectionString))
+{
+    connection.Open();
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "GetCustomerFirstName";
+        command.CommandType = CommandType.StoredProcedure;
+
+        command.Parameters.AddWithValue("@lastName", "Rubble");
+
+        var outputParameter = command.Parameters.Add("@firstName", AseDbType.VarChar);
+        outputParameter.Direction = ParameterDirection.Output;
+
+        var returnParameter = command.Parameters.Add("@returnValue", AseDbType.Integer);
+        returnParameter.Direction = ParameterDirection.ReturnValue;
+
+        command.ExecuteNonQuery();
+
+        //Do something with outputParameter.Value and returnParameter.Value...
+    }
+}
 ```
 
 ### Execute a stored procedure and read response data with [Dapper](https://github.com/StackExchange/Dapper)

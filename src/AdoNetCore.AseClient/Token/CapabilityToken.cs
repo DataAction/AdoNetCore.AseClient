@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -11,7 +10,7 @@ namespace AdoNetCore.AseClient.Token
         //todo: create fields to represent capabilities
         public TokenType Type => TokenType.TDS_CAPABILITY;
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"Write {Type}");
             stream.WriteByte((byte)Type);
@@ -19,7 +18,7 @@ namespace AdoNetCore.AseClient.Token
             stream.Write(_capabilityBytes);
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var remainingLength = stream.ReadUShort();
             var capabilityBytes = new byte[remainingLength];
@@ -66,10 +65,10 @@ CAPABILITY Token (0xE2); variable length.
 0x00 (00000000): (DATA_NOBIT), (DATA_NOINT4), (DATA_NOINT2), (DATA_NOINT1), (RES_NOPARAM), (RES_NOEED), (RES_NOMSG), (NONE) 
          */
 
-        public static CapabilityToken Create(Stream stream, Encoding enc, IFormatToken previous)
+        public static CapabilityToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
         {
             var t = new CapabilityToken();
-            t.Read(stream, enc, previous);
+            t.Read(stream, env, previous);
             return t;
         }
     }

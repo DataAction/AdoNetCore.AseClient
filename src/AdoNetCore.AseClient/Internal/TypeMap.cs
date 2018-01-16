@@ -53,7 +53,8 @@ namespace AdoNetCore.AseClient.Internal
             {typeof(string), (value, length) => TdsDataType.TDS_LONGBINARY},
             {typeof(byte[]), (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
             {typeof(Guid), (value, length) => TdsDataType.TDS_BINARY},
-            {typeof(decimal), (value, length) => TdsDataType.TDS_DECN},
+            {typeof(decimal), (value, length) => TdsDataType.TDS_NUMN},
+            {typeof(AseDecimal), (value, length) => TdsDataType.TDS_NUMN},
             {typeof(float), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
             {typeof(double), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
             {typeof(DateTime), (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME}

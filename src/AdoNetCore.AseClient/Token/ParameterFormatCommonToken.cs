@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -21,7 +19,7 @@ namespace AdoNetCore.AseClient.Token
             Type = type;
         }
 
-        public void Write(Stream stream, Encoding enc)
+        public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"-> {Type}: {Formats.Length} parameters");
             stream.WriteByte((byte)Type);
@@ -30,7 +28,7 @@ namespace AdoNetCore.AseClient.Token
             {
                 foreach (var format in Formats)
                 {
-                    format.WriteForParameter(ms, enc, Type);
+                    format.WriteForParameter(ms, env.Encoding, Type);
                 }
                 ms.Seek(0, SeekOrigin.Begin);
                 var formatBytes = ms.ToArray();
@@ -50,7 +48,7 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public void Read(Stream stream, Encoding enc, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
         {
             var remainingLength = Type == TokenType.TDS_PARAMFMT
                 ? stream.ReadUShort()
@@ -63,7 +61,7 @@ namespace AdoNetCore.AseClient.Token
 
                 for (var i = 0; i < paramCount; i++)
                 {
-                    formats.Add(FormatItem.ReadForParameter(ts, enc, Type));
+                    formats.Add(FormatItem.ReadForParameter(ts, env.Encoding, Type));
                 }
 
                 Formats = formats.ToArray();

@@ -8,6 +8,17 @@ Under the hood, ASE (and Microsoft Sql Server for that matter) relies on an appl
 
 This project provides a .NET Core native implementation of the TDS 5.0 protocol via an ADO.NET DB Provider, making SAP ASE accessible from .NET Core applications hosted on Windows, Linux, Docker and also serverless platforms like [AWS Lambda](https://aws.amazon.com/lambda/).
 
+## Table of Contents
+* [Downloads](#downloads)
+* [Objectives](#objectives)
+* [Performance benchmarks](#performance-benchmarks)
+* [Connection strings](#connection-strings)
+* [Supported types](#supported-types)
+* [Code samples](#code-samples)
+
+## Downloads
+The latest stable release of the AdoNetCore.AseClient is [available on NuGet](https://www.nuget.org/packages/AdoNetCore.AseClient).
+
 ## Objectives
 * Functional parity with the `Sybase.Data.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the `Sybase.Data.AseClient` (with some namespace changes). The following types are supported:
     * AseCommand

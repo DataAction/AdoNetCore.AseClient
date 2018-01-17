@@ -324,6 +324,16 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
+        [Test]
+        public void SelectAnsiString_ParameterNull_ShouldWork()
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", null, DbType.AnsiString);
+                Assert.AreEqual(null, connection.ExecuteScalar<string>("select @expected", p));
+            }
+        }
 
         [Test]
         public void SelectNullLongString_ShouldWork()
@@ -1308,6 +1318,18 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
                     Assert.AreEqual(expected, reader.GetGuid(0));
                 }
             }
+        }
+
+        [Test]
+        public void SelectUnsupportedType_Parameter_ShouldThrowNotSupportedException()
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@expected", null, DbType.Object);
+                Assert.Throws<NotSupportedException>(() => connection.Query("select @expected", p));
+            }
+
         }
     }
 }

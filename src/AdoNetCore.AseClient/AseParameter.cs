@@ -319,7 +319,7 @@ namespace AdoNetCore.AseClient
         /// </summary>
         internal bool DbTypeIsKnown => _isDbTypeSetExplicitly ||
                                        //DbType default is AnsiString (0), so if Value is string/char, that's good enough. If the user requires unicode strings, they should explicitly specify an appropriate DbType
-                                       (DbType == default(DbType) && (Value is string || Value is char));
+                                       (DbType == default(DbType) && (Value is string || Value is char || Value == null || Value == DBNull.Value));
 
         /// <summary>
         /// Gets or sets a value that indicates whether the parameter is input-only, output-only, 

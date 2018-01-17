@@ -72,7 +72,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
             }
 
-            format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.Value, format.Length);
+            format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.Value, format.Length, parameter.ParameterName);
             
             if (dbType == DbType.String)
             {

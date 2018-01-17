@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.0;netcoreapp1.1;netcoreapp2.0;net46</TargetFrameworks>
-    <VersionPrefix>0.9.0</VersionPrefix>
+    <VersionPrefix>0.9.1</VersionPrefix>
     <Authors>dataaction</Authors>
     <Description>.NET Core data provider for Sybase ASE</Description>
     <PackageTags>Sybase ASE Adaptive SAP AseClient DbProvider</PackageTags>

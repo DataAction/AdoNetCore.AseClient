@@ -472,7 +472,7 @@ namespace AdoNetCore.AseClient
                 throw new ArgumentOutOfRangeException(nameof(i));
             }
 
-            return format.ColumnName;
+            return format.DisplayColumnName;
         }
 
         public override int GetOrdinal(string name)
@@ -495,7 +495,7 @@ namespace AdoNetCore.AseClient
 
             for (var i = 0; i < formats.Length; i++)
             {
-                if (string.Equals(formats[i].ColumnName?.TrimStart('[').TrimEnd(']'), name, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(formats[i].DisplayColumnName?.TrimStart('[').TrimEnd(']'), name, StringComparison.OrdinalIgnoreCase))
                 {
                     return i;
                 }
@@ -640,7 +640,7 @@ namespace AdoNetCore.AseClient
                 var row = table.NewRow();
                 var aseDbType = TypeMap.GetAseDbType(column);
 
-                row[columnName] = string.IsNullOrWhiteSpace(column.ColumnLabel) ? column.ColumnName : column.ColumnLabel;
+                row[columnName] = column.DisplayColumnName;
                 row[columnOrdinal] = i;
                 row[columnSize] = column.Length ?? -1;
                 row[numericPrecision] = column.Precision ?? -1;

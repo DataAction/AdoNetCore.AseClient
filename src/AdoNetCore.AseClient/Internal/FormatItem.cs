@@ -33,6 +33,15 @@ namespace AdoNetCore.AseClient.Internal
         public bool IsOutput { get; set; }
 
         /// <summary>
+        /// Get the most appropriate column name to display to the driver user.
+        /// Preference is to the Label/Alias (e.g. "some_alias" from "select some_column as some_alias")
+        /// If no Label/Alias, then just use whatever value the underlying column name has.
+        /// </summary>
+        public string DisplayColumnName => string.IsNullOrWhiteSpace(ColumnLabel)
+            ? ColumnName
+            : ColumnLabel;
+
+        /// <summary>
         /// Relates to TDS_BLOB
         /// </summary>
         public string ClassId { get; set; }
@@ -104,6 +113,7 @@ namespace AdoNetCore.AseClient.Internal
             ReadTypeInfo(format, stream, enc);
 
             Logger.Instance?.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo})");
+            Logger.Instance?.WriteLine($"  <- format names available: ColumnLabel [{format.ColumnLabel}], ColumnName [{format.ColumnName}], CatalogName [{format.CatalogName}], ParameterName [{format.ParameterName}], SchemaName [{format.SchemaName}], TableName [{format.TableName}]");
 
             return format;
         }
@@ -186,7 +196,7 @@ namespace AdoNetCore.AseClient.Internal
                         break;
                     }
                 default:
-                    throw new NotSupportedException($"Unsupported data type {format.DataType} (column: {format.ColumnName})");
+                    throw new NotSupportedException($"Unsupported data type {format.DataType} (column: {format.DisplayColumnName})");
             }
 
             format.LocaleInfo = stream.ReadByteLengthPrefixedString(enc);

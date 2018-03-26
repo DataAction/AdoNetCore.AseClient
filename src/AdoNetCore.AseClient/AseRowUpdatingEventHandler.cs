@@ -1,4 +1,4 @@
-﻿#if !NETCORE_OLD
+﻿#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 namespace AdoNetCore.AseClient
 {
     /// <summary>

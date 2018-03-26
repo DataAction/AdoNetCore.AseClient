@@ -1,4 +1,4 @@
-﻿#if !NETCORE_OLD
+﻿#if ENABLE_DB_DATAPERMISSION
 using System;
 using System.Data.Common;
 using System.Security;

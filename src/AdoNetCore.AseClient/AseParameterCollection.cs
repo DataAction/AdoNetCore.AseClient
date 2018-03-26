@@ -49,16 +49,16 @@ namespace AdoNetCore.AseClient
             }
         }
 
-#if NETCORE_OLD
-        public bool IsFixedSize => ((IList)_parameters).IsFixedSize;
-#else
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override bool IsFixedSize => ((IList)_parameters).IsFixedSize;
+#else
+        public bool IsFixedSize => ((IList)_parameters).IsFixedSize;
 #endif
 
-#if NETCORE_OLD
-        public bool IsReadOnly => ((IList)_parameters).IsReadOnly;
-#else
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override bool IsReadOnly => ((IList)_parameters).IsReadOnly;
+#else
+        public bool IsReadOnly => ((IList)_parameters).IsReadOnly;
 #endif
 
         /// <summary>
@@ -66,10 +66,10 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public override int Count => _parameters.Count;
 
-#if NETCORE_OLD
-        public bool IsSynchronized => ((IList)_parameters).IsSynchronized;
-#else
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override bool IsSynchronized => ((IList)_parameters).IsSynchronized;
+#else
+        public bool IsSynchronized => ((IList)_parameters).IsSynchronized;
 #endif
 
         public override object SyncRoot => ((IList)_parameters).SyncRoot;

@@ -10,6 +10,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("basic")]
     public class LoginTests
     {
         [TestCaseSource(nameof(Login_Success_Cases))]

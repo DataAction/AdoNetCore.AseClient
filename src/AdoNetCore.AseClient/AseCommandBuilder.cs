@@ -1,10 +1,9 @@
-﻿#if !NETCORE_OLD
+﻿#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient
 {

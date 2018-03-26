@@ -5,6 +5,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("basic")]
     public class SimpleProcedureTests
     {
         private readonly string _createProc = @"create procedure [dbo].[sp_test_simple] as begin return end";

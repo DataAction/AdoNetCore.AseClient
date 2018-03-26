@@ -1,4 +1,4 @@
-﻿#if !NETCORE_OLD
+﻿#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 using System.Collections.Generic;
 using System.Data;
 using System.Text.RegularExpressions;
@@ -7,6 +7,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("extra")]
     public class AseDataAdapterTests
     {
         [SetUp]

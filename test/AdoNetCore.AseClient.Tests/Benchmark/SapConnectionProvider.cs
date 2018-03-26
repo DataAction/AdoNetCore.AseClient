@@ -7,7 +7,7 @@ namespace AdoNetCore.AseClient.Tests.Benchmark
     {
         public DbConnection GetConnection(string connectionString)
         {
-#if NET46
+#if NET_FRAMEWORK
             return new Sybase.Data.AseClient.AseConnection(connectionString);
 #else
             throw new NotSupportedException("The SAP AseClient only supports .NET 4+");

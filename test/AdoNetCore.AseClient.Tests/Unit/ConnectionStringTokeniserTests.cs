@@ -5,6 +5,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Unit
 {
     [TestFixture]
+    [Category("quick")]
     public class ConnectionStringTokeniserTests
     {
         [TestCase("Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;", 5)]

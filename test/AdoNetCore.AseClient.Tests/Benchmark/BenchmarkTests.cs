@@ -3,12 +3,13 @@ using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Benchmark
 {
-#if NET46
+#if NET_FRAMEWORK
     [TestFixture(typeof(SapConnectionProvider))]
 #endif
-#if NETCORE_OLD || NETCOREAPP2_0 || NET46
+#if NET_CORE || NET_FRAMEWORK
     [TestFixture(typeof(CoreFxConnectionProvider))]
 #endif
+    [Category("benchmark")]
     public partial class Benchmarks<T> where T : IConnectionProvider
     {
 

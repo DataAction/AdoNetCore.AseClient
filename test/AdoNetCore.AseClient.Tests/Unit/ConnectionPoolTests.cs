@@ -12,6 +12,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Unit
 {
     [TestFixture]
+    [Category("quick")]
     public class ConnectionPoolTests
     {
         public ConnectionPoolTests()

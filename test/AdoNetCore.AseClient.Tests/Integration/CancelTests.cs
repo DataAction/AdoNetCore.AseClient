@@ -8,6 +8,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("basic")]
     public class CancelTests
     {
         public CancelTests()

@@ -14,6 +14,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
     /// For benchmarking, copy this to a new project referencing the AdoNet4.AseClient dll. Hopefully we don't perform too poorly by comparison :)
     /// </summary>
     [TestFixture]
+    [Category("basic")]
     public class EchoProcedureTests
     {
         private readonly string _createProc = @"

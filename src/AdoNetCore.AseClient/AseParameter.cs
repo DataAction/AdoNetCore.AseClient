@@ -9,7 +9,7 @@ namespace AdoNetCore.AseClient
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
     public sealed class AseParameter : DbParameter
-#if NETCOREAPP2_0 || NET45 || NET46
+#if ENABLE_CLONEABLE_INTERFACE
         , ICloneable
 #endif
     {
@@ -302,7 +302,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the <see cref="AseDbType" /> of the parameter.
         /// </summary>
-#if !NETCORE_OLD
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         [DbProviderSpecificTypeProperty(true)]
 #endif
         public AseDbType AseDbType
@@ -372,10 +372,10 @@ namespace AdoNetCore.AseClient
 
         public override bool SourceColumnNullMapping { get; set; }
 
-#if NETCORE_OLD
-        public DataRowVersion SourceVersion { get; set; }
-#else
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override DataRowVersion SourceVersion { get; set; }
+#else
+        public DataRowVersion SourceVersion { get; set; }
 #endif
         /// <summary>
         /// Gets or sets the value of the parameter.
@@ -407,11 +407,7 @@ namespace AdoNetCore.AseClient
         /// passing it to the database, use the <see cref="System.Math" /> class that is part of the System namespace prior to assigning a value to 
         /// the parameter's <see cref="Value" /> property.</para>
         /// </remarks>
-#if NET45
-        public byte Precision { get; set; }
-#else
         public override byte Precision { get; set; }
-#endif
 
         /// <summary>
         /// Gets or sets the number of decimal places to which <see cref="Value" /> is resolved.
@@ -428,11 +424,7 @@ namespace AdoNetCore.AseClient
         /// passing it to the database, use the <see cref="System.Math" /> class that is part of the System namespace prior to assigning a value to 
         /// the parameter's <see cref="Value" /> property.</para>
         /// </remarks>
-#if NET45
-        public byte Scale { get; set; }
-#else
         public override byte Scale { get; set; }
-#endif
 
         /// <summary>
         /// Gets or sets the maximum size, in bytes, of the data within the column.
@@ -466,8 +458,7 @@ namespace AdoNetCore.AseClient
             return ParameterName ?? ParameterIndex.ToString();
         }
 
-
-#if NETCOREAPP2_0 || NET45 || NET46
+#if ENABLE_CLONEABLE_INTERFACE
         object ICloneable.Clone()
         {
             var clone = new AseParameter

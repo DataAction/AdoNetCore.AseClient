@@ -3,6 +3,7 @@
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("basic")]
     public class ChangeDatabaseTests
     {
         [Test]

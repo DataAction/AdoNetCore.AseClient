@@ -33,7 +33,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 socket = new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
 
-#if NET45 || NET46
+#if NET_FRAMEWORK
                 var connect = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, _endpoint, null);
 #else
                 var connect = socket.ConnectAsync(_endpoint);

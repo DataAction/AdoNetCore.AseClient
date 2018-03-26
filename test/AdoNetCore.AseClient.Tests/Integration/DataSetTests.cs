@@ -7,6 +7,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("extra")]
     public class DataSetTests
     {
         [Test]

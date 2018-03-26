@@ -1,4 +1,4 @@
-﻿#if !NETCORE_OLD
+﻿#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 using System.Data;
 using System.Data.Common;
 

@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 
 namespace AdoNetCore.AseClient.Tests.Benchmark
 {
@@ -6,10 +7,10 @@ namespace AdoNetCore.AseClient.Tests.Benchmark
     {
         public DbConnection GetConnection(string connectionString)
         {
-#if NETCORE_OLD || NETCOREAPP2_0 || NET46 || NETSTANDARD2_0
+#if NET_CORE || NET_FRAMEWORK
             return new AseConnection(connectionString);
 #else
-            throw new NotSupportedException("The AdoNetCore AseClient only supports .NET 4+, .NET Core, and .NET Standard 2.0");
+            throw new NotSupportedException("The AdoNetCore AseClient only supports .NET 4+ and .NET Core");
 #endif
         }
     }

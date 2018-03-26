@@ -19,7 +19,7 @@ namespace AdoNetCore.AseClient
         private readonly AseCommand _command;
         private readonly CommandBehavior _behavior;
 
-#if !NETCORE_OLD
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         private DataTable _currentSchemaTable;
 #endif
 
@@ -116,7 +116,7 @@ namespace AdoNetCore.AseClient
                 bytesToRead = byteArrayLength - fieldOffset; // Shrink the bytes requested.
             }
 
-#if NETCOREAPP1_0 || NETCOREAPP1_1
+#if LONG_ARRAY_COPY_UNAVAILABLE
             var cIndex = fieldOffset;
             var bIndex = (long)bufferOffset;
 
@@ -561,18 +561,13 @@ namespace AdoNetCore.AseClient
 
         public override object this[string name] => GetValue(GetOrdinal(name));
 
-#if NETCORE_OLD
-        public void Close() { }
-#else
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override void Close() { }
+#else
+        public void Close() { }
 #endif
 
-#if NETCORE_OLD
-        public DataTable GetSchemaTable()
-        {
-            return null;
-        }
-#else
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override DataTable GetSchemaTable()
         {
             EnsureSchemaTable();
@@ -747,6 +742,11 @@ namespace AdoNetCore.AseClient
 
             _currentSchemaTable = table;
         }
+#else
+        public DataTable GetSchemaTable()
+        {
+            return null;
+        }
 #endif
 
         /// <summary>
@@ -771,7 +771,7 @@ namespace AdoNetCore.AseClient
 
             _currentResult++;
 
-#if !NETCORE_OLD
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _currentSchemaTable = null;
 #endif
 

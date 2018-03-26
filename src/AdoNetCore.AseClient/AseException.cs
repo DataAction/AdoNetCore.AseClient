@@ -1,5 +1,5 @@
 ﻿using System;
-#if !NETCORE_OLD
+#if ENABLE_SYSTEMEXCEPTION
 using System.Runtime.Serialization;
 #endif
 
@@ -8,14 +8,14 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// The exception that is thrown when ASE returns a warning or error. This class cannot be inherited.
     /// </summary>
-#if !NETCORE_OLD
+#if ENABLE_SYSTEMEXCEPTION
     [Serializable]
 #endif
     public sealed class AseException :
-#if NETCORE_OLD
-    Exception
-#else
+#if ENABLE_SYSTEMEXCEPTION
     SystemException
+#else
+    Exception
 #endif
     {
         /// <summary>
@@ -107,7 +107,7 @@ namespace AdoNetCore.AseClient
             Errors = new AseErrorCollection(errors);
         }
 
-#if !NETCORE_OLD
+#if ENABLE_SYSTEMEXCEPTION
         private AseException(SerializationInfo info, StreamingContext context) : base(info, context) {
             Errors = new AseErrorCollection(new AseError
             {

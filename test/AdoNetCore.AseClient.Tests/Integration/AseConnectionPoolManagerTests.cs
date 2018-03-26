@@ -3,6 +3,7 @@
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("extra")]
     public class AseConnectionPoolManagerTests
     {
         [Test]

@@ -5,6 +5,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("basic")]
     public class RaiserrorProcedureTests
     {
         private readonly string _createProc = @"

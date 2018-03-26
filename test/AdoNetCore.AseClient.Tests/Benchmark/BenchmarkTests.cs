@@ -9,6 +9,7 @@ namespace AdoNetCore.AseClient.Tests.Benchmark
 #if NETCORE_OLD || NETCOREAPP2_0 || NET46
     [TestFixture(typeof(CoreFxConnectionProvider))]
 #endif
+    [Category("benchmark")]
     public partial class Benchmarks<T> where T : IConnectionProvider
     {
 

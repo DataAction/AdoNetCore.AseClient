@@ -5,6 +5,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("extra")]
     public class AseDataReaderTests
     {
         private const string AllTypesQuery =

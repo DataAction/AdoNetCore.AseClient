@@ -7,6 +7,7 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
+    [Category("basic")]
     public class MultiTypeEchoProcedureTests
     {
         private readonly string _createProc = @"

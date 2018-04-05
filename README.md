@@ -138,9 +138,9 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `DistributedTransactionProtocol`                                                           | X
 | `DSURL` or `Directory Service URL`                                                         | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
 | `EnableBulkLoad`                                                                           | X
-| `EnableServerPacketSize`                                                                   | ? | May not be supported any more by capability bits
+| `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
 | `Encryption`                                                                               | X
-| `EncryptPassword`                                                                          | ?
+| `EncryptPassword`                                                                          | TODO | Refer to issue [#27](https://github.com/DataAction/AdoNetCore.AseClient/issues/27)
 | `Enlist`                                                                                   | X
 | `FetchArraySize`                                                                           | TODO
 | `HASession`                                                                                | X
@@ -152,7 +152,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Pooling`                                                                                  | &#10003;
 | `Port` or `Server Port`                                                                    | &#10003;
 | `Pwd` or `Password`                                                                        | &#10003;
-| `RestrictMaximum PacketSize`                                                               | ? | May not be supported any more by capability bits
+| `RestrictMaximum PacketSize`                                                               | TODO | May not be supported any more by capability bits
 | `Secondary Data Source`                                                                    | X
 | `Secondary Server Port`                                                                    | X
 | `TextSize`                                                                                 | &#10003;

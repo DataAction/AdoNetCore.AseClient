@@ -96,18 +96,16 @@ namespace AdoNetCore.AseClient.Internal
                     {
                         var precision = format.Precision ?? 1;
                         var scale = format.Scale ?? 0;
-                        if (env.UseAseDecimal)
-                        {
+
+                        Logger.Instance?.WriteLine($"  <- {format.DisplayColumnName} ({precision}, {scale})");
+
                             var aseDecimal = stream.ReadAseDecimal(precision, scale);
 
-                            return aseDecimal.HasValue
-                                ? env.UseAseDecimal
-                                    ? (object)aseDecimal.Value
-                                    : aseDecimal.Value.ToDecimal()
-                                : DBNull.Value;
-                        }
-
-                        return (object)stream.ReadDecimal(precision, scale) ?? DBNull.Value;
+                        return aseDecimal.HasValue
+                            ? env.UseAseDecimal
+                                ? (object) aseDecimal.Value
+                                : aseDecimal.Value.ToDecimal()
+                            : DBNull.Value;
                     }
                 case TdsDataType.TDS_MONEY:
                     return stream.ReadMoney();

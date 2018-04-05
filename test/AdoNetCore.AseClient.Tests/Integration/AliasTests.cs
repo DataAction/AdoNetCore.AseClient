@@ -67,8 +67,12 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         private class AliasTestsDapperResult
         {
+            // ReSharper disable UnusedAutoPropertyAccessor.Local
+            // ReSharper disable InconsistentNaming
             public int? column_with_table_name { get; set; }
             public int? aliased_name { get; set; }
+            // ReSharper restore InconsistentNaming
+            // ReSharper restore UnusedAutoPropertyAccessor.Local
         }
 
         [TestCase]

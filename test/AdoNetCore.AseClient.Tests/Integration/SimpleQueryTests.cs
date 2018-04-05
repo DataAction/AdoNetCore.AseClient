@@ -491,6 +491,28 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
             }
         }
 
+        [TestCaseSource(nameof(SelectDecimal_Calculated_ShouldWork_Cases))]
+        public void SelectDecimal_Calculated_ShouldWork(decimal a, decimal b)
+        {
+            using (var connection = GetConnection())
+            {
+                var result = connection.Query<decimal>($@"declare @a decimal(21,6), @b decimal(9,4)
+set @a = {a}
+set @b = {b}
+
+select (@a * @b)/100").First();
+                Assert.AreEqual(a * b / 100, result);
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectDecimal_Calculated_ShouldWork_Cases()
+        {
+            yield return new TestCaseData(1000m, 0.05m);
+            yield return new TestCaseData(1.333333m, 0.3333m);
+            yield return new TestCaseData(0.999999m, 0.9999m);
+            yield return new TestCaseData(0.000001m, 0.0001m);
+        }
+
         [TestCaseSource(nameof(SelectAseDecimal_Parameter_ShouldWork_Cases))]
         public void SelectAseDecimal_Parameter_ShouldWork(AseDecimal expected)
         {

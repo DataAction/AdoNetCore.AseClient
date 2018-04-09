@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.Common;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -519,7 +520,7 @@ namespace AdoNetCore.AseClient
         {
             using (var ms = new MemoryStream())
             {
-                using (var writer = new StreamWriter(ms))
+                using (var writer = new StreamWriter(ms, Encoding.Unicode, 4096, true))
                 {
                     writer.Write(ExecuteScalar().ToString());
                 }

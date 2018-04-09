@@ -480,7 +480,7 @@ namespace AdoNetCore.AseClient
         }
 
 #if ENABLE_CLONEABLE_INTERFACE
-        object ICloneable.Clone()
+        public object Clone()
         {
             var clone = new AseCommand(Connection)
             {

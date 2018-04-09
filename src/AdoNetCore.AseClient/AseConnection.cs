@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using AdoNetCore.AseClient.Interface;
@@ -10,12 +12,16 @@ namespace AdoNetCore.AseClient
     /// Represents an open connection to an ASE Server database. This class cannot be inherited.
     /// </summary>
     public sealed class AseConnection : DbConnection
+#if ENABLE_CLONEABLE_INTERFACE
+        , ICloneable
+#endif
     {
         private IInternalConnection _internal;
         private string _connectionString;
         private readonly IConnectionPoolManager _connectionPoolManager;
         private ConnectionState _state;
         private bool _isDisposed;
+        private AseTransaction _transaction;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AseConnection" /> class.
@@ -158,9 +164,9 @@ namespace AdoNetCore.AseClient
             }
 
             Open();
-            var t = new AseTransaction(this, isolationLevel);
-            t.Begin();
-            return t;
+            _transaction = new AseTransaction(this, isolationLevel);
+            _transaction.Begin();
+            return _transaction;
         }
 
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
@@ -536,6 +542,42 @@ namespace AdoNetCore.AseClient
             get;
             set;
         }
+
+#if ENABLE_CLONEABLE_INTERFACE
+        public object Clone()
+        {
+            return new AseConnection(_connectionString, _connectionPoolManager);
+        }
+#endif
+
+        public void ClearPool()
+        {
+            _connectionPoolManager.ClearPool(_connectionString);
+        }
+
+        public bool IsCaseSensitive()
+        {
+            return _internal?.StatisticsEnabled ?? false;
+        }
+
+        public IDictionary RetrieveStatistics()
+        {
+            return _internal?.RetrieveStatistics() ?? Internal.InternalConnection.EmptyStatistics;
+        }
+
+        public bool StatisticsEnabled
+        {
+            get => _internal?.StatisticsEnabled ?? false;
+            set
+            {
+                if (_internal != null)
+                {
+                    _internal.StatisticsEnabled = value;
+                }
+            }
+        }
+
+        public AseTransaction Transaction => _transaction;
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
@@ -93,5 +94,22 @@ namespace AdoNetCore.AseClient.Interface
         /// Indicates if this connection has already been disposed
         /// </summary>
         bool IsDisposed { get; }
+
+        /// <summary>
+        /// Indicates if this connection is case sensitive
+        /// </summary>
+        bool IsCaseSensitive();
+
+        /// <summary>
+        /// Indicates if statistics for this connection are enabled;
+        /// Allows for statistics collection to be enabled/disabled
+        /// </summary>
+        bool StatisticsEnabled { get; set; }
+
+        /// <summary>
+        /// Fetch statistics for this connection, if enabled
+        /// </summary>
+        /// <returns></returns>
+        IDictionary RetrieveStatistics();
     }
 }

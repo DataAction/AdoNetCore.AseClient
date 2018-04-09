@@ -214,6 +214,8 @@ namespace AdoNetCore.AseClient
 
         public override string GetDataTypeName(int ordinal)
         {
+            //todo: implement
+            //if now rows, or column index out of range, throw AseException with err num 30118
             throw new NotImplementedException();
         }
 

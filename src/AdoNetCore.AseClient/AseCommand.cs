@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -15,12 +17,13 @@ namespace AdoNetCore.AseClient
         , ICloneable
 #endif
     {
+        private const int DefaultCommandTimeout = 30;
         private AseConnection _connection;
         private AseTransaction _transaction;
         private bool _isDisposed;
         internal readonly AseParameterCollection AseParameters;
         private CommandType _commandType;
-        private int _commandTimeout;
+        private int _commandTimeout = DefaultCommandTimeout;
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
 
@@ -499,5 +502,32 @@ namespace AdoNetCore.AseClient
             return clone;
         }
 #endif
+
+        public string GetDataTypeName(int colindex)
+        {
+            var reader = ExecuteReader();
+            reader.Read();
+            return reader.GetDataTypeName(colindex);
+        }
+
+        public void ResetCommandTimeout()
+        {
+            CommandTimeout = DefaultCommandTimeout;
+        }
+
+        public XmlReader ExecuteXmlReader()
+        {
+            using (var ms = new MemoryStream())
+            {
+                using (var writer = new StreamWriter(ms))
+                {
+                    writer.Write(ExecuteScalar().ToString());
+                }
+
+                ms.Seek(0, SeekOrigin.Begin);
+
+                return XmlReader.Create(ms);
+            }
+        }
     }
 }

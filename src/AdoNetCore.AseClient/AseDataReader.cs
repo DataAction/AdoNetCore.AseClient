@@ -818,6 +818,13 @@ namespace AdoNetCore.AseClient
             ? _results[_currentResult].Rows.Count
             : 0;
 
+        public IList GetList()
+        {
+            return null; //todo: implement -- populate a DataView with rows from the current record set and return it.
+        }
+
+        public bool ContainsListCollection => false;
+
         /// <summary>
         /// Confirm that the reader is pointing at a result set
         /// </summary>

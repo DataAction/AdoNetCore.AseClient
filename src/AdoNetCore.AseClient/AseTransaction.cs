@@ -63,6 +63,8 @@ namespace AdoNetCore.AseClient
             }
         }
 
+        public AseConnection AseConnection => Connection;
+
         protected override DbConnection DbConnection => Connection;
 
         /// <summary>

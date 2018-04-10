@@ -1,4 +1,5 @@
-﻿using AdoNetCore.AseClient.Internal;
+﻿using System.Xml;
+using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -30,7 +31,27 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 {
                     command.CommandText = $"select '{xmlContent}' as xml_content";
 
-                    var reader = command.ExecuteXmlReader();
+                    var doc = new XmlDocument();
+                    using (var reader = command.ExecuteXmlReader())
+                    {
+                        doc.Load(reader);
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void ExecuteXmlReader_WithNonString_ThrowsAseException()
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"select 1 as not_xml_content";
+                    var ex = Assert.Throws<AseException>(() => command.ExecuteXmlReader());
+                    Assert.AreEqual(30081, ex.Errors[0].MessageNumber);
+                    Assert.AreEqual("Column type cannot hold xml data.", ex.Errors[0].Message);
                 }
             }
         }

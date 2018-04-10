@@ -2,7 +2,6 @@
 using System.Data;
 using System.Data.Common;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -518,17 +517,14 @@ namespace AdoNetCore.AseClient
 
         public XmlReader ExecuteXmlReader()
         {
-            using (var ms = new MemoryStream())
+            var result = ExecuteScalar();
+
+            if (result.GetType() != typeof(string))
             {
-                using (var writer = new StreamWriter(ms, Encoding.Unicode, 4096, true))
-                {
-                    writer.Write(ExecuteScalar().ToString());
-                }
-
-                ms.Seek(0, SeekOrigin.Begin);
-
-                return XmlReader.Create(ms);
+                throw new AseException("Column type cannot hold xml data.", 30081);
             }
+
+            return XmlReader.Create(new StringReader((string)result));
         }
     }
 }

@@ -214,9 +214,17 @@ namespace AdoNetCore.AseClient
 
         public override string GetDataTypeName(int ordinal)
         {
-            //todo: implement
-            //if now rows, or column index out of range, throw AseException with err num 30118
-            throw new NotImplementedException();
+            if (CurrentResultSet == null || ordinal < 0)
+            {
+                throw new IndexOutOfRangeException($"Column referenced by index ({ordinal}) does not exist");
+            }
+
+            if (ordinal >= CurrentResultSet.Formats.Length)
+            {
+                throw new AseException("The column specified does not exist.", 30118);
+            }
+
+            return CurrentResultSet.Formats[ordinal].GetDataTypeName();
         }
 
         public override IEnumerator GetEnumerator()

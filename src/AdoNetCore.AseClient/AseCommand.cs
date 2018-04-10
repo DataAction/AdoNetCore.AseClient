@@ -506,7 +506,6 @@ namespace AdoNetCore.AseClient
         public string GetDataTypeName(int colindex)
         {
             var reader = ExecuteReader();
-            reader.Read();
             return reader.GetDataTypeName(colindex);
         }
 

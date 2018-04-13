@@ -206,7 +206,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class SlowConnectionFactory : IInternalConnectionFactory
         {
-            public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
+            public Task<IInternalConnection> GetNewConnection(CancellationToken token)
             {
                 token.WaitHandle.WaitOne();
                 throw new TimeoutException($"Timed out attempting to create new connection");

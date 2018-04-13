@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
 using System.Runtime.ExceptionServices;
@@ -482,7 +483,7 @@ SET FMTONLY OFF";
             _socket.Dispose();
         }
 
-        public static readonly IDictionary EmptyStatistics = new Dictionary<string, long>();
+        public static readonly IDictionary EmptyStatistics = new ReadOnlyDictionary<string, long>(new Dictionary<string, long>());
 
         public bool IsCaseSensitive()
         {

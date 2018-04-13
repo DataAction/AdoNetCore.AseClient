@@ -127,8 +127,9 @@ namespace AdoNetCore.AseClient
             if (_transaction != null && !_transaction.IsDisposed)
             {
                 _transaction.Dispose(); // Will also rollback the transaction
-                _transaction = null;
             }
+
+            _transaction = null;
 
             try
             {

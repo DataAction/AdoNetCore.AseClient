@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -202,6 +204,16 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public void SetTextSize(int textSize) { }
             public bool IsDoomed { get; set; }
             public bool IsDisposed { get; }
+            public bool IsCaseSensitive()
+            {
+                return false;
+            }
+
+            public bool StatisticsEnabled { get; set; }
+            public IDictionary RetrieveStatistics()
+            {
+                return new Dictionary<string, long>();
+            }
         }
 
         private class SlowConnectionFactory : IInternalConnectionFactory

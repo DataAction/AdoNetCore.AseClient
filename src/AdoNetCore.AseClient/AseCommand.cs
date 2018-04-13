@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -15,12 +17,13 @@ namespace AdoNetCore.AseClient
         , ICloneable
 #endif
     {
+        private const int DefaultCommandTimeout = 30;
         private AseConnection _connection;
         private AseTransaction _transaction;
         private bool _isDisposed;
         internal readonly AseParameterCollection AseParameters;
         private CommandType _commandType;
-        private int _commandTimeout;
+        private int _commandTimeout = DefaultCommandTimeout;
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
 
@@ -480,7 +483,7 @@ namespace AdoNetCore.AseClient
         }
 
 #if ENABLE_CLONEABLE_INTERFACE
-        object ICloneable.Clone()
+        public object Clone()
         {
             var clone = new AseCommand(Connection)
             {
@@ -499,5 +502,30 @@ namespace AdoNetCore.AseClient
             return clone;
         }
 #endif
+
+        public string GetDataTypeName(int colindex)
+        {
+            using (var reader = ExecuteReader())
+            {
+                return reader.GetDataTypeName(colindex);
+            }
+        }
+
+        public void ResetCommandTimeout()
+        {
+            CommandTimeout = DefaultCommandTimeout;
+        }
+
+        public XmlReader ExecuteXmlReader()
+        {
+            var result = ExecuteScalar();
+
+            if (result.GetType() != typeof(string))
+            {
+                throw new AseException("Column type cannot hold xml data.", 30081);
+            }
+
+            return XmlReader.Create(new StringReader((string)result));
+        }
     }
 }

@@ -1,9 +1,11 @@
-﻿namespace AdoNetCore.AseClient
+﻿using System;
+
+namespace AdoNetCore.AseClient
 {
     /// <summary>
     /// Collects information relevant to a warning or error returned by the data source.
     /// </summary>
-    public sealed class AseError 
+    public sealed class AseError : IDisposable
     {
         /// <summary>
         /// Number of the error message.
@@ -134,5 +136,7 @@
         {
             get; internal set;
         }
+
+        public void Dispose() { }
     }
 }

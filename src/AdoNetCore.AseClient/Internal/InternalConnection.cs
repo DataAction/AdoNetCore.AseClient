@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
 using System.Runtime.ExceptionServices;
@@ -17,6 +19,7 @@ namespace AdoNetCore.AseClient.Internal
         private readonly IConnectionParameters _parameters;
         private readonly ISocket _socket;
         private readonly DbEnvironment _environment = new DbEnvironment();
+        private bool _statisticsEnabled;
 
         private enum InternalConnectionState
         {
@@ -478,6 +481,52 @@ SET FMTONLY OFF";
 
             IsDisposed = true;
             _socket.Dispose();
+        }
+
+        public static readonly IDictionary EmptyStatistics = new ReadOnlyDictionary<string, long>(new Dictionary<string, long>());
+
+        public bool IsCaseSensitive()
+        {
+            // todo: implement
+            // this should be derived from result of "select value from master.dbo.sysconfigures where name like 'default sortorder id'"
+            // return true if the result is not one of 39, 42, 44, 46, 48, 52, 53, 54, 56, 57, 59, 64, 70, 71, 73, 74
+            return false;
+        }
+
+        public bool StatisticsEnabled
+        {
+            get => _statisticsEnabled;
+            set => _statisticsEnabled = value;
+        }
+
+        public IDictionary RetrieveStatistics()
+        {
+            if (!_statisticsEnabled)
+            {
+                return EmptyStatistics;
+            }
+
+            //todo: implement
+            /*"BuffersReceived"
+            "BuffersSent"
+            "BytesReceived"
+            "BytesSent"
+            "ConnectionTime"
+            "CursorOpens"
+            "ExecutionTime"
+            "IduCount"
+            "IduRows"
+            "NetworkServerTime"
+            "PreparedExecs"
+            "Prepares"
+            "SelectCount"
+            "SelectRows"
+            "ServerRoundtrips"
+            "SumResultSets"
+            "Transactions"
+            "UnpreparedExecs"*/
+
+            return EmptyStatistics;
         }
     }
 }

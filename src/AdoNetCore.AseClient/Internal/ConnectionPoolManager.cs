@@ -28,6 +28,11 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        public void ClearPool(string connectionString)
+        {
+            //todo: implement
+        }
+
         /// <summary>
         /// Gets a connection by connectionString.
         /// </summary>

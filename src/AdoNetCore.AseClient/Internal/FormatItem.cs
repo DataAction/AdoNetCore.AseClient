@@ -65,16 +65,16 @@ namespace AdoNetCore.AseClient.Internal
                     format.Scale = 0;
                     format.Length = 1;
                 }
-                else if(env.UseAseDecimal)
+                else if (env.UseAseDecimal)
                 {
                     var aseDecimal = parameter.Value is AseDecimal d ? d : new AseDecimal(Convert.ToDecimal(parameter.Value));
-                    format.Precision = (byte) aseDecimal.Precision;
-                    format.Scale = (byte) aseDecimal.Scale;
+                    format.Precision = (byte)aseDecimal.Precision;
+                    format.Scale = (byte)aseDecimal.Scale;
                     format.Length = aseDecimal.BytesRequired + 1;
                 }
                 else
                 {
-                    var sqlDecimal = (SqlDecimal) Convert.ToDecimal(parameter.Value);
+                    var sqlDecimal = (SqlDecimal)Convert.ToDecimal(parameter.Value);
                     format.Precision = sqlDecimal.Precision;
                     format.Scale = sqlDecimal.Scale;
                     format.Length = sqlDecimal.BytesRequired + 1;
@@ -82,7 +82,7 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.Value, format.Length, parameter.ParameterName);
-            
+
             if (dbType == DbType.String)
             {
                 format.UserType = 35;
@@ -191,7 +191,8 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_UNITEXT:
                     {
                         format.Length = stream.ReadInt();
-                        /*var name =*/stream.ReadShortLengthPrefixedString(enc);
+                        /*var name =*/
+                        stream.ReadShortLengthPrefixedString(enc);
                         break;
                     }
                 default:
@@ -277,6 +278,139 @@ namespace AdoNetCore.AseClient.Internal
 
             //locale
             stream.WriteByte(0);
+        }
+
+        public string GetDataTypeName()
+        {
+            switch (DataType)
+            {
+                case TdsDataType.TDS_FLT4:
+                    return "real";
+                case TdsDataType.TDS_FLT8:
+                    return "float";
+                case TdsDataType.TDS_FLTN:
+                    switch (Length)
+                    {
+                        case 4:
+                            return "real";
+                        case 8:
+                        default:
+                            return "float";
+                    }
+                case TdsDataType.TDS_BIT:
+                    return "bit";
+                case TdsDataType.TDS_INT1:
+                    return "tinyint";
+                case TdsDataType.TDS_INT2:
+                    return "smallint";
+                case TdsDataType.TDS_INT4:
+                    return "int";
+                case TdsDataType.TDS_INT8:
+                    return "bigint";
+                case TdsDataType.TDS_INTN:
+                    switch (Length)
+                    {
+                        case 1:
+                            return "tinyint";
+                        case 2:
+                            return "smallint";
+                        case 4:
+                            return "int";
+                        case 8:
+                        default:
+                            return "bigint";
+                    }
+                case TdsDataType.TDS_UINT2:
+                    return "unsigned smallint";
+                case TdsDataType.TDS_UINT4:
+                    return "unsigned int";
+                case TdsDataType.TDS_UINT8:
+                    return "unsigned bigint";
+                case TdsDataType.TDS_UINTN:
+                    switch (Length)
+                    {
+                        //server cannot return an unsigned tinyint
+                        //case 1:
+                        //    return "unsigned tinyint";
+                        case 2:
+                            return "unsigned smallint";
+                        case 4:
+                            return "unsigned int";
+                        case 8:
+                        default:
+                            return "unsigned bigint";
+                    }
+                case TdsDataType.TDS_NUMN:
+                    return "numeric";
+                case TdsDataType.TDS_DECN:
+                    return "decimal";
+                case TdsDataType.TDS_MONEY:
+                    return "money";
+                case TdsDataType.TDS_SHORTMONEY:
+                    return "smallmoney";
+                case TdsDataType.TDS_MONEYN:
+                    switch (Length)
+                    {
+                        case 4:
+                            return "smallmoney";
+                        case 8:
+                        default:
+                            return "money";
+                    }
+                case TdsDataType.TDS_DATE:
+                case TdsDataType.TDS_DATEN:
+                    return "date";
+                case TdsDataType.TDS_SHORTDATE:
+                    return "smalldatetime";
+                case TdsDataType.TDS_DATETIME:
+                    return "datetime";
+                case TdsDataType.TDS_DATETIMEN:
+                    switch (Length)
+                    {
+                        case 4:
+                            return "smalldatetime";
+                        case 8:
+                        default:
+                            return "datetime";
+                    }
+                case TdsDataType.TDS_TIME:
+                case TdsDataType.TDS_TIMEN:
+                    return "time";
+                case TdsDataType.TDS_CHAR:
+                    return "char";
+                case TdsDataType.TDS_VARCHAR:
+                    switch (UserType)
+                    {
+                        case 25:
+                            return "nvarchar";
+                        default:
+                            return "varchar";
+                    }
+                case TdsDataType.TDS_LONGCHAR:
+                    return "longchar";
+                case TdsDataType.TDS_TEXT:
+                    return "text";
+                case TdsDataType.TDS_UNITEXT:
+                    return "unitext";
+                case TdsDataType.TDS_BINARY:
+                    return "binary";
+                case TdsDataType.TDS_IMAGE:
+                    return "image";
+                case TdsDataType.TDS_VARBINARY:
+                    return "varbinary";
+                case TdsDataType.TDS_LONGBINARY:
+                    switch (UserType)
+                    {
+                        case 34:
+                            return "unichar";
+                        case 35:
+                            return "univarchar";
+                        default:
+                            return "binary";
+                    }
+                default:
+                    return string.Empty;
+            }
         }
     }
 }

@@ -21,9 +21,9 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public int Count => _errors.Length;
 
-        bool ICollection.IsSynchronized => true;
+        public bool IsSynchronized => true;
 
-        object ICollection.SyncRoot => _syncRoot;
+        public object SyncRoot => _syncRoot;
 
         /// <summary>
         /// Copies the elements of the AseErrorCollection into an array, starting at the given index within the array.

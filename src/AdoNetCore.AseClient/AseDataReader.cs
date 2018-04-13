@@ -214,7 +214,17 @@ namespace AdoNetCore.AseClient
 
         public override string GetDataTypeName(int ordinal)
         {
-            throw new NotImplementedException();
+            if (CurrentResultSet == null || ordinal < 0)
+            {
+                throw new IndexOutOfRangeException($"Column referenced by index ({ordinal}) does not exist");
+            }
+
+            if (ordinal >= CurrentResultSet.Formats.Length)
+            {
+                throw new AseException("The column specified does not exist.", 30118);
+            }
+
+            return CurrentResultSet.Formats[ordinal].GetDataTypeName();
         }
 
         public override IEnumerator GetEnumerator()
@@ -815,6 +825,13 @@ namespace AdoNetCore.AseClient
         public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
             ? _results[_currentResult].Rows.Count
             : 0;
+
+        public IList GetList()
+        {
+            return null; //todo: implement -- populate a DataView with rows from the current record set and return it.
+        }
+
+        public bool ContainsListCollection => false;
 
         /// <summary>
         /// Confirm that the reader is pointing at a result set

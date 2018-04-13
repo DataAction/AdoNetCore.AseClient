@@ -63,6 +63,8 @@ namespace AdoNetCore.AseClient
             }
         }
 
+        public AseConnection AseConnection => Connection;
+
         protected override DbConnection DbConnection => Connection;
 
         /// <summary>
@@ -148,6 +150,8 @@ namespace AdoNetCore.AseClient
 
             _isDisposed = true;
         }
+
+        internal bool IsDisposed => _isDisposed;
 
         /// <summary>
         /// Rolls back the transaction.

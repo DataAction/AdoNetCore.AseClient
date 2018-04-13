@@ -482,7 +482,7 @@ SET FMTONLY OFF";
             _socket.Dispose();
         }
 
-        public static IDictionary EmptyStatistics => new Dictionary<string, long>();
+        public static readonly IDictionary EmptyStatistics = new Dictionary<string, long>();
 
         public bool IsCaseSensitive()
         {

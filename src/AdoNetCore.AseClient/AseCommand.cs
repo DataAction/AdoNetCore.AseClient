@@ -505,8 +505,10 @@ namespace AdoNetCore.AseClient
 
         public string GetDataTypeName(int colindex)
         {
-            var reader = ExecuteReader();
-            return reader.GetDataTypeName(colindex);
+            using (var reader = ExecuteReader())
+            {
+                return reader.GetDataTypeName(colindex);
+            }
         }
 
         public void ResetCommandTimeout()

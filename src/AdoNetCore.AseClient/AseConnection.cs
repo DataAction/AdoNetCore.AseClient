@@ -124,8 +124,15 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseConnection));
             }
 
+            if (_transaction != null && !_transaction.IsDisposed)
+            {
+                _transaction.Dispose(); // Will also rollback the transaction
+                _transaction = null;
+            }
+
             try
             {
+
                 Close();
 
                 // Kill listening references that might keep this object from being garbage collected.
@@ -556,7 +563,7 @@ namespace AdoNetCore.AseClient
 
         public bool IsCaseSensitive()
         {
-            return _internal?.StatisticsEnabled ?? false;
+            return _internal?.IsCaseSensitive() ?? false;
         }
 
         public IDictionary RetrieveStatistics()
@@ -576,7 +583,18 @@ namespace AdoNetCore.AseClient
             }
         }
 
-        public AseTransaction Transaction => _transaction;
+        public AseTransaction Transaction
+        {
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseConnection));
+                }
+
+                return _transaction;
+            }
+        }
     }
 
     /// <summary>

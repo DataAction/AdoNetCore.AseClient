@@ -329,8 +329,9 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_UINTN:
                     switch (Length)
                     {
-                        case 1:
-                            return "unsigned tinyint";
+                        //server cannot return an unsigned tinyint
+                        //case 1:
+                        //    return "unsigned tinyint";
                         case 2:
                             return "unsigned smallint";
                         case 4:

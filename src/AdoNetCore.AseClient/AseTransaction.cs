@@ -151,6 +151,8 @@ namespace AdoNetCore.AseClient
             _isDisposed = true;
         }
 
+        internal bool IsDisposed => _isDisposed;
+
         /// <summary>
         /// Rolls back the transaction.
         /// </summary>

@@ -109,7 +109,7 @@ namespace AdoNetCore.AseClient.Interface
         /// <summary>
         /// Fetch statistics for this connection, if enabled
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An <see cref="IDictionary"/> which should under-the-hood map statistic names <see cref="string"/> to statistic values <see cref="long"/></returns>
         IDictionary RetrieveStatistics();
     }
 }

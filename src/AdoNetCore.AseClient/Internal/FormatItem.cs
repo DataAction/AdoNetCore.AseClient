@@ -362,8 +362,16 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_SHORTDATE:
                     return "smalldatetime";
                 case TdsDataType.TDS_DATETIME:
-                case TdsDataType.TDS_DATETIMEN:
                     return "datetime";
+                case TdsDataType.TDS_DATETIMEN:
+                    switch (Length)
+                    {
+                        case 4:
+                            return "smalldatetime";
+                        case 8:
+                        default:
+                            return "datetime";
+                    }
                 case TdsDataType.TDS_TIME:
                 case TdsDataType.TDS_TIMEN:
                     return "time";

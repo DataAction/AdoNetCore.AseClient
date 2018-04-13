@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient.Internal
             _parameters = parameters;
         }
 
-        public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
+        public Task<IInternalConnection> GetNewConnection(CancellationToken token)
         {
             Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} start");
             Socket socket = null;
@@ -48,7 +48,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 connection = new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
                 connection.Login();
-                return connection;
+                return Task.FromResult((IInternalConnection)connection);
             }
             catch (AseException)
             {

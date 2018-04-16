@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.0;netcoreapp1.1;netcoreapp2.0;net46;netstandard2.0</TargetFrameworks>
-    <VersionPrefix>0.9.2</VersionPrefix>
+    <VersionPrefix>0.10.0</VersionPrefix>
     <Authors>dataaction</Authors>
     <Description>.NET Core data provider for Sybase ASE</Description>
     <PackageTags>Sybase ASE Adaptive SAP AseClient DbProvider</PackageTags>
     <PackageProjectUrl>https://github.com/DataAction/AdoNetCore.AseClient</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/LICENSE</PackageLicenseUrl>
-    <PackageReleaseNotes>Return column aliases if available</PackageReleaseNotes>
+    <PackageReleaseNotes>https://github.com/DataAction/AdoNetCore.AseClient/releases/tag/0.10.0</PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'net46'">
     <DefineConstants>$(DefineConstants);NET_FRAMEWORK</DefineConstants>

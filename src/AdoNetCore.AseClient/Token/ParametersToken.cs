@@ -44,6 +44,7 @@ namespace AdoNetCore.AseClient.Token
                 parameters.Add(p);
             }
             Parameters = parameters.ToArray();
+            Logger.Instance?.WriteLine($"<- {Type}: {Parameters.Length} parameters");
         }
 
         public static ParametersToken Create(Stream stream, DbEnvironment env, IFormatToken previous)

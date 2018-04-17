@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using AdoNetCore.AseClient.Internal;
 using Dapper;
 using NUnit.Framework;
@@ -92,6 +93,50 @@ namespace AdoNetCore.AseClient.Tests.Integration
             {
                 var result = connection.ExecuteScalar<string>("select convert(unitext, 'Àa')");
                 Assert.AreEqual("Àa", result);
+            }
+        }
+
+        [TestCase("select '['+@input+']'", "", "[ ]")]
+        [TestCase("select @input", "", " ")]
+        [TestCase("select convert(char, @input)", null, null)]
+        [TestCase("select '['+convert(char, @input)+']'", null, "[]")]
+        [TestCase("select convert(char, '['+@input+']')", null, "[]                            ")]
+        public void Select_StringParameter(string sql, object input, object expected)
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = sql;
+                    var p = command.CreateParameter();
+                    p.ParameterName = "@input";
+                    p.Value = input ?? DBNull.Value;
+                    p.DbType = DbType.AnsiString;
+                    command.Parameters.Add(p);
+
+                    Assert.AreEqual(expected ?? DBNull.Value, command.ExecuteScalar());
+                }
+            }
+        }
+
+        [TestCase("select ''", " ")]
+        [TestCase("select convert(char, '')", "                              ")]
+        [TestCase("select convert(char(1), '')", " ")]
+        [TestCase("select convert(char, null)", null)]
+        [TestCase("select convert(char(1), null)", null)]
+        public void Select_StringLiteral(string sql, object expected)
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = sql;
+                    var result = command.ExecuteScalar();
+                    Console.WriteLine($"[{result}]");
+                    Assert.AreEqual(expected ?? DBNull.Value, result);
+                }
             }
         }
     }

@@ -31,6 +31,16 @@ end";
 
         private readonly string _dropProc = @"drop procedure [dbo].[sp_test_echo]";
 
+        private readonly string _createEchoCharProc = @"create procedure [dbo].[sp_test_echo_char]
+  @input char(1),
+  @output char(1) output
+as
+begin
+  set @output = @input
+end";
+
+        private readonly string _dropEchoCharProc = @"drop procedure [dbo].[sp_test_echo_char]";
+
         public EchoProcedureTests()
         {
             Logger.Disable();
@@ -42,6 +52,7 @@ end";
             using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_createProc);
+                connection.Execute(_createEchoCharProc);
             }
         }
 
@@ -99,12 +110,46 @@ end";
             }
         }
 
+        [TestCase(" ", " ")]
+        [TestCase("", " ")]
+        [TestCase(null, null)]
+        public void EchoChar_Procedure_ShouldExecute(object input, object expected)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_test_echo_char";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var p = command.CreateParameter();
+                    p.ParameterName = "@input";
+                    p.Value = input ?? DBNull.Value;
+                    p.DbType = DbType.AnsiStringFixedLength;
+                    command.Parameters.Add(p);
+
+                    var pOut = command.CreateParameter();
+                    pOut.ParameterName = "@output";
+                    pOut.Value = DBNull.Value;
+                    pOut.DbType = DbType.AnsiStringFixedLength;
+                    pOut.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(pOut);
+
+                    command.ExecuteNonQuery();
+
+                    Assert.AreEqual(expected ?? DBNull.Value, pOut.Value);
+                }
+            }
+        }
+
         [TearDown]
         public void Teardown()
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Execute(_dropProc);
+                connection.Execute(_dropEchoCharProc);
             }
         }
     }

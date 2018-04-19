@@ -134,6 +134,7 @@ end";
                     pOut.Value = DBNull.Value;
                     pOut.DbType = DbType.AnsiStringFixedLength;
                     pOut.Direction = ParameterDirection.Output;
+                    pOut.Size = 1;
                     command.Parameters.Add(pOut);
 
                     command.ExecuteNonQuery();

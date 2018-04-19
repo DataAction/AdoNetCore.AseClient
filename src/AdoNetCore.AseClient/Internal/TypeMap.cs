@@ -67,7 +67,7 @@ namespace AdoNetCore.AseClient.Internal
                 return parameter.Size;
             }
 
-            var value = parameter.Value;
+            var value = parameter.SendableValue;
             switch (dbType)
             {
                 case DbType.String:

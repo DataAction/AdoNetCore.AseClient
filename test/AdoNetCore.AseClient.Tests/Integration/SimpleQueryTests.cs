@@ -360,8 +360,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         [TestCase(null, null)]
         //Spec p.188: "A NULL value has a length of 0. There is no way to represent a non-NULL empty string of length 0."
-        //in other words, we might think it's an empty string we're sending, but the database will always interpret it as null
-        [TestCase("", null)]
+        //For backwards-compatibility we should send " " in place of "", which means that a char(10) will pad the value out to 10 spaces.
+        [TestCase("", "          ")]
         [TestCase(" ", "          ")]
         [TestCase("asdf", "asdf      ")]
         [TestCase("asdfasdfasdf", "asdfasdfas")]

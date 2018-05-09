@@ -461,7 +461,7 @@ namespace AdoNetCore.AseClient
                 return new string(c, 0, c.Length - 1);
             }
 
-            if (!(obj is IConvertible convertible))
+            if (obj is DBNull || !(obj is IConvertible convertible))
             {
                 throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to String");
             }

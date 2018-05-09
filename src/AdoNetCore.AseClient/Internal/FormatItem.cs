@@ -59,7 +59,7 @@ namespace AdoNetCore.AseClient.Internal
 
             if (dbType == DbType.Decimal || dbType == DbType.VarNumeric)
             {
-                if (parameter.Value == null || parameter.Value == DBNull.Value)
+                if (parameter.SendableValue == DBNull.Value)
                 {
                     format.Precision = 1;
                     format.Scale = 0;
@@ -67,21 +67,21 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 else if (env.UseAseDecimal)
                 {
-                    var aseDecimal = parameter.Value is AseDecimal d ? d : new AseDecimal(Convert.ToDecimal(parameter.Value));
+                    var aseDecimal = parameter.SendableValue is AseDecimal d ? d : new AseDecimal(Convert.ToDecimal(parameter.SendableValue));
                     format.Precision = (byte)aseDecimal.Precision;
                     format.Scale = (byte)aseDecimal.Scale;
                     format.Length = aseDecimal.BytesRequired + 1;
                 }
                 else
                 {
-                    var sqlDecimal = (SqlDecimal)Convert.ToDecimal(parameter.Value);
+                    var sqlDecimal = (SqlDecimal)Convert.ToDecimal(parameter.SendableValue);
                     format.Precision = sqlDecimal.Precision;
                     format.Scale = sqlDecimal.Scale;
                     format.Length = sqlDecimal.BytesRequired + 1;
                 }
             }
 
-            format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.Value, format.Length, parameter.ParameterName);
+            format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, format.Length, parameter.ParameterName);
 
             if (dbType == DbType.String)
             {

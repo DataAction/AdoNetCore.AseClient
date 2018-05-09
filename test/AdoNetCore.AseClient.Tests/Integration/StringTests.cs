@@ -123,8 +123,18 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("select ''", " ")]
         [TestCase("select convert(char, '')", "                              ")]
         [TestCase("select convert(char(1), '')", " ")]
+        [TestCase("select convert(nchar(1), '')", " ")]
+        [TestCase("select convert(unichar(1), '')", " ")]
+        [TestCase("select convert(varchar(1), '')", " ")]
+        [TestCase("select convert(univarchar(1), '')", " ")]
+        [TestCase("select convert(nvarchar(1), '')", " ")]
         [TestCase("select convert(char, null)", null)]
         [TestCase("select convert(char(1), null)", null)]
+        [TestCase("select convert(unichar(1), null)", null)]
+        [TestCase("select convert(nchar(1), null)", null)]
+        [TestCase("select convert(varchar(1), null)", null)]
+        [TestCase("select convert(univarchar(1), null)", null)]
+        [TestCase("select convert(nvarchar(1), null)", null)]
         public void Select_StringLiteral(string sql, object expected)
         {
             using (var connection = GetConnection())

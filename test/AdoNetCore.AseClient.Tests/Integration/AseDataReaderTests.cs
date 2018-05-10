@@ -432,16 +432,14 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             GetHelper_WithValue_TCastSuccessfully(aseType,
                 (reader, ordinal) => reader.GetGuid(ordinal),
-                new Guid(new byte[] {0xc9, 0xf3, 0x17, 0xf5, 0x1c, 0xdb, 0x45, 0xba, 0x90, 0x3e, 0x82, 0xbb, 0x4b, 0xfe, 0xd8, 0xef}));
+                new Guid(new byte[] { 0xc9, 0xf3, 0x17, 0xf5, 0x1c, 0xdb, 0x45, 0xba, 0x90, 0x3e, 0x82, 0xbb, 0x4b, 0xfe, 0xd8, 0xef }));
         }
 
-        /*[TestCase("BIGINT", typeof(InvalidCastException))]
-        [TestCase("BINARY", typeof(InvalidCastException))]
+        [TestCase("BIGINT", typeof(InvalidCastException))]
         [TestCase("CHAR", typeof(InvalidCastException))]
         [TestCase("DATE", typeof(InvalidCastException))]
         [TestCase("DATETIME", typeof(InvalidCastException))]
         [TestCase("DOUBLE_PRECISION", typeof(InvalidCastException))]
-        [TestCase("IMAGE", typeof(InvalidCastException))]
         [TestCase("INT", typeof(InvalidCastException))]
         [TestCase("MONEY", typeof(InvalidCastException))]
         [TestCase("NUMERIC", typeof(InvalidCastException))]
@@ -458,12 +456,11 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("UNSIGNED_INT", typeof(InvalidCastException))]
         [TestCase("UNSIGNED_SMALLINT", typeof(InvalidCastException))]
         [TestCase("UNSIGNED_TINYINT", typeof(InvalidCastException))]
-        [TestCase("VARBINARY", typeof(InvalidCastException))]
         [TestCase("VARCHAR", typeof(InvalidCastException))]
         public void GetGuid_WithInvalidlyTypedValue_ThrowsException(string aseType, Type exceptionType)
         {
             GetHelper_WithValue_ThrowsException(aseType, (reader, ordinal) => reader.GetGuid(ordinal), exceptionType);
-        }*/
+        }
 
         [TestCase("BINARY")]
         public void GetGuid_WithNullValue_ReturnsNull(string aseType)
@@ -500,7 +497,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetString(ordinal));
         }
-        
+
         [TestCase("DATE", "Apr 15 1987")]
         [TestCase("DATETIME", "Apr 15 1987 10:23:00.000PM")]
         [TestCase("SMALLDATETIME", "Apr 15 1987 10:23:00PM")]
@@ -510,7 +507,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
             GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetDateTime(ordinal), DateTime.Parse(expectedDateTime));
         }
 
-       [TestCase("BIGINT", typeof(InvalidCastException))]
+        [TestCase("BIGINT", typeof(InvalidCastException))]
         [TestCase("BINARY", typeof(InvalidCastException))]
         [TestCase("CHAR", typeof(FormatException))]
         [TestCase("DOUBLE_PRECISION", typeof(InvalidCastException))]
@@ -553,35 +550,35 @@ namespace AdoNetCore.AseClient.Tests.Integration
             GetHelper_WithValue_TCastSuccessfully(aseType, (reader, ordinal) => reader.GetTimeSpan(ordinal), TimeSpan.Parse(expectedTimeSpan));
         }
 
-        /*[TestCase("BIGINT", typeof(FormatException))]
-        [TestCase("BINARY", typeof(FormatException))]
-        [TestCase("CHAR", typeof(FormatException))]
-        [TestCase("DATE", typeof(FormatException))]
-        [TestCase("DATETIME", typeof(FormatException))]
-        [TestCase("DOUBLE_PRECISION", typeof(FormatException))]
-        [TestCase("IMAGE", typeof(FormatException))]
-        [TestCase("INT", typeof(FormatException))]
-        [TestCase("MONEY", typeof(FormatException))]
-        [TestCase("NUMERIC", typeof(FormatException))]
-        [TestCase("REAL", typeof(FormatException))]
-        [TestCase("SMALLDATETIME", typeof(FormatException))]
-        [TestCase("SMALLINT", typeof(FormatException))]
-        [TestCase("SMALLMONEY", typeof(FormatException))]
-        [TestCase("TEXT", typeof(FormatException))]
-        [TestCase("TINYINT", typeof(FormatException))]
-        [TestCase("UNICHAR", typeof(FormatException))]
-        [TestCase("UNITEXT", typeof(FormatException))]
-        [TestCase("UNIVARCHAR", typeof(FormatException))]
-        [TestCase("UNSIGNED_BIGINT", typeof(FormatException))]
-        [TestCase("UNSIGNED_INT", typeof(FormatException))]
-        [TestCase("UNSIGNED_SMALLINT", typeof(FormatException))]
-        [TestCase("UNSIGNED_TINYINT", typeof(FormatException))]
-        [TestCase("VARBINARY", typeof(FormatException))]
-        [TestCase("VARCHAR", typeof(FormatException))]
+        [TestCase("BIGINT", typeof(InvalidCastException))]
+        [TestCase("BINARY", typeof(InvalidCastException))]
+        [TestCase("CHAR", typeof(InvalidCastException))]
+        [TestCase("DATE", typeof(InvalidCastException))]
+        [TestCase("DATETIME", typeof(InvalidCastException))]
+        [TestCase("DOUBLE_PRECISION", typeof(InvalidCastException))]
+        [TestCase("IMAGE", typeof(InvalidCastException))]
+        [TestCase("INT", typeof(InvalidCastException))]
+        [TestCase("MONEY", typeof(InvalidCastException))]
+        [TestCase("NUMERIC", typeof(InvalidCastException))]
+        [TestCase("REAL", typeof(InvalidCastException))]
+        [TestCase("SMALLDATETIME", typeof(InvalidCastException))]
+        [TestCase("SMALLINT", typeof(InvalidCastException))]
+        [TestCase("SMALLMONEY", typeof(InvalidCastException))]
+        [TestCase("TEXT", typeof(InvalidCastException))]
+        [TestCase("TINYINT", typeof(InvalidCastException))]
+        [TestCase("UNICHAR", typeof(InvalidCastException))]
+        [TestCase("UNITEXT", typeof(InvalidCastException))]
+        [TestCase("UNIVARCHAR", typeof(InvalidCastException))]
+        [TestCase("UNSIGNED_BIGINT", typeof(InvalidCastException))]
+        [TestCase("UNSIGNED_INT", typeof(InvalidCastException))]
+        [TestCase("UNSIGNED_SMALLINT", typeof(InvalidCastException))]
+        [TestCase("UNSIGNED_TINYINT", typeof(InvalidCastException))]
+        [TestCase("VARBINARY", typeof(InvalidCastException))]
+        [TestCase("VARCHAR", typeof(InvalidCastException))]
         public void GetTimeSpan_WithInvalidlyTypedValue_ThrowsException(string aseType, Type exceptionType)
         {
             GetHelper_WithValue_ThrowsException(aseType, (reader, ordinal) => reader.GetTimeSpan(ordinal), exceptionType);
-        }*/
+        }
 
         [TestCase("TIME")]
         [TestCase("BIGTIME", Ignore = "true", IgnoreReason = "BIGTIME is not supported yet")]

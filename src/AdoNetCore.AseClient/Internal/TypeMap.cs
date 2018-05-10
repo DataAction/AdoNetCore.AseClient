@@ -67,7 +67,7 @@ namespace AdoNetCore.AseClient.Internal
                 return parameter.Size;
             }
 
-            var value = parameter.Value;
+            var value = parameter.SendableValue;
             switch (dbType)
             {
                 case DbType.String:
@@ -139,7 +139,6 @@ namespace AdoNetCore.AseClient.Internal
 
         public static TdsDataType GetTdsDataType(DbType dbType, bool dbTypeIsKnown, object value, int? length, string parameterName)
         {
-            value = value ?? DBNull.Value;
             // If the consumer has explicitly set a type, then rely on that.
             if (dbTypeIsKnown && DbToTdsMap.TryGetValue(dbType, out var result))
             {

@@ -10,6 +10,11 @@ namespace AdoNetCore.AseClient.Internal
     {
         public static object Read(Stream stream, FormatItem format, DbEnvironment env)
         {
+            return ReadInternal(stream, format, env) ?? DBNull.Value;
+        }
+
+        private static object ReadInternal(Stream stream, FormatItem format, DbEnvironment env)
+        {
             switch (format.DataType)
             {
                 case TdsDataType.TDS_BIT:

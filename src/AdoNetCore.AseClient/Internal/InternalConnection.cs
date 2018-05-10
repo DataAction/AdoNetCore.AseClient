@@ -450,7 +450,7 @@ SET FMTONLY OFF";
                 parameterItems.Add(new ParametersToken.Parameter
                 {
                     Format = formatItem,
-                    Value = parameter.Value ?? DBNull.Value
+                    Value = parameter.SendableValue
                 });
             }
 

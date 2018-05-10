@@ -33,7 +33,7 @@ namespace AdoNetCore.AseClient
 
         public override bool GetBoolean(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is bool i1)
             {
@@ -50,7 +50,7 @@ namespace AdoNetCore.AseClient
 
         public override byte GetByte(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is byte i1)
             {
@@ -234,7 +234,7 @@ namespace AdoNetCore.AseClient
 
         public override DateTime GetDateTime(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is DateTime i1)
             {
@@ -251,7 +251,7 @@ namespace AdoNetCore.AseClient
 
         public TimeSpan GetTimeSpan(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is TimeSpan i1)
             {
@@ -263,7 +263,7 @@ namespace AdoNetCore.AseClient
 
         public override decimal GetDecimal(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is decimal i1)
             {
@@ -280,7 +280,7 @@ namespace AdoNetCore.AseClient
 
         public override double GetDouble(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is double i1)
             {
@@ -305,7 +305,7 @@ namespace AdoNetCore.AseClient
 
         public override float GetFloat(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is float i1)
             {
@@ -347,7 +347,7 @@ namespace AdoNetCore.AseClient
 
         public override short GetInt16(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is short i1)
             {
@@ -364,7 +364,7 @@ namespace AdoNetCore.AseClient
 
         public override int GetInt32(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is int i1)
             {
@@ -381,7 +381,7 @@ namespace AdoNetCore.AseClient
 
         public override long GetInt64(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is long i1)
             {
@@ -398,7 +398,7 @@ namespace AdoNetCore.AseClient
 
         public ushort GetUInt16(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is ushort i1)
             {
@@ -415,7 +415,7 @@ namespace AdoNetCore.AseClient
 
         public uint GetUInt32(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is uint i1)
             {
@@ -432,7 +432,7 @@ namespace AdoNetCore.AseClient
 
         public ulong GetUInt64(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is ulong i1)
             {
@@ -449,7 +449,7 @@ namespace AdoNetCore.AseClient
 
         public override string GetString(int i)
         {
-            var obj = GetValue(i);
+            var obj = GetNonNullValue(i);
 
             if (obj is string s)
             {
@@ -524,6 +524,18 @@ namespace AdoNetCore.AseClient
             return IsDBNull(i)
                 ? DBNull.Value
                 : CurrentRow.Items[i];
+        }
+
+        private object GetNonNullValue(int i)
+        {
+            var obj = GetValue(i);
+            
+            if (obj == DBNull.Value || obj == null)
+            {
+                throw new AseException("Value in column is null", 30014);
+            }
+
+            return obj;
         }
 
         public override int GetValues(object[] values)

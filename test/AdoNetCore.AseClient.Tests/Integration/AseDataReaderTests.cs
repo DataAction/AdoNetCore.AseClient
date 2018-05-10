@@ -107,9 +107,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetInt32_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetInt32_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetInt32(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetInt32(ordinal));
         }
 
         [TestCase("INT")]
@@ -143,9 +143,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetInt16_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetInt16_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetInt16(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetInt16(ordinal));
         }
 
         [TestCase("INT")]
@@ -179,9 +179,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetInt64_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetInt64_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetInt64(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetInt64(ordinal));
         }
 
 
@@ -216,9 +216,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetUInt32_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetUInt32_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetUInt32(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetUInt32(ordinal));
         }
 
         [TestCase("INT")]
@@ -252,9 +252,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetUInt16_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetUInt16_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetUInt16(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetUInt16(ordinal));
         }
 
         [TestCase("INT")]
@@ -288,9 +288,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetUInt64_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetUInt64_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetUInt64(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetUInt64(ordinal));
         }
 
         [TestCase("BINARY")]
@@ -356,9 +356,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("UNICHAR")]
         [TestCase("TEXT")]
         [TestCase("UNITEXT")]
-        public void GetString_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetString_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetString(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetString(ordinal));
         }
 
 
@@ -376,9 +376,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("DATETIME")]
         [TestCase("SMALLDATETIME")]
         [TestCase("BIGDATETIME", Ignore = "true", IgnoreReason = "BIGDATETIME is not supported yet")]
-        public void GetDateTime_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetDateTime_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetDateTime(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetDateTime(ordinal));
         }
         [TestCase("TIME", "23:59:59.997")]
         [TestCase("BIGTIME", "11:59:59.999999 PM", Ignore = "true", IgnoreReason = "BIGTIME is not supported yet")]
@@ -389,9 +389,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         [TestCase("TIME")]
         [TestCase("BIGTIME", Ignore = "true", IgnoreReason = "BIGTIME is not supported yet")]
-        public void GetTimeSpan_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetTimeSpan_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetTimeSpan(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetTimeSpan(ordinal));
         }
 
         [TestCase("BIT")]
@@ -431,9 +431,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetByte_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetByte_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetByte(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetByte(ordinal));
         }
 
         [TestCase("INT", 123)]
@@ -467,9 +467,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetFloat_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetFloat_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetFloat(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetFloat(ordinal));
         }
 
         [TestCase("INT", 123d)]
@@ -503,9 +503,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetDouble_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetDouble_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetDouble(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetDouble(ordinal));
         }
 
         [TestCase("INT", 123)]
@@ -539,9 +539,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("NUMERIC")]
         [TestCase("MONEY")]
         [TestCase("SMALLMONEY")]
-        public void GetDecimal_WithNullValue_ThrowsInvalidCastException(string aseType)
+        public void GetDecimal_WithNullValue_ThrowsAseException(string aseType)
         {
-            GetHelper_WithNullValue_ThrowsInvalidCastException(aseType, (reader, ordinal) => reader.GetDecimal(ordinal));
+            GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetDecimal(ordinal));
         }
 
         private void GetHelper_WithValue_TCastSuccessfully<T>(string columnName, Func<AseDataReader, int, T> testMethod, T expectedValue)
@@ -582,7 +582,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
-        private void GetHelper_WithNullValue_ThrowsInvalidCastException<T>(string columnName, Func<AseDataReader, int, T> testMethod)
+        private void GetHelper_WithNullValue_ThrowsAseException<T>(string columnName, Func<AseDataReader, int, T> testMethod)
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
             {
@@ -598,7 +598,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
                         Assert.IsTrue(reader.Read());
 
-                        Assert.Throws<InvalidCastException>(() => testMethod(reader, targetFieldOrdinal));
+                        var ex = Assert.Throws<AseException>(() => testMethod(reader, targetFieldOrdinal));
+                        Assert.AreEqual("Value in column is null", ex.Message);
+                        Assert.AreEqual(30014, ex.Errors[0].MessageNumber);
                     }
                 }
             }

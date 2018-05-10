@@ -41,6 +41,16 @@ end";
 
         private readonly string _dropEchoCharProc = @"drop procedure [dbo].[sp_test_echo_char]";
 
+        private readonly string _createEchoStringProc = @"create procedure [dbo].[sp_test_echo_string]
+  @input char(255),
+  @output char(255) output
+as
+begin
+  set @output = @input
+end";
+
+        private readonly string _dropEchoStringProc = @"drop procedure [dbo].[sp_test_echo_string]";
+
         public EchoProcedureTests()
         {
             Logger.Disable();
@@ -53,6 +63,7 @@ end";
             {
                 connection.Execute(_createProc);
                 connection.Execute(_createEchoCharProc);
+                connection.Execute(_createEchoStringProc);
             }
         }
 
@@ -144,6 +155,39 @@ end";
             }
         }
 
+        [Test]
+        public void EchoString_Procedure_ShouldExecute()
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_test_echo_char";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var expected = new string('.', 255);
+
+                    var p = command.CreateParameter();
+                    p.ParameterName = "@input";
+                    p.Value = expected;
+                    p.DbType = DbType.AnsiStringFixedLength;
+                    command.Parameters.Add(p);
+
+                    var pOut = command.CreateParameter();
+                    pOut.ParameterName = "@output";
+                    pOut.Value = DBNull.Value;
+                    pOut.DbType = DbType.AnsiStringFixedLength;
+                    pOut.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(pOut);
+
+                    command.ExecuteNonQuery();
+
+                    Assert.AreEqual(expected, pOut.Value);
+                }
+            }
+        }
+
         [TearDown]
         public void Teardown()
         {
@@ -151,6 +195,7 @@ end";
             {
                 connection.Execute(_dropProc);
                 connection.Execute(_dropEchoCharProc);
+                connection.Execute(_dropEchoStringProc);
             }
         }
     }

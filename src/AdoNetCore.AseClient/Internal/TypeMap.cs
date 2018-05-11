@@ -62,16 +62,16 @@ namespace AdoNetCore.AseClient.Internal
 
         public static int? GetFormatLength(DbType dbType, AseParameter parameter, Encoding enc)
         {
-            if (parameter.Size > 0)
-            {
-                return parameter.Size;
-            }
-
             var value = parameter.SendableValue;
             switch (dbType)
             {
                 case DbType.String:
                 case DbType.StringFixedLength:
+                    if (parameter.IsOutput)
+                    {
+                        return Math.Max(VarLongBoundary * 2, parameter.Size);
+                    }
+
                     switch (value)
                     {
                         case string s:
@@ -83,6 +83,11 @@ namespace AdoNetCore.AseClient.Internal
                     }
                 case DbType.AnsiString:
                 case DbType.AnsiStringFixedLength:
+                    if (parameter.IsOutput)
+                    {
+                        return Math.Max(VarLongBoundary, parameter.Size);
+                    }
+
                     switch (value)
                     {
                         case string s:
@@ -93,6 +98,11 @@ namespace AdoNetCore.AseClient.Internal
                             return 0;
                     }
                 case DbType.Binary:
+                    if (parameter.IsOutput)
+                    {
+                        return Math.Max(VarLongBoundary, parameter.Size);
+                    }
+
                     switch (value)
                     {
                         case byte[] ba:

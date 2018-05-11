@@ -447,9 +447,16 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public override int Size { get; set; }
 
+        /// <summary>
+        /// Indicates if this parameter can be sent to the server (normal:true),
+        /// or if it's an abstraction over return values (ParameterDirection.ReturnValue:false)
+        /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool CanSendOverTheWire => Direction != ParameterDirection.ReturnValue;
 
+        /// <summary>
+        /// Indicates if this parameter will have an output value
+        /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         internal bool IsOutput => Direction == ParameterDirection.InputOutput || Direction == ParameterDirection.Output;
 

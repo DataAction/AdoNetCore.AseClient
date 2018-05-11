@@ -10,13 +10,11 @@ using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
-    /// <summary>
-    /// For benchmarking, copy this to a new project referencing the AdoNet4.AseClient dll. Hopefully we don't perform too poorly by comparison :)
-    /// </summary>
     [TestFixture]
     [Category("basic")]
     public class EchoProcedureTests
     {
+        //echo an int
         private readonly string _createProc = @"
 create procedure [dbo].[sp_test_echo]
   @nEchoValue int,
@@ -30,7 +28,8 @@ begin
 end";
 
         private readonly string _dropProc = @"drop procedure [dbo].[sp_test_echo]";
-
+        
+        //echo a character
         private readonly string _createEchoCharProc = @"create procedure [dbo].[sp_test_echo_char]
   @input char(1),
   @output char(1) output
@@ -40,6 +39,28 @@ begin
 end";
 
         private readonly string _dropEchoCharProc = @"drop procedure [dbo].[sp_test_echo_char]";
+
+        //echo a string
+        private readonly string _createEchoStringProc = @"create procedure [dbo].[sp_test_echo_string]
+  @input char(255),
+  @output char(255) output
+as
+begin
+  set @output = @input
+end";
+
+        private readonly string _dropEchoStringProc = @"drop procedure [dbo].[sp_test_echo_string]";
+
+        //echo some bytes
+        private readonly string _createEchoBinaryProc = @"create procedure [dbo].[sp_test_echo_binary]
+  @input binary(255),
+  @output binary(255) output
+as
+begin
+  set @output = @input
+end";
+
+        private readonly string _dropEchoBinaryProc = @"drop procedure [dbo].[sp_test_echo_binary]";
 
         public EchoProcedureTests()
         {
@@ -53,6 +74,8 @@ end";
             {
                 connection.Execute(_createProc);
                 connection.Execute(_createEchoCharProc);
+                connection.Execute(_createEchoStringProc);
+                connection.Execute(_createEchoBinaryProc);
             }
         }
 
@@ -144,6 +167,75 @@ end";
             }
         }
 
+        [TestCase(DbType.AnsiStringFixedLength)] //CHAR:0(255)
+        [TestCase(DbType.AnsiString)] //VARCHAR:0(255)
+        [TestCase(DbType.StringFixedLength)] //LONGBINARY:34(510)
+        [TestCase(DbType.String)] //LONGBINARY:35(510)
+        public void EchoString_Procedure_ShouldExecute(DbType outputType)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_test_echo_string";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var expected = new string('.', 255);
+
+                    var p = command.CreateParameter();
+                    p.ParameterName = "@input";
+                    p.Value = expected;
+                    p.DbType = DbType.AnsiStringFixedLength;
+                    command.Parameters.Add(p);
+
+                    var pOut = command.CreateParameter();
+                    pOut.ParameterName = "@output";
+                    pOut.Value = DBNull.Value;
+                    pOut.DbType = outputType;
+                    pOut.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(pOut);
+
+                    command.ExecuteNonQuery();
+
+                    Assert.AreEqual(expected, pOut.Value);
+                }
+            }
+        }
+
+        [Test]
+        public void EchoBinary_Procedure_ShouldExecute()
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_test_echo_binary";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    var expected = Enumerable.Repeat(new byte[] {0xde, 0xad, 0xbe, 0xef}, 64).SelectMany(x => x).Take(255).ToArray();
+
+                    var p = command.CreateParameter();
+                    p.ParameterName = "@input";
+                    p.Value = expected;
+                    p.DbType = DbType.Binary;
+                    command.Parameters.Add(p);
+
+                    var pOut = command.CreateParameter();
+                    pOut.ParameterName = "@output";
+                    pOut.Value = DBNull.Value;
+                    pOut.DbType = DbType.Binary;
+                    pOut.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(pOut);
+
+                    command.ExecuteNonQuery();
+
+                    Assert.AreEqual(expected, pOut.Value);
+                }
+            }
+        }
+
         [TearDown]
         public void Teardown()
         {
@@ -151,6 +243,8 @@ end";
             {
                 connection.Execute(_dropProc);
                 connection.Execute(_dropEchoCharProc);
+                connection.Execute(_dropEchoStringProc);
+                connection.Execute(_dropEchoBinaryProc);
             }
         }
     }

@@ -51,10 +51,6 @@ namespace AdoNetCore.AseClient.Internal
 
         public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
         {
-            //TDS_TYPE depends on (string/binary) Length
-            //(decimal) Length depends on TDS_TYPE
-            //we need to know the length of the value (if it's a string/binary) because the length determines the TDS type
-            //we need to know the DB
             var dbType = parameter.DbType;
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
             var format = new FormatItem
@@ -67,7 +63,7 @@ namespace AdoNetCore.AseClient.Internal
                 UserType = TypeMap.GetTdsUserType(dbType),
             };
 
-            //fixup for decimal type
+            //fixup the FormatItem's length,scale,precision for decimals
             if (format.IsDecimalType)
             {
                 if (parameter.SendableValue == DBNull.Value)

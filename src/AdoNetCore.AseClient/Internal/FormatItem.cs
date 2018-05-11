@@ -48,16 +48,27 @@ namespace AdoNetCore.AseClient.Internal
 
         public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
         {
+            //TDS_TYPE depends on (string/binary) Length
+            //(decimal) Length depends on TDS_TYPE
+            //we need to know the length of the value (if it's a string/binary) because the length determines the TDS type
+            //we need to know the DB
             var dbType = parameter.DbType;
+            var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
+            var tdsDataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, length, parameter.ParameterName);
+            var tdsUserType = TypeMap.GetTdsUserType(dbType);
+            
             var format = new FormatItem
             {
                 ParameterName = parameter.ParameterName,
                 IsOutput = parameter.IsOutput,
                 IsNullable = parameter.IsNullable,
-                Length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding)
+                Length = length,
+                DataType = tdsDataType,
+                UserType = tdsUserType
             };
 
-            if (dbType == DbType.Decimal || dbType == DbType.VarNumeric)
+            //fixup for decimal type
+            if (tdsDataType == TdsDataType.TDS_NUMN || tdsDataType == TdsDataType.TDS_DECN)
             {
                 if (parameter.SendableValue == DBNull.Value)
                 {
@@ -79,18 +90,6 @@ namespace AdoNetCore.AseClient.Internal
                     format.Scale = sqlDecimal.Scale;
                     format.Length = sqlDecimal.BytesRequired + 1;
                 }
-            }
-
-            format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, format.Length, parameter.ParameterName);
-
-            if (dbType == DbType.String)
-            {
-                format.UserType = 35;
-            }
-
-            if (dbType == DbType.StringFixedLength)
-            {
-                format.UserType = 34;
             }
 
             return format;

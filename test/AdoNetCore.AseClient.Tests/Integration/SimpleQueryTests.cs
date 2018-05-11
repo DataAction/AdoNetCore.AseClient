@@ -483,11 +483,31 @@ l:10, p:20, s:3: 01 00 00 00 00 00 00 00 03 e8
         }
 
         [TestCaseSource(nameof(SelectDecimal_Parameter_ShouldWork_Cases))]
-        public void SelectDecimal_Parameter_ShouldWork(decimal expected)
+        public void SelectDecimal_Parameter_Dapper_ShouldWork(decimal expected)
         {
             using (var connection = GetConnection())
             {
                 Assert.AreEqual(expected, connection.ExecuteScalar<decimal?>("select @expected", new { expected }));
+            }
+        }
+
+        [TestCaseSource(nameof(SelectDecimal_Parameter_ShouldWork_Cases))]
+        public void SelectDecimal_Parameter_Default_ShouldWork(decimal expected)
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "select @expected";
+
+                    var p = command.CreateParameter();
+                    p.ParameterName = "@expected";
+                    p.Value = expected;
+                    command.Parameters.Add(p);
+
+                    Assert.AreEqual(expected, command.ExecuteScalar());
+                }
             }
         }
 

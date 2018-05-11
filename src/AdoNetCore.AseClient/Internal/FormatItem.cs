@@ -41,6 +41,9 @@ namespace AdoNetCore.AseClient.Internal
             ? ColumnName
             : ColumnLabel;
 
+        public bool IsDecimalType => DataType == TdsDataType.TDS_DECN ||
+                                     DataType == TdsDataType.TDS_NUMN;
+
         /// <summary>
         /// Relates to TDS_BLOB
         /// </summary>
@@ -54,21 +57,18 @@ namespace AdoNetCore.AseClient.Internal
             //we need to know the DB
             var dbType = parameter.DbType;
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
-            var tdsDataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, length, parameter.ParameterName);
-            var tdsUserType = TypeMap.GetTdsUserType(dbType);
-            
             var format = new FormatItem
             {
                 ParameterName = parameter.ParameterName,
                 IsOutput = parameter.IsOutput,
                 IsNullable = parameter.IsNullable,
                 Length = length,
-                DataType = tdsDataType,
-                UserType = tdsUserType
+                DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, length, parameter.ParameterName),
+                UserType = TypeMap.GetTdsUserType(dbType),
             };
 
             //fixup for decimal type
-            if (tdsDataType == TdsDataType.TDS_NUMN || tdsDataType == TdsDataType.TDS_DECN)
+            if (format.IsDecimalType)
             {
                 if (parameter.SendableValue == DBNull.Value)
                 {

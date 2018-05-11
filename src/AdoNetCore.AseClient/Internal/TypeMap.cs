@@ -164,6 +164,19 @@ namespace AdoNetCore.AseClient.Internal
             throw new NotSupportedException($"Unsupported data type {dbType} for parameter '{parameterName}'.");
         }
 
+        public static int GetTdsUserType(DbType dbType)
+        {
+            switch (dbType)
+            {
+                case DbType.String:
+                    return 35;
+                case DbType.StringFixedLength:
+                    return 34;
+                default:
+                    return 0;
+            }
+        }
+
         private static readonly Dictionary<TdsDataType, Func<FormatItem, Type>> TdsToNetMap = new Dictionary<TdsDataType, Func<FormatItem, Type>>
         {
             {TdsDataType.TDS_BINARY, f => typeof(byte[])},

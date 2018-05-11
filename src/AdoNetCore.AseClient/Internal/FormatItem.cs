@@ -41,6 +41,9 @@ namespace AdoNetCore.AseClient.Internal
             ? ColumnName
             : ColumnLabel;
 
+        public bool IsDecimalType => DataType == TdsDataType.TDS_DECN ||
+                                     DataType == TdsDataType.TDS_NUMN;
+
         /// <summary>
         /// Relates to TDS_BLOB
         /// </summary>
@@ -49,15 +52,19 @@ namespace AdoNetCore.AseClient.Internal
         public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
         {
             var dbType = parameter.DbType;
+            var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
             var format = new FormatItem
             {
                 ParameterName = parameter.ParameterName,
                 IsOutput = parameter.IsOutput,
                 IsNullable = parameter.IsNullable,
-                Length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding)
+                Length = length,
+                DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, length, parameter.ParameterName),
+                UserType = TypeMap.GetTdsUserType(dbType),
             };
 
-            if (dbType == DbType.Decimal || dbType == DbType.VarNumeric)
+            //fixup the FormatItem's length,scale,precision for decimals
+            if (format.IsDecimalType)
             {
                 if (parameter.SendableValue == DBNull.Value)
                 {
@@ -79,18 +86,6 @@ namespace AdoNetCore.AseClient.Internal
                     format.Scale = sqlDecimal.Scale;
                     format.Length = sqlDecimal.BytesRequired + 1;
                 }
-            }
-
-            format.DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, format.Length, parameter.ParameterName);
-
-            if (dbType == DbType.String)
-            {
-                format.UserType = 35;
-            }
-
-            if (dbType == DbType.StringFixedLength)
-            {
-                format.UserType = 34;
             }
 
             return format;

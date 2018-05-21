@@ -7,6 +7,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
     internal class LoginTokenHandler : ITokenHandler
     {
         public bool ReceivedAck { get; private set; }
+        public LoginAckToken.LoginStatus LoginStatus { get; private set; }
         public LoginAckToken Token { get; private set; }
 
         public bool CanHandle(TokenType type)
@@ -21,10 +22,11 @@ namespace AdoNetCore.AseClient.Internal.Handler
                 case LoginAckToken t:
                     ReceivedAck = true;
                     Token = t;
+                    LoginStatus = t.Status;
 
                     if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_FAIL)
                     {
-                        throw new AseException("Login failed.");
+                        Logger.Instance?.WriteLine($"Login failed");
                     }
 
                     if (t.Status == LoginAckToken.LoginStatus.TDS_LOG_NEGOTIATE)

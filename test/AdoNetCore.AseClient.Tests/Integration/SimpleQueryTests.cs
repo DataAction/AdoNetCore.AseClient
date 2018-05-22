@@ -8,6 +8,7 @@ using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
+    //todo: split into separate files in AdoNetCore.AseClient.Tests.Integration.Query
     [TestFixture]
     [Category("basic")]
     public class SimpleQueryTests

@@ -184,6 +184,10 @@ namespace AdoNetCore.AseClient.Internal
                         stream.Read(textPtr, 0, textPtrLen);
                         stream.ReadULong(); //timestamp
                         var dataLen = stream.ReadInt();
+                        if (dataLen == 0)
+                        {
+                            return DBNull.Value;
+                        }
                         var data = new byte[dataLen];
                         stream.Read(data, 0, dataLen);
                         return data;

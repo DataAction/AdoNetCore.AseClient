@@ -37,6 +37,12 @@ namespace AdoNetCore.AseClient.Internal
         {
             lock (_stateMutex)
             {
+                //if the connection's state is broken, it can't get any more broken!
+                if (_state == newState)
+                {
+                    return;
+                }
+
                 if (_state == InternalConnectionState.Broken)
                 {
                     throw new ArgumentException("Cannot change internal connection state as it is Broken");
@@ -71,7 +77,15 @@ namespace AdoNetCore.AseClient.Internal
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("----------  Send packet   ----------");
-            _socket.SendPacket(packet, _environment);
+            try
+            {
+                _socket.SendPacket(packet, _environment);
+            }
+            catch
+            {
+                IsDoomed = true;
+                throw;
+            }
         }
 
         private void ReceiveTokens(params ITokenHandler[] handlers)

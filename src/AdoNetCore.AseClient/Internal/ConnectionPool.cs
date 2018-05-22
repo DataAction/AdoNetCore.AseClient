@@ -265,6 +265,7 @@ namespace AdoNetCore.AseClient.Internal
             if (ShouldRemoveAndReplace(connection, now))
             {
                 RemoveAndReplace(connection);
+                Logger.Instance?.WriteLine("Released connection was removed. Creation of a replacement was tasked.");
                 return;
             }
             

@@ -253,12 +253,15 @@ namespace AdoNetCore.AseClient
         {
             var obj = GetNonNullValue(i);
 
-            if (obj is TimeSpan i1)
+            switch (obj)
             {
-                return i1;
+                case TimeSpan ts:
+                    return ts;
+                case DateTime dt:
+                    return dt.TimeOfDay;
+                default:
+                    throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to TimeSpan");
             }
-
-            throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to TimeSpan");
         }
 
         public override decimal GetDecimal(int i)

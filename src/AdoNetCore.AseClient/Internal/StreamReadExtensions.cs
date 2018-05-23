@@ -183,10 +183,10 @@ namespace AdoNetCore.AseClient.Internal
             return SqlDateTimeEpoch.AddDays(p1);
         }
 
-        public static TimeSpan ReadTime(this Stream stream)
+        public static DateTime ReadTime(this Stream stream)
         {
             var sqlTicks = stream.ReadInt();
-            return SqlDateTimeEpoch.AddMilliseconds(sqlTicks / SqlTicksPerMillisecond) - SqlDateTimeEpoch;
+            return SqlDateTimeEpoch.AddMilliseconds(sqlTicks / SqlTicksPerMillisecond);
         }
 
         public static AseDecimal? ReadAseDecimal(this Stream stream, byte precision, byte scale)

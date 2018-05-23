@@ -16,6 +16,12 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     {typeof(byte[]), o => ((Guid) o).ToByteArray()}
                 }
+            },
+            {
+                typeof(DateTime), new Dictionary<Type, Func< object, object>>
+                {
+                    {typeof(TimeSpan), o => ((DateTime)o).TimeOfDay}
+                }
             }
         };
 
@@ -28,10 +34,10 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (tTo == tFrom)
                 {
-                    return (T) value;
+                    return (T)value;
                 }
 
-                return (T) (CastMap.ContainsKey(tFrom) && CastMap[tFrom].ContainsKey(tTo)
+                return (T)(CastMap.ContainsKey(tFrom) && CastMap[tFrom].ContainsKey(tTo)
                     ? CastMap[tFrom][tTo](value)
                     : Convert.ChangeType(value, tTo));
             }

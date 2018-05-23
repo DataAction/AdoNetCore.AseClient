@@ -185,16 +185,16 @@ namespace AdoNetCore.AseClient.Internal
             //{TdsDataType.TDS_BOUNDARY, f => typeof()},
             {TdsDataType.TDS_CHAR, f => typeof(string)},
             {TdsDataType.TDS_DATE, f => typeof(DateTime)},
-            {TdsDataType.TDS_DATEN, f => typeof(DateTime?)},
+            {TdsDataType.TDS_DATEN, f => typeof(DateTime)},
             {TdsDataType.TDS_DATETIME, f => typeof(DateTime)},
-            {TdsDataType.TDS_DATETIMEN, f => typeof(DateTime?)},
-            {TdsDataType.TDS_DECN, f => typeof(decimal?)},
+            {TdsDataType.TDS_DATETIMEN, f => typeof(DateTime)},
+            {TdsDataType.TDS_DECN, f => typeof(decimal)},
             {TdsDataType.TDS_FLT4, f => typeof(float)},
             {TdsDataType.TDS_FLT8, f => typeof(double)},
             {
                 TdsDataType.TDS_FLTN, f => f.Length == 8
-                    ? typeof(double?)
-                    : typeof(float?)
+                    ? typeof(double)
+                    : typeof(float)
             },
             {TdsDataType.TDS_IMAGE, f => typeof(byte[])},
             {TdsDataType.TDS_INT1, f => typeof(byte)},
@@ -204,12 +204,12 @@ namespace AdoNetCore.AseClient.Internal
             //{TdsDataType.TDS_INTERVAL, f => typeof()},
             {
                 TdsDataType.TDS_INTN, f => f.Length == 8
-                    ? typeof(long?)
+                    ? typeof(long)
                     : f.Length == 4
-                        ? typeof(int?)
+                        ? typeof(int)
                         : f.Length == 2
-                            ? typeof(short?)
-                            : typeof(byte?)
+                            ? typeof(short)
+                            : typeof(byte)
             },
             {
                 TdsDataType.TDS_LONGBINARY, f => f.UserType == 34 || f.UserType == 35
@@ -218,26 +218,26 @@ namespace AdoNetCore.AseClient.Internal
             },
             {TdsDataType.TDS_LONGCHAR, f => typeof(string)},
             {TdsDataType.TDS_MONEY, f => typeof(decimal)},
-            {TdsDataType.TDS_MONEYN, f => typeof(decimal?)},
-            {TdsDataType.TDS_NUMN, f => typeof(decimal?)},
+            {TdsDataType.TDS_MONEYN, f => typeof(decimal)},
+            {TdsDataType.TDS_NUMN, f => typeof(decimal)},
             //{TdsDataType.TDS_SENSITIVITY,f =>  typeof()},
             {TdsDataType.TDS_SHORTDATE, f => typeof(DateTime)},
             {TdsDataType.TDS_SHORTMONEY, f => typeof(decimal)},
             {TdsDataType.TDS_SINT1, f => typeof(sbyte)},
             {TdsDataType.TDS_TEXT, f => typeof(string)},
-            {TdsDataType.TDS_TIME, f => typeof(TimeSpan)},
-            {TdsDataType.TDS_TIMEN, f => typeof(TimeSpan?)},
+            {TdsDataType.TDS_TIME, f => typeof(DateTime)},
+            {TdsDataType.TDS_TIMEN, f => typeof(DateTime)},
             {TdsDataType.TDS_UINT2, f => typeof(ushort)},
             {TdsDataType.TDS_UINT4, f => typeof(uint)},
             {TdsDataType.TDS_UINT8, f => typeof(ulong)},
             {
                 TdsDataType.TDS_UINTN, f => f.Length == 8
-                    ? typeof(ulong?)
+                    ? typeof(ulong)
                     : f.Length == 4
-                        ? typeof(uint?)
+                        ? typeof(uint)
                         : f.Length == 2
-                            ? typeof(ushort?)
-                            : typeof(byte?)
+                            ? typeof(ushort)
+                            : typeof(byte)
             },
             {TdsDataType.TDS_UNITEXT, f => typeof(string)},
             {TdsDataType.TDS_VARBINARY, f => typeof(byte[])},

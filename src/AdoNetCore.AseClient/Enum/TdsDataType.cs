@@ -209,5 +209,8 @@ namespace AdoNetCore.AseClient.Enum
         /// No Yes Yes XML
         /// </summary>
         TDS_XML = 0xA3,
+        //todo: implement
+        //TDS_BIGDATETIME = 0xBB,
+        //TDS_BIGTIME = 0xBC,
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using NUnit.Framework;
 
@@ -949,6 +950,57 @@ SELECT 5";
                     }
                 }
             }
+        }
+
+        [TestCaseSource(nameof(GetFieldType_ReturnsNonNullableType_Cases))]
+        public void GetFieldType_ReturnsNonNullableType(string query, Type expected)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = query;
+                    var reader = command.ExecuteReader();
+                    reader.Read();
+                    Assert.AreEqual(expected, reader.GetFieldType(0));
+                    Assert.IsTrue(reader.IsDBNull(0));
+                }
+            }
+        }
+
+        public static IEnumerable<TestCaseData> GetFieldType_ReturnsNonNullableType_Cases()
+        {
+            //todo: implement bigdatetime support
+            //yield return new TestCaseData("select convert(bigdatetime, null)", typeof(DateTime));
+            yield return new TestCaseData("select convert(bigint, null)", typeof(long));
+            //todo: implement bigtime support
+            //yield return new TestCaseData("select convert(bigtime, null)", typeof(DateTime));
+            yield return new TestCaseData("select convert(binary, null)", typeof(byte[]));
+            yield return new TestCaseData("select convert(char, null)", typeof(string));
+            yield return new TestCaseData("select convert(date, null)", typeof(DateTime));
+            yield return new TestCaseData("select convert(datetime, null)", typeof(DateTime));
+            yield return new TestCaseData("select convert(double precision, null)", typeof(double));
+            yield return new TestCaseData("select convert(image, null)", typeof(byte[]));
+            yield return new TestCaseData("select convert(int, null)", typeof(int));
+            yield return new TestCaseData("select convert(money, null)", typeof(decimal));
+            yield return new TestCaseData("select convert(numeric, null)", typeof(decimal));
+            yield return new TestCaseData("select convert(real, null)", typeof(float));
+            yield return new TestCaseData("select convert(smalldatetime, null)", typeof(DateTime));
+            yield return new TestCaseData("select convert(smallint, null)", typeof(short));
+            yield return new TestCaseData("select convert(smallmoney, null)", typeof(decimal));
+            yield return new TestCaseData("select convert(text, null)", typeof(string));
+            yield return new TestCaseData("select convert(time, null)", typeof(DateTime));
+            yield return new TestCaseData("select convert(tinyint, null)", typeof(byte));
+            yield return new TestCaseData("select convert(unichar, null)", typeof(string));
+            yield return new TestCaseData("select convert(unitext, null)", typeof(string));
+            yield return new TestCaseData("select convert(univarchar, null)", typeof(string));
+            yield return new TestCaseData("select convert(unsigned bigint, null)", typeof(ulong));
+            yield return new TestCaseData("select convert(unsigned int, null)", typeof(uint));
+            yield return new TestCaseData("select convert(unsigned smallint, null)", typeof(ushort));
+            yield return new TestCaseData("select convert(unsigned tinyint, null)", typeof(byte));
+            yield return new TestCaseData("select convert(varbinary, null)", typeof(byte[]));
+            yield return new TestCaseData("select convert(varchar, null)", typeof(string));
         }
     }
 }

@@ -202,9 +202,9 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 
 | ASE Type            | Receive   | .NET Type(s) | Notes
 | ------------------- |:---------:| ------------ | -----
-| `bigdatetime`       | ?         | `DateTime` | Investigate: can we enable this type on our test server?
+| `bigdatetime`       | X         | `DateTime` | To be implemented. `TDS_BIGDATETIME = 0xBB`
 | `bigint`            | &#10003;  | `long`
-| `bigtime`           | ?         | `TimeSpan` | Investigate: can we enable this type on our test server?
+| `bigtime`           | X         | `DateTime` | To be implemented. `TDS_BIGTIME = 0xBC`
 | `binary`            | &#10003;  | `byte[]`
 | `bit`               | &#10003;  | `bool`
 | `char`              | &#10003;  | `string`
@@ -222,7 +222,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `smalldatetime`     | &#10003;  | `DateTime`
 | `smallint`          | &#10003;  | `short`
 | `smallmoney`        | &#10003;  | `decimal`
-| `time`              | &#10003;  | `TimeSpan`
+| `time`              | &#10003;  | `DateTime` | We have added a `GetTimeSpan` method to `AseDataReader`
 | `tinyint`           | &#10003;  | `byte`
 | `unichar`           | &#10003;  | `string` | Server sends as binary with usertype `34`
 | `univarchar`        | &#10003;  | `string` | Server sends as binary with usertype `35`

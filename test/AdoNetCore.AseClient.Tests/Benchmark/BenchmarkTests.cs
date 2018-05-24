@@ -1,4 +1,5 @@
 ﻿using System;
+using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Benchmark
@@ -12,7 +13,6 @@ namespace AdoNetCore.AseClient.Tests.Benchmark
     [Category("benchmark")]
     public partial class Benchmarks<T> where T : IConnectionProvider
     {
-
         [SetUp]
         public void SetUp()
         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using AdoNetCore.AseClient.Tests.ConnectionProvider;
 
 namespace AdoNetCore.AseClient.Tests.Benchmark
 {

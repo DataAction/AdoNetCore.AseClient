@@ -1,7 +1,9 @@
-﻿using System;
+﻿#if NET_CORE
+using System;
+#endif
 using System.Data.Common;
 
-namespace AdoNetCore.AseClient.Tests.Benchmark
+namespace AdoNetCore.AseClient.Tests.ConnectionProvider
 {
     public class SapConnectionProvider : IConnectionProvider
     {

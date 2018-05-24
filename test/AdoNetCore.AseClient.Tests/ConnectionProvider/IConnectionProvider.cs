@@ -1,6 +1,6 @@
 ﻿using System.Data.Common;
 
-namespace AdoNetCore.AseClient.Tests.Benchmark
+namespace AdoNetCore.AseClient.Tests.ConnectionProvider
 {
     /// <summary>
     /// Abstraction to make the switching of the AseConnection possible for benchmarking the SAP and AdoNetCore implementations.

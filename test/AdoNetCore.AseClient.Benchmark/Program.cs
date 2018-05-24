@@ -1,5 +1,6 @@
 ﻿using System;
 using AdoNetCore.AseClient.Tests.Benchmark;
+using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using BenchmarkDotNet.Running;
 
 namespace AdoNetCore.AseClient.Benchmark

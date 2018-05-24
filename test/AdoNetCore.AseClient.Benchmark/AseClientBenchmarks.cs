@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using AdoNetCore.AseClient.Tests.Benchmark;
+using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using BenchmarkDotNet.Attributes;
 
 namespace AdoNetCore.AseClient.Benchmark

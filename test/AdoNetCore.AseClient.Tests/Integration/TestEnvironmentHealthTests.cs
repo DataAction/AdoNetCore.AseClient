@@ -3,11 +3,11 @@ using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
-    [SetUpFixture]
-    public class HealthCheckTests
+    [TestFixture]
+    public class TestEnvironmentHealthTests
     {
-        [OneTimeSetUp]
-        public void HealthCheckBefore()
+        [Test]
+        public void Adequate_UserConnections_Configuration()
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
             using (var command = connection.CreateCommand())
@@ -24,12 +24,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
                     Assert.GreaterOrEqual(Convert.ToInt32(configValue), 100, "The database server should be configured to allow for more connections. Run the following: `exec sp_configure 'number of user connections', 100`");
                 }
             }
-        }
-
-        [OneTimeTearDown]
-        public void HealthCheckAfter()
-        {
-
         }
     }
 }

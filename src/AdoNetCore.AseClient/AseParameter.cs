@@ -490,7 +490,9 @@ namespace AdoNetCore.AseClient
             ? DBNull.Value
             : Value is string && Equals(Value, string.Empty)
                 ? " "
-                : Value;
+                : Value is byte[] bytes && bytes.Length == 0
+                    ? new byte[] {0}
+                    : Value;
 
     }
 }

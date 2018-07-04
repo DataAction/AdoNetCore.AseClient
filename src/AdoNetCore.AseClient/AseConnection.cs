@@ -337,6 +337,13 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public override string ServerVersion => _internal?.ServerVersion;
 
+#if ENABLE_DB_PROVIDERFACTORY
+        /// <summary>
+        /// The DbProviderFactory available for creating child types.
+        /// </summary>
+        protected override DbProviderFactory DbProviderFactory => AseClientFactory.Instance;
+#endif
+
         /// <summary>
         /// Indicates the state of the <see cref="AseConnection" /> during the most recent network operation 
         /// performed on the connection.

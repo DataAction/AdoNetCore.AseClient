@@ -24,14 +24,13 @@ The latest stable release of the AdoNetCore.AseClient is [available on NuGet](ht
 
 ## Objectives
 * Functional parity with the `Sybase.Data.AseClient` provided by SAP. Ideally, our driver will be a drop in replacement for the `Sybase.Data.AseClient` (with some namespace changes). The following types are supported:
+    * AseClientFactory - .NET Core 2.1+
     * AseCommand
     * AseCommandBuilder
     * AseConnection
-    * AseDataAdapter
     * AseConnectionPool
     * AseConnectionPoolManager
-    * AseParameter
-    * AseParameterCollection
+    * AseDataAdapter
     * AseDataReader
     * AseDbType
     * AseDecimal
@@ -40,6 +39,8 @@ The latest stable release of the AdoNetCore.AseClient is [available on NuGet](ht
     * AseException
     * AseInfoMessageEventArgs
     * AseInfoMessageEventHandler 
+    * AseParameter
+    * AseParameterCollection
     * AseRowUpdatedEventArgs - .NET Core 2.0+
     * AseRowUpdatedEventHandler - .NET Core 2.0+
     * AseRowUpdatingEventArgs - .NET Core 2.0+
@@ -61,11 +62,9 @@ The latest stable release of the AdoNetCore.AseClient is [available on NuGet](ht
         * AseClientPermission
         * AseClientPermissionAttribute
     * `ASE Functions` - The SAP `Sybase.Data.AseClient` provides an `AseFunctions` type filled with utility functions that aren't implemented. This type will not be supported as it doesn't do anything. Consumers should remove references to this type.
-* The following types are not yet supported:
-    * [AseClientFactory](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409534226.html) - waiting on .NET Core 2.1 for this type to be supported.
 
 * Performance equivalent to or better than that of `Sybase.Data.AseClient` provided by SAP. This is possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
-* Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1 when it is released)
+* Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1)
 * Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the `Sybase.Data.AseClient`
 
 ## Performance benchmarks

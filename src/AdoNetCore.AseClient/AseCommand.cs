@@ -27,7 +27,14 @@ namespace AdoNetCore.AseClient
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
 
-        public AseCommand(AseConnection connection)
+        internal AseCommand()
+        {
+            _connection = null; // Sucks that this is null
+            AseParameters = new AseParameterCollection();
+            NamedParameters = false;
+        }
+
+        internal AseCommand(AseConnection connection)
         {
             _connection = connection;
             AseParameters = new AseParameterCollection();
@@ -287,6 +294,7 @@ namespace AdoNetCore.AseClient
                 }
 
                 _connection = value;
+                NamedParameters = _connection?.NamedParameters ?? false;
             }
         }
 

@@ -27,16 +27,67 @@ namespace AdoNetCore.AseClient
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
 
-        internal AseCommand()
+        /// <summary>
+        /// Constructor function for an <see cref="AseCommand"/> instance.
+        /// Note: the instance will not be initialised with an AseConnection; before use this must be supplied.
+        /// </summary>
+        public AseCommand()
         {
-            _connection = null; // Sucks that this is null
             AseParameters = new AseParameterCollection();
-            NamedParameters = false;
+            NamedParameters = true;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseCommand"/> instance.
+        /// Note: the instance will not be initialised with an AseConnection; before use this must be supplied.
+        /// </summary>
+        /// <param name="commandText">The command text to execute</param>
+        public AseCommand(string commandText)
+        {
+            AseParameters = new AseParameterCollection();
+            NamedParameters = true;
+
+            CommandText = commandText;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseCommand"/> instance.
+        /// </summary>
+        /// <param name="commandText">The command text to execute</param>
+        /// <param name="connection">The connection upon which to execute</param>
+        public AseCommand(string commandText, AseConnection connection)
+        {
+            _connection = connection;
+            _transaction = connection.Transaction;
+
+            AseParameters = new AseParameterCollection();
+            NamedParameters = connection.NamedParameters;
+
+            CommandText = commandText;
+        }
+
+        /// <summary>
+        /// Constructor function for an <see cref="AseCommand"/> instance.
+        /// </summary>
+        /// <param name="commandText">The command text to execute</param>
+        /// <param name="connection">The connection upon which to execute</param>
+        /// <param name="transaction">The transaction within which to execute</param>
+        public AseCommand(string commandText, AseConnection connection, AseTransaction transaction)
+        {
+            _connection = connection;
+            _transaction = transaction;
+
+            AseParameters = new AseParameterCollection();
+            NamedParameters = connection.NamedParameters;
+
+            CommandText = commandText;
         }
 
         internal AseCommand(AseConnection connection)
         {
             _connection = connection;
+            _transaction = connection.Transaction;
+
             AseParameters = new AseParameterCollection();
             NamedParameters = connection.NamedParameters;
         }
@@ -302,6 +353,28 @@ namespace AdoNetCore.AseClient
         {
             get => Connection;
             set => Connection = (AseConnection)value;
+        }
+
+        public new AseTransaction Transaction
+        {
+            get
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                return _transaction;
+            }
+            set
+            {
+                if (_isDisposed)
+                {
+                    throw new ObjectDisposedException(nameof(AseCommand));
+                }
+
+                _transaction = value;
+            }
         }
 
         protected override DbTransaction DbTransaction

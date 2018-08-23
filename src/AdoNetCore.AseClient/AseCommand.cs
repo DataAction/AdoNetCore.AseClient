@@ -430,9 +430,11 @@ namespace AdoNetCore.AseClient
 
         protected override void Dispose(bool disposing)
         {
+            base.Dispose(disposing);
+
             if (_isDisposed)
             {
-                throw new ObjectDisposedException(nameof(AseCommand));
+                return;
             }
 
             _isDisposed = true;

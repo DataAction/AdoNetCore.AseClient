@@ -249,6 +249,18 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(2, eventCount); // 2 state changes occur while Opening a connection.
         }
 
+        [Test]
+        public void RepeatedDisposal_DoesNotThrow()
+        {
+            var mockConnectionPoolManager = InitMockConnectionPoolManager();
+
+            var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=foo;Uid=myUsername;Pwd=myPassword;", mockConnectionPoolManager);
+
+            connection.Open();
+            connection.Dispose();
+            connection.Dispose();
+        }
+
         private static IConnectionPoolManager InitMockConnectionPoolManager()
         {
             var mockConnection = new Mock<IInternalConnection>();

@@ -221,5 +221,56 @@ namespace AdoNetCore.AseClient.Tests.Unit
             mockCommandRollbackTransaction.VerifySet(x => { x.Transaction = transaction; });
             mockCommandRollbackTransaction.Verify();
         }
+
+        [Test]
+        public void RepeatedDisposal_DoesNotThrow()
+        {
+            // Arrange
+            var mockConnection = new Mock<IDbConnection>();
+            var isolationLevel = IsolationLevel.Serializable;
+
+            var mockCommandIsolationLevel = new Mock<IDbCommand>();
+            var mockCommandBeginTransaction = new Mock<IDbCommand>();
+            var mockCommandRollbackTransaction = new Mock<IDbCommand>();
+
+            mockCommandIsolationLevel
+                .SetupAllProperties()
+                .Setup(x => x.ExecuteNonQuery())
+                .Returns(0);
+
+            mockCommandBeginTransaction
+                .SetupAllProperties()
+                .Setup(x => x.ExecuteNonQuery())
+                .Returns(0);
+
+            mockCommandRollbackTransaction
+                .SetupAllProperties()
+                .Setup(x => x.ExecuteNonQuery())
+                .Returns(0);
+
+            mockConnection
+                .Setup(x => x.BeginTransaction(isolationLevel))
+                .Returns(() =>
+                {
+                    // Simulate what AseConnection.BeginTransaction() does.
+                    var t = new AseTransaction(mockConnection.Object, isolationLevel);
+                    t.Begin();
+                    return t;
+                });
+
+            mockConnection
+                .SetupSequence(x => x.CreateCommand())
+                .Returns(mockCommandIsolationLevel.Object)
+                .Returns(mockCommandBeginTransaction.Object)
+                .Returns(mockCommandRollbackTransaction.Object);
+
+
+            // Act
+            var connection = mockConnection.Object;
+            var transaction = connection.BeginTransaction(isolationLevel);
+
+            transaction.Dispose(); // Implicit rollback
+            transaction.Dispose(); // Should do nothing
+        }
     }
 }

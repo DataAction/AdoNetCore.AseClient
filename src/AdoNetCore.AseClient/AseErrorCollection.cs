@@ -62,7 +62,8 @@ namespace AdoNetCore.AseClient
             AseError result = _errors[0];
             for (int i = 1; i < this._errors.Length; i++)
             {
-                if (result.Severity < _errors[i].Severity)
+                // The '=' in '<=' means that for equal severity, we take the last error in the list. 
+                if (result.Severity <= _errors[i].Severity)
                 {
                     result = _errors[i];
                 }

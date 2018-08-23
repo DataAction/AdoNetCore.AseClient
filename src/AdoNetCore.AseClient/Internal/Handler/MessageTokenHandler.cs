@@ -8,7 +8,8 @@ namespace AdoNetCore.AseClient.Internal.Handler
 {
     internal class MessageTokenHandler : ITokenHandler
     {
-        private readonly List<EedToken> _errorTokens = new List<EedToken>();
+        private readonly List<AseError> _allErrors = new List<AseError>();
+        private bool _foundSevereError = false;
 
         public bool CanHandle(TokenType type)
         {
@@ -20,21 +21,42 @@ namespace AdoNetCore.AseClient.Internal.Handler
             switch (token)
             {
                 case EedToken t:
-                    var isBackupServer = BackupServerErrorInfo.TryParse(t.Message, out BackupServerErrorInfo backupServerErrorInfo);
 
-                    var isSevere = !isBackupServer ? t.Severity > 10 
-                        : backupServerErrorInfo.Severity != BackupServerSeverity.Informational;
+                    var isBackupServerMessage = BackupServerErrorInfo.TryParse(t.Message, out BackupServerErrorInfo backupServerErrorInfo);
+
+                    var isSevere = t.Severity > 10 || isBackupServerMessage &&  backupServerErrorInfo.Severity != BackupServerSeverity.Informational;
+
+                    if (isSevere)
+                    {
+                        this._foundSevereError = true;
+                    }
+                    
+                    _allErrors.Add(new AseError
+                    {
+                        IsError = true,
+                        IsFromServer = true,
+                        IsFromBackupServer = backupServerErrorInfo != null,
+                        BackupServerErrorInfo = backupServerErrorInfo,
+                        Message = t.Message,
+                        MessageNumber = t.MessageNumber,
+                        ProcName = t.ProcedureName,
+                        State = t.State,
+                        TranState = (int)t.TransactionStatus,
+                        Status = (int)t.Status,
+                        Severity = t.Severity,
+                        ServerName = t.ServerName,
+                        SqlState = Encoding.ASCII.GetString(t.SqlState),
+                        IsFromClient = false,
+                        IsInformation = false,
+                        IsWarning = false,
+                        LineNum = t.LineNumber
+                    });
 
                     var msgType = isSevere
                         ? "ERROR"
                         : "INFO ";
 
                     var formatted = $"{msgType} [{t.Severity}] [L:{t.LineNumber}]: {t.Message}";
-
-                    if (isSevere)
-                    {
-                        _errorTokens.Add(t);
-                    }
 
                     if (formatted.EndsWith("\n"))
                     {
@@ -52,32 +74,9 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
         public void AssertNoErrors()
         {
-            if (_errorTokens.Count > 0)
+            if (this._foundSevereError)
             {
-                var errorList = new List<AseError>();
-                foreach (var error in _errorTokens)
-                {
-                    errorList.Add(new AseError
-                    {
-                        IsError = true,
-                        IsFromServer = true,
-                        Message = error.Message,
-                        MessageNumber = error.MessageNumber,
-                        ProcName = error.ProcedureName,
-                        State = error.State,
-                        TranState = (int)error.TransactionStatus,
-                        Status = (int)error.Status,
-                        Severity = error.Severity,
-                        ServerName = error.ServerName,
-                        SqlState = Encoding.ASCII.GetString(error.SqlState),
-                        IsFromClient = false,
-                        IsInformation = false,
-                        IsWarning = false,
-                        LineNum = error.LineNumber
-                    });
-                }
-                errorList.Sort((a, b) => -1 * a.Severity.CompareTo(b.Severity));
-                throw new AseException(errorList.ToArray());
+                throw new AseException(this._allErrors.ToArray());
             }
         }
     }

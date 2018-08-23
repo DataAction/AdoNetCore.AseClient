@@ -3,8 +3,10 @@
     using System;
     using AdoNetCore.AseClient.Enum;
 
-    internal class BackupServerErrorInfo
+    public class BackupServerErrorInfo
     {
+        private BackupServerErrorInfo() { }
+
         public BackupServerErrorMajor Major { get; internal set; }
         public int Minor { get; internal set; }
         public BackupServerSeverity Severity { get; internal set; }
@@ -13,6 +15,7 @@
 
         internal static bool TryParse(string message, out BackupServerErrorInfo info)
         {
+            info = null;
             // Backup Server error messages are in this form: MMM DD YYY: Backup Server:N.N.N.N: Message Text
             // The four components of a Backup Server error message are major.minor.severity.state.
             //
@@ -22,9 +25,8 @@
             //     "Backup Server: 4.172.1.4: The value of 'allocated pages threshold' has been set to 40%.",
             //     "Backup Server: 4.41.1.1: Creating new disk file /doesnotexist/foo.",
             //     "Backup Server: 4.141.2.40: [11] The 'open' call failed for database/archive device while working on stripe device '/doesnotexist/foo' with error number 2 (No such file or directory). Refer to your operating system documentation for further details.\0"
-            info = null;
 
-            if (!message.StartsWith("Backup Server: ")) { return false; }
+            if (!message.StartsWith("Backup Server:")) { return false; }
             const string marker = ":";
             int idxFirstColon = message.IndexOf(marker) + marker.Length;
             int idxSecondColon = message.IndexOf(marker, startIndex: idxFirstColon);

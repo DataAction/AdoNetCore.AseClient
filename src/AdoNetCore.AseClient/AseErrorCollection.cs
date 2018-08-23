@@ -53,5 +53,21 @@ namespace AdoNetCore.AseClient
                 return _errors[index];
             }
         }
+
+        internal AseError GetMostSevereError()
+        {
+            if (this._errors.Length == 0) { return null; }
+            if (this._errors.Length == 1) { return _errors[0]; }
+
+            AseError result = _errors[0];
+            for (int i = 1; i < this._errors.Length; i++)
+            {
+                if (result.Severity < _errors[i].Severity)
+                {
+                    result = _errors[i];
+                }
+            }
+            return result;
+        }
     }
 }

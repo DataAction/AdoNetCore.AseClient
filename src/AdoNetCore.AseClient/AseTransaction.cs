@@ -141,9 +141,11 @@ namespace AdoNetCore.AseClient
         /// </summary>
         protected override void Dispose(bool disposing)
         {
+            base.Dispose(disposing);
+
             if (_isDisposed)
             {
-                throw new ObjectDisposedException(nameof(AseTransaction));
+                return;
             }
 
             Rollback();

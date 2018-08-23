@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Interface;
@@ -74,6 +75,12 @@ namespace AdoNetCore.AseClient.Internal
                 if (ae.InnerException is OperationCanceledException)
                 {
                     throw GetTimedOutAseException(_parameters.Pooling);
+                }
+
+                if (ae.InnerException is AseException)
+                {
+                    ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                    throw;
                 }
 
                 throw new AseException(ae.InnerException);

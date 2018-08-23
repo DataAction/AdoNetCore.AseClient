@@ -137,6 +137,11 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("No login ack found");
             }
 
+            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
+            {
+                throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
+            }
+
             ServerVersion = ackHandler.Token.ProgramVersion;
 
             Created = DateTime.UtcNow;

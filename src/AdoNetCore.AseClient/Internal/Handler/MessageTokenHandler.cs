@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -8,7 +8,9 @@ namespace AdoNetCore.AseClient.Internal.Handler
 {
     internal class MessageTokenHandler : ITokenHandler
     {
-        private readonly List<EedToken> _errorTokens = new List<EedToken>();
+        private readonly List<AseError> _allErrors = new List<AseError>();
+        private bool _foundSevereError = false;
+
         public bool CanHandle(TokenType type)
         {
             return type == TokenType.TDS_EED; //add info and error? don't think we'll be messing with capability bits related to that.
@@ -19,17 +21,38 @@ namespace AdoNetCore.AseClient.Internal.Handler
             switch (token)
             {
                 case EedToken t:
+
                     var isSevere = t.Severity > 10;
+
+                    if (isSevere)
+                    {
+                        _foundSevereError = true;
+                    }
+                    
+                    _allErrors.Add(new AseError
+                    {
+                        IsError = isSevere,
+                        IsFromServer = true,
+                        Message = t.Message,
+                        MessageNumber = t.MessageNumber,
+                        ProcName = t.ProcedureName,
+                        State = t.State,
+                        TranState = (int)t.TransactionStatus,
+                        Status = (int)t.Status,
+                        Severity = t.Severity,
+                        ServerName = t.ServerName,
+                        SqlState = Encoding.ASCII.GetString(t.SqlState),
+                        IsFromClient = false,
+                        IsInformation = false,
+                        IsWarning = false,
+                        LineNum = t.LineNumber
+                    });
+
                     var msgType = isSevere
                         ? "ERROR"
                         : "INFO ";
 
                     var formatted = $"{msgType} [{t.Severity}] [L:{t.LineNumber}]: {t.Message}";
-
-                    if (isSevere)
-                    {
-                        _errorTokens.Add(t);
-                    }
 
                     if (formatted.EndsWith("\n"))
                     {
@@ -47,32 +70,9 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
         public void AssertNoErrors()
         {
-            if (_errorTokens.Count > 0)
+            if (_foundSevereError)
             {
-                var errorList = new List<AseError>();
-                foreach (var error in _errorTokens)
-                {
-                    errorList.Add(new AseError
-                    {
-                        IsError = true,
-                        IsFromServer = true,
-                        Message = error.Message,
-                        MessageNumber = error.MessageNumber,
-                        ProcName = error.ProcedureName,
-                        State = error.State,
-                        TranState = (int)error.TransactionStatus,
-                        Status = (int)error.Status,
-                        Severity = error.Severity,
-                        ServerName = error.ServerName,
-                        SqlState = Encoding.ASCII.GetString(error.SqlState),
-                        IsFromClient = false,
-                        IsInformation = false,
-                        IsWarning = false,
-                        LineNum = error.LineNumber
-                    });
-                }
-                errorList.Sort((a, b) => -1 * a.Severity.CompareTo(b.Severity));
-                throw new AseException(errorList.ToArray());
+                throw new AseException(_allErrors.ToArray());
             }
         }
     }

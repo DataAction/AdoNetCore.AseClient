@@ -95,7 +95,6 @@ namespace AdoNetCore.AseClient
         {
             get; internal set;
         }
-        
 
         /// <summary>
         /// The error message that comes from the Adaptive Server server.

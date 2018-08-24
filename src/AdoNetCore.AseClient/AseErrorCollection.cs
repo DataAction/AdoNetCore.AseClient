@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 
 namespace AdoNetCore.AseClient
@@ -10,10 +10,13 @@ namespace AdoNetCore.AseClient
     {
         private readonly object _syncRoot = new object();
         private readonly AseError[] _errors;
+        private readonly int _indexOfMostSevereError;
+        public AseError MainError { get { return _indexOfMostSevereError == -1 ? null : _errors[_indexOfMostSevereError]; } }
 
         internal AseErrorCollection(params AseError[] errors) 
         {
             _errors = errors ?? new AseError[0];
+            _indexOfMostSevereError = GetIndexOfMostSevereError();
         }
 
         /// <summary>
@@ -52,6 +55,23 @@ namespace AdoNetCore.AseClient
             {
                 return _errors[index];
             }
+        }
+
+        internal int GetIndexOfMostSevereError()
+        {
+            if (_errors.Length == 0) { return -1; }
+            if (_errors.Length == 1) { return 0; }
+
+            int result = 0;
+            for (int i = 1; i < _errors.Length; i++)
+            {
+                // The '=' in '<=' means that for equal severity, we take the last error in the list. 
+                if (_errors[result].Severity <= _errors[i].Severity)
+                {
+                    result = i;
+                }
+            }
+            return result;
         }
     }
 }

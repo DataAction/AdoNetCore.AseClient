@@ -35,16 +35,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = new AseConnection(ConnectionStrings.BadPass))
             {
-                Assert.Throws<AseException>(() => connection.Open());
-            }
-        }
-
-        [Test]
-        public void CannotResolveServer_Failure()
-        {
-            using (var connection = new AseConnection("Data Source=myASEServer;Port=5000;Database=mydb;Uid=x;Pwd=y;"))
-            {
-                Assert.Throws<AseException>(() => connection.Open());
+                var ex = Assert.Throws<AseException>(() => connection.Open());
+                Assert.AreEqual("Login failed.\n", ex.Message);
+                Assert.AreEqual(4002, ex.Errors[0].MessageNumber);
             }
         }
 

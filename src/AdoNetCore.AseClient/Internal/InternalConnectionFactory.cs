@@ -21,9 +21,32 @@ namespace AdoNetCore.AseClient.Internal
         public Task<IInternalConnection> GetNewConnection(CancellationToken token)
         {
             Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} start");
-            Socket socket = null;
-            InternalConnection connection = null;
 
+            var socket = CreateSocket(token);
+            var connection = CreateConnection(socket, token); //will dispose socket on fail
+
+            try
+            {
+                connection.Login();
+                return Task.FromResult((IInternalConnection) connection);
+            }
+            catch (AseException)
+            {
+                connection?.Dispose();
+                socket?.Dispose();
+                throw;
+            }
+            catch(Exception ex)
+            {
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} encountered exception: {ex}");
+                connection?.Dispose();
+                socket?.Dispose();
+                throw new OperationCanceledException();
+            }
+        }
+
+        private Socket CreateSocket(CancellationToken token)
+        {
             try
             {
                 if (_endpoint == null)
@@ -31,8 +54,23 @@ namespace AdoNetCore.AseClient.Internal
                     _endpoint = CreateEndpoint(_parameters.Server, _parameters.Port, token);
                 }
 
-                socket = new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
+                return new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
+                throw;
+            }
+            catch (Exception)
+            {
+                throw new AseException("Client unable to establish a connection", 30010);
+            }
+        }
 
+        private InternalConnection CreateConnection(Socket socket, CancellationToken token)
+        {
+            try
+            {
 #if NET_FRAMEWORK
                 var connect = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, _endpoint, null);
 #else
@@ -46,27 +84,18 @@ namespace AdoNetCore.AseClient.Internal
                     throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
                 }
 
-                connection = new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
-                connection.Login();
-                return Task.FromResult((IInternalConnection)connection);
-            }
-            catch (AseException)
-            {
-                throw;
+                return new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
             }
             catch (OperationCanceledException)
             {
                 Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
-                connection?.Dispose();
                 socket?.Dispose();
                 throw;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
-                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} encountered exception: {ex}");
-                connection?.Dispose();
-                socket?.Dispose();
-                throw new OperationCanceledException();
+                socket.Dispose();
+                throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
             }
         }
 

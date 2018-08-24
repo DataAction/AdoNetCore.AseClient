@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -102,7 +102,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             using (var connection = GetConnection())
             {
                 var result = connection.ExecuteScalar<string>("select convert(text, 'Àa')");
-                Assert.AreEqual("Àa", result);
+                Assert.AreEqual("Àa\0", result);
             }
         }
 

@@ -30,15 +30,10 @@ namespace AdoNetCore.AseClient
             get; private set;
         }
 
-        public AseError MostSevereError
-        {
-            get; private set;
-        }
-
         /// <summary>
         /// This method returns the message of the most severe error.
         /// </summary>
-        public override string Message => MostSevereError == null ? string.Empty : MostSevereError.Message;
+        public override string Message => this.Errors.MainError == null ? string.Empty : this.Errors.MainError.Message;
 
         /// <summary>
         /// Constructor function for an <see cref="AseException" /> instance.
@@ -46,11 +41,10 @@ namespace AdoNetCore.AseClient
         /// <param name="message">A message describing the error.</param>
         public AseException(string message) : base(message)
         {
-            MostSevereError = new AseError
+            Errors = new AseErrorCollection(new AseError
             {
                 Message = message
-            };
-            Errors = new AseErrorCollection(MostSevereError);
+            });
         }
 
         /// <summary>
@@ -60,12 +54,11 @@ namespace AdoNetCore.AseClient
         /// <param name="errorCode">The error code identifying the error.</param>
         public AseException(string message, int errorCode) : base(message)
         {
-            MostSevereError = new AseError
+            Errors = new AseErrorCollection(new AseError
             {
                 Message = message,
                 MessageNumber = errorCode
-            };
-            Errors = new AseErrorCollection(MostSevereError);
+            });
         }
 
         /// <summary>
@@ -75,7 +68,6 @@ namespace AdoNetCore.AseClient
         public AseException(params AseError[] errors)
         {
             Errors = new AseErrorCollection(errors);
-            MostSevereError = Errors.GetMostSevereError();
         }
 
         /// <summary>
@@ -85,11 +77,10 @@ namespace AdoNetCore.AseClient
         /// <param name="inner">A deeper error that happened in the context of this error.</param>
         public AseException(string message, Exception inner) : base(message, inner)
         {
-            MostSevereError = new AseError
+            Errors = new AseErrorCollection(new AseError
             {
                 Message = message
-            };
-            Errors = new AseErrorCollection(MostSevereError);
+            });
         } 
 
         /// <summary>
@@ -100,12 +91,11 @@ namespace AdoNetCore.AseClient
         /// <param name="inner">A deeper error that happened in the context of this error.</param>
         public AseException(string message, int errorCode, Exception inner) : base(message, inner)
         {
-            MostSevereError = new AseError
+            Errors = new AseErrorCollection(new AseError
             {
                 Message = message,
                 MessageNumber = errorCode
-            };
-            Errors = new AseErrorCollection(MostSevereError);
+            });
         }
 
         /// <summary>
@@ -116,16 +106,14 @@ namespace AdoNetCore.AseClient
         public AseException(Exception inner, params AseError[] errors) : base("", inner)
         {
             Errors = new AseErrorCollection(errors);
-            MostSevereError = Errors.GetMostSevereError();
         }
 
 #if ENABLE_SYSTEMEXCEPTION
         private AseException(SerializationInfo info, StreamingContext context) : base(info, context) {
-            MostSevereError = new AseError
+            Errors = new AseErrorCollection(new AseError
             {
                 Message = ""
-            };
-            Errors = new AseErrorCollection(MostSevereError);
+            });
         }
 #endif
     }

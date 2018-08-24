@@ -10,10 +10,13 @@ namespace AdoNetCore.AseClient
     {
         private readonly object _syncRoot = new object();
         private readonly AseError[] _errors;
+        private readonly int _indexOfMostSevereError;
+        public AseError MainError { get { return _indexOfMostSevereError == -1 ? null : _errors[_indexOfMostSevereError]; } }
 
         internal AseErrorCollection(params AseError[] errors) 
         {
             _errors = errors ?? new AseError[0];
+            _indexOfMostSevereError = this.GetIndexOfMostSevereError();
         }
 
         /// <summary>
@@ -54,18 +57,18 @@ namespace AdoNetCore.AseClient
             }
         }
 
-        internal AseError GetMostSevereError()
+        internal int GetIndexOfMostSevereError()
         {
-            if (this._errors.Length == 0) { return null; }
-            if (this._errors.Length == 1) { return _errors[0]; }
+            if (this._errors.Length == 0) { return -1; }
+            if (this._errors.Length == 1) { return 0; }
 
-            AseError result = _errors[0];
+            int result = 0;
             for (int i = 1; i < this._errors.Length; i++)
             {
                 // The '=' in '<=' means that for equal severity, we take the last error in the list. 
-                if (result.Severity <= _errors[i].Severity)
+                if (_errors[result].Severity <= _errors[i].Severity)
                 {
-                    result = _errors[i];
+                    result = i;
                 }
             }
             return result;

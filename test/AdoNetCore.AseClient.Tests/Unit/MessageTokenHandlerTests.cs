@@ -87,7 +87,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 TransactionStatus = TranState.TDS_NOT_IN_TRAN
             });
             var ex = Assert.Throws<AseException>(() => handler.AssertNoErrors());
-            Assert.AreEqual(2, ex.Errors.Count);
+            Assert.AreEqual(3, ex.Errors.Count);
         }
     }
 }

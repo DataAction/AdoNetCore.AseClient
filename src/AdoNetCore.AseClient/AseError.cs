@@ -1,5 +1,4 @@
 ﻿using System;
-using AdoNetCore.AseClient.Internal.Handler;
 
 namespace AdoNetCore.AseClient
 {
@@ -97,11 +96,10 @@ namespace AdoNetCore.AseClient
             get; internal set;
         }
 
-
         /// <summary>
         /// The error message that comes from the Adaptive Server server.
         /// </summary>
-        public bool IsFromServer
+        public bool IsFromServer 
         {
             get; internal set;
         }

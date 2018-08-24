@@ -28,7 +28,8 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
         {
             using (var connection = GetConnection())
             {
-                connection.Execute("create table [dbo].[nchar_test_table] (value nvarchar(10))");
+                connection.Execute("create table [dbo].[nvarchar_test_table] (value nvarchar(10))");
+                connection.Execute("create table [dbo].[charnchar_test_table] (charDataType char(20) null, ncharDataType nchar(20) null)");
             }
         }
 
@@ -37,7 +38,8 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
         {
             using (var connection = GetConnection())
             {
-                connection.Execute("drop table [dbo].[nchar_test_table]");
+                connection.Execute("drop table [dbo].[nvarchar_test_table]");
+                connection.Execute("drop table [dbo].[charnchar_test_table]");
             }
         }
 
@@ -242,12 +244,12 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             {
                 var p = new DynamicParameters();
                 p.Add("@input", input, DbType.String);
-                connection.Execute("insert into [dbo].[nchar_test_table] (value) values (@input)", p);
+                connection.Execute("insert into [dbo].[nvarchar_test_table] (value) values (@input)", p);
             }
 
             using (var connection = GetConnection())
             {
-                Assert.AreEqual(expected, connection.QuerySingle<string>("select top 1 value from [dbo].[nchar_test_table]"));
+                Assert.AreEqual(expected, connection.QuerySingle<string>("select top 1 value from [dbo].[nvarchar_test_table]"));
             }
         }
 
@@ -295,6 +297,30 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             yield return new TestCaseData("u 200A", "test\u200A", "test\u200A");
             yield return new TestCaseData("u 3000", "\u3000", "\u3000");
             yield return new TestCaseData("u 3000", "test\u3000", "test\u3000");
+        }
+
+        [TestCaseSource(nameof(SelectCharNChar_FromTable_Cases))]
+        public void SelectCharNChar_FromTable(string charValue, string ncharValue, string charExpected, string ncharExpected)
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Execute($"insert into [dbo].[charnchar_test_table] (charDataType, ncharDataType) values ('{charValue}', N'{ncharValue}')");
+            }
+
+            using (var connection = GetConnection())
+            {
+                var charResult = connection.QuerySingle<string>("select top 1 charDataType from [dbo].[charnchar_test_table]");
+                Assert.AreEqual(charExpected, charResult);
+
+                var ncharResult = connection.QuerySingle<string>("select top 1 ncharDataType from [dbo].[charnchar_test_table]");
+                Assert.AreEqual(ncharExpected, ncharResult);
+            }
+        }
+
+        public static IEnumerable<TestCaseData> SelectCharNChar_FromTable_Cases()
+        {
+            yield return new TestCaseData("\u2000\u0020", "\u2000\u0020", "\u2002", "\u2002");
+            yield return new TestCaseData("a\u2000\u0020", "a\u2000\u0020", "a\u2002", "a\u2002");
         }
     }
 }

@@ -31,7 +31,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     
                     _allErrors.Add(new AseError
                     {
-                        IsError = true,
+                        IsError = isSevere,
                         IsFromServer = true,
                         Message = t.Message,
                         MessageNumber = t.MessageNumber,

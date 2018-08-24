@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
@@ -486,13 +487,6 @@ namespace AdoNetCore.AseClient
             return clone;
         }
 #endif
-        internal object SendableValue => Value == null
-            ? DBNull.Value
-            : Value is string && Equals(Value, string.Empty)
-                ? " "
-                : Value is byte[] bytes && bytes.Length == 0
-                    ? new byte[] {0}
-                    : Value;
-
+        internal object SendableValue => Value.AsSendableValue();
     }
 }

@@ -20,7 +20,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
     {
         private DbConnection GetConnection()
         {
-            return Activator.CreateInstance<T>().GetConnection(ConnectionStrings.Pooled);
+            return Activator.CreateInstance<T>().GetConnection(ConnectionStrings.PooledUtf8);
         }
 
         [SetUp]

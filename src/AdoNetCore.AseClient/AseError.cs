@@ -107,19 +107,6 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
-        /// The error message that comes from the Adaptive Server Backup server.
-        /// </summary>
-        public bool IsFromBackupServer
-        {
-            get; internal set;
-        }
-
-        public BackupServerErrorInfo BackupServerErrorInfo
-        {
-            get; internal set;
-        }
-
-        /// <summary>
         /// The error message that comes from Adaptive Server ADO.NET Data Provider.
         /// </summary>
         public bool IsFromClient 

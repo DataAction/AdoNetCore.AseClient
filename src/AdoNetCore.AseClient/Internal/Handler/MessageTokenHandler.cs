@@ -22,9 +22,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
             {
                 case EedToken t:
 
-                    var isBackupServerMessage = BackupServerErrorInfo.TryParse(t.Message, out BackupServerErrorInfo backupServerErrorInfo);
-
-                    var isSevere = t.Severity > 10 || isBackupServerMessage &&  backupServerErrorInfo.Severity != BackupServerSeverity.Informational;
+                    var isSevere = t.Severity > 10;
 
                     if (isSevere)
                     {
@@ -35,8 +33,6 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     {
                         IsError = true,
                         IsFromServer = true,
-                        IsFromBackupServer = backupServerErrorInfo != null,
-                        BackupServerErrorInfo = backupServerErrorInfo,
                         Message = t.Message,
                         MessageNumber = t.MessageNumber,
                         ProcName = t.ProcedureName,

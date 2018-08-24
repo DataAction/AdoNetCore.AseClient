@@ -44,110 +44,6 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
         /// <summary>
         /// From old StringTests.cs
         /// </summary>
-        [Test]
-        public void CharEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(char(3), 'Àa')");
-                Assert.AreEqual("Àa", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
-        [Test]
-        public void VarcharEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(varchar(10), 'Àa')");
-                Assert.AreEqual("Àa", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
-        [Test]
-        public void NcharEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(nchar(1), 'Àa')");
-                Assert.AreEqual("Àa", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
-        [Test]
-        public void NvarcharEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(nvarchar(10), 'Àa')");
-                Assert.AreEqual("Àa", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
-        [Test]
-        public void TextEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(text, 'Àa')");
-                Assert.AreEqual("Àa\0", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
-        [Test]
-        public void UnicharEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(unichar(2), 'Àa')");
-                Assert.AreEqual("Àa", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
-        [Test]
-        public void UnivarcharEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(univarchar(2), 'Àa')");
-                Assert.AreEqual("Àa", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
-        [Test]
-        public void UnitextEncoding_ShouldWork()
-        {
-            using (var connection = GetConnection())
-            {
-                var result = connection.ExecuteScalar<string>("select convert(unitext, 'Àa')");
-                Assert.AreEqual("Àa", result);
-            }
-        }
-
-        /// <summary>
-        /// From old StringTests.cs
-        /// </summary>
         [TestCase("select '['+@input+']'", "", "[ ]")]
         [TestCase("select @input", "", " ")]
         [TestCase("select convert(char, @input)", null, null)]
@@ -175,6 +71,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
         /// <summary>
         /// From old StringTests.cs
         /// </summary>
+        // empty/null
         [TestCase("select ''", " ")]
         [TestCase("select convert(char, '')", "                              ")]
         [TestCase("select convert(char(1), '')", " ")]
@@ -183,6 +80,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
         [TestCase("select convert(varchar(1), '')", " ")]
         [TestCase("select convert(univarchar(1), '')", " ")]
         [TestCase("select convert(nvarchar(1), '')", " ")]
+        [TestCase("select convert(text, '')", " ")]
         [TestCase("select convert(char, null)", null)]
         [TestCase("select convert(char(1), null)", null)]
         [TestCase("select convert(unichar(1), null)", null)]
@@ -190,6 +88,64 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
         [TestCase("select convert(varchar(1), null)", null)]
         [TestCase("select convert(univarchar(1), null)", null)]
         [TestCase("select convert(nvarchar(1), null)", null)]
+        [TestCase("select convert(text, null)", null)]
+
+        [TestCase("select convert(text, 'À')", "À\0", Ignore = "Appears to be the result of a bug in the SAP driver")]
+        [TestCase("select convert(text, 'Àa')", "Àa\0", Ignore = "Appears to be the result of a bug in the SAP driver")]
+        [TestCase("select convert(text, 'Àab')", "Àab\0", Ignore = "Appears to be the result of a bug in the SAP driver")]
+        [TestCase("select convert(text, 'ÀÀ')", "ÀÀ\0\0", Ignore = "Appears to be the result of a bug in the SAP driver")]
+        [TestCase("select convert(text, 'ÀÀÀ')", "ÀÀÀ\0\0\0", Ignore = "Appears to be the result of a bug in the SAP driver")]
+        [TestCase("select convert(text, 'ÀÀÀÀÀÀÀÀÀÀ')", "ÀÀÀÀÀÀÀÀÀÀ\0\0\0\0\0\0\0\0\0\0", Ignore = "Appears to be the result of a bug in the SAP driver")]
+        // ok, this is just getting ridiculous
+        [TestCase("select convert(text, 'ÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀ')", "ÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀ\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", Ignore = "Appears to be the result of a bug in the SAP driver")]
+        [TestCase("select convert(text, 'a')", "a")]
+
+        [TestCase("select convert(char(3), 'Àa')", "Àa")]
+        [TestCase("select convert(char(4), 'Àa')", "Àa ")]
+        [TestCase("select convert(char(2), 'Àa')", "À")]
+
+        [TestCase("select convert(varchar(10), 'À')", "À")]
+        [TestCase("select convert(varchar(10), 'ÀÀ')", "ÀÀ")]
+        [TestCase("select convert(varchar(10), 'Àa')", "Àa")]
+        [TestCase("select convert(varchar(10), 'Àab')", "Àab")]
+        [TestCase("select convert(varchar(10), 'ÀÀa')", "ÀÀa")]
+
+        //it looks like nchar length equates to length * 3 bytes...
+        [TestCase("select convert(nchar(1), 'À')", "À ")]
+        [TestCase("select convert(nchar(1), 'Àa')", "Àa")]
+        [TestCase("select convert(nchar(1), 'ÀÀ')", "À")]
+        [TestCase("select convert(nchar(1), 'Àa')", "Àa")]
+        [TestCase("select convert(nchar(1), 'Àab')", "Àa")]
+        [TestCase("select convert(nchar(1), 'ÀÀa')", "À")]
+        [TestCase("select convert(nchar(2), 'À')", "À    ")]
+        [TestCase("select convert(nchar(2), 'ÀÀ')", "ÀÀ  ")]
+        [TestCase("select convert(nchar(2), 'Àab')", "Àab  ")]
+        [TestCase("select convert(nchar(2), 'ÀÀa')", "ÀÀa ")]
+        [TestCase("select convert(nchar(3), 'ÀÀa')", "ÀÀa    ")]
+
+        [TestCase("select convert(nvarchar(10), 'À')", "À")]
+        [TestCase("select convert(nvarchar(10), 'a')", "a")]
+        [TestCase("select convert(nvarchar(10), 'ÀÀa')", "ÀÀa")]
+        [TestCase("select convert(nvarchar(10), 'Àaa')", "Àaa")]
+        [TestCase("select convert(nvarchar(10), 'ÀÀ')", "ÀÀ")]
+
+        [TestCase("select convert(unichar(1), 'À')", "À")]
+        [TestCase("select convert(unichar(1), 'a')", "a")]
+        [TestCase("select convert(unichar(2), 'À')", "À ")]
+        [TestCase("select convert(unichar(2), 'a')", "a ")]
+        [TestCase("select convert(unichar(2), 'ÀÀ')", "ÀÀ")]
+        [TestCase("select convert(unichar(3), 'Àa')", "Àa ")]
+        [TestCase("select convert(unichar(3), 'ÀÀa')", "ÀÀa")]
+
+        [TestCase("select convert(univarchar(10), 'À')", "À")]
+        [TestCase("select convert(univarchar(10), 'a')", "a")]
+        [TestCase("select convert(univarchar(10), 'Àa')", "Àa")]
+        [TestCase("select convert(univarchar(10), 'ÀÀ')", "ÀÀ")]
+
+        [TestCase("select convert(unitext, 'À')", "À")]
+        [TestCase("select convert(unitext, 'a')", "a")]
+        [TestCase("select convert(unitext, 'Àa')", "Àa")]
+        [TestCase("select convert(unitext, 'ÀÀ')", "ÀÀ")]
         public void Select_StringLiteral(string sql, object expected)
         {
             using (var connection = GetConnection())

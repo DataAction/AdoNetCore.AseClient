@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 
 namespace AdoNetCore.AseClient
@@ -16,7 +16,7 @@ namespace AdoNetCore.AseClient
         internal AseErrorCollection(params AseError[] errors) 
         {
             _errors = errors ?? new AseError[0];
-            _indexOfMostSevereError = this.GetIndexOfMostSevereError();
+            _indexOfMostSevereError = GetIndexOfMostSevereError();
         }
 
         /// <summary>
@@ -59,11 +59,11 @@ namespace AdoNetCore.AseClient
 
         internal int GetIndexOfMostSevereError()
         {
-            if (this._errors.Length == 0) { return -1; }
-            if (this._errors.Length == 1) { return 0; }
+            if (_errors.Length == 0) { return -1; }
+            if (_errors.Length == 1) { return 0; }
 
             int result = 0;
-            for (int i = 1; i < this._errors.Length; i++)
+            for (int i = 1; i < _errors.Length; i++)
             {
                 // The '=' in '<=' means that for equal severity, we take the last error in the list. 
                 if (_errors[result].Severity <= _errors[i].Severity)

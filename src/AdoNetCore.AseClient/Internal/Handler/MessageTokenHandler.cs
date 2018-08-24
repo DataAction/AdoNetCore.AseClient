@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
                     if (isSevere)
                     {
-                        this._foundSevereError = true;
+                        _foundSevereError = true;
                     }
                     
                     _allErrors.Add(new AseError
@@ -70,9 +70,9 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
         public void AssertNoErrors()
         {
-            if (this._foundSevereError)
+            if (_foundSevereError)
             {
-                throw new AseException(this._allErrors.ToArray());
+                throw new AseException(_allErrors.ToArray());
             }
         }
     }

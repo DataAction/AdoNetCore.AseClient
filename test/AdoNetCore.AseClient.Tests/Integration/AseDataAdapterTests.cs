@@ -1,4 +1,4 @@
-﻿#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 using System.Collections.Generic;
 using System.Data;
 using System.Text.RegularExpressions;
@@ -14,7 +14,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         public void SetUp()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(ConnectionStrings.Default))
+            using (var connnection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connnection.Open();
 
@@ -129,7 +129,7 @@ END";
         public void TearDown()
         {
             // Use SqlCommandBuilder.
-            using (var connnection = new AseConnection(ConnectionStrings.Default))
+            using (var connnection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connnection.Open();
 
@@ -156,7 +156,7 @@ END";
         [Test]
         public void AseAdapter_WithAseCommandBuilder_HasInsertUpdateDeleteCommands()
         {
-            using (var connnection = new AseConnection(ConnectionStrings.Default))
+            using (var connnection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connnection.Open();
 
@@ -200,7 +200,7 @@ END";
         [TestCaseSource(nameof(DeriveParametersTestCases))]
         public void AseCommandBuilder_DeriveParameters_SetsParametersOnCommand(string procedureName)
         {
-            using (var connnection = new AseConnection(ConnectionStrings.Default))
+            using (var connnection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connnection.Open();
 
@@ -246,7 +246,7 @@ END";
         [Test]
         public void AseAdapter_WithAseCommandBuilder_CanInsertUpdateAndDelete()
         {
-            using (var connnection = new AseConnection(ConnectionStrings.Default))
+            using (var connnection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connnection.Open();
 

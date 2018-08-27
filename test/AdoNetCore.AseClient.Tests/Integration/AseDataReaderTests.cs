@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using NUnit.Framework;
@@ -409,7 +409,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("IMAGE")]
         public void GetBytes_WithNullValue_ReturnsNull(string aseType)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
 
@@ -822,7 +822,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         private void GetHelper_WithValue_TCastSuccessfully<T>(string columnName, Func<AseDataReader, int, T> testMethod, T expectedValue)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
 
@@ -860,7 +860,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         private void GetHelper_WithValue_ThrowsException<T>(string columnName, Func<AseDataReader, int, T> testMethod, Type exceptionType)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
 
@@ -881,7 +881,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         private void GetHelper_WithNullValue_ThrowsAseException<T>(string columnName, Func<AseDataReader, int, T> testMethod)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
 
@@ -913,7 +913,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase(CommandBehavior.SingleRow, 1)]
         public void ExecuteReader_WithCommandBehavior_ReturnsTheCorrectNumberOfRows(CommandBehavior behavior, int expectedNumberOfRows)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
 
@@ -952,7 +952,7 @@ SELECT 5";
         [TestCaseSource(nameof(GetFieldType_ReturnsNonNullableType_Cases))]
         public void GetFieldType_ReturnsNonNullableType(string query, Type expected)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())

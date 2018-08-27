@@ -1,4 +1,4 @@
-﻿#if NETCOREAPP2_0
+#if NETCOREAPP2_0
 using System;
 using System.Data;
 using AdoNetCore.AseClient.Internal;
@@ -14,7 +14,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         public void SingleTable_Load_Succeeds()
         {
             Logger.Enable();
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             using (var command = connection.CreateCommand())
             {
                 connection.Open();

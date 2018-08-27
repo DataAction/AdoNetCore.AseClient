@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
@@ -9,7 +9,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void ChangeDatabase_Success()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
                 connection.ChangeDatabase("tempdb");

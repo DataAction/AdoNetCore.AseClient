@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -70,7 +70,7 @@ end";
         [SetUp]
         public void Setup()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_createProc);
                 connection.Execute(_createEchoCharProc);
@@ -138,7 +138,7 @@ end";
         [TestCase(null, null)]
         public void EchoChar_Procedure_ShouldExecute(object input, object expected)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -173,7 +173,7 @@ end";
         [TestCase(DbType.String)] //LONGBINARY:35(510)
         public void EchoString_Procedure_ShouldExecute(DbType outputType)
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -239,7 +239,7 @@ end";
         [TearDown]
         public void Teardown()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_dropProc);
                 connection.Execute(_dropEchoCharProc);

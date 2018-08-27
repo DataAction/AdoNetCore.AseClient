@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Dapper;
 using NUnit.Framework;
 
@@ -21,7 +21,7 @@ end";
         [SetUp]
         public void Setup()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_createProc);
             }
@@ -30,7 +30,7 @@ end";
         [Test]
         public void RaiserrorProcedure_ThrowsAseException()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 var ex = Assert.Throws<AseException>(() => connection.Execute("sp_test_raiseerror", commandType: CommandType.StoredProcedure));
                 var error = ex.Errors[0];
@@ -46,7 +46,7 @@ end";
         [TearDown]
         public void Teardown()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_dropProc);
             }

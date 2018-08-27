@@ -94,9 +94,9 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.IsFalse(ex.Errors[1].IsError);
             Assert.IsTrue(ex.Errors[1].IsInformation);
 
-            Assert.AreEqual(2, ex.Errors[1].Severity);
-            Assert.IsFalse(ex.Errors[1].IsError);
-            Assert.IsTrue(ex.Errors[1].IsInformation);
+            Assert.AreEqual(2, ex.Errors[2].Severity);
+            Assert.IsFalse(ex.Errors[2].IsError);
+            Assert.IsTrue(ex.Errors[2].IsInformation);
         }
     }
 }

@@ -15,7 +15,13 @@ namespace AdoNetCore.AseClient
 
         internal AseErrorCollection(params AseError[] errors)
         {
-            _errors = new List<AseError>(ArrangeErrors(errors)).ToArray();
+            _errors = new AseError[errors?.Length ?? 0];
+            var idx = 0;
+            foreach (var error in ArrangeErrors(errors))
+            {
+                _errors[idx] = error;
+                idx++;
+            }
         }
 
         /// <summary>

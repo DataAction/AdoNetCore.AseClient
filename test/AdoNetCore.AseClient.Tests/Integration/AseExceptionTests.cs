@@ -31,7 +31,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 var ex = Assert.Throws<AseException>(() => connection.Execute($"dump database {dbName} to '/doesnotexist/foo' with compression = '101'"));
                 Assert.Greater(ex.Errors.Count, 1);
                 Assert.Greater(ex.Errors[0].Severity, 10);
-                Assert.AreEqual(8009, ex.Errors[0].MessageNumber);
             }
         }
     }

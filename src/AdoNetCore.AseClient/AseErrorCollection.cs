@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace AdoNetCore.AseClient
 {
@@ -10,13 +11,11 @@ namespace AdoNetCore.AseClient
     {
         private readonly object _syncRoot = new object();
         private readonly AseError[] _errors;
-        private readonly int _indexOfMostSevereError;
-        public AseError MainError { get { return _indexOfMostSevereError == -1 ? null : _errors[_indexOfMostSevereError]; } }
+        internal AseError MainError => _errors.Length > 0 ? _errors[0] : null;
 
-        internal AseErrorCollection(params AseError[] errors) 
+        internal AseErrorCollection(params AseError[] errors)
         {
-            _errors = errors ?? new AseError[0];
-            _indexOfMostSevereError = GetIndexOfMostSevereError();
+            _errors = new List<AseError>(ArrangeErrors(errors)).ToArray();
         }
 
         /// <summary>
@@ -49,29 +48,49 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// The error at the specified index.
         /// </summary>
-        public AseError this[int index] 
-        {
-            get 
-            {
-                return _errors[index];
-            }
-        }
+        public AseError this[int index] => _errors[index];
 
-        internal int GetIndexOfMostSevereError()
+        private static int GetIndexOfMostSevereError(AseError[] errors)
         {
-            if (_errors.Length == 0) { return -1; }
-            if (_errors.Length == 1) { return 0; }
+            if (errors.Length == 0) { return -1; }
+            if (errors.Length == 1) { return 0; }
 
-            int result = 0;
-            for (int i = 1; i < _errors.Length; i++)
+            var result = 0;
+            for (var i = 1; i < errors.Length; i++)
             {
                 // The '=' in '<=' means that for equal severity, we take the last error in the list. 
-                if (_errors[result].Severity <= _errors[i].Severity)
+                if (errors[result].Severity <= errors[i].Severity)
                 {
                     result = i;
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// Return the most severe error first, and then everything else in original order
+        /// </summary>
+        private static IEnumerable<AseError> ArrangeErrors(AseError[] errors)
+        {
+            if (errors == null || errors.Length == 0)
+            {
+                yield break;
+            }
+
+            var idxMostSevere = GetIndexOfMostSevereError(errors);
+
+            if (idxMostSevere >= 0)
+            {
+                yield return errors[idxMostSevere];
+            }
+
+            for (var idxError = 0; idxError < errors.Length; idxError++)
+            {
+                if (idxError != idxMostSevere)
+                {
+                    yield return errors[idxError];
+                }
+            }
         }
     }
 }

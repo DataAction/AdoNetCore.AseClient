@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
@@ -213,11 +213,6 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public override void Close()
         {
-            if (_isDisposed)
-            {
-                throw new ObjectDisposedException(nameof(AseConnection));
-            }
-
             if (State == ConnectionState.Closed)
             {
                 return;

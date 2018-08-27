@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using AdoNetCore.AseClient.Internal;
 using Dapper;
@@ -24,7 +24,7 @@ end";
         [SetUp]
         public void Setup()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_createProc);
             }
@@ -34,7 +34,7 @@ end";
         public void Simple_Procedure_ShouldExecute()
         {
             Logger.Enable();
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 var p = new DynamicParameters();
                 p.Add("@echoChar", null, DbType.String, ParameterDirection.Output, 2);
@@ -51,7 +51,7 @@ end";
         [TearDown]
         public void Teardown()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_dropProc);
             }

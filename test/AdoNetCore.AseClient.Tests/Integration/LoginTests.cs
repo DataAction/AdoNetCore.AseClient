@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         public static IEnumerable<TestCaseData> Login_Success_Cases()
         {
-            yield return new TestCaseData(ConnectionStrings.Default);
+            yield return new TestCaseData(ConnectionStrings.Pooled);
             yield return new TestCaseData(ConnectionStrings.BigPacketSize);
         }
 

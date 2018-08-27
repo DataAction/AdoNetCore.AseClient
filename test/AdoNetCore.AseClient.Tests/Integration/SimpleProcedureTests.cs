@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Dapper;
 using NUnit.Framework;
 
@@ -14,7 +14,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [SetUp]
         public void Setup()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_createProc);
             }
@@ -23,7 +23,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void Simple_Procedure_ShouldExecute()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute("sp_test_simple", commandType: CommandType.StoredProcedure);
             }
@@ -32,7 +32,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TearDown]
         public void Teardown()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Execute(_dropProc);
             }

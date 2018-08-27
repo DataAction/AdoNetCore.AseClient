@@ -1,4 +1,4 @@
-﻿using AdoNetCore.AseClient.Internal;
+using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -15,7 +15,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void Ping_ShouldWork()
         {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
                 connection.Open();
                 Assert.IsTrue(connection.InternalConnection.Ping());

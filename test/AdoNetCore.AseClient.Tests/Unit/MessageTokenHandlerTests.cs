@@ -1,4 +1,4 @@
-﻿using AdoNetCore.AseClient.Enum;
+using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Internal.Handler;
 using AdoNetCore.AseClient.Token;
 using NUnit.Framework;
@@ -88,6 +88,15 @@ namespace AdoNetCore.AseClient.Tests.Unit
             });
             var ex = Assert.Throws<AseException>(() => handler.AssertNoErrors());
             Assert.AreEqual(3, ex.Errors.Count);
+            Assert.AreEqual(16, ex.Errors[0].Severity);
+
+            Assert.AreEqual(1, ex.Errors[1].Severity);
+            Assert.IsFalse(ex.Errors[1].IsError);
+            Assert.IsTrue(ex.Errors[1].IsInformation);
+
+            Assert.AreEqual(2, ex.Errors[2].Severity);
+            Assert.IsFalse(ex.Errors[2].IsError);
+            Assert.IsTrue(ex.Errors[2].IsInformation);
         }
     }
 }

@@ -43,7 +43,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         ServerName = t.ServerName,
                         SqlState = Encoding.ASCII.GetString(t.SqlState),
                         IsFromClient = false,
-                        IsInformation = false,
+                        IsInformation = !isSevere,
                         IsWarning = false,
                         LineNum = t.LineNumber
                     });

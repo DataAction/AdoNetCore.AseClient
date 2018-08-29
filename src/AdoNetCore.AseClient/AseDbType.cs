@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 // ReSharper disable UnusedMember.Global
 
 namespace AdoNetCore.AseClient
@@ -8,37 +8,37 @@ namespace AdoNetCore.AseClient
     /// </summary>
     public enum AseDbType
     {
-        BigInt = DbType.Int64,
-        Binary = DbType.Binary,
-        Bit = DbType.Boolean,
-        Char = DbType.AnsiStringFixedLength,
-        Date = DbType.Date,
-        DateTime = DbType.DateTime,
-        Decimal = DbType.Decimal,
-        Double = DbType.Double,
-        //Float = DbType.Single, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
-        Integer = DbType.Int32,
-        Image = DbType.Binary,
-        LongVarChar = DbType.AnsiString, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
-        Money = DbType.Currency,
-        NChar = DbType.AnsiStringFixedLength,
-        Numeric = DbType.VarNumeric,
-        NVarChar = DbType.AnsiString,
-        Real = DbType.Single,
-        SmallDateTime = DbType.DateTime,
-        SmallInt = DbType.Int16, // NOTE - this was missing from the docs: http://infocenter.sybase.com/help/topic/com.sybase.help.sdk_12.5.1.adonet/html/adonet/Asadbtype_apiref.htm
-        SmallMoney = DbType.Currency,
-        Text = DbType.AnsiString,
-        Unitext = DbType.String,
-        Time = DbType.Time,
-        TimeStamp = DbType.Binary,
-        TinyInt = DbType.Byte,
-        UniChar = DbType.StringFixedLength,
-        UniVarChar = DbType.String,
-        UnsignedBigInt = DbType.UInt64,
-        UnsignedInt = DbType.UInt32,
-        UnsignedSmallInt = DbType.UInt16,
-        VarBinary = DbType.Binary,
-        VarChar = DbType.AnsiString
+        BigDateTime = 93,
+        BigInt = -5,
+        Binary = -2,
+        Bit = -7,
+        Char = 1,
+        Date = 91,
+        DateTime = 93,
+        Decimal = 3,
+        Double = 8,
+        Integer = 4,
+        Image = -4,
+        Money = -200,
+        NChar = -204,
+        Numeric = 2,
+        NVarChar = -205,
+        Real = 7,
+        SmallDateTime = -202,
+        SmallInt = 5,
+        SmallMoney = -201,
+        Text = -1,
+        Unitext = -10,
+        Time = 92,
+        TimeStamp = -203,
+        TinyInt = -6,
+        UniChar = -8,
+        UniVarChar = -9,
+        UnsignedBigInt = -208,
+        UnsignedInt = -207,
+        UnsignedSmallInt = -206,
+        Unsupported = 0,
+        VarBinary = -3,
+        VarChar = 12
     }
 }

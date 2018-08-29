@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
@@ -301,7 +301,7 @@ namespace AdoNetCore.AseClient.Internal
                     ? AseDbType.UniVarChar
                     : AseDbType.Binary
             },
-            {TdsDataType.TDS_LONGCHAR, f => AseDbType.LongVarChar},
+            //{TdsDataType.TDS_LONGCHAR, f => AseDbType.LongVarChar},
             {TdsDataType.TDS_MONEY, f => AseDbType.Money},
             {TdsDataType.TDS_MONEYN, f => f.Length == 8 ? AseDbType.Money : AseDbType.SmallMoney},
             {TdsDataType.TDS_NUMN, f => AseDbType.Numeric},
@@ -339,6 +339,97 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             return TdsToAseMap[format.DataType](format);
+        }
+
+        private static readonly Dictionary<DbType, AseDbType> DbTypeToAseDbTypeMap = new Dictionary<DbType, AseDbType>
+        {
+            {DbType.AnsiString, AseDbType.VarChar},
+            {DbType.AnsiStringFixedLength, AseDbType.Char},
+            {DbType.Binary, AseDbType.Binary},
+            {DbType.Boolean, AseDbType.Bit},
+            {DbType.Byte, AseDbType.TinyInt},
+            {DbType.Currency, AseDbType.Money},
+            {DbType.Date, AseDbType.Date},
+            {DbType.DateTime, AseDbType.DateTime},
+            {DbType.DateTime2, AseDbType.DateTime},
+            {DbType.DateTimeOffset, AseDbType.Unsupported},
+            {DbType.Decimal, AseDbType.Decimal},
+            {DbType.Double, AseDbType.Double},
+            {DbType.Guid, AseDbType.Unsupported},
+            {DbType.Int16, AseDbType.SmallInt},
+            {DbType.Int32, AseDbType.Integer},
+            {DbType.Int64, AseDbType.BigInt},
+            {DbType.Object, AseDbType.Binary},
+            {DbType.SByte, AseDbType.Unsupported},
+            {DbType.Single, AseDbType.Real},
+            {DbType.String, AseDbType.UniVarChar},
+            {DbType.StringFixedLength, AseDbType.UniChar},
+            {DbType.Time, AseDbType.Time},
+            {DbType.UInt16, AseDbType.UnsignedSmallInt},
+            {DbType.UInt32, AseDbType.UnsignedInt},
+            {DbType.UInt64, AseDbType.UnsignedBigInt},
+            {DbType.VarNumeric, AseDbType.Numeric},
+            {DbType.Xml, AseDbType.Unsupported},
+        };
+
+        public static AseDbType GetAseDbType(DbType dbType)
+        {
+            return DbTypeToAseDbTypeMap.ContainsKey(dbType)
+                ? DbTypeToAseDbTypeMap[dbType]
+                : default(AseDbType);
+        }
+
+        private static readonly Dictionary<AseDbType, DbType> AseDbTypeToDbTypeMap = new Dictionary<AseDbType, DbType>
+        {
+            //{AseDbType.BigDateTime, DbType.DateTime}, //same value as DateTime
+            {AseDbType.BigInt, DbType.Int64},
+            {AseDbType.Binary, DbType.Binary},
+            {AseDbType.Bit, DbType.Boolean},
+            {AseDbType.Char, DbType.AnsiStringFixedLength},
+            {AseDbType.Date, DbType.Date},
+            {AseDbType.DateTime, DbType.DateTime},
+            {AseDbType.Decimal, DbType.Decimal},
+            {AseDbType.Double, DbType.Double},
+            {AseDbType.Image, DbType.Binary},
+            {AseDbType.Integer, DbType.Int32},
+            {AseDbType.Money, DbType.Currency},
+            {AseDbType.NChar, DbType.AnsiStringFixedLength},
+            {AseDbType.Numeric, DbType.VarNumeric},
+            {AseDbType.NVarChar, DbType.AnsiString},
+            {AseDbType.Real, DbType.Single},
+            {AseDbType.SmallDateTime, DbType.DateTime},
+            {AseDbType.SmallInt, DbType.Int16},
+            {AseDbType.SmallMoney, DbType.Currency},
+            {AseDbType.Text, DbType.AnsiString},
+            {AseDbType.Time, DbType.Time},
+            {AseDbType.TimeStamp, DbType.Binary},
+            {AseDbType.TinyInt, DbType.Byte},
+            {AseDbType.UniChar, DbType.StringFixedLength},
+            {AseDbType.Unitext, DbType.String},
+            {AseDbType.UniVarChar, DbType.String},
+            {AseDbType.UnsignedBigInt, DbType.UInt64},
+            {AseDbType.UnsignedInt, DbType.UInt32},
+            {AseDbType.UnsignedSmallInt, DbType.UInt16},
+            {AseDbType.Unsupported, DbType.Guid},
+            {AseDbType.VarBinary, DbType.Binary},
+            {AseDbType.VarChar, DbType.AnsiString}
+        };
+
+        public static DbType GetDbType(AseDbType aseDbType)
+        {
+            return AseDbTypeToDbTypeMap.ContainsKey(aseDbType)
+                ? AseDbTypeToDbTypeMap[aseDbType]
+                : default(DbType);
+        }
+
+        public static AseDbType CleanupAseDbType(AseDbType aseDbType)
+        {
+            if (aseDbType == AseDbType.BigDateTime)
+            {
+                return AseDbType.DateTime;
+            }
+
+            return aseDbType;
         }
     }
 }

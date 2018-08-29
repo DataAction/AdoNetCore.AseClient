@@ -34,48 +34,56 @@ namespace AdoNetCore.AseClient.Tests.Unit
             }
         }
 
-        [TestCaseSource(nameof(CreateAseParameter_WithAseDbType_HasExpectedDbType_Cases))]
-        public void CreateAseParameter_WithAseDbType_HasExpectedDbType(string aseDbType, DbType expectedDbType, string expectedAseDbType)
+        [TestCaseSource(nameof(CreateAseParameter_WithAseDbType_HasExpectedProperties_Cases))]
+        public void CreateAseParameter_WithAseDbType_HasExpectedProperties(string aseDbType, DbType expectedDbType, string expectedAseDbType, int expectedPrecision, int expectedScale)
         {
             var p = GetParameterProvider().GetParameter("@test", aseDbType);
+
+            Assert.AreEqual(0, p.Size);
+            Assert.AreEqual(ParameterDirection.Input, p.Direction);
+            Assert.AreEqual(false, p.IsNullable);
+            Assert.AreEqual(expectedPrecision, p.Precision);
+            Assert.AreEqual(expectedScale, p.Scale);
+            Assert.IsNull(p.SourceColumn);
+            Assert.AreEqual(null, p.Value);
 
             AssertParameterTypes(p, expectedDbType, expectedAseDbType);
         }
 
-        public static IEnumerable<TestCaseData> CreateAseParameter_WithAseDbType_HasExpectedDbType_Cases()
+        public static IEnumerable<TestCaseData> CreateAseParameter_WithAseDbType_HasExpectedProperties_Cases()
         {
-            yield return new TestCaseData("BigDateTime", DbType.DateTime, "DateTime");
-            yield return new TestCaseData("BigInt", DbType.Int64, "BigInt");
-            yield return new TestCaseData("Binary", DbType.Binary, "Binary");
-            yield return new TestCaseData("Bit", DbType.Boolean, "Bit");
-            yield return new TestCaseData("Char", DbType.AnsiStringFixedLength, "Char");
-            yield return new TestCaseData("Date", DbType.Date, "Date");
-            yield return new TestCaseData("DateTime", DbType.DateTime, "DateTime");
-            yield return new TestCaseData("Decimal", DbType.Decimal, "Decimal");
-            yield return new TestCaseData("Double", DbType.Double, "Double");
-            yield return new TestCaseData("Image", DbType.Binary, "Image");
-            yield return new TestCaseData("Integer", DbType.Int32, "Integer");
-            yield return new TestCaseData("Money", DbType.Currency, "Money");
-            yield return new TestCaseData("NChar", DbType.AnsiStringFixedLength, "NChar");
-            yield return new TestCaseData("Numeric", DbType.VarNumeric, "Numeric");
-            yield return new TestCaseData("NVarChar", DbType.AnsiString, "NVarChar");
-            yield return new TestCaseData("Real", DbType.Single, "Real");
-            yield return new TestCaseData("SmallDateTime", DbType.DateTime, "SmallDateTime");
-            yield return new TestCaseData("SmallInt", DbType.Int16, "SmallInt");
-            yield return new TestCaseData("SmallMoney", DbType.Currency, "SmallMoney");
-            yield return new TestCaseData("Text", DbType.AnsiString, "Text");
-            yield return new TestCaseData("Time", DbType.Time, "Time");
-            yield return new TestCaseData("TimeStamp", DbType.Binary, "TimeStamp");
-            yield return new TestCaseData("TinyInt", DbType.Byte, "TinyInt");
-            yield return new TestCaseData("UniChar", DbType.StringFixedLength, "UniChar");
-            yield return new TestCaseData("Unitext", DbType.String, "Unitext");
-            yield return new TestCaseData("UniVarChar", DbType.String, "UniVarChar");
-            yield return new TestCaseData("UnsignedBigInt", DbType.UInt64, "UnsignedBigInt");
-            yield return new TestCaseData("UnsignedInt", DbType.UInt32, "UnsignedInt");
-            yield return new TestCaseData("UnsignedSmallInt", DbType.UInt16, "UnsignedSmallInt");
-            yield return new TestCaseData("Unsupported", DbType.Guid, "Unsupported");
-            yield return new TestCaseData("VarBinary", DbType.Binary, "VarBinary");
-            yield return new TestCaseData("VarChar", DbType.AnsiString, "VarChar");
+            yield return new TestCaseData("BigDateTime", DbType.DateTime, "DateTime", 0, 0);
+            yield return new TestCaseData("BigInt", DbType.Int64, "BigInt", 0, 0);
+            yield return new TestCaseData("Binary", DbType.Binary, "Binary", 0, 0);
+            yield return new TestCaseData("Bit", DbType.Boolean, "Bit", 0, 0);
+            yield return new TestCaseData("Char", DbType.AnsiStringFixedLength, "Char", 0, 0);
+            yield return new TestCaseData("Date", DbType.Date, "Date", 0, 0);
+            yield return new TestCaseData("DateTime", DbType.DateTime, "DateTime", 0, 0);
+            yield return new TestCaseData("Decimal", DbType.Decimal, "Decimal", 0, 0);
+            yield return new TestCaseData("Double", DbType.Double, "Double", 0, 0);
+            yield return new TestCaseData("Image", DbType.Binary, "Image", 0, 0);
+            yield return new TestCaseData("Integer", DbType.Int32, "Integer", 0, 0);
+            yield return new TestCaseData("Money", DbType.Currency, "Money", 20, 4);
+            yield return new TestCaseData("NChar", DbType.AnsiStringFixedLength, "NChar", 0, 0);
+            yield return new TestCaseData("Numeric", DbType.VarNumeric, "Numeric", 0, 0);
+            yield return new TestCaseData("NVarChar", DbType.AnsiString, "NVarChar", 0, 0);
+            yield return new TestCaseData("Real", DbType.Single, "Real", 0, 0);
+            yield return new TestCaseData("SmallDateTime", DbType.DateTime, "SmallDateTime", 0, 0);
+            yield return new TestCaseData("SmallInt", DbType.Int16, "SmallInt", 0, 0);
+            yield return new TestCaseData("SmallMoney", DbType.Currency, "SmallMoney", 12, 4);
+            yield return new TestCaseData("Text", DbType.AnsiString, "Text", 0, 0);
+            yield return new TestCaseData("Time", DbType.Time, "Time", 0, 0);
+            yield return new TestCaseData("TimeStamp", DbType.Binary, "TimeStamp", 0, 0);
+            yield return new TestCaseData("TinyInt", DbType.Byte, "TinyInt", 0, 0);
+            yield return new TestCaseData("UniChar", DbType.StringFixedLength, "UniChar", 0, 0);
+            yield return new TestCaseData("Unitext", DbType.String, "Unitext", 0, 0);
+            yield return new TestCaseData("UniVarChar", DbType.String, "UniVarChar", 0, 0);
+            yield return new TestCaseData("UnsignedBigInt", DbType.UInt64, "UnsignedBigInt", 0, 0);
+            yield return new TestCaseData("UnsignedInt", DbType.UInt32, "UnsignedInt", 0, 0);
+            yield return new TestCaseData("UnsignedSmallInt", DbType.UInt16, "UnsignedSmallInt", 0, 0);
+            yield return new TestCaseData("Unsupported", DbType.Guid, "Unsupported", 0, 0);
+            yield return new TestCaseData("VarBinary", DbType.Binary, "VarBinary", 0, 0);
+            yield return new TestCaseData("VarChar", DbType.AnsiString, "VarChar", 0, 0);
         }
 
         [TestCaseSource(nameof(CreateAseParameter_WithDbType_HasExpectedAseDbType_Cases))]
@@ -83,6 +91,14 @@ namespace AdoNetCore.AseClient.Tests.Unit
         {
             var p = GetParameterProvider().GetParameter();
             p.DbType = dbType;
+            
+            Assert.AreEqual(0, p.Size);
+            Assert.AreEqual(ParameterDirection.Input, p.Direction);
+            Assert.AreEqual(false, p.IsNullable);
+            Assert.AreEqual(0, p.Precision);
+            Assert.AreEqual(0, p.Scale);
+            Assert.IsNull(p.SourceColumn);
+            Assert.AreEqual(null, p.Value);
 
             AssertParameterTypes(p, expectedDbType, expectedAseDbType);
         }
@@ -123,7 +139,6 @@ namespace AdoNetCore.AseClient.Tests.Unit
         {
             var p = GetParameterProvider().GetParameter("@test", value);
 
-            Assert.AreEqual(DbType.Guid, p.DbType);
             Assert.AreEqual(0, p.Size);
             Assert.AreEqual(ParameterDirection.Input, p.Direction);
             Assert.AreEqual(false, p.IsNullable);
@@ -132,16 +147,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.IsNull(p.SourceColumn);
             Assert.AreEqual(value, p.Value);
 
-#if NET_FRAMEWORK
-            if (p is Sybase.Data.AseClient.AseParameter pSap)
-            {
-                Assert.AreEqual("Unsupported", pSap.AseDbType.ToString());
-            }
-#endif
-            if (p is AseParameter pCore)
-            {
-                Assert.AreEqual("Unsupported", pCore.AseDbType.ToString());
-            }
+            AssertParameterTypes(p, DbType.Guid, "Unsupported");
         }
 
         public static IEnumerable<TestCaseData> CreateAseParameter_WithValue_Cases()

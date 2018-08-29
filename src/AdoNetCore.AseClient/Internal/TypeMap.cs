@@ -301,7 +301,7 @@ namespace AdoNetCore.AseClient.Internal
                     ? AseDbType.UniVarChar
                     : AseDbType.Binary
             },
-            //{TdsDataType.TDS_LONGCHAR, f => AseDbType.LongVarChar},
+            {TdsDataType.TDS_LONGCHAR, f => AseDbType.VarChar},
             {TdsDataType.TDS_MONEY, f => AseDbType.Money},
             {TdsDataType.TDS_MONEYN, f => f.Length == 8 ? AseDbType.Money : AseDbType.SmallMoney},
             {TdsDataType.TDS_NUMN, f => AseDbType.Numeric},
@@ -360,7 +360,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Int32, AseDbType.Integer},
             {DbType.Int64, AseDbType.BigInt},
             {DbType.Object, AseDbType.Binary},
-            {DbType.SByte, AseDbType.Unsupported},
+            {DbType.SByte, AseDbType.SmallInt}, //Was Unsupported
             {DbType.Single, AseDbType.Real},
             {DbType.String, AseDbType.UniVarChar},
             {DbType.StringFixedLength, AseDbType.UniChar},

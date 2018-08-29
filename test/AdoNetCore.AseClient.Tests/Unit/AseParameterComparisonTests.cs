@@ -34,6 +34,22 @@ namespace AdoNetCore.AseClient.Tests.Unit
             }
         }
 
+        private void AssertDifferingParameterTypes(DbParameter p, DbType expectedDbTypeCore, string expectedAseDbTypeCore, DbType expectedDbTypeSap, string expectedAseDbTypeSap)
+        {
+#if NET_FRAMEWORK
+            if (p is Sybase.Data.AseClient.AseParameter pSap)
+            {
+                Assert.AreEqual(expectedDbTypeSap, p.DbType);
+                Assert.AreEqual(expectedAseDbTypeSap, pSap.AseDbType.ToString());
+            }
+#endif
+            if (p is AseParameter pCore)
+            {
+                Assert.AreEqual(expectedDbTypeCore, p.DbType);
+                Assert.AreEqual(expectedAseDbTypeCore, pCore.AseDbType.ToString());
+            }
+        }
+
         [TestCaseSource(nameof(CreateAseParameter_WithAseDbType_HasExpectedProperties_Cases))]
         public void CreateAseParameter_WithAseDbType_HasExpectedProperties(string aseDbType, DbType expectedDbType, string expectedAseDbType, int expectedPrecision, int expectedScale)
         {
@@ -103,6 +119,23 @@ namespace AdoNetCore.AseClient.Tests.Unit
             AssertParameterTypes(p, expectedDbType, expectedAseDbType);
         }
 
+        [Test]
+        public void CreateAseParameter_WithDbType_HasExpectedAseDbType_SpecialCase_SByte()
+        {
+            var p = GetParameterProvider().GetParameter();
+            p.DbType = DbType.SByte;
+            
+            Assert.AreEqual(0, p.Size);
+            Assert.AreEqual(ParameterDirection.Input, p.Direction);
+            Assert.AreEqual(false, p.IsNullable);
+            Assert.AreEqual(0, p.Precision);
+            Assert.AreEqual(0, p.Scale);
+            Assert.IsNull(p.SourceColumn);
+            Assert.AreEqual(null, p.Value);
+
+            AssertDifferingParameterTypes(p, DbType.Int16, AseDbType.SmallInt.ToString(), DbType.Guid, AseDbType.Unsupported.ToString());
+        }
+
         public static IEnumerable<TestCaseData> CreateAseParameter_WithDbType_HasExpectedAseDbType_Cases()
         {
             yield return new TestCaseData(DbType.AnsiString, AseDbType.VarChar.ToString(), DbType.AnsiString);
@@ -122,7 +155,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
             yield return new TestCaseData(DbType.Int32, AseDbType.Integer.ToString(), DbType.Int32);
             yield return new TestCaseData(DbType.Int64, AseDbType.BigInt.ToString(), DbType.Int64);
             yield return new TestCaseData(DbType.Object, AseDbType.Binary.ToString(), DbType.Binary);
-            yield return new TestCaseData(DbType.SByte, AseDbType.Unsupported.ToString(), DbType.Guid); //DbType.Guid seems to be used as the "Unsupported" type
+            //yield return new TestCaseData(DbType.SByte, AseDbType.SmallInt.ToString(), DbType.Int16); //Technically this should be Unsupported/Guid, but you can actually represent the value in a short just fine.
+            //yield return new TestCaseData(DbType.SByte, AseDbType.Unsupported.ToString(), DbType.Guid); //DbType.Guid seems to be used as the "Unsupported" type
             yield return new TestCaseData(DbType.Single, AseDbType.Real.ToString(), DbType.Single);
             yield return new TestCaseData(DbType.String, AseDbType.UniVarChar.ToString(), DbType.String);
             yield return new TestCaseData(DbType.StringFixedLength, AseDbType.UniChar.ToString(), DbType.StringFixedLength);

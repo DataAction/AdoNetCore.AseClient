@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,23 +9,29 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueWriter
     {
-        private static readonly Dictionary<Type, Dictionary<Type, Func<object, object>>> CastMap = new Dictionary<Type, Dictionary<Type, Func<object, object>>>
+        private static readonly Dictionary<Type, Dictionary<Type, Func<object, Encoding, object>>> CastMap = new Dictionary<Type, Dictionary<Type, Func<object, Encoding, object>>>
         {
             {
-                typeof(Guid), new Dictionary<Type, Func<object, object>>
+                typeof(Guid), new Dictionary<Type, Func<object, Encoding, object>>
                 {
-                    {typeof(byte[]), o => ((Guid) o).ToByteArray()}
+                    {typeof(byte[]), (o, _) => ((Guid) o).ToByteArray()}
                 }
             },
             {
-                typeof(DateTime), new Dictionary<Type, Func< object, object>>
+                typeof(DateTime), new Dictionary<Type, Func<object, Encoding, object>>
                 {
-                    {typeof(TimeSpan), o => ((DateTime)o).TimeOfDay}
+                    {typeof(TimeSpan), (o, _) => ((DateTime) o).TimeOfDay}
+                }
+            },
+            {
+                typeof(string), new Dictionary<Type, Func<object, Encoding, object>>
+                {
+                    {typeof(byte[]), (o, e) => e.GetBytes((string) o)}
                 }
             }
         };
 
-        private static T Cast<T>(object value, FormatItem format)
+        private static T Cast<T>(object value, FormatItem format, Encoding enc)
         {
             try
             {
@@ -38,7 +44,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
 
                 return (T)(CastMap.ContainsKey(tFrom) && CastMap[tFrom].ContainsKey(tTo)
-                    ? CastMap[tFrom][tTo](value)
+                    ? CastMap[tFrom][tTo](value, enc)
                     : Convert.ChangeType(value, tTo));
             }
             catch (InvalidCastException)
@@ -63,26 +69,26 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_INT1:
-                    stream.WriteByte(Cast<byte>(value, format));
+                    stream.WriteByte(Cast<byte>(value, format, enc));
                     break;
                 //no TDS_SINT1, we will transmit as an INTN(2)
                 case TdsDataType.TDS_INT2:
-                    stream.WriteShort(Cast<short>(value, format));
+                    stream.WriteShort(Cast<short>(value, format, enc));
                     break;
                 case TdsDataType.TDS_UINT2:
-                    stream.WriteUShort(Cast<ushort>(value, format));
+                    stream.WriteUShort(Cast<ushort>(value, format, enc));
                     break;
                 case TdsDataType.TDS_INT4:
-                    stream.WriteInt(Cast<int>(value, format));
+                    stream.WriteInt(Cast<int>(value, format, enc));
                     break;
                 case TdsDataType.TDS_UINT4:
-                    stream.WriteUInt(Cast<uint>(value, format));
+                    stream.WriteUInt(Cast<uint>(value, format, enc));
                     break;
                 case TdsDataType.TDS_INT8:
-                    stream.WriteLong(Cast<long>(value, format));
+                    stream.WriteLong(Cast<long>(value, format, enc));
                     break;
                 case TdsDataType.TDS_UINT8:
-                    stream.WriteULong(Cast<ulong>(value, format));
+                    stream.WriteULong(Cast<ulong>(value, format, enc));
                     break;
                 case TdsDataType.TDS_INTN:
                     switch (value)
@@ -139,10 +145,10 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     break;
                 case TdsDataType.TDS_FLT4:
-                    stream.WriteFloat(Cast<float>(value, format));
+                    stream.WriteFloat(Cast<float>(value, format, enc));
                     break;
                 case TdsDataType.TDS_FLT8:
-                    stream.WriteDouble(Cast<double>(value, format));
+                    stream.WriteDouble(Cast<double>(value, format, enc));
                     break;
                 case TdsDataType.TDS_FLTN:
                     switch (value)
@@ -163,20 +169,20 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_VARCHAR:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteBytePrefixedString(Cast<string>(value, format), enc);
+                        stream.WriteBytePrefixedString(Cast<string>(value, format, enc), enc);
                     }
                     break;
                 case TdsDataType.TDS_LONGCHAR:
                     if (!stream.TryWriteIntPrefixedNull(value))
                     {
-                        stream.WriteIntPrefixedString(Cast<string>(value, format), enc);
+                        stream.WriteIntPrefixedString(Cast<string>(value, format, enc), enc);
                     }
                     break;
                 case TdsDataType.TDS_VARBINARY:
                 case TdsDataType.TDS_BINARY:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteBytePrefixedByteArray(Cast<byte[]>(value, format));
+                        stream.WriteBytePrefixedByteArray(Cast<byte[]>(value, format, enc));
                     }
                     break;
                 case TdsDataType.TDS_LONGBINARY:
@@ -212,42 +218,42 @@ namespace AdoNetCore.AseClient.Internal
                                 stream.WriteDecimal(ad);
                                 break;
                             default:
-                                stream.WriteDecimal(Cast<decimal>(value, format));
+                                stream.WriteDecimal(Cast<decimal>(value, format, enc));
                                 break;
                         }
                     }
                     break;
                 case TdsDataType.TDS_DATETIME:
-                    stream.WriteIntPartDateTime(Cast<DateTime>(value, format));
+                    stream.WriteIntPartDateTime(Cast<DateTime>(value, format, enc));
                     break;
                 case TdsDataType.TDS_DATETIMEN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteIntPartDateTime(Cast<DateTime>(value, format));
+                        stream.WriteIntPartDateTime(Cast<DateTime>(value, format, enc));
                     }
                     break;
                 case TdsDataType.TDS_DATE:
-                    stream.WriteDate(Cast<DateTime>(value, format));
+                    stream.WriteDate(Cast<DateTime>(value, format, enc));
                     break;
                 case TdsDataType.TDS_DATEN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteDate(Cast<DateTime>(value, format));
+                        stream.WriteDate(Cast<DateTime>(value, format, enc));
                     }
                     break;
                 case TdsDataType.TDS_TIME:
-                    stream.WriteTime(Cast<TimeSpan>(value, format));
+                    stream.WriteTime(Cast<TimeSpan>(value, format, enc));
                     break;
                 case TdsDataType.TDS_TIMEN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteTime(Cast<TimeSpan>(value, format));
+                        stream.WriteTime(Cast<TimeSpan>(value, format, enc));
                     }
                     break;
                 case TdsDataType.TDS_MONEYN:
                     if (!stream.TryWriteBytePrefixedNull(value))
                     {
-                        stream.WriteMoney(Cast<decimal>(value, format));
+                        stream.WriteMoney(Cast<decimal>(value, format, enc));
                     }
                     break;
                 default:

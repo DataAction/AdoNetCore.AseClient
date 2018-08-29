@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -1325,18 +1325,6 @@ select (@a * @b)/100").First();
                     Assert.AreEqual(expected, reader.GetGuid(0));
                 }
             }
-        }
-
-        [Test]
-        public void SelectUnsupportedType_Parameter_ShouldThrowNotSupportedException()
-        {
-            using (var connection = GetConnection())
-            {
-                var p = new DynamicParameters();
-                p.Add("@expected", null, DbType.Object);
-                Assert.Throws<NotSupportedException>(() => connection.Query("select @expected", p));
-            }
-
         }
     }
 }

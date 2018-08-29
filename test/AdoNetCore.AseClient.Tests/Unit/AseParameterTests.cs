@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Unit
@@ -97,7 +97,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var parameter = new AseParameter(parameterName, value);
 
             Assert.AreEqual(parameterName, parameter.ParameterName);
-            Assert.AreEqual(AseDbType.NVarChar, parameter.AseDbType);
+            Assert.AreEqual(AseDbType.Unsupported, parameter.AseDbType);
             Assert.AreEqual(0, parameter.Size);
             Assert.AreEqual(ParameterDirection.Input, parameter.Direction);
             Assert.AreEqual(false, parameter.IsNullable);

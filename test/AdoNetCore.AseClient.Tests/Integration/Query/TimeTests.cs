@@ -122,7 +122,6 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             yield return new TestCaseData(new DateTime(1900, 01, 01, 14, 44, 33, 233), new DateTime(1900, 01, 01, 14, 44, 33, 233));
             yield return new TestCaseData(new DateTime(1900, 01, 01, 22, 44, 33, 0), new DateTime(1900, 01, 01, 22, 44, 33, 0));
             yield return new TestCaseData(new DateTime(1900, 01, 01, 23, 59, 59, 996), new DateTime(1900, 01, 01, 23, 59, 59, 996));
-            yield return new TestCaseData(new DateTime(1900, 01, 01, 23, 59, 59, 997), new DateTime(1900, 01, 01, 23, 59, 59, 997));
             yield return new TestCaseData(new DateTime(1900, 01, 01, 9, 44, 33, 886), new DateTime(1900, 01, 01, 9, 44, 33, 886));
 
             if (typeof(T) == typeof(CoreFxConnectionProvider))

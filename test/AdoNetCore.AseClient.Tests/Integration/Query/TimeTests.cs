@@ -48,7 +48,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             yield return new TestCaseData("select convert(time, null)", null);
             yield return new TestCaseData("select convert(time, '12:12:12')", new DateTime(1900, 01, 01, 12, 12, 12));
             yield return new TestCaseData("select convert(time, '00:00:00')", new DateTime(1900, 01, 01, 0, 0, 0, 0));
-            yield return new TestCaseData("select convert(time, '23:59:59.997')", new DateTime(1900, 01, 01, 23, 59, 59, 997));
+            yield return new TestCaseData("select convert(time, '23:59:59.997')", new DateTime(1900, 01, 01, 23, 59, 59, 996));
         }
 
         
@@ -69,7 +69,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
 #if NET_FRAMEWORK
                     if (reader is Sybase.Data.AseClient.AseDataReader readerSap)
                     {
-                        Assert.AreEqual(new TimeSpan(12, 12, 12), readerSap.GetTimeSpan(0));
+                        Assert.Throws<NotSupportedException>(() => readerSap.GetTimeSpan(0));
                     }
 #endif
                     if (reader is AseDataReader readerCore)

@@ -48,11 +48,8 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
                 p.Add("@date_field", value, DbType.Date);
                 connection.Execute("insert into [dbo].[insert_date_tests] (date_field) values (@date_field)", p);
             }
-
-            using (var connection = GetConnection())
-            {
-                Assert.AreEqual(value, connection.QuerySingle<DateTime?>("select top 1 date_field from [dbo].[insert_date_tests]"));
-            }
+            
+            DateTimeTestHelper.Insert_Parameter_VerifyResult(GetConnection, "insert_date_tests", "date_field", value);
         }
 
         public static IEnumerable<TestCaseData> Insert_Parameter_Cases()
@@ -63,6 +60,39 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
             yield return new TestCaseData(new DateTime(2123, 11, 23));
             yield return new TestCaseData(new DateTime(3210, 11, 23));
             yield return new TestCaseData(new DateTime(9999, 12, 31));
+        }
+
+        [TestCaseSource(nameof(Insert_Parameter_ExecuteScalar_AseDbType_Cases))]
+        public void Insert_Parameter_ExecuteScalar_AseDbType(DateTime? value, string aseDbType, DateTime? expected)
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "insert into [dbo].[insert_date_tests] (date_field) values (@date_field)";
+                    var p = command.CreateParameter();
+                    DateTimeTestHelper.SetAseDbType(p, aseDbType);
+                    p.ParameterName = "@date_field";
+                    p.Value = (object)value ?? DBNull.Value;
+                    command.Parameters.Add(p);
+                    command.ExecuteNonQuery();
+                }
+            }
+
+            DateTimeTestHelper.Insert_Parameter_VerifyResult(GetConnection, "insert_date_tests", "date_field", expected);
+        }
+
+        public static IEnumerable<TestCaseData> Insert_Parameter_ExecuteScalar_AseDbType_Cases()
+        {
+            foreach (var testValue in DateTimeTestHelper.TestValues)
+            {
+                yield return new TestCaseData(testValue, "Date", testValue?.Date);
+                yield return new TestCaseData(testValue, "DateTime", testValue?.Date);
+                yield return new TestCaseData(testValue, "SmallDateTime", testValue?.Date);
+                yield return new TestCaseData(testValue, "BigDateTime", testValue?.Date);
+                yield return new TestCaseData(testValue, "Time", testValue?.Date);
+            }
         }
     }
 }

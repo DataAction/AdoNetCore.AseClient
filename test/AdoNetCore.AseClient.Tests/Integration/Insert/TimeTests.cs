@@ -28,6 +28,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
                 connection.Execute("create table [dbo].[insert_time_tests] (time_field time null)");
             }
         }
+
         [TearDown]
         public void TearDown()
         {
@@ -36,6 +37,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
                 connection.Execute("drop table [dbo].[insert_time_tests]");
             }
         }
+
         [TestCaseSource(nameof(Insert_Parameter_Cases))]
         public void Insert_Parameter_Dapper(DateTime? value)
         {
@@ -45,11 +47,31 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
                 p.Add("@time_field", value, DbType.Time);
                 connection.Execute("insert into [dbo].[insert_time_tests] (time_field) values (@time_field)", p);
             }
+
+            DateTimeTestHelper.Insert_Parameter_VerifyResult(GetConnection, "insert_time_tests", "time_field", value);
+        }
+
+        [TestCaseSource(nameof(Insert_Parameter_ExecuteScalar_AseDbType_Cases))]
+        public void Insert_Parameter_ExecuteScalar_AseDbType(DateTime? value, string aseDbType, DateTime? expected)
+        {
             using (var connection = GetConnection())
             {
-                Assert.AreEqual(value, connection.QuerySingle<DateTime?>("select top 1 time_field from [dbo].[insert_time_tests]"));
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "insert into [dbo].[insert_time_tests] (time_field) values (@time_field)";
+                    var p = command.CreateParameter();
+                    DateTimeTestHelper.SetAseDbType(p, aseDbType);
+                    p.ParameterName = "@time_field";
+                    p.Value = (object)value ?? DBNull.Value;
+                    command.Parameters.Add(p);
+                    command.ExecuteNonQuery();
+                }
             }
+
+            DateTimeTestHelper.Insert_Parameter_VerifyResult(GetConnection, "insert_time_tests", "time_field", expected);
         }
+
         public static IEnumerable<TestCaseData> Insert_Parameter_Cases()
         {
             yield return new TestCaseData(null);
@@ -61,6 +83,29 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
             yield return new TestCaseData(new DateTime(1900, 01, 01, 23, 59, 59, 996));
             yield return new TestCaseData(new DateTime(1900, 01, 01, 23, 59, 59, 996));
             yield return new TestCaseData(new DateTime(1900, 01, 01, 9, 44, 33, 886));
+        }
+
+        public static IEnumerable<TestCaseData> Insert_Parameter_ExecuteScalar_AseDbType_Cases()
+        {
+            foreach (var testValue in DateTimeTestHelper.TestValues)
+            {
+                //yield return new TestCaseData(testValue, "Date", GenerateExpected(testValue)); //Operand type clash: DATE is incompatible with TIME
+                yield return new TestCaseData(testValue, "DateTime", GenerateExpected(testValue));
+                yield return new TestCaseData(testValue, "SmallDateTime", GenerateExpected(testValue));
+                yield return new TestCaseData(testValue, "BigDateTime", GenerateExpected(testValue));
+                yield return new TestCaseData(testValue, "Time", GenerateExpected(testValue));
+            }
+        }
+
+        private static DateTime? GenerateExpected(DateTime? value)
+        {
+            if (!value.HasValue)
+            {
+                return null;
+            }
+
+            var time = value.Value.TimeOfDay;
+            return new DateTime(1900, 01, 01, time.Hours, time.Minutes, time.Seconds, time.Milliseconds);
         }
     }
 }

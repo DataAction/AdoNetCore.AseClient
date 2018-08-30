@@ -6,7 +6,7 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ParameterValueExtensions
     {
-        internal static object AsSendableValue(this object value)
+        internal static object AsSendableValue(this object value, AseDbType aseDbType)
         {
             if (value == null)
             {
@@ -20,7 +20,7 @@ namespace AdoNetCore.AseClient.Internal
                 case char c:
                     return c.AsSendable();
                 case byte[] b:
-                    return b.AsSendable();
+                    return b.AsSendable(aseDbType);
                 default:
                     return value;
             }
@@ -53,9 +53,9 @@ namespace AdoNetCore.AseClient.Internal
                 : value;
         }
 
-        private static byte[] AsSendable(this byte[] value)
+        private static byte[] AsSendable(this byte[] value, AseDbType aseDbType)
         {
-            return value.Length == 0
+            return value.Length == 0 && aseDbType != AseDbType.Image
                 ? new byte[] { 0 }
                 : value;
         }

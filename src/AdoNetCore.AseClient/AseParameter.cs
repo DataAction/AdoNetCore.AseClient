@@ -483,6 +483,6 @@ namespace AdoNetCore.AseClient
             return clone;
         }
 #endif
-        internal object SendableValue => Value.AsSendableValue();
+        internal object SendableValue => Value.AsSendableValue(_type);
     }
 }

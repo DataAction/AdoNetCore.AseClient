@@ -544,7 +544,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
             GetHelper_WithNullValue_ThrowsAseException(aseType, (reader, ordinal) => reader.GetDateTime(ordinal));
         }
 
-        [TestCase("TIME", "23:59:59.997")]
+        [TestCase("TIME", "23:59:59.996")]
         [TestCase("BIGTIME", "11:59:59.999999 PM", Ignore = "true", IgnoreReason = "BIGTIME is not supported yet")]
         public void GetTimeSpan_WithValue_CastSuccessfully(string aseType, string expectedTimeSpan)
         {

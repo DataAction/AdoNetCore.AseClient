@@ -15,7 +15,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             {
                 ms.WriteBigDateTime(value);
                 ms.Seek(0, SeekOrigin.Begin);
-                Assert.AreEqual(BitConverter.ToInt64(expected, 0), BitConverter.ToInt64(ms.ToArray(), 0));
+                Assert.AreEqual(BitConverter.ToInt64(expected, 0), BitConverter.ToInt64(ms.ToArray(), 1));
             }
         }
 

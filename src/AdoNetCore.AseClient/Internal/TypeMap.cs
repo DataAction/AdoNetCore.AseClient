@@ -34,7 +34,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Double, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
             {DbType.DateTime, (value, length) => TdsDataType.TDS_BIGDATETIMEN},
             {DbType.Date, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATEN : TdsDataType.TDS_DATE},
-            {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN : TdsDataType.TDS_TIME}
+            {DbType.Time, (value, length) => TdsDataType.TDS_BIGDATETIMEN}
         };
 
         private static readonly Dictionary<Type, Func<object, int, TdsDataType>> NetTypeToTdsMap = new Dictionary<Type, Func<object, int, TdsDataType>>

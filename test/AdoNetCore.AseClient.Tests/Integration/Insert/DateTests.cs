@@ -90,7 +90,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
                 yield return new TestCaseData(testValue, "DateTime", testValue?.Date);
                 yield return new TestCaseData(testValue, "SmallDateTime", testValue?.Date);
                 yield return new TestCaseData(testValue, "BigDateTime", testValue?.Date);
-                yield return new TestCaseData(testValue, "Time", testValue?.Date);
+                yield return new TestCaseData(testValue, "Time", testValue?.Date); // reference driver appears to send these as BIGDATETIMEN rather than TIME type, so the response value has the same date part.
             }
         }
     }

@@ -141,7 +141,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void WriteIntPartDateTime(this Stream stream, DateTime value)
         {
-            var span = value - Constants.Sql.Epoch;
+            var span = value - Constants.Sql.RegularDateTime.Epoch;
             var day = span.Days;
             var ticks = span.Ticks - day * TimeSpan.TicksPerDay;
             if (ticks < 0L)
@@ -149,17 +149,17 @@ namespace AdoNetCore.AseClient.Internal
                 day--;
                 ticks += TimeSpan.TicksPerDay;
             }
-            var time = (int)((double)ticks / TimeSpan.TicksPerMillisecond * Constants.Sql.TicksPerMillisecond + 0.5);
+            var time = (int)((double)ticks / TimeSpan.TicksPerMillisecond * Constants.Sql.RegularDateTime.TicksPerMillisecond + 0.5);
             stream.WriteInt(day);
             stream.WriteInt(time);
         }
 
         public static void WriteBigDateTime(this Stream stream, DateTime value)
         {
-            var timeSinceEpoch = value - Constants.Sql.BigEpoch;
+            var timeSinceEpoch = value - Constants.Sql.BigDateTime.Epoch;
             var msSinceEpoch = (long) timeSinceEpoch.TotalMilliseconds;
             var usSinceEpoch = msSinceEpoch * 1000;
-            var usSinceYearZero = usSinceEpoch + Constants.Sql.BigEpochMicroSeconds;
+            var usSinceYearZero = usSinceEpoch + Constants.Sql.BigDateTime.EpochMicroSeconds;
 
             stream.WriteByte(8); // length
             stream.WriteLong(usSinceYearZero);
@@ -167,7 +167,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void WriteDate(this Stream stream, DateTime value)
         {
-            var span = value - Constants.Sql.Epoch;
+            var span = value - Constants.Sql.RegularDateTime.Epoch;
             var day = span.Days;
             if (span.Ticks - day * TimeSpan.TicksPerDay < 0L)
             {
@@ -178,7 +178,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void WriteTime(this Stream stream, TimeSpan value)
         {
-            var time = (int)((double)value.Ticks / TimeSpan.TicksPerMillisecond * Constants.Sql.TicksPerMillisecond + 0.5);
+            var time = (int)((double)value.Ticks / TimeSpan.TicksPerMillisecond * Constants.Sql.RegularDateTime.TicksPerMillisecond + 0.5);
             stream.WriteInt(time);
         }
 

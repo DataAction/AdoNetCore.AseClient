@@ -165,17 +165,17 @@ namespace AdoNetCore.AseClient.Internal
         {
             var days = stream.ReadInt();
             var sqlTicks = stream.ReadInt();
-            return Constants.Sql.Epoch.AddDays(days).AddMilliseconds((int)(sqlTicks / Constants.Sql.TicksPerMillisecond));
+            return Constants.Sql.RegularDateTime.Epoch.AddDays(days).AddMilliseconds((int)(sqlTicks / Constants.Sql.RegularDateTime.TicksPerMillisecond));
         }
 
         public static DateTime ReadBigDateTime(this Stream stream)
         {
             var usSinceYearZero = stream.ReadLong();
-            var usSinceEpoch = usSinceYearZero - Constants.Sql.BigEpochMicroSeconds;
+            var usSinceEpoch = usSinceYearZero - Constants.Sql.BigDateTime.EpochMicroSeconds;
             var msSinceEpoch = usSinceEpoch / 1000;
             var timeSinceEpoch = TimeSpan.FromMilliseconds(msSinceEpoch);
 
-            return Constants.Sql.BigEpoch + timeSinceEpoch;
+            return Constants.Sql.BigDateTime.Epoch + timeSinceEpoch;
         }
 
         public static DateTime ReadShortPartDateTime(this Stream stream)
@@ -183,19 +183,19 @@ namespace AdoNetCore.AseClient.Internal
             var p1 = stream.ReadUShort();
             var p2 = stream.ReadUShort();
 
-            return Constants.Sql.Epoch.AddDays(p1).AddMinutes(p2);
+            return Constants.Sql.RegularDateTime.Epoch.AddDays(p1).AddMinutes(p2);
         }
 
         public static DateTime ReadDate(this Stream stream)
         {
             var p1 = stream.ReadInt();
-            return Constants.Sql.Epoch.AddDays(p1);
+            return Constants.Sql.RegularDateTime.Epoch.AddDays(p1);
         }
 
         public static DateTime ReadTime(this Stream stream)
         {
             var sqlTicks = stream.ReadInt();
-            return Constants.Sql.Epoch.AddMilliseconds((int)(sqlTicks / Constants.Sql.TicksPerMillisecond));
+            return Constants.Sql.RegularDateTime.Epoch.AddMilliseconds((int)(sqlTicks / Constants.Sql.RegularDateTime.TicksPerMillisecond));
         }
 
         public static AseDecimal? ReadAseDecimal(this Stream stream, byte precision, byte scale)

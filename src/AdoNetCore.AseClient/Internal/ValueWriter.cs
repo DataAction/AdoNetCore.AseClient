@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 typeof(TimeSpan), new Dictionary<Type, Func<object, Encoding, object>>
                 {
-                    {typeof(DateTime), (o, _) => Constants.Sql.Epoch + (TimeSpan)o }
+                    {typeof(DateTime), (o, _) => Constants.Sql.RegularDateTime.Epoch + (TimeSpan)o }
                 }
             },
             {

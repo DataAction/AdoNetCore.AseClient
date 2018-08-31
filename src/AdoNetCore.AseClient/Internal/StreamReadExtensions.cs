@@ -168,6 +168,16 @@ namespace AdoNetCore.AseClient.Internal
             return Constants.Sql.Epoch.AddDays(days).AddMilliseconds((int)(sqlTicks / Constants.Sql.TicksPerMillisecond));
         }
 
+        public static DateTime ReadBigDateTime(this Stream stream)
+        {
+            var usSinceYearZero = stream.ReadLong();
+            var usSinceEpoch = usSinceYearZero - Constants.Sql.BigEpochMicroSeconds;
+            var msSinceEpoch = usSinceEpoch / 1000;
+            var timeSinceEpoch = TimeSpan.FromMilliseconds(msSinceEpoch);
+
+            return Constants.Sql.BigEpoch + timeSinceEpoch;
+        }
+
         public static DateTime ReadShortPartDateTime(this Stream stream)
         {
             var p1 = stream.ReadUShort();

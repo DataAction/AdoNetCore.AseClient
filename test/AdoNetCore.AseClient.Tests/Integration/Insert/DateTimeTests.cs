@@ -38,6 +38,42 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
             }
         }
 
+        [TestCaseSource(nameof(Insert_BigDateTimeParameter_ThrowsArithmeticAseException_Cases))]
+        public void Insert_BigDateTimeParameter_ThrowsArithmeticAseException(string _, DateTime? value)
+        {
+            using (var connection = GetConnection())
+            {
+                var p = new DynamicParameters();
+                p.Add("@datetime_field", value, DbType.DateTime);
+
+                var expectedMessage = "Arithmetic overflow during implicit conversion of BIGDATETIME value 'Jan  1 0001 12:00AM' to a DATETIME field .\n";
+                var insertQuery = "insert into [dbo].[insert_datetime_tests] (datetime_field) values (@datetime_field)";
+#if NET_FRAMEWORK
+                if (connection is Sybase.Data.AseClient.AseConnection)
+                {
+                    var ex = Assert.Throws<Sybase.Data.AseClient.AseException>(() => connection.Execute(insertQuery, p));
+                    Assert.AreEqual(expectedMessage, ex.Message);
+                }
+#endif
+
+                if (connection is AseConnection)
+                {
+                    var ex = Assert.Throws<AseException>(() => connection.Execute(insertQuery, p));
+                    Assert.AreEqual(expectedMessage, ex.Message);
+                }
+            }
+        }
+
+        public static IEnumerable<TestCaseData> Insert_BigDateTimeParameter_ThrowsArithmeticAseException_Cases()
+        {
+            yield return new TestCaseData("00:00:00.000", new DateTime(0001, 01, 01, 0, 0, 0, 0));
+            yield return new TestCaseData("00:00:00.001", new DateTime(0001, 01, 01, 0, 0, 0, 1));
+            yield return new TestCaseData("00:00:00.002", new DateTime(0001, 01, 01, 0, 0, 0, 2));
+            yield return new TestCaseData("00:00:00.003", new DateTime(0001, 01, 01, 0, 0, 0, 3));
+            yield return new TestCaseData("00:00:00.004", new DateTime(0001, 01, 01, 0, 0, 0, 4));
+            yield return new TestCaseData("00:00:00.005", new DateTime(0001, 01, 01, 0, 0, 0, 5));
+        }
+
         [TestCaseSource(nameof(Insert_Parameter_Cases))]
         public void Insert_Parameter_Dapper(string _, DateTime? value)
         {

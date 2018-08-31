@@ -232,6 +232,12 @@ namespace AdoNetCore.AseClient.Internal
                         stream.WriteIntPartDateTime(Cast<DateTime>(value, format, enc));
                     }
                     break;
+                case TdsDataType.TDS_BIGDATETIMEN:
+                    if (!stream.TryWriteBytePrefixedNull(value))
+                    {
+                        stream.WriteBigDateTime(Cast<DateTime>(value, format, enc));
+                    }
+                    break;
                 case TdsDataType.TDS_DATE:
                     stream.WriteDate(Cast<DateTime>(value, format, enc));
                     break;

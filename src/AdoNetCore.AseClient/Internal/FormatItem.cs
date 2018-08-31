@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -190,6 +190,10 @@ namespace AdoNetCore.AseClient.Internal
                         stream.ReadShortLengthPrefixedString(enc);
                         break;
                     }
+                case TdsDataType.TDS_BIGDATETIMEN:
+                    format.Length = stream.ReadByte();
+                    stream.ReadByte(); // don't know what this represents, but when sending/receiving a big datetime we need to send/receive a byte
+                    break;
                 default:
                     throw new NotSupportedException($"Unsupported data type {format.DataType} (column: {format.DisplayColumnName})");
             }
@@ -266,6 +270,10 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteByte((byte)(Length ?? 1));
                     stream.WriteByte(Precision ?? 1);
                     stream.WriteByte(Scale ?? 0);
+                    break;
+                case TdsDataType.TDS_BIGDATETIMEN:
+                    stream.WriteByte(8);
+                    stream.WriteByte(6);
                     break;
                 default:
                     throw new NotSupportedException($"{DataType} not yet supported");
@@ -360,6 +368,7 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DATETIME:
                     return "datetime";
                 case TdsDataType.TDS_DATETIMEN:
+                case TdsDataType.TDS_BIGDATETIMEN:
                     switch (Length)
                     {
                         case 4:

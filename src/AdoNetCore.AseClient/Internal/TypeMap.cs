@@ -32,7 +32,7 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.VarNumeric, (value, length) => TdsDataType.TDS_NUMN},
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
             {DbType.Double, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
-            {DbType.DateTime, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME},
+            {DbType.DateTime, (value, length) => TdsDataType.TDS_BIGDATETIMEN},
             {DbType.Date, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATEN : TdsDataType.TDS_DATE},
             {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN : TdsDataType.TDS_TIME}
         };
@@ -57,7 +57,7 @@ namespace AdoNetCore.AseClient.Internal
             {typeof(AseDecimal), (value, length) => TdsDataType.TDS_NUMN},
             {typeof(float), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
             {typeof(double), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
-            {typeof(DateTime), (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME}
+            {typeof(DateTime), (value, length) => TdsDataType.TDS_BIGDATETIMEN }
         };
 
         public static int? GetFormatLength(DbType dbType, AseParameter parameter, Encoding enc)
@@ -188,6 +188,7 @@ namespace AdoNetCore.AseClient.Internal
             {TdsDataType.TDS_DATEN, f => typeof(DateTime)},
             {TdsDataType.TDS_DATETIME, f => typeof(DateTime)},
             {TdsDataType.TDS_DATETIMEN, f => typeof(DateTime)},
+            {TdsDataType.TDS_BIGDATETIMEN, f => typeof(DateTime)},
             {TdsDataType.TDS_DECN, f => typeof(decimal)},
             {TdsDataType.TDS_FLT4, f => typeof(float)},
             {TdsDataType.TDS_FLT8, f => typeof(double)},
@@ -272,6 +273,7 @@ namespace AdoNetCore.AseClient.Internal
             {TdsDataType.TDS_DATEN, f => AseDbType.Date},
             {TdsDataType.TDS_DATETIME, f => AseDbType.DateTime},
             {TdsDataType.TDS_DATETIMEN, f => AseDbType.DateTime},
+            {TdsDataType.TDS_BIGDATETIMEN, f => AseDbType.DateTime},
             {TdsDataType.TDS_DECN, f => AseDbType.Decimal},
             {TdsDataType.TDS_FLT4, f => AseDbType.Real},
             {TdsDataType.TDS_FLT8, f => AseDbType.Double},

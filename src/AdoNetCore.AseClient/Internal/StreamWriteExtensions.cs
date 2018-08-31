@@ -154,6 +154,17 @@ namespace AdoNetCore.AseClient.Internal
             stream.WriteInt(time);
         }
 
+        public static void WriteBigDateTime(this Stream stream, DateTime value)
+        {
+            var timeSinceEpoch = value - Constants.Sql.BigEpoch;
+            var msSinceEpoch = (long) timeSinceEpoch.TotalMilliseconds;
+            var usSinceEpoch = msSinceEpoch * 1000;
+            var usSinceYearZero = usSinceEpoch + Constants.Sql.BigEpochMicroSeconds;
+
+            stream.WriteByte(8); // length
+            stream.WriteLong(usSinceYearZero);
+        }
+
         public static void WriteDate(this Stream stream, DateTime value)
         {
             var span = value - Constants.Sql.Epoch;

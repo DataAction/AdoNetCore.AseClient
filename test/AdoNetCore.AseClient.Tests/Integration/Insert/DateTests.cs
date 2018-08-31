@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Text;
 using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using Dapper;
 using NUnit.Framework;

@@ -1,7 +1,13 @@
 # AdoNetCore.AseClient - a .NET Core DB Provider for SAP ASE
 
 [![CodeFactor](https://www.codefactor.io/repository/github/dataaction/adonetcore.aseclient/badge)](https://www.codefactor.io/repository/github/dataaction/adonetcore.aseclient)
-[![NuGet](https://img.shields.io/nuget/v/AdoNetCore.AseClient.svg)](https://www.nuget.org/packages/AdoNetCore.AseClient)
+
+Packages available at NuGet:
+
+| Name                                               | Version
+| -------------------------------------------------- | -------
+| `AdoNetCore.AseClient` (Recommended)               | [![AdoNetCore.AseClient@NuGet](https://img.shields.io/nuget/v/AdoNetCore.AseClient.svg)](https://www.nuget.org/packages/AdoNetCore.AseClient)
+| `AdoNetCore.AseClient.StrongName` (Strongly Named) | [![AdoNetCore.AseClient.StrongName@NuGet](https://img.shields.io/nuget/v/AdoNetCore.AseClient.StrongName.svg)](https://www.nuget.org/packages/AdoNetCore.AseClient.StrongName)
 
 SAP (formerly Sybase) has supported accessing the ASE database management system from ADO.NET for many years. Unfortunately SAP has not yet made a driver available to support .NET Core, so this project enables product teams that are dependent upon ASE to keep moving their application stack forwards.
 

@@ -123,12 +123,16 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             yield return new TestCaseData(new DateTime(1900, 01, 01, 22, 44, 33, 0), new DateTime(1900, 01, 01, 22, 44, 33, 0));
             yield return new TestCaseData(new DateTime(1900, 01, 01, 23, 59, 59, 996), new DateTime(1900, 01, 01, 23, 59, 59, 996));
             yield return new TestCaseData(new DateTime(1900, 01, 01, 9, 44, 33, 886), new DateTime(1900, 01, 01, 9, 44, 33, 886));
+            
+            var oneTickBeforeMidnight = TimeSpan.FromHours(24).Add(TimeSpan.FromTicks(-1));
+            yield return new TestCaseData(new DateTime(1900, 01, 01).Add(oneTickBeforeMidnight), new DateTime(1900, 01, 01, 23, 59, 59, 999));
 
             if (typeof(T) == typeof(CoreFxConnectionProvider))
             {
                 yield return new TestCaseData(new TimeSpan(0, 0, 0, 0, 0), new DateTime(1900, 01, 01, 0, 0, 0, 0));
                 yield return new TestCaseData(new TimeSpan(0, 23, 59, 59, 996), new DateTime(1900, 01, 01, 23, 59, 59, 996));
                 yield return new TestCaseData(new TimeSpan(12, 12, 12), new DateTime(1900, 01, 01, 12, 12, 12));
+                yield return new TestCaseData(oneTickBeforeMidnight, new DateTime(1900, 01, 01, 23, 59, 59, 999));
             }
         }
     }

@@ -29,6 +29,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
             yield return new TestCaseData("0001_6", new DateTime(0001, 01, 01, 0, 0, 0, 5), new byte[] { 0x88, 0x53, 0xEB, 0xA9, 0xC2, 0x1C, 0x00, 0x00 });
             yield return new TestCaseData("1753_1", new DateTime(1753, 1, 1, 0, 0, 0, 0, 0), new byte[] { 0x00, 0xA0, 0x7E, 0xDC, 0xB6, 0x88, 0xC4, 0x00 });
             yield return new TestCaseData("1900_1", new DateTime(1900, 1, 1, 0, 0, 0, 0, 0), new byte[] { 0x00, 0x60, 0x5A, 0x60, 0xB1, 0x03, 0xD5, 0x00 });
+            yield return new TestCaseData("1900_2", new DateTime(1900, 1, 1, 23, 59, 59, 999), new byte[] { 0x18, 0xBC, 0x31, 0x7E, 0xC5, 0x03, 0xD5, 0x00 });
+            yield return new TestCaseData("1900_3", new DateTime(1900, 01, 01).Add(TimeSpan.FromHours(24).Add(TimeSpan.FromTicks(-1))), new byte[] { 0x18, 0xBC, 0x31, 0x7E, 0xC5, 0x03, 0xD5, 0x00 });
             yield return new TestCaseData("9999_1", new DateTime(9999, 1, 1, 0, 0, 0, 0, 0), new byte[] { 0x00, 0x80, 0x76, 0xE9, 0x1F, 0x04, 0x61, 0x04 });
         }
     }

@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
@@ -9,7 +9,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void NumberOfOpenConnections_NewConnectionWithUnpooledConnectionString_ReturnsZero()
         {
-            var unpooledConnectionString = ConnectionStrings.DefaultUnique;
+            var unpooledConnectionString = ConnectionStrings.NonPooledUnique;
             var originalNumberOfOpenConnections = AseConnectionPoolManager.NumberOfOpenConnections;
 
             using (var connection = new AseConnection(unpooledConnectionString))
@@ -28,7 +28,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void GetConnectionPool_NewConnectionWithUnpooledConnectionString_ReturnsPoolWithSizeZero()
         {
-            var unpooledConnectionString = ConnectionStrings.DefaultUnique;
+            var unpooledConnectionString = ConnectionStrings.NonPooledUnique;
 
             using (var connection = new AseConnection(unpooledConnectionString))
             {

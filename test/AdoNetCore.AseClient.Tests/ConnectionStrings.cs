@@ -8,7 +8,7 @@ namespace AdoNetCore.AseClient.Tests
 {
     public static class ConnectionStrings
     {
-        public static string Default =>       $"{Prefix}; Pooling=false; LoginTimeOut=1;";
+        public static string Default =>       Pooled;
         public static string NonPooled =>     $"{Prefix}; Pooling=false; LoginTimeOut=1;";
         public static string Pooled =>        $"{Prefix}; Pooling=true;  LoginTimeOut=1; Max Pool Size=32;";
         public static string Pooled10 =>      $"{Prefix}; Pooling=true;  LoginTimeOut=1; Max Pool Size=10;";
@@ -17,7 +17,7 @@ namespace AdoNetCore.AseClient.Tests
         public static string BigPacketSize => $"{Prefix}; Pooling=false; LoginTimeOut=1; PacketSize=2048;";
         public static string BigTextSize =>   $"{Prefix}; Pooling=false; LoginTimeOut=1; TextSize=131072;";
         public static string AseDecimalOn =>  $"{Prefix}; Pooling=false; LoginTimeOut=1; UseAseDecimal=1;";
-        public static string DefaultUnique => $"{Default}; UniqueID={{{Guid.NewGuid()}}}";
+        public static string NonPooledUnique => $"{NonPooled}; UniqueID={{{Guid.NewGuid()}}}";
         public static string PooledUnique =>  $"{Pooled}; UniqueID={{{Guid.NewGuid()}}}";
         public static string BadPass =>       $"Data Source={Server}; Port={Port}; Uid={User}; Pwd=XXXXXXXX; db={Database};";
 

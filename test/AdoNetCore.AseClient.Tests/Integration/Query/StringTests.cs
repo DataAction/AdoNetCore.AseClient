@@ -185,8 +185,8 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             yield return new TestCaseData("\\x0D", '\x0D', '\x0D');
             yield return new TestCaseData("\\xA0", '\xA0', '\xA0');
             yield return new TestCaseData("space", ' ', ' ');
-            yield return new TestCaseData("u 2000", '\u2000', '\u2002');
-            yield return new TestCaseData("u 2001", '\u2001', '\u2003');
+            yield return new TestCaseData("u 2000", '\u2000', '\u2000');
+            yield return new TestCaseData("u 2001", '\u2001', '\u2001');
             yield return new TestCaseData("u 2002", '\u2002', '\u2002');
             yield return new TestCaseData("u 2003", '\u2003', '\u2003');
             yield return new TestCaseData("u 2004", '\u2004', '\u2004');
@@ -223,8 +223,8 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             yield return new TestCaseData("\test\x0D", "test\x0D", "test\x0D");
             yield return new TestCaseData("\test\xA0", "test\xA0", "test\xA0");
             yield return new TestCaseData("space", "test ", "test ");
-            yield return new TestCaseData("u 2000", "test\u2000", "test\u2002");
-            yield return new TestCaseData("u 2001", "test\u2001", "test\u2003");
+            yield return new TestCaseData("u 2000", "test\u2000", "test\u2000");
+            yield return new TestCaseData("u 2001", "test\u2001", "test\u2001");
             yield return new TestCaseData("u 2002", "test\u2002", "test\u2002");
             yield return new TestCaseData("u 2003", "test\u2003", "test\u2003");
             yield return new TestCaseData("u 2004", "test\u2004", "test\u2004");
@@ -273,10 +273,10 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
             yield return new TestCaseData("\test\xA0", "test\xA0", "test\xA0");
             yield return new TestCaseData("space", " ", " ");
             yield return new TestCaseData("space", "test ", "test");
-            yield return new TestCaseData("u 2000", "\u2000", "\u2002");
-            yield return new TestCaseData("u 2000", "test\u2000 ", "test\u2002");
-            yield return new TestCaseData("u 2001", "\u2001", "\u2003");
-            yield return new TestCaseData("u 2001", "test\u2001", "test\u2003");
+            yield return new TestCaseData("u 2000", "\u2000", "\u2000");
+            yield return new TestCaseData("u 2000", "test\u2000 ", "test\u2000");
+            yield return new TestCaseData("u 2001", "\u2001", "\u2001");
+            yield return new TestCaseData("u 2001", "test\u2001", "test\u2001");
             yield return new TestCaseData("u 2002", "\u2002", "\u2002");
             yield return new TestCaseData("u 2002", "test\u2002", "test\u2002");
             yield return new TestCaseData("u 2003", "\u2003", "\u2003");
@@ -319,8 +319,10 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
 
         public static IEnumerable<TestCaseData> SelectCharNChar_FromTable_Cases()
         {
-            yield return new TestCaseData("\u2000\u0020", "\u2000\u0020", "\u2002", "\u2002");
-            yield return new TestCaseData("a\u2000\u0020", "a\u2000\u0020", "a\u2002", "a\u2002");
+            yield return new TestCaseData("\u2000\u0020", "\u2000\u0020", "\u2000", "\u2000");
+            yield return new TestCaseData("\u2000", "\u2000", "\u2000", "\u2000");
+            yield return new TestCaseData("a\u2000\u0020", "a\u2000\u0020", "a\u2000", "a\u2000");
+            yield return new TestCaseData("a\u2000", "a\u2000", "a\u2000", "a\u2000");
         }
     }
 }

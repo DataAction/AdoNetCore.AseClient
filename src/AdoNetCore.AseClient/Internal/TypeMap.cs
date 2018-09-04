@@ -412,6 +412,8 @@ namespace AdoNetCore.AseClient.Internal
             {AseDbType.UnsignedBigInt, DbType.UInt64},
             {AseDbType.UnsignedInt, DbType.UInt32},
             {AseDbType.UnsignedSmallInt, DbType.UInt16},
+            // As per the reference driver, Guid appears to be synonymous with Unsupported.
+            // Never fear! If the user explicitly sets the DbType to Guid, and uses a System.Guid Value, it will be supported.
             {AseDbType.Unsupported, DbType.Guid},
             {AseDbType.VarBinary, DbType.Binary},
             {AseDbType.VarChar, DbType.AnsiString}
@@ -424,13 +426,19 @@ namespace AdoNetCore.AseClient.Internal
                 : default(DbType);
         }
 
+        /// <summary>
+        /// When a parameter's type is set, this will be called to "clean it up".
+        /// In particular, the reference driver treats DateTime and BigDateTime as the same value (and both are transmitted as a TDS_BIGDATETIMEN type), so we should do the same.
+        /// </summary>
         public static AseDbType CleanupAseDbType(AseDbType aseDbType)
         {
+            // DateTime and BigDateTime are implemented the same way.
             if (aseDbType == AseDbType.BigDateTime)
             {
                 return AseDbType.DateTime;
             }
 
+            // it's clean, leave it alone!
             return aseDbType;
         }
     }

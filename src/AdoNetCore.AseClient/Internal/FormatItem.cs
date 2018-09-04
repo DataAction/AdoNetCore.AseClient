@@ -1,5 +1,4 @@
-﻿using System;
-using System.Data;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -23,7 +22,7 @@ namespace AdoNetCore.AseClient.Internal
         public byte? Scale { get; set; }
         public string LocaleInfo { get; set; }
 
-        private string _parameterName { get; set; }
+        private string _parameterName;
         public string ParameterName
         {
             get => _parameterName;
@@ -190,6 +189,12 @@ namespace AdoNetCore.AseClient.Internal
                         stream.ReadShortLengthPrefixedString(enc);
                         break;
                     }
+                case TdsDataType.TDS_BIGDATETIMEN:
+                    format.Length = stream.ReadByte();
+                    // don't know what this represents, but when sending/receiving a big datetime we need to send/receive a byte
+                    // maybe it represents the resolution to which the number represents (e.g. 6 = microseconds, 3 = milliseconds?)
+                    stream.ReadByte();
+                    break;
                 default:
                     throw new NotSupportedException($"Unsupported data type {format.DataType} (column: {format.DisplayColumnName})");
             }
@@ -267,6 +272,12 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteByte(Precision ?? 1);
                     stream.WriteByte(Scale ?? 0);
                     break;
+                case TdsDataType.TDS_BIGDATETIMEN:
+                    stream.WriteByte((byte)(Length ?? 8));
+                    // don't know what this represents, but when sending/receiving a big datetime we need to send/receive a byte
+                    // maybe it represents the resolution to which the number represents (e.g. 6 = microseconds, 3 = milliseconds?)
+                    stream.WriteByte(6);
+                    break;
                 default:
                     throw new NotSupportedException($"{DataType} not yet supported");
             }
@@ -288,7 +299,7 @@ namespace AdoNetCore.AseClient.Internal
                     {
                         case 4:
                             return "real";
-                        case 8:
+                        //case 8:
                         default:
                             return "float";
                     }
@@ -311,7 +322,7 @@ namespace AdoNetCore.AseClient.Internal
                             return "smallint";
                         case 4:
                             return "int";
-                        case 8:
+                        //case 8:
                         default:
                             return "bigint";
                     }
@@ -331,7 +342,7 @@ namespace AdoNetCore.AseClient.Internal
                             return "unsigned smallint";
                         case 4:
                             return "unsigned int";
-                        case 8:
+                        //case 8:
                         default:
                             return "unsigned bigint";
                     }
@@ -348,7 +359,7 @@ namespace AdoNetCore.AseClient.Internal
                     {
                         case 4:
                             return "smallmoney";
-                        case 8:
+                        //case 8:
                         default:
                             return "money";
                     }
@@ -360,11 +371,12 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_DATETIME:
                     return "datetime";
                 case TdsDataType.TDS_DATETIMEN:
+                case TdsDataType.TDS_BIGDATETIMEN:
                     switch (Length)
                     {
                         case 4:
                             return "smalldatetime";
-                        case 8:
+                        //case 8:
                         default:
                             return "datetime";
                     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -13,7 +13,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
     [TestFixture(typeof(SapConnectionProvider))]
 #endif
     [TestFixture(typeof(CoreFxConnectionProvider))]
-    public class ImageTests<T> where T : IConnectionProvider
+    public class BinaryTests<T> where T : IConnectionProvider
     {
         private DbConnection GetConnection()
         {

@@ -1,4 +1,4 @@
-﻿
+
 // ReSharper disable InconsistentNaming
 namespace AdoNetCore.AseClient.Enum
 {
@@ -209,8 +209,12 @@ namespace AdoNetCore.AseClient.Enum
         /// No Yes Yes XML
         /// </summary>
         TDS_XML = 0xA3,
-        //todo: implement
-        //TDS_BIGDATETIME = 0xBB,
+        /// <summary>
+        /// Fixed Nullable Converted Description (these are guesses)
+        /// No Yes Yes Date/Time
+        /// Note: As far as I can tell, this uses the same encoding mechanism as DATETIME still 8 bytes...
+        /// </summary>
+        TDS_BIGDATETIMEN = 0xBB,
         //TDS_BIGTIME = 0xBC,
     }
 }

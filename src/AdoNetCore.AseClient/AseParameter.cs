@@ -292,12 +292,8 @@ namespace AdoNetCore.AseClient
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public override DbType DbType
         {
-            get => (DbType)_type;
-            set
-            {
-                _type = (AseDbType) value;
-                _isDbTypeSetExplicitly = true;
-            }
+            get => TypeMap.GetDbType(_type);
+            set => AseDbType = TypeMap.GetAseDbType(value);
         }
 
         /// <summary>
@@ -310,7 +306,7 @@ namespace AdoNetCore.AseClient
         {
             get => _type;
             set {
-                _type = value;
+                _type = TypeMap.CleanupAseDbType(value);
                 _isDbTypeSetExplicitly = true;
             }
         }
@@ -487,6 +483,6 @@ namespace AdoNetCore.AseClient
             return clone;
         }
 #endif
-        internal object SendableValue => Value.AsSendableValue();
+        internal object SendableValue => Value.AsSendableValue(_type);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -138,6 +138,12 @@ namespace AdoNetCore.AseClient.Internal
                             return stream.ReadShortPartDateTime();
                         case 8:
                             return stream.ReadIntPartDateTime();
+                    }
+                    break;
+                case TdsDataType.TDS_BIGDATETIMEN:
+                    switch (stream.ReadByte())
+                    {
+                        case 8: return stream.ReadBigDateTime();
                     }
                     break;
                 case TdsDataType.TDS_DATE:

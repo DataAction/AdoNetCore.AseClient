@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -253,7 +253,7 @@ namespace AdoNetCore.AseClient.Internal
         public string ApplicationName { get; private set; } = CurrentProcess.ProcessName;
         public string ClientHostName { get; private set; } = Environment.MachineName;
         public string ClientHostProc { get; private set; } = string.Empty;
-        public string Charset { get; private set; } = "iso_1";
+        public string Charset { get; private set; }
         public bool Pooling { get; private set; } = true;
         public short MaxPoolSize { get; private set; } = 100;
         public short MinPoolSize { get; private set; }

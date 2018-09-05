@@ -143,13 +143,14 @@ namespace AdoNetCore.AseClient.Internal
         {
             var span = value - Constants.Sql.RegularDateTime.Epoch;
             var day = span.Days;
-            var ticks = span.Ticks - day * TimeSpan.TicksPerDay;
+            var ticks = span.Ticks - (day * TimeSpan.TicksPerDay);
             if (ticks < 0L)
             {
                 day--;
                 ticks += TimeSpan.TicksPerDay;
             }
-            var time = (int)((double)ticks / TimeSpan.TicksPerMillisecond * Constants.Sql.RegularDateTime.TicksPerMillisecond + 0.5);
+            var milliseconds = (double) ticks / TimeSpan.TicksPerMillisecond;
+            var time = (int)((milliseconds * Constants.Sql.RegularDateTime.TicksPerMillisecond) + 0.5);
             stream.WriteInt(day);
             stream.WriteInt(time);
         }
@@ -169,7 +170,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             var span = value - Constants.Sql.RegularDateTime.Epoch;
             var day = span.Days;
-            if (span.Ticks - day * TimeSpan.TicksPerDay < 0L)
+            if (span.Ticks - (day * TimeSpan.TicksPerDay) < 0L)
             {
                 day--;
             }
@@ -178,7 +179,8 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void WriteTime(this Stream stream, TimeSpan value)
         {
-            var time = (int)((double)value.Ticks / TimeSpan.TicksPerMillisecond * Constants.Sql.RegularDateTime.TicksPerMillisecond + 0.5);
+            var milliseconds = (double) value.Ticks / TimeSpan.TicksPerMillisecond;
+            var time = (int)((milliseconds * Constants.Sql.RegularDateTime.TicksPerMillisecond) + 0.5);
             stream.WriteInt(time);
         }
 

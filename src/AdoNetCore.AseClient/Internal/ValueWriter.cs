@@ -59,218 +59,326 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static readonly Dictionary<TdsDataType, Action<object, Stream, FormatItem, Encoding>> WriteMap = new Dictionary<TdsDataType, Action<object, Stream, FormatItem, Encoding>>
+        {
+            { TdsDataType.TDS_BIT, WriteTDS_BIT },
+            { TdsDataType.TDS_INT1, WriteTDS_INT1 },
+            //no TDS_SINT1, we will transmit as an INTN(2)
+            { TdsDataType.TDS_INT2, WriteTDS_INT2 },
+            { TdsDataType.TDS_UINT2, WriteTDS_UINT2 },
+            { TdsDataType.TDS_INT4, WriteTDS_INT4 },
+            { TdsDataType.TDS_UINT4, WriteTDS_UINT4 },
+            { TdsDataType.TDS_INT8, WriteTDS_INT8 },
+            { TdsDataType.TDS_UINT8, WriteTDS_UINT8 },
+            { TdsDataType.TDS_INTN, WriteTDS_INTN },
+            { TdsDataType.TDS_UINTN, WriteTDS_UINTN },
+            { TdsDataType.TDS_FLT4, WriteTDS_FLT4 },
+            { TdsDataType.TDS_FLT8, WriteTDS_FLT8 },
+            { TdsDataType.TDS_FLTN, WriteTDS_FLTN },
+            { TdsDataType.TDS_VARCHAR, WriteTDS_VARCHAR },
+            { TdsDataType.TDS_LONGCHAR, WriteTDS_LONGCHAR },
+            { TdsDataType.TDS_VARBINARY, WriteTDS_VARBINARY },
+            { TdsDataType.TDS_BINARY, WriteTDS_BINARY },
+            { TdsDataType.TDS_LONGBINARY, WriteTDS_LONGBINARY },
+            { TdsDataType.TDS_DECN, WriteTDS_DECN },
+            { TdsDataType.TDS_NUMN, WriteTDS_NUMN },
+            { TdsDataType.TDS_DATETIME, WriteTDS_DATETIME },
+            { TdsDataType.TDS_DATETIMEN, WriteTDS_DATETIMEN },
+            { TdsDataType.TDS_BIGDATETIMEN, WriteTDS_BIGDATETIMEN },
+            { TdsDataType.TDS_DATE, WriteTDS_DATE },
+            { TdsDataType.TDS_DATEN, WriteTDS_DATEN },
+            { TdsDataType.TDS_TIME, WriteTDS_TIME },
+            { TdsDataType.TDS_TIMEN, WriteTDS_TIMEN },
+            { TdsDataType.TDS_MONEYN, WriteTDS_MONEYN },
+        };
+
         public static void Write(object value, Stream stream, FormatItem format, Encoding enc)
         {
-            switch (format.DataType)
+            if (WriteMap.ContainsKey(format.DataType))
             {
-                case TdsDataType.TDS_BIT:
-                    switch (value)
-                    {
-                        case bool b:
-                            stream.WriteBool(b);
-                            break;
-                        default:
-                            stream.WriteByte(0);
-                            break;
-                    }
-                    break;
-                case TdsDataType.TDS_INT1:
-                    stream.WriteByte(Cast<byte>(value, format, enc));
-                    break;
-                //no TDS_SINT1, we will transmit as an INTN(2)
-                case TdsDataType.TDS_INT2:
-                    stream.WriteShort(Cast<short>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_UINT2:
-                    stream.WriteUShort(Cast<ushort>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_INT4:
-                    stream.WriteInt(Cast<int>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_UINT4:
-                    stream.WriteUInt(Cast<uint>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_INT8:
-                    stream.WriteLong(Cast<long>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_UINT8:
-                    stream.WriteULong(Cast<ulong>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_INTN:
-                    switch (value)
-                    {
-                        case byte b:
-                            stream.WriteByte(1);
-                            stream.WriteByte(b);
-                            break;
-                        case sbyte sb:
-                            stream.WriteByte(2);
-                            stream.WriteShort(sb);
-                            break;
-                        case short s:
-                            stream.WriteByte(2);
-                            stream.WriteShort(s);
-                            break;
-                        case int i:
-                            stream.WriteByte(4);
-                            stream.WriteInt(i);
-                            break;
-                        case long l:
-                            stream.WriteByte(8);
-                            stream.WriteLong(l);
-                            break;
-                        //case null:
-                        default:
-                            stream.WriteByte(0);
-                            break;
-                    }
-                    break;
-                case TdsDataType.TDS_UINTN:
-                    switch (value)
-                    {
-                        case byte b:
-                            stream.WriteByte(1);
-                            stream.WriteByte(b);
-                            break;
-                        case ushort s:
-                            stream.WriteByte(2);
-                            stream.WriteUShort(s);
-                            break;
-                        case uint i:
-                            stream.WriteByte(4);
-                            stream.WriteUInt(i);
-                            break;
-                        case ulong l:
-                            stream.WriteByte(8);
-                            stream.WriteULong(l);
-                            break;
-                        //case null:
-                        default:
-                            stream.WriteByte(0);
-                            break;
-                    }
-                    break;
-                case TdsDataType.TDS_FLT4:
-                    stream.WriteFloat(Cast<float>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_FLT8:
-                    stream.WriteDouble(Cast<double>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_FLTN:
-                    switch (value)
-                    {
-                        case float f:
-                            stream.WriteByte(4);
-                            stream.WriteFloat(f);
-                            break;
-                        case double d:
-                            stream.WriteByte(8);
-                            stream.WriteDouble(d);
-                            break;
-                        default:
-                            stream.WriteByte(0);
-                            break;
-                    }
-                    break;
-                case TdsDataType.TDS_VARCHAR:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        stream.WriteBytePrefixedString(Cast<string>(value, format, enc), enc);
-                    }
-                    break;
-                case TdsDataType.TDS_LONGCHAR:
-                    if (!stream.TryWriteIntPrefixedNull(value))
-                    {
-                        stream.WriteIntPrefixedString(Cast<string>(value, format, enc), enc);
-                    }
-                    break;
-                case TdsDataType.TDS_VARBINARY:
-                case TdsDataType.TDS_BINARY:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        stream.WriteBytePrefixedByteArray(Cast<byte[]>(value, format, enc));
-                    }
-                    break;
-                case TdsDataType.TDS_LONGBINARY:
-                    if (!stream.TryWriteIntPrefixedNull(value))
-                    {
-                        switch (value)
-                        {
-                            case string s:
-                                stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(s));
-                                break;
-                            case char c:
-                                stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(new[] { c }));
-                                break;
-                            case byte[] ba:
-                                stream.WriteIntPrefixedByteArray(ba);
-                                break;
-                            case byte b:
-                                stream.WriteIntPrefixedByteArray(new[] { b });
-                                break;
-                            default:
-                                stream.WriteInt(0);
-                                break;
-                        }
-                    }
-                    break;
-                case TdsDataType.TDS_DECN:
-                case TdsDataType.TDS_NUMN:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        switch (value)
-                        {
-                            case AseDecimal ad:
-                                stream.WriteDecimal(ad);
-                                break;
-                            default:
-                                stream.WriteDecimal(Cast<decimal>(value, format, enc));
-                                break;
-                        }
-                    }
-                    break;
-                case TdsDataType.TDS_DATETIME:
-                    stream.WriteIntPartDateTime(Cast<DateTime>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_DATETIMEN:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        stream.WriteIntPartDateTime(Cast<DateTime>(value, format, enc));
-                    }
-                    break;
-                case TdsDataType.TDS_BIGDATETIMEN:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        stream.WriteBigDateTime(Cast<DateTime>(value, format, enc));
-                    }
-                    break;
-                case TdsDataType.TDS_DATE:
-                    stream.WriteDate(Cast<DateTime>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_DATEN:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        stream.WriteDate(Cast<DateTime>(value, format, enc));
-                    }
-                    break;
-                case TdsDataType.TDS_TIME:
-                    stream.WriteTime(Cast<TimeSpan>(value, format, enc));
-                    break;
-                case TdsDataType.TDS_TIMEN:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        stream.WriteTime(Cast<TimeSpan>(value, format, enc));
-                    }
-                    break;
-                case TdsDataType.TDS_MONEYN:
-                    if (!stream.TryWriteBytePrefixedNull(value))
-                    {
-                        stream.WriteMoney(Cast<decimal>(value, format, enc));
-                    }
+                WriteMap[format.DataType](value, stream, format, enc);
+            }
+            else
+            {
+                Debug.Assert(false, $"Unsupported data type {format.DataType}");
+            }
+        }
+
+        private static void WriteTDS_BIT(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            switch (value)
+            {
+                case bool b:
+                    stream.WriteBool(b);
                     break;
                 default:
-                    Debug.Assert(false, $"Unsupported data type {format.DataType}");
+                    stream.WriteByte(0);
                     break;
+            }
+        }
+
+        private static void WriteTDS_INT1(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteByte(Cast<byte>(value, format, enc));
+        }
+
+        private static void WriteTDS_INT2(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteShort(Cast<short>(value, format, enc));
+        }
+
+        private static void WriteTDS_UINT2(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteUShort(Cast<ushort>(value, format, enc));
+        }
+
+        private static void WriteTDS_INT4(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteInt(Cast<int>(value, format, enc));
+        }
+
+        private static void WriteTDS_UINT4(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteUInt(Cast<uint>(value, format, enc));
+        }
+
+        private static void WriteTDS_INT8(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteLong(Cast<long>(value, format, enc));
+        }
+
+        private static void WriteTDS_UINT8(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteULong(Cast<ulong>(value, format, enc));
+        }
+
+        private static void WriteTDS_INTN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            switch (value)
+            {
+                case byte b:
+                    stream.WriteByte(1);
+                    stream.WriteByte(b);
+                    break;
+                case sbyte sb:
+                    stream.WriteByte(2);
+                    stream.WriteShort(sb);
+                    break;
+                case short s:
+                    stream.WriteByte(2);
+                    stream.WriteShort(s);
+                    break;
+                case int i:
+                    stream.WriteByte(4);
+                    stream.WriteInt(i);
+                    break;
+                case long l:
+                    stream.WriteByte(8);
+                    stream.WriteLong(l);
+                    break;
+                //case null:
+                default:
+                    stream.WriteByte(0);
+                    break;
+            }
+        }
+
+        private static void WriteTDS_UINTN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            switch (value)
+            {
+                case byte b:
+                    stream.WriteByte(1);
+                    stream.WriteByte(b);
+                    break;
+                case ushort s:
+                    stream.WriteByte(2);
+                    stream.WriteUShort(s);
+                    break;
+                case uint i:
+                    stream.WriteByte(4);
+                    stream.WriteUInt(i);
+                    break;
+                case ulong l:
+                    stream.WriteByte(8);
+                    stream.WriteULong(l);
+                    break;
+                //case null:
+                default:
+                    stream.WriteByte(0);
+                    break;
+            }
+        }
+
+        private static void WriteTDS_FLT4(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteFloat(Cast<float>(value, format, enc));
+        }
+
+        private static void WriteTDS_FLT8(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteDouble(Cast<double>(value, format, enc));
+        }
+
+        private static void WriteTDS_FLTN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            switch (value)
+            {
+                case float f:
+                    stream.WriteByte(4);
+                    stream.WriteFloat(f);
+                    break;
+                case double d:
+                    stream.WriteByte(8);
+                    stream.WriteDouble(d);
+                    break;
+                default:
+                    stream.WriteByte(0);
+                    break;
+            }
+        }
+
+        private static void WriteTDS_VARCHAR(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteBytePrefixedString(Cast<string>(value, format, enc), enc);
+            }
+        }
+
+        private static void WriteTDS_LONGCHAR(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteIntPrefixedNull(value))
+            {
+                stream.WriteIntPrefixedString(Cast<string>(value, format, enc), enc);
+            }
+        }
+
+        private static void WriteTDS_VARBINARY(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteBytePrefixedByteArray(Cast<byte[]>(value, format, enc));
+            }
+        }
+
+        private static void WriteTDS_BINARY(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteBytePrefixedByteArray(Cast<byte[]>(value, format, enc));
+            }
+        }
+
+        private static void WriteTDS_LONGBINARY(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteIntPrefixedNull(value))
+            {
+                switch (value)
+                {
+                    case string s:
+                        stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(s));
+                        break;
+                    case char c:
+                        stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(new[] { c }));
+                        break;
+                    case byte[] ba:
+                        stream.WriteIntPrefixedByteArray(ba);
+                        break;
+                    case byte b:
+                        stream.WriteIntPrefixedByteArray(new[] { b });
+                        break;
+                    default:
+                        stream.WriteInt(0);
+                        break;
+                }
+            }
+        }
+
+        private static void WriteTDS_DECN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                switch (value)
+                {
+                    case AseDecimal ad:
+                        stream.WriteDecimal(ad);
+                        break;
+                    default:
+                        stream.WriteDecimal(Cast<decimal>(value, format, enc));
+                        break;
+                }
+            }
+        }
+
+        private static void WriteTDS_NUMN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                switch (value)
+                {
+                    case AseDecimal ad:
+                        stream.WriteDecimal(ad);
+                        break;
+                    default:
+                        stream.WriteDecimal(Cast<decimal>(value, format, enc));
+                        break;
+                }
+            }
+        }
+
+        private static void WriteTDS_DATETIME(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteIntPartDateTime(Cast<DateTime>(value, format, enc));
+        }
+
+        private static void WriteTDS_DATETIMEN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteIntPartDateTime(Cast<DateTime>(value, format, enc));
+            }
+        }
+
+        private static void WriteTDS_BIGDATETIMEN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteBigDateTime(Cast<DateTime>(value, format, enc));
+            }
+        }
+
+        private static void WriteTDS_DATE(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteDate(Cast<DateTime>(value, format, enc));
+        }
+
+        private static void WriteTDS_DATEN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteDate(Cast<DateTime>(value, format, enc));
+            }
+        }
+
+        private static void WriteTDS_TIME(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            stream.WriteTime(Cast<TimeSpan>(value, format, enc));
+        }
+
+        private static void WriteTDS_TIMEN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteTime(Cast<TimeSpan>(value, format, enc));
+            }
+        }
+
+        private static void WriteTDS_MONEYN(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            if (!stream.TryWriteBytePrefixedNull(value))
+            {
+                stream.WriteMoney(Cast<decimal>(value, format, enc));
             }
         }
     }

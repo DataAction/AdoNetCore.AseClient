@@ -60,7 +60,6 @@ namespace AdoNetCore.AseClient.Internal
             {typeof(DateTime), (value, length) => TdsDataType.TDS_BIGDATETIMEN }
         };
 
-        
         private static readonly Dictionary<DbType, int> FixedFormatLengthMap = new Dictionary<DbType, int>
         {
             //1 byte pos/neg, 16 bytes data
@@ -165,7 +164,6 @@ namespace AdoNetCore.AseClient.Internal
                     return 0;
             }
         }
-
 
         public static TdsDataType GetTdsDataType(DbType dbType, bool dbTypeIsKnown, object value, int? length, string parameterName)
         {

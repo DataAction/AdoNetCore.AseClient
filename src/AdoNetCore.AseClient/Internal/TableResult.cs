@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -6,10 +6,5 @@ namespace AdoNetCore.AseClient.Internal
     {
         public FormatItem[] Formats { get; set; }
         public List<RowResult> Rows { get; } = new List<RowResult>();
-    }
-
-    internal class RowResult
-    {
-        public object[] Items { get; set; }
     }
 }

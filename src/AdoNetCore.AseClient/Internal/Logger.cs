@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 
 namespace AdoNetCore.AseClient.Internal
@@ -44,7 +44,6 @@ namespace AdoNetCore.AseClient.Internal
         private Logger() { }
 
         private string Timestamp => _lineStart && Timestamps ? DateTime.UtcNow.ToString("[yyyy-MM-dd HH:mm:ss] ") : string.Empty;
-
 
         public void WriteLine()
         {

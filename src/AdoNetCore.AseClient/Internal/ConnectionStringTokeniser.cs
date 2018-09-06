@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -23,8 +23,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public IEnumerable<ConnectionStringItem> Tokenise(string connectionString)
         {
-
-            foreach (System.Text.RegularExpressions.Match item in TokenRegex.Matches(connectionString))
+            foreach (Match item in TokenRegex.Matches(connectionString))
             {
                 if (item.Success)
                 {

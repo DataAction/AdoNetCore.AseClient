@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -53,7 +53,7 @@ namespace AdoNetCore.AseClient.Packet
 
         private int TDS_MAXNAME = 30;
         private int TDS_PROGNLEN = 10;
-        private int TDS_RPLEN = 15 * 16 + 12 + 1;
+        private int TDS_RPLEN = (15 * 16) + 12 + 1;
         private int TDS_PKTLEN = 6;
 
         public BufferType Type => BufferType.TDS_BUF_LOGIN;
@@ -101,7 +101,7 @@ namespace AdoNetCore.AseClient.Packet
                 (byte) LDate4
             });
 
-            stream.WritePaddedString(Language, TDS_MAXNAME, env.Encoding);//llanguage
+            stream.WritePaddedString(Language, TDS_MAXNAME, env.Encoding); //llanguage
 
             stream.Write(new byte[]
             {
@@ -111,7 +111,7 @@ namespace AdoNetCore.AseClient.Packet
 
             stream.WritePaddedString(Charset, TDS_MAXNAME, env.Encoding); //lcharset
             stream.WriteByte((byte)LSetCharset); //lsetcharset
-            stream.WritePaddedString(PacketSize.ToString(), TDS_PKTLEN, env.Encoding);//lpacketsize
+            stream.WritePaddedString(PacketSize.ToString(), TDS_PKTLEN, env.Encoding); //lpacketsize
             //ldummy
             stream.Write(new byte[]
             {

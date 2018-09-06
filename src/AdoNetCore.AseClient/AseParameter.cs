@@ -352,7 +352,6 @@ namespace AdoNetCore.AseClient
             set => _parameterName = value == null || value.StartsWith("@") ? value : $"@{value}";
         }
 
-
         /// <summary>
         /// Gets or sets the index of the <see cref="AseParameter" />.
         /// </summary>

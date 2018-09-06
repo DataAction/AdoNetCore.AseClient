@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Numerics;
 using AdoNetCore.AseClient.Internal;
@@ -88,7 +88,7 @@ namespace AdoNetCore.AseClient
         /// <param name="value">The target value array in bytes.</param>
         public AseDecimal(int precision, int scale, byte[] value)
         {
-            Debug.Assert(null != value);
+            Debug.Assert(value != null);
             Debug.Assert(value.Length > 0);
 
             var data = new byte[value.Length - 1];

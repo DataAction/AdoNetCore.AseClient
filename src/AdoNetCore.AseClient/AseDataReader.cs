@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -563,7 +563,6 @@ namespace AdoNetCore.AseClient
                 Array.Clear(values, num, values.Length - num); // Clear any extra values to avoid confusion.
             }
             return num;
-
         }
 
         public override bool IsDBNull(int i)

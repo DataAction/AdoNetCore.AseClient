@@ -265,7 +265,6 @@ namespace AdoNetCore.AseClient.Internal
             return stream.ReadIntPartDateTime();
         }
 
-
         private static object ReadTDS_SHORTDATE(Stream stream, FormatItem format, DbEnvironment env)
         {
             return stream.ReadShortPartDateTime();

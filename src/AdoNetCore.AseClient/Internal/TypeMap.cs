@@ -60,92 +60,112 @@ namespace AdoNetCore.AseClient.Internal
             {typeof(DateTime), (value, length) => TdsDataType.TDS_BIGDATETIMEN }
         };
 
+        
+        private static readonly Dictionary<DbType, int> FixedFormatLengthMap = new Dictionary<DbType, int>
+        {
+            //1 byte pos/neg, 16 bytes data
+            {DbType.Decimal, 17},
+            //1 byte pos/neg, 16 bytes data
+            {DbType.VarNumeric, 17},
+            {DbType.Boolean, 1},
+            {DbType.Byte, 1},
+            {DbType.Int16, 2},
+            {DbType.UInt16, 2},
+            //can't seem to write an sbyte as a single byte, so it'll get encoded in a short
+            {DbType.SByte, 2},
+            {DbType.Int32, 4},
+            {DbType.UInt32, 4},
+            {DbType.Int64, 8},
+            {DbType.UInt64, 8},
+            {DbType.Single, 4},
+            {DbType.Double, 8},
+            {DbType.DateTime, 8},
+            {DbType.Date, 4},
+            {DbType.Time, 4},
+            {DbType.Guid, 16},
+            {DbType.Currency, 8},
+        };
+
+        private static readonly Dictionary<DbType, Func<AseParameter, Encoding, object, int>> VariableFormatLengthMap = new Dictionary<DbType, Func<AseParameter, Encoding, object, int>>
+        {
+            {DbType.String, GetStringFormatLength},
+            {DbType.StringFixedLength, GetStringFormatLength},
+            {DbType.AnsiString, GetAnsiStringFormatLength},
+            {DbType.AnsiStringFixedLength, GetAnsiStringFormatLength},
+            {DbType.Binary, GetBinaryFormatLength},
+        };
+
         public static int? GetFormatLength(DbType dbType, AseParameter parameter, Encoding enc)
         {
-            var value = parameter.SendableValue;
-            switch (dbType)
+            if (FixedFormatLengthMap.ContainsKey(dbType))
             {
-                case DbType.String:
-                case DbType.StringFixedLength:
-                    if (parameter.IsOutput)
-                    {
-                        return Math.Max(VarLongBoundary * 2, parameter.Size);
-                    }
+                return FixedFormatLengthMap[dbType];
+            }
 
-                    switch (value)
-                    {
-                        case string s:
-                            return Encoding.Unicode.GetByteCount(s);
-                        case char c:
-                            return Encoding.Unicode.GetByteCount(new[] { c });
-                        default:
-                            return 0;
-                    }
-                case DbType.AnsiString:
-                case DbType.AnsiStringFixedLength:
-                    if (parameter.IsOutput)
-                    {
-                        return Math.Max(VarLongBoundary, parameter.Size);
-                    }
+            var value = parameter.SendableValue;
 
-                    switch (value)
-                    {
-                        case string s:
-                            return enc.GetByteCount(s);
-                        case char c:
-                            return enc.GetByteCount(new[] { c });
-                        default:
-                            return 0;
-                    }
-                case DbType.Binary:
-                    if (parameter.IsOutput)
-                    {
-                        return Math.Max(VarLongBoundary, parameter.Size);
-                    }
+            if (VariableFormatLengthMap.ContainsKey(dbType))
+            {
+                return VariableFormatLengthMap[dbType](parameter, enc, value);
+            }
 
-                    switch (value)
-                    {
-                        case byte[] ba:
-                            return ba.Length;
-                        case byte _:
-                            return 1;
-                        default:
-                            return 0;
-                    }
-                case DbType.Decimal:
-                case DbType.VarNumeric:
-                    return 17; //1 byte pos/neg, 16 bytes data
-                case DbType.Boolean:
-                case DbType.Byte:
-                    return 1;
-                case DbType.Int16:
-                case DbType.UInt16:
-                case DbType.SByte://can't seem to write an sbyte as a single byte, so it'll get encoded in a short
-                    return 2;
-                case DbType.Int32:
-                case DbType.UInt32:
-                    return 4;
-                case DbType.Int64:
-                case DbType.UInt64:
-                    return 8;
-                case DbType.Single:
-                    return 4;
-                case DbType.Double:
-                    return 8;
-                case DbType.DateTime:
-                    return 8;
-                case DbType.Date:
-                    return 4;
-                case DbType.Time:
-                    return 4;
-                case DbType.Guid:
-                    return 16;
-                case DbType.Currency:
-                    return 8;
+            return null;
+        }
+
+        private static int GetStringFormatLength(AseParameter parameter, Encoding enc, object value)
+        {
+            if (parameter.IsOutput)
+            {
+                return Math.Max(VarLongBoundary * 2, parameter.Size);
+            }
+
+            switch (value)
+            {
+                case string s:
+                    return Encoding.Unicode.GetByteCount(s);
+                case char c:
+                    return Encoding.Unicode.GetByteCount(new[] { c });
                 default:
-                    return null;
+                    return 0;
             }
         }
+
+        private static int GetAnsiStringFormatLength(AseParameter parameter, Encoding enc, object value)
+        {
+            if (parameter.IsOutput)
+            {
+                return Math.Max(VarLongBoundary, parameter.Size);
+            }
+
+            switch (value)
+            {
+                case string s:
+                    return enc.GetByteCount(s);
+                case char c:
+                    return enc.GetByteCount(new[] { c });
+                default:
+                    return 0;
+            }
+        }
+
+        private static int GetBinaryFormatLength(AseParameter parameter, Encoding enc, object value)
+        {
+            if (parameter.IsOutput)
+            {
+                return Math.Max(VarLongBoundary, parameter.Size);
+            }
+
+            switch (value)
+            {
+                case byte[] ba:
+                    return ba.Length;
+                case byte _:
+                    return 1;
+                default:
+                    return 0;
+            }
+        }
+
 
         public static TdsDataType GetTdsDataType(DbType dbType, bool dbTypeIsKnown, object value, int? length, string parameterName)
         {

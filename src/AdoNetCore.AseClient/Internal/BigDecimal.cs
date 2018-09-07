@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using System.Text;
 
@@ -184,7 +184,7 @@ namespace AdoNetCore.AseClient.Internal
             var mantissa = (BigInteger)value;
             var exponent = 0;
             double scaleFactor = 1;
-            while (Math.Abs(value * scaleFactor - (double)mantissa) > 0)
+            while (Math.Abs((value * scaleFactor) - (double)mantissa) > 0)
             {
                 exponent -= 1;
                 scaleFactor *= 10;
@@ -322,7 +322,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public static BigDecimal operator %(BigDecimal left, BigDecimal right)
         {
-            return left - right * (left / right).Floor();
+            return left - (right * (left / right)).Floor();
         }
 
         public static bool operator ==(BigDecimal left, BigDecimal right)

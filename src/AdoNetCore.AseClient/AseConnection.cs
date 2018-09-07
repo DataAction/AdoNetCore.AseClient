@@ -135,7 +135,6 @@ namespace AdoNetCore.AseClient
 
             try
             {
-
                 Close();
 
                 // Kill listening references that might keep this object from being garbage collected.

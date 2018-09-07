@@ -1,4 +1,4 @@
-﻿// ReSharper disable InconsistentNaming
+// ReSharper disable InconsistentNaming
 namespace AdoNetCore.AseClient.Enum
 {
     internal enum LInt2 : byte
@@ -6,17 +6,19 @@ namespace AdoNetCore.AseClient.Enum
         TDS_INT2_LSB_HI = 2,
         TDS_INT2_LSB_LO = 3,
     }
+
     internal enum LInt4 : byte
     {
-
         TDS_INT4_LSB_HI = 0,
         TDS_INT4_LSB_LO = 1,
     }
+
     internal enum LChar : byte
     {
         TDS_CHAR_ASCII = 6,
         TDS_CHAR_EBCDIC = 7,
     }
+
     internal enum LFlt : byte
     {
         TDS_FLT_IEEE_HI = 4,
@@ -24,11 +26,11 @@ namespace AdoNetCore.AseClient.Enum
         TDS_FLT_IEEE_LO = 10,
         TDS_FLT_ND5000 = 11,
     }
+
     internal enum LDt : byte
     {
         TDS_TWO_I4_LSB_HI = 8,
         TDS_TWO_I4_LSB_LO = 9,
-
     }
 
     internal enum LUseDb : byte

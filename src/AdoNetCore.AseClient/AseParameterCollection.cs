@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient
         private readonly List<AseParameter> _parameters;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        internal bool HasSendableParameters 
+        internal bool HasSendableParameters
         {
             get
             {
@@ -30,12 +30,11 @@ namespace AdoNetCore.AseClient
                     }
                 }
                 return false;
-            }    
-            
+            }
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        internal IEnumerable<AseParameter> SendableParameters 
+        internal IEnumerable<AseParameter> SendableParameters
         {
             get
             {
@@ -84,7 +83,7 @@ namespace AdoNetCore.AseClient
             _parameters[index] = (AseParameter)value;
         }
 
-        public AseParameterCollection() 
+        public AseParameterCollection()
         {
             _parameters = new List<AseParameter>();
         }
@@ -92,11 +91,11 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Removes all items from the collection.
         /// </summary>
-        public override void Clear() 
+        public override void Clear()
         {
             _parameters.Clear();
         }
-       
+
         /// <summary>
         /// Determines whether the specified parameter name is in this <see cref="AseParameterCollection" />.
         /// </summary>
@@ -129,13 +128,13 @@ namespace AdoNetCore.AseClient
 
         public new AseParameter this[string parameterName]
         {
-            get => (AseParameter) GetParameter(parameterName);
+            get => (AseParameter)GetParameter(parameterName);
             set => SetParameter(parameterName, value);
         }
 
         public new AseParameter this[int index]
         {
-            get => (AseParameter) GetParameter(index);
+            get => (AseParameter)GetParameter(index);
             set => SetParameter(index, value);
         }
 
@@ -176,7 +175,7 @@ namespace AdoNetCore.AseClient
             }
             else
             {
-                _parameters[index] = (AseParameter) value;
+                _parameters[index] = (AseParameter)value;
             }
         }
 
@@ -186,7 +185,7 @@ namespace AdoNetCore.AseClient
         /// <param name="parameterName">The name of the parameter to add.</param>
         /// <param name="dbType">The <see cref="AseDbType" /> of the parameter to add.</param>
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
-        public AseParameter Add(string parameterName, AseDbType dbType) 
+        public AseParameter Add(string parameterName, AseDbType dbType)
         {
             var parameter = new AseParameter(parameterName, dbType);
 
@@ -201,10 +200,10 @@ namespace AdoNetCore.AseClient
         /// <param name="size">The size as <see cref="Int32" />.</param>
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         /// <remarks>This overload is useful when you are adding a parameter of a variable-length data type such as <b>varchar</b> or <b>binary</b>.</remarks>
-        public AseParameter Add(string parameterName, AseDbType dbType, int size) 
+        public AseParameter Add(string parameterName, AseDbType dbType, int size)
         {
             var parameter = new AseParameter(parameterName, dbType, size);
-            
+
             return Add(parameter);
         }
 
@@ -239,12 +238,12 @@ namespace AdoNetCore.AseClient
         /// <param name="value">An object that is the value of the parameter.</param>
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         /// <remarks>This overload is useful when you are adding a parameter of a variable-length data type such as <b>varchar</b> or <b>binary</b>.</remarks>
-        public AseParameter Add(string parameterName, AseDbType dbType, int size, ParameterDirection direction, Boolean isNullable, Byte precision, Byte scale, string sourceColumn, DataRowVersion sourceVersion, object value) 
+        public AseParameter Add(string parameterName, AseDbType dbType, int size, ParameterDirection direction, Boolean isNullable, Byte precision, Byte scale, string sourceColumn, DataRowVersion sourceVersion, object value)
         {
             var parameter = new AseParameter(
-                parameterName, 
-                dbType, 
-                size, 
+                parameterName,
+                dbType,
+                size,
                 direction,
                 isNullable,
                 precision,
@@ -270,12 +269,6 @@ namespace AdoNetCore.AseClient
             }
             return parameter;
         }
-
-
-
-
-
-
 
         /// <summary>
         /// Adds an <see cref="AseParameter" /> to the <see cref="AseParameterCollection" /> given the parameter name and the data type.
@@ -336,8 +329,8 @@ namespace AdoNetCore.AseClient
             {
                 Add(obj);
             }
-
         }
+
         /// <summary>
         /// Adds an array of <see cref="AseParameter"/> to the <see cref="AseParameterCollection"/>.
         /// </summary>
@@ -356,10 +349,10 @@ namespace AdoNetCore.AseClient
         /// <param name="parameterName">The name of the parameter.</param>
         /// <param name="parameterValue">The value to be added. Use <see cref="DBNull.Value" /> instead of null, to indicate a null value.</param>
         /// <returns>An <see cref="AseParameter" /> object.</returns>
-        public AseParameter Add(string parameterName, object parameterValue) 
+        public AseParameter Add(string parameterName, object parameterValue)
         {
             var parameter = new AseParameter(parameterName, parameterValue);
-            
+
             return Add(parameter);
         }
 
@@ -423,7 +416,7 @@ namespace AdoNetCore.AseClient
         /// Returns -1 when the object does not exist in the <see cref="AseParameterCollection" />.</returns>
         public override int IndexOf(object value)
         {
-            if(value is AseParameter p) 
+            if (value is AseParameter p)
             {
                 for (var i = 0; i < _parameters.Count; i++)
                 {

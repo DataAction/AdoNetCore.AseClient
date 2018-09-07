@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 
 namespace AdoNetCore.AseClient.Internal
@@ -8,42 +8,42 @@ namespace AdoNetCore.AseClient.Internal
         public static string Dump(byte[] bytes, int bytesPerLine = 16)
         {
             if (bytes == null) return "<null>";
-            int bytesLength = bytes.Length;
+            var bytesLength = bytes.Length;
 
-            char[] HexChars = "0123456789ABCDEF".ToCharArray();
+            var hexChars = "0123456789ABCDEF".ToCharArray();
 
-            int firstHexColumn =
+            var firstHexColumn =
                   8                   // 8 characters for the address
                 + 3;                  // 3 spaces
 
-            int firstCharColumn = firstHexColumn
-                + bytesPerLine * 3       // - 2 digit for the hexadecimal value and 1 space
-                + (bytesPerLine - 1) / 8 // - 1 extra space every 8 characters from the 9th
+            var firstCharColumn = firstHexColumn
+                + (bytesPerLine * 3)       // - 2 digit for the hexadecimal value and 1 space
+                + ((bytesPerLine - 1) / 8) // - 1 extra space every 8 characters from the 9th
                 + 2;                  // 2 spaces 
 
-            int lineLength = firstCharColumn
+            var lineLength = firstCharColumn
                 + bytesPerLine           // - characters to show the ascii value
                 + Environment.NewLine.Length; // Carriage return and line feed (should normally be 2)
 
-            char[] line = (new String(' ', lineLength - 2) + Environment.NewLine).ToCharArray();
-            int expectedLines = (bytesLength + bytesPerLine - 1) / bytesPerLine;
-            StringBuilder result = new StringBuilder(expectedLines * lineLength);
+            var line = (new String(' ', lineLength - 2) + Environment.NewLine).ToCharArray();
+            var expectedLines = (bytesLength + bytesPerLine - 1) / bytesPerLine;
+            var result = new StringBuilder(expectedLines * lineLength);
 
-            for (int i = 0; i < bytesLength; i += bytesPerLine)
+            for (var i = 0; i < bytesLength; i += bytesPerLine)
             {
-                line[0] = HexChars[(i >> 28) & 0xF];
-                line[1] = HexChars[(i >> 24) & 0xF];
-                line[2] = HexChars[(i >> 20) & 0xF];
-                line[3] = HexChars[(i >> 16) & 0xF];
-                line[4] = HexChars[(i >> 12) & 0xF];
-                line[5] = HexChars[(i >> 8) & 0xF];
-                line[6] = HexChars[(i >> 4) & 0xF];
-                line[7] = HexChars[(i >> 0) & 0xF];
+                line[0] = hexChars[(i >> 28) & 0xF];
+                line[1] = hexChars[(i >> 24) & 0xF];
+                line[2] = hexChars[(i >> 20) & 0xF];
+                line[3] = hexChars[(i >> 16) & 0xF];
+                line[4] = hexChars[(i >> 12) & 0xF];
+                line[5] = hexChars[(i >> 8) & 0xF];
+                line[6] = hexChars[(i >> 4) & 0xF];
+                line[7] = hexChars[(i >> 0) & 0xF];
 
-                int hexColumn = firstHexColumn;
-                int charColumn = firstCharColumn;
+                var hexColumn = firstHexColumn;
+                var charColumn = firstCharColumn;
 
-                for (int j = 0; j < bytesPerLine; j++)
+                for (var j = 0; j < bytesPerLine; j++)
                 {
                     if (j > 0 && (j & 7) == 0) hexColumn++;
                     if (i + j >= bytesLength)
@@ -54,10 +54,10 @@ namespace AdoNetCore.AseClient.Internal
                     }
                     else
                     {
-                        byte b = bytes[i + j];
-                        line[hexColumn] = HexChars[(b >> 4) & 0xF];
-                        line[hexColumn + 1] = HexChars[b & 0xF];
-                        line[charColumn] = asciiSymbol(b);
+                        var b = bytes[i + j];
+                        line[hexColumn] = hexChars[(b >> 4) & 0xF];
+                        line[hexColumn + 1] = hexChars[b & 0xF];
+                        line[charColumn] = AsciiSymbol(b);
                     }
                     hexColumn += 3;
                     charColumn++;
@@ -66,7 +66,8 @@ namespace AdoNetCore.AseClient.Internal
             }
             return result.ToString();
         }
-        static char asciiSymbol(byte val)
+
+        static char AsciiSymbol(byte val)
         {
             if (val < 32) return '.';  // Non-printable ASCII
             if (val < 127) return (char)val;   // Normal ASCII

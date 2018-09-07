@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -17,7 +17,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, DbEnvironment env)
         {
-
+            // do nothing
         }
 
         public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
@@ -30,7 +30,6 @@ namespace AdoNetCore.AseClient.Token
                 stream.ReadByte();
             }
         }
-
 
         /// <summary>
         /// The token's length or the length of its remaining length indicator is encoded in the token's type.

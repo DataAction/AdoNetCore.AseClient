@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -16,7 +16,7 @@ namespace AdoNetCore.AseClient.Token
             TDS_EED_FOLLOWS = 0x01,
             // ReSharper disable once InconsistentNaming
             TDS_EED_INFO = 0x02
-        };
+        }
 
         public TokenType Type => TokenType.TDS_EED;
 

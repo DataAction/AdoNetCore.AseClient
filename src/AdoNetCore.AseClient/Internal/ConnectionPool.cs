@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
@@ -18,7 +18,6 @@ namespace AdoNetCore.AseClient.Internal
         /// The number of connections in the pool.
         /// </summary>
         public int PoolSize { get; private set; }
-
 
         //regular members
         private readonly IConnectionParameters _parameters;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -11,13 +12,56 @@ namespace AdoNetCore.AseClient.Internal
         //Cache the current process details, expensive call
         private static readonly Process CurrentProcess = Process.GetCurrentProcess();
         private static readonly Regex DsUrlRegex = new Regex(
-            @"^file://(?<path>.+" + Regex.Escape(new string(new [] { Path.DirectorySeparatorChar })) + ")?(?<filename>[^" + Regex.Escape(new string(new[] { Path.DirectorySeparatorChar })) + "?]+)(?:[?](?<servicename>.+))?$", 
+            @"^file://(?<path>.+" + Regex.Escape(new string(new[] { Path.DirectorySeparatorChar })) + ")?(?<filename>[^" + Regex.Escape(new string(new[] { Path.DirectorySeparatorChar })) + "?]+)(?:[?](?<servicename>.+))?$",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+        private static readonly Dictionary<string, Action<ConnectionStringItem, ConnectionParameters>> PropertyMap = new Dictionary<string, Action<ConnectionStringItem, ConnectionParameters>>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"Server", ParseServer},
+            {"Data Source", ParseServer},
+            {"DataSource", ParseServer},
+            {"Address", ParseServer},
+            {"Addr", ParseServer},
+            {"Network Address", ParseServer},
+            {"Server Name", ParseServer},
+            {"Port", ParsePort},
+            {"Server Port", ParsePort},
+            {"Db", ParseDatabase},
+            {"Database", ParseDatabase},
+            {"Initial Catalog", ParseDatabase},
+            {"UID", ParseUsername},
+            {"User ID", ParseUsername},
+            {"UserID", ParseUsername},
+            {"User", ParseUsername},
+            {"Pwd", ParsePassword},
+            {"Password", ParsePassword},
+            {"Charset", ParseCharset},
+            {"Pooling", ParsePooling},
+            {"Max Pool Size", ParseMaxPoolSize},
+            {"Min Pool Size", ParseMinPoolSize},
+            {"ApplicationName", ParseApplicationName},
+            {"Application Name", ParseApplicationName},
+            {"ClientHostName", ParseClientHostName},
+            {"ClientHostProc", ParseClientHostProc},
+            {"Ping Server", ParsePingServer},
+            {"LoginTimeOut", ParseLoginTimeout},
+            {"Connect Timeout", ParseLoginTimeout},
+            {"Connection Timeout", ParseLoginTimeout},
+            {"ConnectionIdleTimeout", ParseConnectionIdleTimeout},
+            {"Connection IdleTimeout", ParseConnectionIdleTimeout},
+            {"Connection Idle Timeout", ParseConnectionIdleTimeout},
+            {"ConnectionLifetime", ParseConnectionLifetime},
+            {"Connection Lifetime", ParseConnectionLifetime},
+            {"PacketSize", ParsePacketSize},
+            {"Packet Size", ParsePacketSize},
+            {"TextSize", ParseTextSize},
+            {"UseAseDecimal", ParseUseAseDecimal},
+        };
 
         public static ConnectionParameters Parse(string connectionString)
         {
             var connectionStringTokeniser = new ConnectionStringTokeniser();
-            
+
             var result = new ConnectionParameters();
 
             string dsUrl = null;
@@ -28,126 +72,21 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     dsUrl = item.PropertyValue;
                 }
-                else if (item.PropertyName.Equals("Server", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Data Source", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("DataSource", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Address", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Addr", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Network Address", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Server Name", StringComparison.OrdinalIgnoreCase))
+                else if (PropertyMap.ContainsKey(item.PropertyName))
                 {
-                    if (string.IsNullOrWhiteSpace(item.PropertyValue))
-                    {
-                        continue;
-                    }
-                    var parts = item.PropertyValue.Split(',', ':');
-
-                    result.Server = parts[0];
-
-                    if (parts.Length > 1)
-                    {
-                        result.Port = Convert.ToInt32(parts[1]);
-                    }
-                }
-                else if (item.PropertyName.Equals("Port", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Server Port", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Port = Convert.ToInt32(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("Db", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Database", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Initial Catalog", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Database = item.PropertyValue;
-                }
-                else if (item.PropertyName.Equals("UID", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("User ID", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("UserID", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("User", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Username = item.PropertyValue;
-                }
-                else if (item.PropertyName.Equals("Pwd", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Password", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Password = item.PropertyValue;
-                }
-                else if (item.PropertyName.Equals("Charset", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Charset = item.PropertyValue;
-                }
-                else if (item.PropertyName.Equals("Pooling", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Pooling = Convert.ToBoolean(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("Max Pool Size", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.MaxPoolSize = Convert.ToInt16(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("Min Pool Size", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.MinPoolSize = Convert.ToInt16(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("ApplicationName", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Application Name", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.ApplicationName = item.PropertyValue;
-                }
-                else if (item.PropertyName.Equals("ClientHostName", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.ClientHostName = item.PropertyValue;
-                }
-                else if (item.PropertyName.Equals("ClientHostProc", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.ClientHostProc = item.PropertyValue;
-                }
-                else if (item.PropertyName.Equals("Ping Server", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.PingServer = Convert.ToBoolean(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("LoginTimeOut", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Connect Timeout", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Connection Timeout", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.LoginTimeout = Convert.ToInt32(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("ConnectionIdleTimeout", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Connection IdleTimeout", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Connection Idle Timeout", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.ConnectionIdleTimeout = Convert.ToInt16(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("ConnectionLifetime", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Connection Lifetime", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.ConnectionLifetime = Convert.ToInt16(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("PacketSize", StringComparison.OrdinalIgnoreCase)
-                    || item.PropertyName.Equals("Packet Size", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.PacketSize = Convert.ToUInt16(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("TextSize", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.TextSize = Convert.ToInt32(item.PropertyValue);
-                }
-                else if (item.PropertyName.Equals("UseAseDecimal", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (bool.TryParse(item.PropertyValue, out var parsedBool))
-                    {
-                        result.UseAseDecimal = parsedBool;
-                    }
-                    else if (int.TryParse(item.PropertyValue, out var parsedInt))
-                    {
-                        result.UseAseDecimal = parsedInt != 0;
-                    }
-                    else
-                    {
-                        result.UseAseDecimal = Convert.ToBoolean(item.PropertyValue);
-                    }
+                    PropertyMap[item.PropertyName](item, result);
                 }
             }
 
+            ProcessDsUrl(dsUrl, result);
+
+            ValidateConnectionParameters(result);
+
+            return result;
+        }
+
+        private static void ProcessDsUrl(string dsUrl, ConnectionParameters result)
+        {
             if (!string.IsNullOrWhiteSpace(dsUrl))
             {
                 // file://[path]<filename>[?][servicename]
@@ -190,7 +129,128 @@ namespace AdoNetCore.AseClient.Internal
                     }
                 }
             }
+        }
 
+        private static void ParseServer(ConnectionStringItem item, ConnectionParameters result)
+        {
+            if (string.IsNullOrWhiteSpace(item.PropertyValue))
+            {
+                return;
+            }
+            var parts = item.PropertyValue.Split(',', ':');
+
+            result.Server = parts[0];
+
+            if (parts.Length > 1)
+            {
+                result.Port = Convert.ToInt32(parts[1]);
+            }
+        }
+
+        private static void ParsePort(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Port = Convert.ToInt32(item.PropertyValue);
+        }
+
+        private static void ParseDatabase(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Database = item.PropertyValue;
+        }
+
+        private static void ParseUsername(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Username = item.PropertyValue;
+        }
+
+        private static void ParsePassword(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Password = item.PropertyValue;
+        }
+
+        private static void ParseCharset(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Charset = item.PropertyValue;
+        }
+
+        private static void ParsePooling(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Pooling = Convert.ToBoolean(item.PropertyValue);
+        }
+
+        private static void ParseMaxPoolSize(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.MaxPoolSize = Convert.ToInt16(item.PropertyValue);
+        }
+
+        private static void ParseMinPoolSize(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.MinPoolSize = Convert.ToInt16(item.PropertyValue);
+        }
+
+        private static void ParseApplicationName(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.ApplicationName = item.PropertyValue;
+        }
+
+        private static void ParseClientHostName(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.ClientHostName = item.PropertyValue;
+        }
+
+        private static void ParseClientHostProc(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.ClientHostProc = item.PropertyValue;
+        }
+
+        private static void ParsePingServer(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.PingServer = Convert.ToBoolean(item.PropertyValue);
+        }
+
+        private static void ParseLoginTimeout(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.LoginTimeout = Convert.ToInt32(item.PropertyValue);
+        }
+
+        private static void ParseConnectionIdleTimeout(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.ConnectionIdleTimeout = Convert.ToInt16(item.PropertyValue);
+        }
+
+        private static void ParseConnectionLifetime(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.ConnectionLifetime = Convert.ToInt16(item.PropertyValue);
+        }
+
+        private static void ParsePacketSize(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.PacketSize = Convert.ToUInt16(item.PropertyValue);
+        }
+
+        private static void ParseTextSize(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.TextSize = Convert.ToInt32(item.PropertyValue);
+        }
+
+        private static void ParseUseAseDecimal(ConnectionStringItem item, ConnectionParameters result)
+        {
+            if (bool.TryParse(item.PropertyValue, out var parsedBool))
+            {
+                result.UseAseDecimal = parsedBool;
+            }
+            else if (int.TryParse(item.PropertyValue, out var parsedInt))
+            {
+                result.UseAseDecimal = parsedInt != 0;
+            }
+            else
+            {
+                result.UseAseDecimal = Convert.ToBoolean(item.PropertyValue);
+            }
+        }
+
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+        private static void ValidateConnectionParameters(ConnectionParameters result)
+        {
             if (string.IsNullOrWhiteSpace(result.Server))
             {
                 throw new ArgumentException("Data Source not specified");
@@ -240,8 +300,6 @@ namespace AdoNetCore.AseClient.Internal
             {
                 throw new ArgumentException("Min Pool Size must be at most the same as Max Pool Size");
             }
-
-            return result;
         }
 
         public string Server { get; private set; } = string.Empty;
@@ -263,6 +321,6 @@ namespace AdoNetCore.AseClient.Internal
         public bool PingServer { get; private set; } = true; //in pooling, ping the server before returning from the pool
         public ushort PacketSize { get; private set; } = 512;
         public int TextSize { get; private set; } = 32768;
-        public bool UseAseDecimal { get; private set; } = false;
+        public bool UseAseDecimal { get; private set; }
     }
 }

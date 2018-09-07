@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
@@ -56,7 +56,6 @@ namespace AdoNetCore.AseClient.Interface
         /// but the result is wrapped in a Task to allow the caller to check IsCanceled
         /// </summary>
         Task<int> ExecuteNonQueryTaskRunnable(AseCommand command, AseTransaction transaction);
-
 
         /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteReader()"/>

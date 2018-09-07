@@ -1,6 +1,7 @@
 # AdoNetCore.AseClient - a .NET Core DB Provider for SAP ASE
 
 [![CodeFactor](https://www.codefactor.io/repository/github/dataaction/adonetcore.aseclient/badge)](https://www.codefactor.io/repository/github/dataaction/adonetcore.aseclient)
+[![Join the chat at https://gitter.im/DataAction/AdoNetCore.AseClient](https://badges.gitter.im/DataAction/AdoNetCore.AseClient.svg)](https://gitter.im/DataAction/AdoNetCore.AseClient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Packages available at NuGet:
 
@@ -130,16 +131,16 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 
 | Property                                                                                   | Support   | Notes
 | ------------------------------------------------------------------------------------------ |:---------:| -----
-| `AlternateServers`                                                                         | X
-| `AnsiNull`                                                                                 | TODO
+| `AlternateServers`                                                                         | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
+| `AnsiNull`                                                                                 | TODO | Submit a PR!
 | `ApplicationName` or `Application Name`                                                    | &#10003;
 | `BufferCacheSize`                                                                          | TODO
-| `Charset`                                                                                  | &#10003;
+| `Charset`                                                                                  | &#10003; | If not specified, the server should dictate the character set
 | `ClientHostName`                                                                           | &#10003;
 | `ClientHostProc`                                                                           | &#10003;
 | `CodePageType`                                                                             | TODO
-| `Connection Lifetime` or `ConnectionLifetime`                                              | TODO
-| `ConnectionIdleTimeout` or `Connection IdleTimeout` or `Connection Idle Timeout`           | TODO
+| `Connection Lifetime` or `ConnectionLifetime`                                              | &#10003;
+| `ConnectionIdleTimeout` or `Connection IdleTimeout` or `Connection Idle Timeout`           | &#10003;
 | `CumulativeRecordCount`                                                                    | TODO
 | `Database` or `Db` or `Initial Catalog`                                                    | &#10003;
 | `Data Source` or `DataSource` or `Address` or `Addr` or `Network Address` or `Server Name` | &#10003;
@@ -148,10 +149,10 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `EnableBulkLoad`                                                                           | X
 | `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
 | `Encryption`                                                                               | X
-| `EncryptPassword`                                                                          | TODO | Refer to issue [#27](https://github.com/DataAction/AdoNetCore.AseClient/issues/27)
+| `EncryptPassword`                                                                          | TODO | Submit a PR! Refer to issue [#27](https://github.com/DataAction/AdoNetCore.AseClient/issues/27)
 | `Enlist`                                                                                   | X
 | `FetchArraySize`                                                                           | TODO
-| `HASession`                                                                                | X
+| `HASession`                                                                                | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
 | `LoginTimeOut` or `Connect Timeout` or `Connection Timeout`                                | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
 | `Max Pool Size`                                                                            | &#10003;
 | `Min Pool Size`                                                                            | &#10003; | <ul><li>The pool will attempt to prime itself on creation up to this size (in a thread)</li><li>When a connection is killed, the pool will attempt to replace it if the pool size is less than Min</li></ul>
@@ -161,8 +162,8 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Port` or `Server Port`                                                                    | &#10003;
 | `Pwd` or `Password`                                                                        | &#10003;
 | `RestrictMaximum PacketSize`                                                               | TODO | May not be supported any more by capability bits
-| `Secondary Data Source`                                                                    | X
-| `Secondary Server Port`                                                                    | X
+| `Secondary Data Source`                                                                    | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
+| `Secondary Server Port`                                                                    | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
 | `TextSize`                                                                                 | &#10003;
 | `TightlyCoupledTransaction`                                                                | X
 | `TrustedFile`                                                                              | X
@@ -187,7 +188,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `DateTimeOffset`        | X         | | ASE does not support a `DateTimeOffset` type. Use `DateTime` instead
 | `Decimal`               | &#10003;  | `decimal`
 | `Double`                | &#10003;  | `double`
-| `Guid`                  | X         | | ASE does not support GUID or UUID types. Call `.ToByteArray()` and use `DbType.Binary` instead
+| `Guid`                  | &#10003;  | `System.Guid` | Technically ASE does not support GUID or UUID types. Our driver supports it, but converts to `Binary` under the hood. You can obtain the same result by calling `.ToByteArray()` and using `DbType.Binary`.
 | `Int16`                 | &#10003;  | `short`
 | `Int32`                 | &#10003;  | `int`
 | `Int64`                 | &#10003;  | `long`

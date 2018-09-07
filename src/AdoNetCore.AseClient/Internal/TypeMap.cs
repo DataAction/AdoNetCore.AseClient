@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
@@ -32,9 +32,9 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.VarNumeric, (value, length) => TdsDataType.TDS_NUMN},
             {DbType.Single, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
             {DbType.Double, (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
-            {DbType.DateTime, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME},
+            {DbType.DateTime, (value, length) => TdsDataType.TDS_BIGDATETIMEN},
             {DbType.Date, (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATEN : TdsDataType.TDS_DATE},
-            {DbType.Time, (value, length) => value == DBNull.Value ? TdsDataType.TDS_TIMEN : TdsDataType.TDS_TIME}
+            {DbType.Time, (value, length) => TdsDataType.TDS_BIGDATETIMEN}
         };
 
         private static readonly Dictionary<Type, Func<object, int, TdsDataType>> NetTypeToTdsMap = new Dictionary<Type, Func<object, int, TdsDataType>>
@@ -57,7 +57,7 @@ namespace AdoNetCore.AseClient.Internal
             {typeof(AseDecimal), (value, length) => TdsDataType.TDS_NUMN},
             {typeof(float), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
             {typeof(double), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
-            {typeof(DateTime), (value, length) => value == DBNull.Value ? TdsDataType.TDS_DATETIMEN : TdsDataType.TDS_DATETIME}
+            {typeof(DateTime), (value, length) => TdsDataType.TDS_BIGDATETIMEN }
         };
 
         public static int? GetFormatLength(DbType dbType, AseParameter parameter, Encoding enc)
@@ -188,6 +188,7 @@ namespace AdoNetCore.AseClient.Internal
             {TdsDataType.TDS_DATEN, f => typeof(DateTime)},
             {TdsDataType.TDS_DATETIME, f => typeof(DateTime)},
             {TdsDataType.TDS_DATETIMEN, f => typeof(DateTime)},
+            {TdsDataType.TDS_BIGDATETIMEN, f => typeof(DateTime)},
             {TdsDataType.TDS_DECN, f => typeof(decimal)},
             {TdsDataType.TDS_FLT4, f => typeof(float)},
             {TdsDataType.TDS_FLT8, f => typeof(double)},
@@ -272,6 +273,7 @@ namespace AdoNetCore.AseClient.Internal
             {TdsDataType.TDS_DATEN, f => AseDbType.Date},
             {TdsDataType.TDS_DATETIME, f => AseDbType.DateTime},
             {TdsDataType.TDS_DATETIMEN, f => AseDbType.DateTime},
+            {TdsDataType.TDS_BIGDATETIMEN, f => AseDbType.DateTime},
             {TdsDataType.TDS_DECN, f => AseDbType.Decimal},
             {TdsDataType.TDS_FLT4, f => AseDbType.Real},
             {TdsDataType.TDS_FLT8, f => AseDbType.Double},
@@ -301,7 +303,7 @@ namespace AdoNetCore.AseClient.Internal
                     ? AseDbType.UniVarChar
                     : AseDbType.Binary
             },
-            {TdsDataType.TDS_LONGCHAR, f => AseDbType.LongVarChar},
+            {TdsDataType.TDS_LONGCHAR, f => AseDbType.VarChar},
             {TdsDataType.TDS_MONEY, f => AseDbType.Money},
             {TdsDataType.TDS_MONEYN, f => f.Length == 8 ? AseDbType.Money : AseDbType.SmallMoney},
             {TdsDataType.TDS_NUMN, f => AseDbType.Numeric},
@@ -339,6 +341,105 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             return TdsToAseMap[format.DataType](format);
+        }
+
+        private static readonly Dictionary<DbType, AseDbType> DbTypeToAseDbTypeMap = new Dictionary<DbType, AseDbType>
+        {
+            {DbType.AnsiString, AseDbType.VarChar},
+            {DbType.AnsiStringFixedLength, AseDbType.Char},
+            {DbType.Binary, AseDbType.Binary},
+            {DbType.Boolean, AseDbType.Bit},
+            {DbType.Byte, AseDbType.TinyInt},
+            {DbType.Currency, AseDbType.Money},
+            {DbType.Date, AseDbType.Date},
+            {DbType.DateTime, AseDbType.DateTime},
+            {DbType.DateTime2, AseDbType.DateTime},
+            {DbType.DateTimeOffset, AseDbType.Unsupported},
+            {DbType.Decimal, AseDbType.Decimal},
+            {DbType.Double, AseDbType.Double},
+            {DbType.Guid, AseDbType.Unsupported},
+            {DbType.Int16, AseDbType.SmallInt},
+            {DbType.Int32, AseDbType.Integer},
+            {DbType.Int64, AseDbType.BigInt},
+            {DbType.Object, AseDbType.Binary},
+            {DbType.SByte, AseDbType.SmallInt}, //Was Unsupported
+            {DbType.Single, AseDbType.Real},
+            {DbType.String, AseDbType.UniVarChar},
+            {DbType.StringFixedLength, AseDbType.UniChar},
+            {DbType.Time, AseDbType.Time},
+            {DbType.UInt16, AseDbType.UnsignedSmallInt},
+            {DbType.UInt32, AseDbType.UnsignedInt},
+            {DbType.UInt64, AseDbType.UnsignedBigInt},
+            {DbType.VarNumeric, AseDbType.Numeric},
+            {DbType.Xml, AseDbType.Unsupported},
+        };
+
+        public static AseDbType GetAseDbType(DbType dbType)
+        {
+            return DbTypeToAseDbTypeMap.ContainsKey(dbType)
+                ? DbTypeToAseDbTypeMap[dbType]
+                : default(AseDbType);
+        }
+
+        private static readonly Dictionary<AseDbType, DbType> AseDbTypeToDbTypeMap = new Dictionary<AseDbType, DbType>
+        {
+            //{AseDbType.BigDateTime, DbType.DateTime}, //same value as DateTime
+            {AseDbType.BigInt, DbType.Int64},
+            {AseDbType.Binary, DbType.Binary},
+            {AseDbType.Bit, DbType.Boolean},
+            {AseDbType.Char, DbType.AnsiStringFixedLength},
+            {AseDbType.Date, DbType.Date},
+            {AseDbType.DateTime, DbType.DateTime},
+            {AseDbType.Decimal, DbType.Decimal},
+            {AseDbType.Double, DbType.Double},
+            {AseDbType.Image, DbType.Binary},
+            {AseDbType.Integer, DbType.Int32},
+            {AseDbType.Money, DbType.Currency},
+            {AseDbType.NChar, DbType.AnsiStringFixedLength},
+            {AseDbType.Numeric, DbType.VarNumeric},
+            {AseDbType.NVarChar, DbType.AnsiString},
+            {AseDbType.Real, DbType.Single},
+            {AseDbType.SmallDateTime, DbType.DateTime},
+            {AseDbType.SmallInt, DbType.Int16},
+            {AseDbType.SmallMoney, DbType.Currency},
+            {AseDbType.Text, DbType.AnsiString},
+            {AseDbType.Time, DbType.Time},
+            {AseDbType.TimeStamp, DbType.Binary},
+            {AseDbType.TinyInt, DbType.Byte},
+            {AseDbType.UniChar, DbType.StringFixedLength},
+            {AseDbType.Unitext, DbType.String},
+            {AseDbType.UniVarChar, DbType.String},
+            {AseDbType.UnsignedBigInt, DbType.UInt64},
+            {AseDbType.UnsignedInt, DbType.UInt32},
+            {AseDbType.UnsignedSmallInt, DbType.UInt16},
+            // As per the reference driver, Guid appears to be synonymous with Unsupported.
+            // Never fear! If the user explicitly sets the DbType to Guid, and uses a System.Guid Value, it will be supported.
+            {AseDbType.Unsupported, DbType.Guid},
+            {AseDbType.VarBinary, DbType.Binary},
+            {AseDbType.VarChar, DbType.AnsiString}
+        };
+
+        public static DbType GetDbType(AseDbType aseDbType)
+        {
+            return AseDbTypeToDbTypeMap.ContainsKey(aseDbType)
+                ? AseDbTypeToDbTypeMap[aseDbType]
+                : default(DbType);
+        }
+
+        /// <summary>
+        /// When a parameter's type is set, this will be called to "clean it up".
+        /// In particular, the reference driver treats DateTime and BigDateTime as the same value (and both are transmitted as a TDS_BIGDATETIMEN type), so we should do the same.
+        /// </summary>
+        public static AseDbType CleanupAseDbType(AseDbType aseDbType)
+        {
+            // DateTime and BigDateTime are implemented the same way.
+            if (aseDbType == AseDbType.BigDateTime)
+            {
+                return AseDbType.DateTime;
+            }
+
+            // it's clean, leave it alone!
+            return aseDbType;
         }
     }
 }

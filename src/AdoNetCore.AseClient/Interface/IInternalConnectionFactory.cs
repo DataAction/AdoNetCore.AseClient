@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AdoNetCore.AseClient.Interface
@@ -9,6 +9,6 @@ namespace AdoNetCore.AseClient.Interface
         /// Create a new internal connection, ready to use.
         /// If cancellation is requested, this will discard any work done and throw an OperationCancelledException
         /// </summary>
-        Task<IInternalConnection> GetNewConnection(CancellationToken token);
+        Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier);
     }
 }

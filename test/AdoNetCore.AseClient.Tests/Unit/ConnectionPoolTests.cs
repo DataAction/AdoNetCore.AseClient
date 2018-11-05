@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -27,7 +27,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
         {
             var pool = new ConnectionPool(new TestConnectionParameters(), new SlowConnectionFactory());
 
-            Assert.Throws<AseException>(() => pool.Reserve());
+            Assert.Throws<AseException>(() => pool.Reserve(null));
             Assert.AreEqual(0, pool.PoolSize);
         }
 
@@ -55,8 +55,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
             };
             var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory());
 
-            var c1 = pool.Reserve();
-            Assert.Throws<AseException>(() => pool.Reserve());
+            var c1 = pool.Reserve(null);
+            Assert.Throws<AseException>(() => pool.Reserve(null));
 
             Assert.AreEqual(1, pool.PoolSize);
             pool.Release(c1);
@@ -89,14 +89,14 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory());
 
             Console.WriteLine($"Wave 0 (primer) of {waves}");
-            var connections = Enumerable.Repeat<Func<IInternalConnection>>(() => pool.Reserve(), size).Select(f => f()).ToArray();
+            var connections = Enumerable.Repeat<Func<IInternalConnection>>(() => pool.Reserve(null), size).Select(f => f()).ToArray();
 
             for (var wave = 0; wave < waves; wave++)
             {
                 Console.WriteLine($"Wave {wave + 1} of {waves}");
 
                 var closureConnections = connections; //access to modified closure warning
-                var reserveTask = Task.Run(() => Enumerable.Repeat<Func<IInternalConnection>>(() => pool.Reserve(), size).AsParallel().Select(f => f()).ToArray());
+                var reserveTask = Task.Run(() => Enumerable.Repeat<Func<IInternalConnection>>(() => pool.Reserve(null), size).AsParallel().Select(f => f()).ToArray());
                 var releaseTask = Task.Run(() => Parallel.ForEach(closureConnections, pool.Release));
 
                 try
@@ -145,7 +145,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 },
                 (_, __) =>
                 {
-                    var c = pool.Reserve();
+                    var c = pool.Reserve(null);
                     pool.Release(c);
                 });
 
@@ -154,7 +154,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class ImmediateConnectionFactory : IInternalConnectionFactory
         {
-            public async Task<IInternalConnection> GetNewConnection(CancellationToken token)
+            public async Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
             {
                 return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection());
             }
@@ -214,11 +214,12 @@ namespace AdoNetCore.AseClient.Tests.Unit
             {
                 return new Dictionary<string, long>();
             }
+            public IInfoMessageEventNotifier EventNotifier { get; set; }
         }
 
         private class SlowConnectionFactory : IInternalConnectionFactory
         {
-            public Task<IInternalConnection> GetNewConnection(CancellationToken token)
+            public Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
             {
                 token.WaitHandle.WaitOne();
                 throw new TimeoutException($"Timed out attempting to create new connection");

@@ -1,32 +1,32 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Data.Common;
-using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader
     {
-        private static readonly HashSet<TdsDataType> LongTdsTypes = new HashSet<TdsDataType> {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT};
+        //private static readonly HashSet<TdsDataType> LongTdsTypes = new HashSet<TdsDataType> {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT};
 
         private readonly TableResult[] _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
-        private readonly AseCommand _command;
         private readonly CommandBehavior _behavior;
 
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+        private readonly AseCommand _command;
         private DataTable _currentSchemaTable;
 #endif
 
         internal AseDataReader(TableResult[] results, AseCommand command, CommandBehavior behavior)
         {
             _results = results;
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _command = command;
+#endif
             _behavior = behavior;
             NextResult();
         }

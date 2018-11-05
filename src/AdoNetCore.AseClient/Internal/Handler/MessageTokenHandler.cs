@@ -9,7 +9,18 @@ namespace AdoNetCore.AseClient.Internal.Handler
     internal class MessageTokenHandler : ITokenHandler
     {
         private readonly List<AseError> _allErrors = new List<AseError>();
-        private bool _foundSevereError = false;
+        private bool _foundSevereError;
+        private readonly IInfoMessageEventNotifier _eventNotifier;
+
+        public MessageTokenHandler()
+        {
+            _eventNotifier = null;
+        }
+
+        public MessageTokenHandler(IInfoMessageEventNotifier eventNotifier)
+        {
+            _eventNotifier = eventNotifier;
+        }
 
         public bool CanHandle(TokenType type)
         {
@@ -28,8 +39,8 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     {
                         _foundSevereError = true;
                     }
-                    
-                    _allErrors.Add(new AseError
+
+                    var error = new AseError
                     {
                         IsError = isSevere,
                         IsFromServer = true,
@@ -46,7 +57,10 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         IsInformation = !isSevere,
                         IsWarning = false,
                         LineNum = t.LineNumber
-                    });
+                    };
+
+                    _allErrors.Add(error);
+                    _eventNotifier?.NotifyInfoMessage(new AseErrorCollection(error), error.Message);
 
                     var msgType = isSevere
                         ? "ERROR"

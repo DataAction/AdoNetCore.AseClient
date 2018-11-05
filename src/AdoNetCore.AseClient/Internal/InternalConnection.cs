@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -122,7 +122,7 @@ namespace AdoNetCore.AseClient.Internal
                     new CapabilityToken()));
 
             var ackHandler = new LoginTokenHandler();
-            var messageHandler = new MessageTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
 
             ReceiveTokens(
                 ackHandler,
@@ -191,7 +191,7 @@ namespace AdoNetCore.AseClient.Internal
                 CommandText = $"USE {databaseName}"
             }));
 
-            var messageHandler = new MessageTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
 
             ReceiveTokens(
                 new EnvChangeTokenHandler(_environment),
@@ -215,7 +215,7 @@ namespace AdoNetCore.AseClient.Internal
                 SendPacket(new NormalPacket(BuildCommandTokens(command, behavior)));
 
                 var doneHandler = new DoneTokenHandler();
-                var messageHandler = new MessageTokenHandler();
+                var messageHandler = new MessageTokenHandler(EventNotifier);
                 var dataReaderHandler = readerSource != null ? new DataReaderTokenHandler() : null;
 
                 ReceiveTokens(
@@ -376,7 +376,7 @@ namespace AdoNetCore.AseClient.Internal
             SendPacket(new NormalPacket(OptionCommandToken.CreateSetTextSize(textSize)));
 
             var doneHandler = new DoneTokenHandler();
-            var messageHandler = new MessageTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
             var dataReaderHandler = new DataReaderTokenHandler();
 
             ReceiveTokens(
@@ -547,5 +547,7 @@ SET FMTONLY OFF";
 
             return EmptyStatistics;
         }
+
+        public IInfoMessageEventNotifier EventNotifier { get; set; }
     }
 }

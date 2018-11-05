@@ -21,6 +21,7 @@ namespace AdoNetCore.AseClient
         private ConnectionState _state;
         private bool _isDisposed;
         private AseTransaction _transaction;
+        private readonly IEventNotifier _eventNotifier;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AseConnection" /> class.
@@ -112,6 +113,7 @@ namespace AdoNetCore.AseClient
             _connectionPoolManager = connectionPoolManager;
             NamedParameters = true;
             _isDisposed = false;
+            _eventNotifier = new EventNotifier(this);
         }
 
         /// <summary>
@@ -138,10 +140,7 @@ namespace AdoNetCore.AseClient
                 Close();
 
                 // Kill listening references that might keep this object from being garbage collected.
-                StateChangeInternal = null;
-                InfoMessageInternal = null;
-                TraceEnterInternal = null;
-                TraceExitInternal = null;
+                _eventNotifier.ClearAll();
             }
             finally
             {
@@ -271,7 +270,7 @@ namespace AdoNetCore.AseClient
 
             var parameters = ConnectionParameters.Parse(_connectionString);
 
-            _internal = _connectionPoolManager.Reserve(_connectionString, parameters);
+            _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier);
 
             InternalConnectionTimeout = parameters.LoginTimeout;
 
@@ -364,7 +363,7 @@ namespace AdoNetCore.AseClient
                     var oldState = _state;
                     _state = value;
 
-                    NotifyStateChange(oldState, _state);
+                    _eventNotifier.NotifyStateChange(oldState, _state);
                 }
             }
         }
@@ -396,7 +395,7 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                InfoMessageInternal += value;
+                _eventNotifier.InfoMessage += value;
             }
             remove
             {
@@ -404,17 +403,8 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                InfoMessageInternal -= value;
+                _eventNotifier.InfoMessage -= value;
             }
-        }
-
-        private event AseInfoMessageEventHandler InfoMessageInternal; // TODO - implement
-
-        private void NotifyInfoMessage(AseErrorCollection errors, string message)
-        {
-            var infoMessage = InfoMessageInternal;
-
-            infoMessage?.Invoke(this, new AseInfoMessageEventArgs(errors, message));
         }
 
         /// <summary>
@@ -432,7 +422,7 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                StateChangeInternal += value;
+                _eventNotifier.StateChange += value;
             }
             remove
             {
@@ -440,17 +430,8 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                StateChangeInternal -= value;
+                _eventNotifier.StateChange -= value;
             }
-        }
-
-        private event StateChangeEventHandler StateChangeInternal;
-
-        private void NotifyStateChange(ConnectionState originalState, ConnectionState currentState)
-        {
-            var stateChange = StateChangeInternal;
-
-            stateChange?.Invoke(this, new StateChangeEventArgs(originalState, currentState));
         }
 
         /// <summary>
@@ -477,7 +458,7 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                TraceEnterInternal += value;
+                _eventNotifier.TraceEnter += value;
             }
             remove
             {
@@ -485,16 +466,8 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                TraceEnterInternal -= value;
+                _eventNotifier.TraceEnter -= value;
             }
-        }
-
-        private event TraceEnterEventHandler TraceEnterInternal;
-
-        private void NotifyTraceEnter(object source, string method, params object[] parameters)
-        {
-            var traceEnter = TraceEnterInternal;
-            traceEnter?.Invoke(this, source, method, parameters);
         }
 
         /// <summary>
@@ -521,7 +494,7 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                TraceExitInternal += value;
+                _eventNotifier.TraceExit += value;
             }
             remove
             {
@@ -529,16 +502,8 @@ namespace AdoNetCore.AseClient
                 {
                     throw new ObjectDisposedException(nameof(AseConnection));
                 }
-                TraceExitInternal -= value;
+                _eventNotifier.TraceExit -= value;
             }
-        }
-
-        private event TraceExitEventHandler TraceExitInternal;
-
-        private void NotifyTraceExit(object source, string method, object returnValue)
-        {
-            var traceExit = TraceExitInternal;
-            traceExit?.Invoke(this, source, method, returnValue);
         }
 
         /// <summary>

@@ -110,5 +110,10 @@ namespace AdoNetCore.AseClient.Interface
         /// </summary>
         /// <returns>An <see cref="IDictionary"/> which should under-the-hood map statistic names <see cref="string"/> to statistic values <see cref="long"/></returns>
         IDictionary RetrieveStatistics();
+
+        /// <summary>
+        /// The 'caller event' notifier for the connection
+        /// </summary>
+        IInfoMessageEventNotifier EventNotifier { get; set; }
     }
 }

@@ -9,6 +9,32 @@ namespace AdoNetCore.AseClient.Tests.Integration.Connection
     public class InfoMessageTests
     {
         [Test]
+        public void OpenConnection_OutputsInfoMessages()
+        {
+            // since we care about stuff that happens when the connection is (physically) opened
+            // we can't use a connection coming from the pool because it might have already been opened.
+            using (var connection = new AseConnection(ConnectionStrings.NonPooled))
+            {
+                var infoMessages = new List<AseError>();
+                AseInfoMessageEventHandler handlerFunc = (sender, args) =>
+                {
+                    foreach (AseError message in args.Errors)
+                    {
+                        infoMessages.Add(message);
+                    }
+                };
+
+                connection.InfoMessage += handlerFunc;
+
+                connection.Open();
+
+                connection.InfoMessage -= handlerFunc;
+
+                Assert.IsNotEmpty(infoMessages);
+            }
+        }
+
+        [Test]
         public void ExecutePrintStatements_OutputsInfoMessages()
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))

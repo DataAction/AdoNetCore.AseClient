@@ -43,7 +43,7 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public IInternalConnection Reserve()
+        public IInternalConnection Reserve(IInfoMessageEventNotifier eventNotifier)
         {
             try
             {
@@ -53,8 +53,8 @@ namespace AdoNetCore.AseClient.Internal
                     src.CancelAfter(TimeSpan.FromSeconds(_parameters.LoginTimeout));
 
                     var task = _parameters.Pooling
-                        ? ReservePooledConnection(t)
-                        : _connectionFactory.GetNewConnection(t);
+                        ? ReservePooledConnection(t, eventNotifier)
+                        : _connectionFactory.GetNewConnection(t, eventNotifier);
 
                     task.Wait(t);
                     var connection = task.Result;
@@ -109,17 +109,17 @@ namespace AdoNetCore.AseClient.Internal
                 : new AseException("Timed out trying to establish a connection");
         }
 
-        private async Task<IInternalConnection> ReservePooledConnection(CancellationToken cancellationToken)
+        private async Task<IInternalConnection> ReservePooledConnection(CancellationToken cancellationToken, IInfoMessageEventNotifier eventNotifier)
         {
-            return FetchIdlePooledConnection()
+            return FetchIdlePooledConnection(eventNotifier)
                    ?? (CheckAndIncrementPoolSize()
                        //there's room in the pool! create new connection and return it
-                       ? await CreateNewPooledConnection(cancellationToken)
+                       ? await CreateNewPooledConnection(cancellationToken, eventNotifier)
                        //pool's full, wait for something to release a connection
-                       : WaitForPooledConnection(cancellationToken));
+                       : WaitForPooledConnection(cancellationToken, eventNotifier));
         }
 
-        private IInternalConnection FetchIdlePooledConnection()
+        private IInternalConnection FetchIdlePooledConnection(IInfoMessageEventNotifier eventNotifier)
         {
             var now = DateTime.UtcNow;
             while (_available.TryTake(out var connection))
@@ -137,6 +137,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
 
                 Logger.Instance?.WriteLine($"{nameof(FetchIdlePooledConnection)} returned idle connection");
+                connection.EventNotifier = eventNotifier;
                 return connection;
             }
 
@@ -144,12 +145,12 @@ namespace AdoNetCore.AseClient.Internal
             return null;
         }
 
-        private async Task<IInternalConnection> CreateNewPooledConnection(CancellationToken cancellationToken)
+        private async Task<IInternalConnection> CreateNewPooledConnection(CancellationToken cancellationToken = new CancellationToken(), IInfoMessageEventNotifier eventNotifier = null)
         {
             try
             {
                 Logger.Instance?.WriteLine($"{nameof(CreateNewPooledConnection)} start");
-                return await _connectionFactory.GetNewConnection(cancellationToken);
+                return await _connectionFactory.GetNewConnection(cancellationToken, eventNotifier);
             }
             catch
             {
@@ -159,13 +160,14 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private IInternalConnection WaitForPooledConnection(CancellationToken cancellationToken)
+        private IInternalConnection WaitForPooledConnection(CancellationToken cancellationToken, IInfoMessageEventNotifier eventNotifier)
         {
             Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} start");
             try
             {
                 var conn = _available.Take(cancellationToken);
                 Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} found connection");
+                conn.EventNotifier = eventNotifier;
                 return conn;
             }
             catch (OperationCanceledException)
@@ -182,7 +184,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 try
                 {
-                    AddToPool(await CreateNewPooledConnection(new CancellationToken()));
+                    AddToPool(await CreateNewPooledConnection(/*Since this is an internal optimisation, there's no point supplying a cancellation token or event notifier*/));
                     Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} added new internal connection");
                 }
                 catch(Exception ex)
@@ -201,7 +203,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 try
                 {
-                    AddToPool(await CreateNewPooledConnection(new CancellationToken()));
+                    AddToPool(await CreateNewPooledConnection(/*Since this is an internal optimisation, there's no point supplying a cancellation token or event notifier*/));
                     Logger.Instance?.WriteLine($"{nameof(TryReplaceConnection)} added new internal connection");
                 }
                 catch (Exception ex)

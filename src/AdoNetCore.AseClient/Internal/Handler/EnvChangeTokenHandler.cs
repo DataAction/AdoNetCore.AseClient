@@ -61,7 +61,18 @@ namespace AdoNetCore.AseClient.Internal.Handler
                                 }
                                 else
                                 {
-                                    throw new AseException($"Server environment changed to unsupported charset {change.NewValue}");
+                                    try
+                                    {
+                                        // save it for later
+                                        var newEncoding = Encoding.GetEncoding(change.NewValue);
+                                        CharsetMap[change.NewValue] = () => newEncoding;
+
+                                        _environment.Encoding = newEncoding;
+                                    }
+                                    catch
+                                    {
+                                        throw new AseException($"Server environment changed to unsupported charset '{change.NewValue}'. To add support for this charset, register an EncodingProvider to handle targeting '{change.NewValue}'.");
+                                    }
                                 }
                                 break;
                         }

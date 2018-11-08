@@ -69,6 +69,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
                 var guid = Guid.NewGuid();
                 yield return new TestCaseData(guid, guid.ToByteArray());
                 yield return new TestCaseData(new byte[] { 0x01 }, new byte[] { 0x01 });
+                yield return new TestCaseData(sbyte.MaxValue, sbyte.MaxValue);
             }
         }
     }

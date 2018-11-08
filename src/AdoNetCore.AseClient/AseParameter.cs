@@ -23,9 +23,6 @@ namespace AdoNetCore.AseClient
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private AseDbType _type;
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _isDbTypeSetExplicitly;
-
         /// <summary>
         /// Constructor function for an <see cref="AseParameter" />instance.
         /// </summary>
@@ -283,7 +280,6 @@ namespace AdoNetCore.AseClient
         public override void ResetDbType()
         {
             DbType = default(DbType);
-            _isDbTypeSetExplicitly = false;
         }
 
         /// <summary>
@@ -307,16 +303,8 @@ namespace AdoNetCore.AseClient
             get => _type;
             set {
                 _type = TypeMap.CleanupAseDbType(value);
-                _isDbTypeSetExplicitly = true;
             }
         }
-
-        /// <summary>
-        /// Indicates if the DbType is known, or if we need to infer it
-        /// </summary>
-        internal bool DbTypeIsKnown => _isDbTypeSetExplicitly ||
-                                       //DbType default is AnsiString (0), so if Value is string/char, that's good enough. If the user requires unicode strings, they should explicitly specify an appropriate DbType
-                                       (DbType == default(DbType) && (Value is string || Value is char || Value == null || Value == DBNull.Value));
 
         /// <summary>
         /// Gets or sets a value that indicates whether the parameter is input-only, output-only, 
@@ -467,7 +455,6 @@ namespace AdoNetCore.AseClient
             var clone = new AseParameter
             {
                 _type = AseDbType,
-                _isDbTypeSetExplicitly = _isDbTypeSetExplicitly,
                 Direction = Direction,
                 IsNullable = IsNullable,
                 ParameterName = ParameterName,

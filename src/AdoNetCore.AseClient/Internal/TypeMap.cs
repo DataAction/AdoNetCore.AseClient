@@ -37,27 +37,27 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.Time, (value, length) => TdsDataType.TDS_BIGDATETIMEN}
         };
 
-        private static readonly Dictionary<Type, Func<object, int, TdsDataType>> NetTypeToTdsMap = new Dictionary<Type, Func<object, int, TdsDataType>>
+        private static readonly Dictionary<Type, AseDbType> NetTypeToAseDbTypeMap = new Dictionary<Type, AseDbType>
         {
-            {typeof(bool), (value, length) => TdsDataType.TDS_BIT},
-            {typeof(byte), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT1},
-            {typeof(sbyte), (value, length) => TdsDataType.TDS_INTN},
-            {typeof(short), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT2},
-            {typeof(ushort), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT2},
-            {typeof(int), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT4},
-            {typeof(uint), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT4},
-            {typeof(long), (value, length) => value == DBNull.Value ? TdsDataType.TDS_INTN : TdsDataType.TDS_INT8},
-            {typeof(ulong), (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT8},
-            {typeof(char), (value, length) => TdsDataType.TDS_CHAR},
-            {typeof(char[]), (value, length) => TdsDataType.TDS_CHAR},
-            {typeof(string), (value, length) => TdsDataType.TDS_LONGBINARY},
-            {typeof(byte[]), (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
-            {typeof(Guid), (value, length) => TdsDataType.TDS_BINARY},
-            {typeof(decimal), (value, length) => TdsDataType.TDS_NUMN},
-            {typeof(AseDecimal), (value, length) => TdsDataType.TDS_NUMN},
-            {typeof(float), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT4},
-            {typeof(double), (value, length) => value == DBNull.Value ? TdsDataType.TDS_FLTN : TdsDataType.TDS_FLT8},
-            {typeof(DateTime), (value, length) => TdsDataType.TDS_BIGDATETIMEN }
+            {typeof(bool), AseDbType.Bit},
+            {typeof(byte), AseDbType.TinyInt},
+            {typeof(short), AseDbType.SmallInt},
+            {typeof(ushort), AseDbType.UnsignedSmallInt},
+            {typeof(int), AseDbType.Integer},
+            {typeof(uint), AseDbType.UnsignedInt},
+            {typeof(long), AseDbType.BigInt},
+            {typeof(ulong), AseDbType.UnsignedBigInt},
+            {typeof(char), AseDbType.VarChar},
+            {typeof(char[]), AseDbType.VarChar},
+            {typeof(string), AseDbType.VarChar},
+            {typeof(byte[]), AseDbType.VarBinary},
+            {typeof(Guid), AseDbType.VarBinary},
+            {typeof(decimal), AseDbType.Decimal},
+            {typeof(AseDecimal), AseDbType.Decimal},
+            {typeof(float), AseDbType.Real},
+            {typeof(double), AseDbType.Double},
+            {typeof(DateTime), AseDbType.DateTime},
+            {typeof(TimeSpan), AseDbType.DateTime}
         };
 
         private static readonly Dictionary<DbType, int> FixedFormatLengthMap = new Dictionary<DbType, int>
@@ -165,16 +165,26 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public static TdsDataType GetTdsDataType(DbType dbType, bool dbTypeIsKnown, object value, int? length, string parameterName)
+        public static AseDbType InferType(AseParameter parameter)
         {
-            // If the consumer has explicitly set a type, then rely on that.
-            if (dbTypeIsKnown && DbToTdsMap.TryGetValue(dbType, out var result))
+            if (parameter.AseDbType != AseDbType.Unsupported || parameter.Value == null || parameter.Value == DBNull.Value)
             {
-                return result(value, length ?? 0);
+                return parameter.AseDbType;
             }
 
-            // If that is not set, then we should try to infer the type;
-            if (NetTypeToTdsMap.TryGetValue(value.GetType(), out result))
+            var netType = parameter.Value.GetType();
+            if (NetTypeToAseDbTypeMap.ContainsKey(netType))
+            {
+                return NetTypeToAseDbTypeMap[netType];
+            }
+
+            throw new NotSupportedException($"Unsupported .net type {parameter.Value.GetType()} for parameter '{parameter.ParameterName}'.");
+        }
+
+        public static TdsDataType GetTdsDataType(DbType dbType, object value, int? length, string parameterName)
+        {
+            // If the consumer has explicitly set a type, then rely on that.
+            if (DbToTdsMap.TryGetValue(dbType, out var result))
             {
                 return result(value, length ?? 0);
             }

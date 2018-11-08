@@ -41,6 +41,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             {typeof(bool), AseDbType.Bit},
             {typeof(byte), AseDbType.TinyInt},
+            {typeof(sbyte), AseDbType.SmallInt},
             {typeof(short), AseDbType.SmallInt},
             {typeof(ushort), AseDbType.UnsignedSmallInt},
             {typeof(int), AseDbType.Integer},

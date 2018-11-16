@@ -26,13 +26,19 @@ namespace AdoNetCore.AseClient.Internal
             {
                 typeof(TimeSpan), new Dictionary<Type, Func<object, Encoding, object>>
                 {
-                    {typeof(DateTime), (o, _) => Constants.Sql.RegularDateTime.Epoch + (TimeSpan)o }
+                    {typeof(DateTime), (o, _) => Constants.Sql.RegularDateTime.Epoch + (TimeSpan) o}
                 }
             },
             {
                 typeof(string), new Dictionary<Type, Func<object, Encoding, object>>
                 {
                     {typeof(byte[]), (o, e) => e.GetBytes((string) o)}
+                }
+            },
+            {
+                typeof(char[]), new Dictionary<Type, Func<object, Encoding, object>>
+                {
+                    {typeof(string), (o, e) => new string((char[]) o)}
                 }
             }
         };

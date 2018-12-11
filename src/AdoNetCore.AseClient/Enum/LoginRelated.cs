@@ -1,4 +1,7 @@
 // ReSharper disable InconsistentNaming
+
+using System;
+
 namespace AdoNetCore.AseClient.Enum
 {
     internal enum LInt2 : byte
@@ -74,51 +77,66 @@ namespace AdoNetCore.AseClient.Enum
 
     internal enum LFlt4 : byte
     {
-        TDS_FLT4_IEEE_HI = (12),
-        TDS_FLT4_IEEE_LO = (13),
-        TDS_FLT4_VAXF = (14),
-        TDS_FLT4_ND50004 = (15)
+        TDS_FLT4_IEEE_HI = 12,
+        TDS_FLT4_IEEE_LO = 13,
+        TDS_FLT4_VAXF = 14,
+        TDS_FLT4_ND50004 = 15
     }
 
     internal enum LDate4 : byte
     {
-        TDS_TWO_I2_LSB_HI = (16),
-        TDS_TWO_I2_LSB_LO = (17)
+        TDS_TWO_I2_LSB_HI = 16,
+        TDS_TWO_I2_LSB_LO = 17
     }
 
     internal enum LSetLang : byte
     {
-        TDS_NOTIFY = (1),
-        TDS_NO_NOTIFY = (0)
+        TDS_NOTIFY = 1,
+        TDS_NO_NOTIFY = 0
     }
 
+    /// <summary>
+    /// Flags related to secure login
+    /// </summary>
+    [Flags]
     internal enum LSecLogin : byte
     {
-        TDS_SEC_LOG_ENCRYPT = (0x01),
-        TDS_SEC_LOG_CHALLENGE = (0x02),
-        TDS_SEC_LOG_LABELS = (0x04),
-        TDS_SEC_LOG_APPDEFINED = (0x08),
-        TDS_SEC_LOG_SECSESS = (0x10),
-        TDS_SEC_LOG_ENCRYPT2 = (0x20)
+        /// <summary>
+        /// Password encryption - proprietary scheme
+        /// </summary>
+        TDS_SEC_LOG_ENCRYPT = 0x01,
+        TDS_SEC_LOG_CHALLENGE = 0x02,
+        TDS_SEC_LOG_LABELS = 0x04,
+        TDS_SEC_LOG_APPDEFINED = 0x08,
+        TDS_SEC_LOG_SECSESS = 0x10,
+        /// <summary>
+        /// Password encryption - RSA key?
+        /// </summary>
+        TDS_SEC_LOG_ENCRYPT2 = 0x20,
+        TDS_SEC_LOG_UNKNOWN_FLAG = 0x40,
+        /// <summary>
+        /// Password encryption - RSA key + ???
+        /// </summary>
+        TDS_SEC_LOG_ENCRYPT3 = 0x80
     }
 
     internal enum LSecBulk : byte
     {
-        TDS_SEC_BULK_LABELED = (0x01)
+        TDS_SEC_BULK_LABELED = 0x01
     }
 
     internal enum LHaLogin : byte
     {
-        TDS_HA_LOG_SESSION = (0x01),
-        TDS_HA_LOG_RESUME = (0x02),
-        TDS_HA_LOG_FAILOVERSRV = (0x04),
-        TDS_HA_LOG_REDIRECT = (0x08),
-        TDS_HA_LOG_MIGRATE = (0x10)
+        TDS_HA_LOG_SESSION = 0x01,
+        TDS_HA_LOG_RESUME = 0x02,
+        TDS_HA_LOG_FAILOVERSRV = 0x04,
+        TDS_HA_LOG_REDIRECT = 0x08,
+        TDS_HA_LOG_MIGRATE = 0x10
     }
 
     internal enum LSetCharset : byte
     {
-        TDS_NOTIFY = (1),
-        TDS_NO_NOTIFY = (0)
+        TDS_NOTIFY = 1,
+        TDS_NO_NOTIFY = 0
     }
 }

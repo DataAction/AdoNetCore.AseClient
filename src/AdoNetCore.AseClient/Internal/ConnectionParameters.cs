@@ -56,6 +56,7 @@ namespace AdoNetCore.AseClient.Internal
             {"Packet Size", ParsePacketSize},
             {"TextSize", ParseTextSize},
             {"UseAseDecimal", ParseUseAseDecimal},
+            {"EncryptPassword", ParseEncryptPassword},
         };
 
         public static ConnectionParameters Parse(string connectionString)
@@ -248,6 +249,22 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static void ParseEncryptPassword(ConnectionStringItem item, ConnectionParameters result)
+        {
+            if (bool.TryParse(item.PropertyValue, out var parsedBool))
+            {
+                result.EncryptPassword = parsedBool;
+            }
+            else if (int.TryParse(item.PropertyValue, out var parsedInt))
+            {
+                result.EncryptPassword = parsedInt != 0;
+            }
+            else
+            {
+                result.EncryptPassword = Convert.ToBoolean(item.PropertyValue);
+            }
+        }
+
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private static void ValidateConnectionParameters(ConnectionParameters result)
         {
@@ -322,5 +339,7 @@ namespace AdoNetCore.AseClient.Internal
         public ushort PacketSize { get; private set; } = 512;
         public int TextSize { get; private set; } = 32768;
         public bool UseAseDecimal { get; private set; }
+
+        public bool EncryptPassword { get; private set; }
     }
 }

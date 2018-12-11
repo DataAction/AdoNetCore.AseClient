@@ -33,10 +33,10 @@ namespace AdoNetCore.AseClient.Packet
         public LDate4 LDate4 { get; set; } = LDate4.TDS_TWO_I2_LSB_LO;
         public LSetLang LSetLang { get; set; } = LSetLang.TDS_NOTIFY;
         public LSetCharset LSetCharset { get; set; } = LSetCharset.TDS_NOTIFY;
-
         public int PacketSize { get; set; }
+        public bool EncryptPassword { get; set; }
 
-        public LoginPacket(string hostname, string username, string password, string processId, string applicationName, string serverName, string language, string charset, string clientLibrary, int packetSize, CapabilityToken capability)
+        public LoginPacket(string hostname, string username, string password, string processId, string applicationName, string serverName, string language, string charset, string clientLibrary, int packetSize, CapabilityToken capability, bool encryptPassword)
         {
             Capability = capability;
             Hostname = hostname ?? string.Empty;
@@ -49,6 +49,7 @@ namespace AdoNetCore.AseClient.Packet
             Charset = charset ?? string.Empty;
             ClientLibrary = clientLibrary ?? string.Empty;
             PacketSize = packetSize;
+            EncryptPassword = encryptPassword;
         }
 
         private int TDS_MAXNAME = 30;
@@ -64,7 +65,8 @@ namespace AdoNetCore.AseClient.Packet
             Logger.Instance?.WriteLine($"Write {Type}");
             stream.WritePaddedString(Hostname, TDS_MAXNAME, env.Encoding); //lhostname
             stream.WritePaddedString(Username, TDS_MAXNAME, env.Encoding); //lussername
-            stream.WritePaddedString(Password, TDS_MAXNAME, env.Encoding); //lpw
+            stream.WritePaddedString(EncryptPassword ? string.Empty : Password, TDS_MAXNAME, env.Encoding);
+
             stream.WritePaddedString(ProcessId, TDS_MAXNAME, env.Encoding); //lhostproc
 
             stream.Write(new byte[]
@@ -87,7 +89,7 @@ namespace AdoNetCore.AseClient.Packet
 
             //spec's a bit weird when it comes to this bit... following ADO.net driver
             //lrempw, lrempwlen
-            stream.WriteWeirdPasswordString(Password, TDS_RPLEN, env.Encoding);
+            stream.WriteWeirdPasswordString(EncryptPassword ? string.Empty : Password, TDS_RPLEN, env.Encoding);
 
             //ltds version
             stream.Write(new byte[] { 5, 0, 0, 0 });

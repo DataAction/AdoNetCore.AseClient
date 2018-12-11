@@ -104,11 +104,23 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        /*private void NegotiatePassword()
+        {
+            var ackHandler = new LoginTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
+
+            ReceiveTokens(
+                ackHandler,
+                new EnvChangeTokenHandler(_environment),
+                messageHandler);
+        }*/
+
         public void Login()
         {
             //socket is established already
             //login
-            SendPacket(new LoginPacket(
+            SendPacket(
+                new LoginPacket(
                     _parameters.ClientHostName,
                     _parameters.Username,
                     _parameters.Password,
@@ -119,7 +131,13 @@ namespace AdoNetCore.AseClient.Internal
                     _parameters.Charset,
                     "ADO.NET",
                     _environment.PacketSize,
-                    new CapabilityToken()));
+                    new CapabilityToken(),
+                    _parameters.EncryptPassword));
+
+            /*if (_parameters.EncryptPassword)
+            {
+                NegotiatePassword();
+            }*/
 
             var ackHandler = new LoginTokenHandler();
             var messageHandler = new MessageTokenHandler(EventNotifier);

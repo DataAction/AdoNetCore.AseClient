@@ -248,6 +248,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public ushort PacketSize { get; }
             public int TextSize { get; }
             public bool UseAseDecimal { get; } = false;
+            public bool EncryptPassword { get; } = false;
         }
     }
 }

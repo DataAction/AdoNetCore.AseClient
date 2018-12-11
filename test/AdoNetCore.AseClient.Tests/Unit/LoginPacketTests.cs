@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -73,7 +73,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
                     "iso_1",
                     "ADO.NET",
                     512,
-                    new CapabilityToken()
+                    new CapabilityToken(),
+                    false
                 ).Write(
                     ms,
                     new DbEnvironment

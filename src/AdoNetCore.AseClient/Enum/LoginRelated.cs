@@ -101,6 +101,7 @@ namespace AdoNetCore.AseClient.Enum
     [Flags]
     internal enum LSecLogin : byte
     {
+        UNUSED = 0x00,
         /// <summary>
         /// Password encryption - proprietary scheme
         /// </summary>

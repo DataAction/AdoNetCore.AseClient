@@ -104,16 +104,15 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        /*private void NegotiatePassword()
+        private void NegotiatePassword(MessageToken.MsgId scheme, ParameterFormatCommonToken format, ParametersToken parameters)
         {
-            var ackHandler = new LoginTokenHandler();
-            var messageHandler = new MessageTokenHandler(EventNotifier);
-
-            ReceiveTokens(
-                ackHandler,
-                new EnvChangeTokenHandler(_environment),
-                messageHandler);
-        }*/
+            //todo:
+            // 1. Interpret scheme
+            // 2. Interpret parameters (parse out RSA public key parameters from the longest LONGBINARY value. This is just a DER encoded exponent and modulus).
+            // 3. Encrypt the password somehow
+            // 4. Send the encrypted password
+            // 5. Expect an ack
+        }
 
         public void Login()
         {
@@ -134,11 +133,6 @@ namespace AdoNetCore.AseClient.Internal
                     new CapabilityToken(),
                     _parameters.EncryptPassword));
 
-            /*if (_parameters.EncryptPassword)
-            {
-                NegotiatePassword();
-            }*/
-
             var ackHandler = new LoginTokenHandler();
             var messageHandler = new MessageTokenHandler(EventNotifier);
 
@@ -155,7 +149,11 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("No login ack found");
             }
 
-            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
+            if (ackHandler.LoginStatus == LoginAckToken.LoginStatus.TDS_LOG_NEGOTIATE)
+            {
+                NegotiatePassword(ackHandler.Message.MessageId, ackHandler.Format, ackHandler.Parameters);
+            }
+            else if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
             {
                 throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
             }
@@ -465,7 +463,7 @@ namespace AdoNetCore.AseClient.Internal
 
             if ((behavior & CommandBehavior.SchemaOnly) == CommandBehavior.SchemaOnly)
             {
-                result = 
+                result =
 $@"SET FMTONLY ON
 {commandText}
 SET FMTONLY OFF";

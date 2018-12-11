@@ -122,6 +122,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, DbEnvironment env)
         {
+            Logger.Instance?.WriteLine($"-> {Type}: {Status} {MessageId}");
             stream.WriteByte(3);
             stream.WriteByte((byte)Status);
             stream.WriteShort((short)MessageId);
@@ -136,6 +137,14 @@ namespace AdoNetCore.AseClient.Token
                 Status = (MsgStatus)ts.ReadByte();
                 MessageId = (MsgId) ts.ReadShort();
             }
+            Logger.Instance?.WriteLine($"<- {Type}: {Status} {MessageId}");
+        }
+
+        public static MessageToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        {
+            var t = new MessageToken();
+            t.Read(stream, env, previous);
+            return t;
         }
     }
 }

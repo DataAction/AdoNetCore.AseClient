@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCaseSource(nameof(Login_Success_Cases))]
         public void Login_Success(string cs)
         {
-            //Logger.Enable();
+            Logger.Enable();
             using (var connection = GetConnection(cs))
             {
                 connection.Open();

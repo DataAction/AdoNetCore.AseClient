@@ -105,10 +105,16 @@ namespace AdoNetCore.AseClient.Packet
 
             stream.WritePaddedString(Language, TDS_MAXNAME, env.Encoding); //llanguage
 
+            var lSecLogin = EncryptPassword
+                //? LSecLogin.TDS_SEC_LOG_ENCRYPT | LSecLogin.TDS_SEC_LOG_ENCRYPT2 | LSecLogin.TDS_SEC_LOG_ENCRYPT3
+                ? LSecLogin.TDS_SEC_LOG_ENCRYPT3
+                : LSecLogin.UNUSED;
             stream.Write(new byte[]
             {
                 (byte)LSetLang,
-                0,0,0,0,8,0,0,0,0,0,0,0,0//loldsecure, lseclogin, lsecbulk, lhalogin, lhasessionid, lsecspare
+                0, 0, //loldsecure
+                (byte)lSecLogin,
+                0,8,0,0,0,0,0,0,0,0//lsecbulk, lhalogin, lhasessionid, lsecspare
             });
 
             stream.WritePaddedString(Charset, TDS_MAXNAME, env.Encoding); //lcharset

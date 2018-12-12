@@ -146,14 +146,14 @@ namespace AdoNetCore.AseClient.Internal
             Debug.Assert(parameters[0].Value is int);
             Debug.Assert(parameters[1].Value is byte[]);
             Debug.Assert(parameters[2].Value is byte[]);
-            var cipherSuite = (int)parameters[0].Value; //maybe?
-            var rsaKey = (byte[]) parameters[1].Value;
+            var cipherSuite = (int)parameters[0].Value; //where is this used?
+            var rsaKey = (byte[])parameters[1].Value;
             var rsaParams = ReadPublicKey(rsaKey);
-            var rando = (byte[])parameters[2].Value; //?
+            var nonce = (byte[])parameters[2].Value;
 
             Logger.Instance?.WriteLine($"Cipher Suite: {cipherSuite}");
             Logger.Instance?.WriteLine($"RsaKey [{rsaKey.Length}]: {ByteArrayToHexString(rsaKey)}");
-            Logger.Instance?.WriteLine($"Rando [{rando.Length}]: {ByteArrayToHexString(rando)}");
+            Logger.Instance?.WriteLine($"Nonce [{nonce.Length}]: {ByteArrayToHexString(nonce)}");
             Logger.Instance?.WriteLine($"RSA Mod [{rsaParams.Modulus.Length}]: {ByteArrayToHexString(rsaParams.Modulus)}");
             Logger.Instance?.WriteLine($"RSA Exp [{rsaParams.Exponent.Length}]: {ByteArrayToHexString(rsaParams.Exponent)}");
 
@@ -163,10 +163,19 @@ namespace AdoNetCore.AseClient.Internal
                 rsa.ImportParameters(rsaParams);
                 var passwordBytes = Encoding.ASCII.GetBytes(password);
                 Logger.Instance?.WriteLine($"Pre-Encrypted Password [{passwordBytes.Length}]: {ByteArrayToHexString(passwordBytes)}");
-                encryptedPassword = rsa.Encrypt(passwordBytes, RSAEncryptionPadding.OaepSHA1);
+                var noncedBytes = new byte[passwordBytes.Length + nonce.Length];
+                //password + nonce
+                //"The decrypted nonce message does not match expected nonce value."
+                /*Array.Copy(passwordBytes, 0, noncedBytes, 0, passwordBytes.Length);
+                Array.Copy(nonce, 0, noncedBytes, passwordBytes.Length, nonce.Length);*/
+                //nonce + password
+                Array.Copy(nonce, 0, noncedBytes, 0, nonce.Length);
+                Array.Copy(passwordBytes, 0, noncedBytes, nonce.Length, passwordBytes.Length);
+                Logger.Instance?.WriteLine($"Nonced Bytes [{noncedBytes.Length}]: {ByteArrayToHexString(noncedBytes)}");
+                encryptedPassword = rsa.Encrypt(noncedBytes, RSAEncryptionPadding.OaepSHA1);
             }
 
-            Logger.Instance?.WriteLine($"Encrypted Password [{encryptedPassword.Length}]: {ByteArrayToHexString(encryptedPassword)}");
+            Logger.Instance?.WriteLine($"Encrypted Bytes [{encryptedPassword.Length}]: {ByteArrayToHexString(encryptedPassword)}");
 
             var pwdFormat = new FormatItem
             {
@@ -331,7 +340,7 @@ namespace AdoNetCore.AseClient.Internal
             //short form length?
             if (len < 0x80)
             {
-                return (uint) len;
+                return (uint)len;
             }
             //long form length, bits 1-7 indicate how many octets contribute to the length
             var count = len & 0x7F;
@@ -340,7 +349,7 @@ namespace AdoNetCore.AseClient.Internal
                 throw new NotSupportedException("Too many bytes!");
             }
 
-            var bytes = new byte[] {0, 0, 0, 0};
+            var bytes = new byte[] { 0, 0, 0, 0 };
             s.Read(bytes, 0, count);
             return BitConverter.ToUInt32(bytes, 0);
         }

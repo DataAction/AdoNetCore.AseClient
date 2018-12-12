@@ -130,6 +130,16 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static string ByteArrayToHexString(byte[] bytes)
+        {
+            var sb = new StringBuilder();
+            foreach (var b in bytes)
+            {
+                sb.Append(b.ToString("X2"));
+            }
+            return sb.ToString();
+        }
+
         private void DoEncrypt3Scheme(ParametersToken.Parameter[] parameters, string password)
         {
             Debug.Assert(parameters.Length == 3);
@@ -137,15 +147,26 @@ namespace AdoNetCore.AseClient.Internal
             Debug.Assert(parameters[1].Value is byte[]);
             Debug.Assert(parameters[2].Value is byte[]);
             var cipherSuite = (int)parameters[0].Value; //maybe?
-            var rsaParams = ReadPublicKey((byte[]) parameters[1].Value);
+            var rsaKey = (byte[]) parameters[1].Value;
+            var rsaParams = ReadPublicKey(rsaKey);
             var rando = (byte[])parameters[2].Value; //?
+
+            Logger.Instance?.WriteLine($"Cipher Suite: {cipherSuite}");
+            Logger.Instance?.WriteLine($"RsaKey [{rsaKey.Length}]: {ByteArrayToHexString(rsaKey)}");
+            Logger.Instance?.WriteLine($"Rando [{rando.Length}]: {ByteArrayToHexString(rando)}");
+            Logger.Instance?.WriteLine($"RSA Mod [{rsaParams.Modulus.Length}]: {ByteArrayToHexString(rsaParams.Modulus)}");
+            Logger.Instance?.WriteLine($"RSA Exp [{rsaParams.Exponent.Length}]: {ByteArrayToHexString(rsaParams.Exponent)}");
 
             byte[] encryptedPassword;
             using (var rsa = RSA.Create())
             {
                 rsa.ImportParameters(rsaParams);
-                encryptedPassword = rsa.Encrypt(Encoding.ASCII.GetBytes(password), RSAEncryptionPadding.OaepSHA1);
+                var passwordBytes = Encoding.ASCII.GetBytes(password);
+                Logger.Instance?.WriteLine($"Pre-Encrypted Password [{passwordBytes.Length}]: {ByteArrayToHexString(passwordBytes)}");
+                encryptedPassword = rsa.Encrypt(passwordBytes, RSAEncryptionPadding.OaepSHA1);
             }
+
+            Logger.Instance?.WriteLine($"Encrypted Password [{encryptedPassword.Length}]: {ByteArrayToHexString(encryptedPassword)}");
 
             var pwdFormat = new FormatItem
             {
@@ -237,6 +258,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             Logger.Instance?.WriteLine($"{nameof(ReadPublicKey)} {publicKey.Length} bytes");
             var keyFile = Encoding.ASCII.GetString(publicKey);
+            Logger.Instance?.WriteLine(keyFile);
             var strippedKeyFile = keyFile
                 .Replace("\n", string.Empty)
                 .Replace("\0", string.Empty)
@@ -262,7 +284,7 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     return new RSAParameters
                     {
-                        Modulus = ReadInteger(psSeq),
+                        Modulus = SkipFirstByteIfZero(ReadInteger(psSeq)),
                         Exponent = ReadInteger(psSeq)
                     };
                 }
@@ -279,6 +301,28 @@ namespace AdoNetCore.AseClient.Internal
             s.Read(bytes, 0, bytes.Length);
 
             return bytes;
+        }
+
+        private byte[] SkipFirstByteIfZero(byte[] bytes)
+        {
+            if (bytes.Length == 0)
+            {
+                return bytes;
+            }
+
+            if (bytes[0] != 0)
+            {
+                return bytes;
+            }
+
+            var newBytes = new byte[bytes.Length - 1];
+
+            if (newBytes.Length > 0)
+            {
+                Array.Copy(bytes, 1, newBytes, 0, newBytes.Length);
+            }
+
+            return newBytes;
         }
 
         private uint ReadDerLen(Stream s)

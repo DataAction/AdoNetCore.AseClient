@@ -123,6 +123,7 @@ namespace AdoNetCore.AseClient.Token
         public void Write(Stream stream, DbEnvironment env)
         {
             Logger.Instance?.WriteLine($"-> {Type}: {Status} {MessageId}");
+            stream.WriteByte((byte)Type);
             stream.WriteByte(3);
             stream.WriteByte((byte)Status);
             stream.WriteShort((short)MessageId);

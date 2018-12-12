@@ -4,7 +4,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -104,14 +109,196 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private void NegotiatePassword(MessageToken.MsgId scheme, ParameterFormatCommonToken format, ParametersToken parameters)
+        private void NegotiatePassword(MessageToken.MsgId scheme, ParametersToken.Parameter[] parameters, string password)
         {
-            //todo:
-            // 1. Interpret scheme
-            // 2. Interpret parameters (parse out RSA public key parameters from the longest LONGBINARY value. This is just a DER encoded exponent and modulus).
-            // 3. Encrypt the password somehow
-            // 4. Send the encrypted password
+            try
+            {
+                switch (scheme)
+                {
+                    case MessageToken.MsgId.TDS_MSG_SEC_ENCRYPT3:
+                        DoEncrypt3Scheme(parameters, password);
+                        break;
+                    default:
+                        throw new NotSupportedException($"Server requested unsupported password encryption scheme");
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                //todo: expand on exception cases
+                Logger.Instance?.WriteLine($"{nameof(CryptographicException)} - {ex}");
+                throw new AseException("Password encryption failed");
+            }
+        }
+
+        private void DoEncrypt3Scheme(ParametersToken.Parameter[] parameters, string password)
+        {
+            Debug.Assert(parameters.Length == 3);
+            Debug.Assert(parameters[0].Value is int);
+            Debug.Assert(parameters[1].Value is byte[]);
+            Debug.Assert(parameters[2].Value is byte[]);
+            var cipherSuite = (int)parameters[0].Value; //maybe?
+            var rsaParams = ReadPublicKey((byte[]) parameters[1].Value);
+            var rando = (byte[])parameters[2].Value; //?
+
+            byte[] encryptedPassword;
+            using (var rsa = RSA.Create())
+            {
+                rsa.ImportParameters(rsaParams);
+                encryptedPassword = rsa.Encrypt(Encoding.ASCII.GetBytes(password), RSAEncryptionPadding.OaepSHA1);
+            }
+
+            var pwdFormat = new FormatItem
+            {
+                DataType = TdsDataType.TDS_LONGBINARY,
+                Length = 512
+            };
+
+            var remPwdVarcharFormat = new FormatItem
+            {
+                DataType = TdsDataType.TDS_VARCHAR,
+                Length = 255,
+                IsNullable = true
+            };
+
+            SendPacket(
+                new NormalPacket(
+                    new MessageToken
+                    {
+                        Status = MessageToken.MsgStatus.TDS_MSG_HASARGS,
+                        MessageId = MessageToken.MsgId.TDS_MSG_SEC_LOGPWD3
+                    },
+                    new ParameterFormatToken
+                    {
+                        Formats = new[]
+                        {
+                            pwdFormat
+                        }
+                    },
+                    new ParametersToken
+                    {
+                        Parameters = new[]
+                        {
+                            new ParametersToken.Parameter
+                            {
+                                Value = encryptedPassword,
+                                Format = pwdFormat
+                            }
+                        }
+                    },
+                    new MessageToken
+                    {
+                        Status = MessageToken.MsgStatus.TDS_MSG_HASARGS,
+                        MessageId = MessageToken.MsgId.MSG_SEC_REMPWD3
+                    },
+                    new ParameterFormatToken
+                    {
+                        Formats = new[]
+                        {
+                            remPwdVarcharFormat,
+                            pwdFormat
+                        }
+                    },
+                    new ParametersToken
+                    {
+                        Parameters = new[]
+                        {
+                            new ParametersToken.Parameter
+                            {
+                                Value = DBNull.Value,
+                                Format = remPwdVarcharFormat
+                            },
+                            new ParametersToken.Parameter
+                            {
+                                Value = encryptedPassword,
+                                Format = pwdFormat
+                            }
+                        }
+                    }
+                ));
+
             // 5. Expect an ack
+            var ackHandler = new LoginTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
+
+            ReceiveTokens(
+                ackHandler,
+                new EnvChangeTokenHandler(_environment),
+                messageHandler);
+
+            messageHandler.AssertNoErrors();
+
+            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
+            {
+                throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
+            }
+        }
+
+        private RSAParameters ReadPublicKey(byte[] publicKey)
+        {
+            Logger.Instance?.WriteLine($"{nameof(ReadPublicKey)} {publicKey.Length} bytes");
+            var keyFile = Encoding.ASCII.GetString(publicKey);
+            var strippedKeyFile = keyFile
+                .Replace("\n", string.Empty)
+                .Replace("\0", string.Empty)
+                .Replace("-----BEGIN RSA PUBLIC KEY-----", string.Empty)
+                .Replace("-----END RSA PUBLIC KEY-----", string.Empty);
+
+            var der = Convert.FromBase64String(strippedKeyFile);
+            Logger.Instance?.WriteLine($"DER ASN.1 encoded key is {der.Length} bytes");
+
+            //todo: interpret ASN.1 DER
+            /* Assume the format is
+            RSAPublicKey ::= SEQUENCE {
+                 modulus            INTEGER,
+                 publicExponent     INTEGER
+            }*/
+
+            using (var ms = new MemoryStream(der))
+            {
+                var seq = ms.ReadByte();
+                Debug.Assert(seq == 0x30);
+                var seqRemainingBytes = ReadDerLen(ms);
+                using (var psSeq = new ReadablePartialStream(ms, seqRemainingBytes))
+                {
+                    return new RSAParameters
+                    {
+                        Modulus = ReadInteger(psSeq),
+                        Exponent = ReadInteger(psSeq)
+                    };
+                }
+            }
+        }
+
+        private byte[] ReadInteger(Stream s)
+        {
+            var type = s.ReadByte();
+            Debug.Assert(type == 0x02);
+
+            var len = ReadDerLen(s);
+            var bytes = new byte[len];
+            s.Read(bytes, 0, bytes.Length);
+
+            return bytes;
+        }
+
+        private uint ReadDerLen(Stream s)
+        {
+            var len = s.ReadByte();
+            //short form length?
+            if (len < 0x80)
+            {
+                return (uint) len;
+            }
+            //long form length, bits 1-7 indicate how many octets contribute to the length
+            var count = len & 0x7F;
+            if (count > 4)
+            {
+                throw new NotSupportedException("Too many bytes!");
+            }
+
+            var bytes = new byte[] {0, 0, 0, 0};
+            s.Read(bytes, 0, count);
+            return BitConverter.ToUInt32(bytes, 0);
         }
 
         public void Login()
@@ -151,7 +338,7 @@ namespace AdoNetCore.AseClient.Internal
 
             if (ackHandler.LoginStatus == LoginAckToken.LoginStatus.TDS_LOG_NEGOTIATE)
             {
-                NegotiatePassword(ackHandler.Message.MessageId, ackHandler.Format, ackHandler.Parameters);
+                NegotiatePassword(ackHandler.Message.MessageId, ackHandler.Parameters.Parameters, _parameters.Password);
             }
             else if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
             {

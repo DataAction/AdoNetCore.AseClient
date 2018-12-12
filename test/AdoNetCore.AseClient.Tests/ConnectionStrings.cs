@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient.Tests
         public static string Default => Pooled;
         public static string NonPooled => $"{Prefix}; Pooling=false; LoginTimeOut=1;";
         public static string Pooled => $"{Prefix}; Pooling=true; LoginTimeOut=1; Max Pool Size=32;";
-        public static string PasswordEncrypted => $"{Prefix}; Pooling=true; LoginTimeOut=1; Max Pool Size=32; EncryptPassword=1;";
+        public static string PasswordEncrypted => $"{Prefix}; Pooling=true; LoginTimeOut=1; Max Pool Size=32; EncryptPassword=1; UniqueID={{{Guid.NewGuid()}}}";
         public static string Pooled10 => $"{Prefix}; Pooling=true; LoginTimeOut=1; Max Pool Size=10;";
         public static string Pooled100 => $"{Prefix}; Pooling=true; LoginTimeOut=1; Max Pool Size=100;";
         public static string PooledUtf8 => Pooled;

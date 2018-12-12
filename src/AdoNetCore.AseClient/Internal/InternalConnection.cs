@@ -4,11 +4,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
-using System.Diagnostics;
-using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Enum;
@@ -109,251 +106,6 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private void NegotiatePassword(MessageToken.MsgId scheme, ParametersToken.Parameter[] parameters, string password)
-        {
-            try
-            {
-                switch (scheme)
-                {
-                    case MessageToken.MsgId.TDS_MSG_SEC_ENCRYPT3:
-                        DoEncrypt3Scheme(parameters, password);
-                        break;
-                    default:
-                        throw new NotSupportedException($"Server requested unsupported password encryption scheme");
-                }
-            }
-            catch (CryptographicException ex)
-            {
-                //todo: expand on exception cases
-                Logger.Instance?.WriteLine($"{nameof(CryptographicException)} - {ex}");
-                throw new AseException("Password encryption failed");
-            }
-        }
-
-        private static string ByteArrayToHexString(byte[] bytes)
-        {
-            var sb = new StringBuilder();
-            foreach (var b in bytes)
-            {
-                sb.Append(b.ToString("X2"));
-            }
-            return sb.ToString();
-        }
-
-        private void DoEncrypt3Scheme(ParametersToken.Parameter[] parameters, string password)
-        {
-            Debug.Assert(parameters.Length == 3);
-            Debug.Assert(parameters[0].Value is int);
-            Debug.Assert(parameters[1].Value is byte[]);
-            Debug.Assert(parameters[2].Value is byte[]);
-            var cipherSuite = (int)parameters[0].Value; //where is this used?
-            var rsaKey = (byte[])parameters[1].Value;
-            var rsaParams = ReadPublicKey(rsaKey);
-            var nonce = (byte[])parameters[2].Value;
-
-            Logger.Instance?.WriteLine($"Cipher Suite: {cipherSuite}");
-            Logger.Instance?.WriteLine($"RsaKey [{rsaKey.Length}]: {ByteArrayToHexString(rsaKey)}");
-            Logger.Instance?.WriteLine($"Nonce [{nonce.Length}]: {ByteArrayToHexString(nonce)}");
-            Logger.Instance?.WriteLine($"RSA Mod [{rsaParams.Modulus.Length}]: {ByteArrayToHexString(rsaParams.Modulus)}");
-            Logger.Instance?.WriteLine($"RSA Exp [{rsaParams.Exponent.Length}]: {ByteArrayToHexString(rsaParams.Exponent)}");
-
-            byte[] encryptedPassword;
-            using (var rsa = RSA.Create())
-            {
-                rsa.ImportParameters(rsaParams);
-                var passwordBytes = Encoding.ASCII.GetBytes(password);
-                Logger.Instance?.WriteLine($"Pre-Encrypted Password [{passwordBytes.Length}]: {ByteArrayToHexString(passwordBytes)}");
-                var noncedBytes = new byte[passwordBytes.Length + nonce.Length];
-                //password + nonce
-                //"The decrypted nonce message does not match expected nonce value."
-                /*Array.Copy(passwordBytes, 0, noncedBytes, 0, passwordBytes.Length);
-                Array.Copy(nonce, 0, noncedBytes, passwordBytes.Length, nonce.Length);*/
-                //nonce + password
-                Array.Copy(nonce, 0, noncedBytes, 0, nonce.Length);
-                Array.Copy(passwordBytes, 0, noncedBytes, nonce.Length, passwordBytes.Length);
-                Logger.Instance?.WriteLine($"Nonced Bytes [{noncedBytes.Length}]: {ByteArrayToHexString(noncedBytes)}");
-                encryptedPassword = rsa.Encrypt(noncedBytes, RSAEncryptionPadding.OaepSHA1);
-            }
-
-            Logger.Instance?.WriteLine($"Encrypted Bytes [{encryptedPassword.Length}]: {ByteArrayToHexString(encryptedPassword)}");
-
-            var pwdFormat = new FormatItem
-            {
-                DataType = TdsDataType.TDS_LONGBINARY,
-                Length = 512
-            };
-
-            var remPwdVarcharFormat = new FormatItem
-            {
-                DataType = TdsDataType.TDS_VARCHAR,
-                Length = 255,
-                IsNullable = true
-            };
-
-            SendPacket(
-                new NormalPacket(
-                    new MessageToken
-                    {
-                        Status = MessageToken.MsgStatus.TDS_MSG_HASARGS,
-                        MessageId = MessageToken.MsgId.TDS_MSG_SEC_LOGPWD3
-                    },
-                    new ParameterFormatToken
-                    {
-                        Formats = new[]
-                        {
-                            pwdFormat
-                        }
-                    },
-                    new ParametersToken
-                    {
-                        Parameters = new[]
-                        {
-                            new ParametersToken.Parameter
-                            {
-                                Value = encryptedPassword,
-                                Format = pwdFormat
-                            }
-                        }
-                    },
-                    new MessageToken
-                    {
-                        Status = MessageToken.MsgStatus.TDS_MSG_HASARGS,
-                        MessageId = MessageToken.MsgId.MSG_SEC_REMPWD3
-                    },
-                    new ParameterFormatToken
-                    {
-                        Formats = new[]
-                        {
-                            remPwdVarcharFormat,
-                            pwdFormat
-                        }
-                    },
-                    new ParametersToken
-                    {
-                        Parameters = new[]
-                        {
-                            new ParametersToken.Parameter
-                            {
-                                Value = DBNull.Value,
-                                Format = remPwdVarcharFormat
-                            },
-                            new ParametersToken.Parameter
-                            {
-                                Value = encryptedPassword,
-                                Format = pwdFormat
-                            }
-                        }
-                    }
-                ));
-
-            // 5. Expect an ack
-            var ackHandler = new LoginTokenHandler();
-            var messageHandler = new MessageTokenHandler(EventNotifier);
-
-            ReceiveTokens(
-                ackHandler,
-                new EnvChangeTokenHandler(_environment),
-                messageHandler);
-
-            messageHandler.AssertNoErrors();
-
-            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
-            {
-                throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
-            }
-        }
-
-        private RSAParameters ReadPublicKey(byte[] publicKey)
-        {
-            Logger.Instance?.WriteLine($"{nameof(ReadPublicKey)} {publicKey.Length} bytes");
-            var keyFile = Encoding.ASCII.GetString(publicKey);
-            Logger.Instance?.WriteLine(keyFile);
-            var strippedKeyFile = keyFile
-                .Replace("\n", string.Empty)
-                .Replace("\0", string.Empty)
-                .Replace("-----BEGIN RSA PUBLIC KEY-----", string.Empty)
-                .Replace("-----END RSA PUBLIC KEY-----", string.Empty);
-
-            var der = Convert.FromBase64String(strippedKeyFile);
-            Logger.Instance?.WriteLine($"DER ASN.1 encoded key is {der.Length} bytes");
-
-            //todo: interpret ASN.1 DER
-            /* Assume the format is
-            RSAPublicKey ::= SEQUENCE {
-                 modulus            INTEGER,
-                 publicExponent     INTEGER
-            }*/
-
-            using (var ms = new MemoryStream(der))
-            {
-                var seq = ms.ReadByte();
-                Debug.Assert(seq == 0x30);
-                var seqRemainingBytes = ReadDerLen(ms);
-                using (var psSeq = new ReadablePartialStream(ms, seqRemainingBytes))
-                {
-                    return new RSAParameters
-                    {
-                        Modulus = SkipFirstByteIfZero(ReadInteger(psSeq)),
-                        Exponent = ReadInteger(psSeq)
-                    };
-                }
-            }
-        }
-
-        private byte[] ReadInteger(Stream s)
-        {
-            var type = s.ReadByte();
-            Debug.Assert(type == 0x02);
-
-            var len = ReadDerLen(s);
-            var bytes = new byte[len];
-            s.Read(bytes, 0, bytes.Length);
-
-            return bytes;
-        }
-
-        private byte[] SkipFirstByteIfZero(byte[] bytes)
-        {
-            if (bytes.Length == 0)
-            {
-                return bytes;
-            }
-
-            if (bytes[0] != 0)
-            {
-                return bytes;
-            }
-
-            var newBytes = new byte[bytes.Length - 1];
-
-            if (newBytes.Length > 0)
-            {
-                Array.Copy(bytes, 1, newBytes, 0, newBytes.Length);
-            }
-
-            return newBytes;
-        }
-
-        private uint ReadDerLen(Stream s)
-        {
-            var len = s.ReadByte();
-            //short form length?
-            if (len < 0x80)
-            {
-                return (uint)len;
-            }
-            //long form length, bits 1-7 indicate how many octets contribute to the length
-            var count = len & 0x7F;
-            if (count > 4)
-            {
-                throw new NotSupportedException("Too many bytes!");
-            }
-
-            var bytes = new byte[] { 0, 0, 0, 0 };
-            s.Read(bytes, 0, count);
-            return BitConverter.ToUInt32(bytes, 0);
-        }
-
         public void Login()
         {
             //socket is established already
@@ -402,6 +154,49 @@ namespace AdoNetCore.AseClient.Internal
 
             Created = DateTime.UtcNow;
             SetState(InternalConnectionState.Ready);
+        }
+
+        private void NegotiatePassword(MessageToken.MsgId scheme, ParametersToken.Parameter[] parameters, string password)
+        {
+            try
+            {
+                switch (scheme)
+                {
+                    case MessageToken.MsgId.TDS_MSG_SEC_ENCRYPT3:
+                        DoEncrypt3Scheme(parameters, password);
+                        break;
+                    default:
+                        throw new NotSupportedException($"Server requested unsupported password encryption scheme");
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                //todo: expand on exception cases
+                Logger.Instance?.WriteLine($"{nameof(CryptographicException)} - {ex}");
+                throw new AseException("Password encryption failed");
+            }
+        }
+
+        private void DoEncrypt3Scheme(ParametersToken.Parameter[] parameters, string password)
+        {
+            var encryptedPassword = Encryption.EncryptPassword3((int) parameters[0].Value, (byte[]) parameters[1].Value, (byte[]) parameters[2].Value, Encoding.ASCII.GetBytes(password));
+            SendPacket(new NormalPacket(Encryption.BuildEncrypt3Tokens(encryptedPassword)));
+
+            // 5. Expect an ack
+            var ackHandler = new LoginTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
+
+            ReceiveTokens(
+                ackHandler,
+                new EnvChangeTokenHandler(_environment),
+                messageHandler);
+
+            messageHandler.AssertNoErrors();
+
+            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
+            {
+                throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
+            }
         }
 
         public DateTime Created { get; private set; }

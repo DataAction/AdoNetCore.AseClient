@@ -59,8 +59,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         public static IEnumerable<TestCaseData> EncryptedPassword_Login_Success_Cases()
         {
-            yield return new TestCaseData("ENCRYPT3", ConnectionStrings.PasswordEncrypted, 0x80);
-            yield return new TestCaseData("ENCRYPT2", ConnectionStrings.PasswordEncrypted, 0x20);
+            yield return new TestCaseData("ENCRYPT3", ConnectionStrings.PasswordEncrypted3, 0x80);
+            yield return new TestCaseData("ENCRYPT2", ConnectionStrings.PasswordEncrypted2, 0x20);
         }
 
         [Test]

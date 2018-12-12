@@ -165,6 +165,9 @@ namespace AdoNetCore.AseClient.Internal
                     case MessageToken.MsgId.TDS_MSG_SEC_ENCRYPT3:
                         DoEncrypt3Scheme(parameters, password);
                         break;
+                    case MessageToken.MsgId.TDS_MSG_SEC_ENCRYPT2:
+                        DoEncrypt2Scheme(parameters, password);
+                        break;
                     default:
                         throw new NotSupportedException($"Server requested unsupported password encryption scheme");
                 }
@@ -174,6 +177,28 @@ namespace AdoNetCore.AseClient.Internal
                 //todo: expand on exception cases
                 Logger.Instance?.WriteLine($"{nameof(CryptographicException)} - {ex}");
                 throw new AseException("Password encryption failed");
+            }
+        }
+
+        private void DoEncrypt2Scheme(ParametersToken.Parameter[] parameters, string password)
+        {
+            var encryptedPassword = Encryption.EncryptPassword2((int) parameters[0].Value, (byte[]) parameters[1].Value, Encoding.ASCII.GetBytes(password));
+            SendPacket(new NormalPacket(Encryption.BuildEncrypt2Tokens(encryptedPassword)));
+
+            // 5. Expect an ack
+            var ackHandler = new LoginTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
+
+            ReceiveTokens(
+                ackHandler,
+                new EnvChangeTokenHandler(_environment),
+                messageHandler);
+
+            messageHandler.AssertNoErrors();
+
+            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
+            {
+                throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
             }
         }
 

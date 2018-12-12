@@ -111,7 +111,7 @@ namespace AdoNetCore.AseClient.Token
             /// <summary>
             /// Return alternate alternate encrypted remote pass-word.
             /// </summary>
-            MSG_SEC_REMPWD3 = 32
+            TDS_MSG_SEC_REMPWD3 = 32
         }
 
         public TokenType Type => TokenType.TDS_MSG;

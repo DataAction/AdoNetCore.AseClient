@@ -11,66 +11,6 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class Encryption
     {
-        public static IToken[] BuildEncrypt2Tokens(byte[] encryptedPassword)
-        {
-            var pwdFormat = new FormatItem
-            {
-                DataType = TdsDataType.TDS_LONGBINARY,
-                Length = 512
-            };
-            var remPwdVarcharFormat = new FormatItem
-            {
-                DataType = TdsDataType.TDS_VARCHAR,
-                Length = 255,
-                IsNullable = true
-            };
-
-            return new IToken[]
-            {
-                new MessageToken
-                {
-                    Status = MessageToken.MsgStatus.TDS_MSG_HASARGS,
-                    MessageId = MessageToken.MsgId.TDS_MSG_SEC_LOGPWD2
-                },
-                new ParameterFormatToken
-                {
-                    Formats = new[]
-                    {
-                        pwdFormat,
-                        remPwdVarcharFormat,
-                        pwdFormat
-                    }
-                },
-                new ParametersToken
-                {
-                    Parameters = new[]
-                    {
-                        new ParametersToken.Parameter
-                        {
-                            Value = encryptedPassword,
-                            Format = pwdFormat
-                        },
-                        new ParametersToken.Parameter
-                        {
-                            Value = DBNull.Value,
-                            Format = remPwdVarcharFormat
-                        },
-                        new ParametersToken.Parameter
-                        {
-                            Value = encryptedPassword,
-                            Format = pwdFormat
-                        }
-                    }
-                },
-                new DoneToken
-                {
-                    Count = 0,
-                    Status = DoneToken.DoneStatus.TDS_DONE_FINAL,
-                    TransactionState = TranState.TDS_NOT_IN_TRAN
-                }
-            };
-        }
-
         public static IToken[] BuildEncrypt3Tokens(byte[] encryptedPassword)
         {
             var pwdFormat = new FormatItem
@@ -141,27 +81,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
             };
         }
-
-        public static byte[] EncryptPassword2(int suite, byte[] rsaKey, byte[] passwordBytes)
-        {
-            Logger.Instance?.WriteLine($"Cipher Suite: {suite}");
-            Logger.Instance?.WriteLine($"RsaKey [{rsaKey.Length}]: {ByteArrayToHexString(rsaKey)}");
-
-            byte[] encryptedPassword;
-            using (var rsa = RSA.Create())
-            {
-                var rsaParams = ReadPublicKey(rsaKey);
-                Logger.Instance?.WriteLine($"RSA Mod [{rsaParams.Modulus.Length}]: {ByteArrayToHexString(rsaParams.Modulus)}");
-                Logger.Instance?.WriteLine($"RSA Exp [{rsaParams.Exponent.Length}]: {ByteArrayToHexString(rsaParams.Exponent)}");
-                rsa.ImportParameters(rsaParams);
-
-                encryptedPassword = rsa.Encrypt(passwordBytes, RSAEncryptionPadding.OaepSHA1);
-            }
-
-            Logger.Instance?.WriteLine($"Encrypted Bytes [{encryptedPassword.Length}]: {ByteArrayToHexString(encryptedPassword)}");
-            return encryptedPassword;
-        }
-
+        
         public static byte[] EncryptPassword3(int suite, byte[] rsaKey, byte[] nonce, byte[] passwordBytes)
         {
             Logger.Instance?.WriteLine($"Cipher Suite: {suite}");

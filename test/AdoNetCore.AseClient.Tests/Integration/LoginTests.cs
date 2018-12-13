@@ -5,9 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
-using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Internal;
-using AdoNetCore.AseClient.Packet;
 using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using NUnit.Framework;
 
@@ -28,7 +26,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCaseSource(nameof(Login_Success_Cases))]
         public void Login_Success(string cs)
         {
-            LoginPacket.ResetPreferredLSecLogin();
             Logger.Enable();
             using (var connection = GetConnection(cs))
             {
@@ -41,26 +38,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             yield return new TestCaseData(ConnectionStrings.Pooled);
             yield return new TestCaseData(ConnectionStrings.BigPacketSize);
-            yield return new TestCaseData(ConnectionStrings.PasswordEncrypted);
-        }
-
-        [TestCaseSource(nameof(EncryptedPassword_Login_Success_Cases))]
-        public void EncryptedPassword_Login_Success(string _, string cs, int lSecLoginOverride)
-        {
-            LoginPacket.PreferredLSecLogin = (LSecLogin) lSecLoginOverride;
-            Logger.Enable();
-
-            using (var connection = GetConnection(cs))
-            {
-                connection.Open();
-                Assert.IsTrue(connection.State == ConnectionState.Open, "Connection state should be Open after calling Open()");
-            }
-        }
-
-        public static IEnumerable<TestCaseData> EncryptedPassword_Login_Success_Cases()
-        {
-            yield return new TestCaseData("ENCRYPT3", ConnectionStrings.PasswordEncrypted3, 0x80);
-            yield return new TestCaseData("ENCRYPT2", ConnectionStrings.PasswordEncrypted2, 0x20);
+            yield return new TestCaseData(ConnectionStrings.EncryptPassword1);
+            yield return new TestCaseData(ConnectionStrings.EncryptPassword2);
         }
 
         [Test]

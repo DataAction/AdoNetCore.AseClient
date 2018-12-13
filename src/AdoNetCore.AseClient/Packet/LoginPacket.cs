@@ -36,13 +36,6 @@ namespace AdoNetCore.AseClient.Packet
         public int PacketSize { get; set; }
         public bool EncryptPassword { get; set; }
 
-        public static void ResetPreferredLSecLogin()
-        {
-            PreferredLSecLogin = LSecLogin.TDS_SEC_LOG_ENCRYPT3;
-        }
-
-        public static LSecLogin PreferredLSecLogin { get; set; } = LSecLogin.TDS_SEC_LOG_ENCRYPT3;
-
         public LoginPacket(string hostname, string username, string password, string processId, string applicationName, string serverName, string language, string charset, string clientLibrary, int packetSize, CapabilityToken capability, bool encryptPassword)
         {
             Capability = capability;
@@ -113,7 +106,7 @@ namespace AdoNetCore.AseClient.Packet
             stream.WritePaddedString(Language, TDS_MAXNAME, env.Encoding); //llanguage
 
             var lSecLogin = EncryptPassword
-                ? PreferredLSecLogin
+                ? LSecLogin.TDS_SEC_LOG_ENCRYPT3
                 : LSecLogin.UNUSED;
 
             stream.Write(new byte[]

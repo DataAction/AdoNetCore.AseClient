@@ -15,6 +15,8 @@ namespace AdoNetCore.AseClient
         , ICloneable
 #endif
     {
+        private static Func<IConnectionPoolManager> MakeConnectionPoolManager => () => new ConnectionPoolManager();
+
         private IInternalConnection _internal;
         private string _connectionString;
         private readonly IConnectionPoolManager _connectionPoolManager;
@@ -102,7 +104,7 @@ namespace AdoNetCore.AseClient
         /// </para>
         /// You can change the value for these properties only by using the <see cref="ConnectionString" /> property.
         /// </remarks>
-        public AseConnection(string connectionString) : this(connectionString, new ConnectionPoolManager())
+        public AseConnection(string connectionString) : this(connectionString, MakeConnectionPoolManager())
         {
         }
 
@@ -528,6 +530,11 @@ namespace AdoNetCore.AseClient
         public void ClearPool()
         {
             _connectionPoolManager.ClearPool(_connectionString);
+        }
+
+        public static void ClearPools()
+        {
+            MakeConnectionPoolManager().ClearPools();
         }
 
         public bool IsCaseSensitive()

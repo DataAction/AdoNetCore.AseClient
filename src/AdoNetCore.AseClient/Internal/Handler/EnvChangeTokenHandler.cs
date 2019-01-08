@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using AdoNetCore.AseClient.Enum;
@@ -14,14 +14,14 @@ namespace AdoNetCore.AseClient.Internal.Handler
         //  * https://www.connectionstrings.com/ase-unsupported-charset/
         //  * master.dbo.syscharsets
         //the ones of interest seem to be: iso_1 (or ???), ascii_8, utf-8 (or utf8???), 
-        private static readonly Dictionary<string, Encoding> CharsetMap = new Dictionary<string, Encoding>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, Func<Encoding>> CharsetMap = new Dictionary<string, Func<Encoding>>(StringComparer.OrdinalIgnoreCase)
         {
-            {"iso_1", Encoding.GetEncoding("ISO-8859-1")},
-            {"iso 8859-1", Encoding.GetEncoding("ISO-8859-1")},
-            {"iso88591", Encoding.GetEncoding("ISO-8859-1")},
-            {"ascii_8", Encoding.ASCII},
-            {"utf-8", Encoding.UTF8 },
-            {"utf8", Encoding.UTF8 },
+            {"iso_1", () => Encoding.GetEncoding("ISO-8859-1")},
+            {"iso 8859-1", () => Encoding.GetEncoding("ISO-8859-1")},
+            {"iso88591", () => Encoding.GetEncoding("ISO-8859-1")},
+            {"ascii_8", () => Encoding.ASCII},
+            {"utf-8", () => Encoding.UTF8},
+            {"utf8", () => Encoding.UTF8},
         };
         private readonly DbEnvironment _environment;
 
@@ -57,11 +57,22 @@ namespace AdoNetCore.AseClient.Internal.Handler
                             case EnvironmentChangeToken.ChangeType.TDS_ENV_CHARSET:
                                 if (CharsetMap.ContainsKey(change.NewValue))
                                 {
-                                    _environment.Encoding = CharsetMap[change.NewValue];
+                                    _environment.Encoding = CharsetMap[change.NewValue]();
                                 }
                                 else
                                 {
-                                    throw new AseException($"Server environment changed to unsupported charset {change.NewValue}");
+                                    try
+                                    {
+                                        // save it for later
+                                        var newEncoding = Encoding.GetEncoding(change.NewValue);
+                                        CharsetMap[change.NewValue] = () => newEncoding;
+
+                                        _environment.Encoding = newEncoding;
+                                    }
+                                    catch
+                                    {
+                                        throw new AseException($"Server environment changed to unsupported charset '{change.NewValue}'. To add support for this charset, register an EncodingProvider to handle targeting '{change.NewValue}'.");
+                                    }
                                 }
                                 break;
                         }

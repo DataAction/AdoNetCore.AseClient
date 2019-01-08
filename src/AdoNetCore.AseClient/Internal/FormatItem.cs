@@ -50,6 +50,8 @@ namespace AdoNetCore.AseClient.Internal
 
         public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
         {
+            parameter.AseDbType = TypeMap.InferType(parameter);
+
             var dbType = parameter.DbType;
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
             var format = new FormatItem
@@ -58,7 +60,7 @@ namespace AdoNetCore.AseClient.Internal
                 IsOutput = parameter.IsOutput,
                 IsNullable = parameter.IsNullable,
                 Length = length,
-                DataType = TypeMap.GetTdsDataType(dbType, parameter.DbTypeIsKnown, parameter.SendableValue, length, parameter.ParameterName),
+                DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
                 UserType = TypeMap.GetTdsUserType(dbType),
             };
 

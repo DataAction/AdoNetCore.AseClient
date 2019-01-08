@@ -145,7 +145,7 @@ namespace AdoNetCore.AseClient.Internal
             return null;
         }
 
-        private async Task<IInternalConnection> CreateNewPooledConnection(CancellationToken cancellationToken, IInfoMessageEventNotifier eventNotifier)
+        private async Task<IInternalConnection> CreateNewPooledConnection(CancellationToken cancellationToken = new CancellationToken(), IInfoMessageEventNotifier eventNotifier = null)
         {
             try
             {
@@ -184,7 +184,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 try
                 {
-                    AddToPool(await CreateNewPooledConnection(new CancellationToken(), null));
+                    AddToPool(await CreateNewPooledConnection(/*Since this is an internal optimisation, there's no point supplying a cancellation token or event notifier*/));
                     Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} added new internal connection");
                 }
                 catch(Exception ex)
@@ -203,7 +203,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 try
                 {
-                    AddToPool(await CreateNewPooledConnection(new CancellationToken(), null));
+                    AddToPool(await CreateNewPooledConnection(/*Since this is an internal optimisation, there's no point supplying a cancellation token or event notifier*/));
                     Logger.Instance?.WriteLine($"{nameof(TryReplaceConnection)} added new internal connection");
                 }
                 catch (Exception ex)

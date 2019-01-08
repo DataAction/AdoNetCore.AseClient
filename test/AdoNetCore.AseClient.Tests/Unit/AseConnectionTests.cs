@@ -162,7 +162,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var mockConnectionPoolManager = new Mock<IConnectionPoolManager>();
 
             mockConnectionPoolManager
-                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), null))
+                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>()))
                 .Returns(mockConnection.Object);
 
             mockConnection.Setup(x => x.ChangeDatabase(It.IsAny<string>()));
@@ -184,7 +184,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var mockConnectionPoolManager = new Mock<IConnectionPoolManager>();
 
             mockConnectionPoolManager
-                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), null))
+                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>()))
                 .Returns(mockConnection.Object);
 
             mockConnection.Setup(x => x.ChangeDatabase(It.IsAny<string>()));
@@ -267,7 +267,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var mockConnectionPoolManager = new Mock<IConnectionPoolManager>();
 
             mockConnectionPoolManager
-                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), null))
+                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>()))
                 .Returns(mockConnection.Object);
 
             return mockConnectionPoolManager.Object;

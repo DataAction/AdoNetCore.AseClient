@@ -48,20 +48,24 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken, ref bool streamExceeded)
         {
             var remainingLength = Type == TokenType.TDS_PARAMFMT
-                ? stream.ReadUShort()
-                : stream.ReadUInt();
+                ? stream.ReadUShort(ref streamExceeded)
+                : stream.ReadUInt(ref streamExceeded);
 
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
-                var paramCount = ts.ReadUShort();
+                var paramCount = ts.ReadUShort(ref streamExceeded);
                 var formats = new List<FormatItem>();
 
                 for (var i = 0; i < paramCount; i++)
                 {
-                    formats.Add(FormatItem.ReadForParameter(ts, env.Encoding, Type));
+                    formats.Add(FormatItem.ReadForParameter(ts, env.Encoding, Type, ref streamExceeded));
+                    if (streamExceeded)
+                        return;
                 }
 
                 Formats = formats.ToArray();

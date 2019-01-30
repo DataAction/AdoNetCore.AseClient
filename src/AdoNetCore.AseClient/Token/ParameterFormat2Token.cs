@@ -9,10 +9,10 @@ namespace AdoNetCore.AseClient.Token
     {
         public ParameterFormat2Token() : base(TokenType.TDS_PARAMFMT2) { }
 
-        public static ParameterFormat2Token Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static ParameterFormat2Token Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new ParameterFormat2Token();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

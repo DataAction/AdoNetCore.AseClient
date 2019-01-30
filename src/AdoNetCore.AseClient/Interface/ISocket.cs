@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Interface
@@ -7,7 +8,9 @@ namespace AdoNetCore.AseClient.Interface
     {
         void SendPacket(IPacket packet, DbEnvironment env);
 
-        IToken[] ReceiveTokens(DbEnvironment env);
+        IEnumerable<IToken> ReceiveTokens(DbEnvironment env);
+
+        IEnumerable<IToken> ReceivePartialTokens(DbEnvironment env);
 
         DateTime LastActive { get; }
     }

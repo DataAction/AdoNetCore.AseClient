@@ -20,15 +20,20 @@ namespace AdoNetCore.AseClient.Token
             // do nothing
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             //var remainingLength = stream.ReadShort();
-            var remainingLength = CalculateRemainingLength(Type, stream);
+            var remainingLength = CalculateRemainingLength(Type, stream, ref streamExceeded);
+            if (stream.CheckRequiredLength((long)remainingLength, ref streamExceeded) == false)
+                return;
 
-            for (ulong i = 0; i < remainingLength; i++)
-            {
-                stream.ReadByte();
-            }
+            if (remainingLength < long.MaxValue)
+                stream.Seek((long)remainingLength, SeekOrigin.Current);
+            else
+                for (ulong i = 0; i < remainingLength; i++)
+                {
+                    stream.ReadByte();
+                }
         }
 
         /// <summary>
@@ -37,28 +42,28 @@ namespace AdoNetCore.AseClient.Token
         /// <param name="stream"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        private ulong CalculateRemainingLength(TokenType type, Stream stream)
+        private ulong CalculateRemainingLength(TokenType type, Stream stream, ref bool streamExceeded)
         {
             var b = (byte)type;
 
             if ((b & 0b0011_0000) == 0b0011_0000)
             {
-                return Convert.ToUInt64(stream.ReadByte());
+                return Convert.ToUInt64(stream.ReadByte(ref streamExceeded));
             }
 
             if ((b & 0b0011_0100) == 0b0011_0100)
             {
-                return stream.ReadUShort();
+                return stream.ReadUShort(ref streamExceeded);
             }
 
             if ((b & 0b0011_1000) == 0b0011_1000)
             {
-                return stream.ReadUInt();
+                return stream.ReadUInt(ref streamExceeded);
             }
 
             if ((b & 0b0011_1100) == 0b0011_1100)
             {
-                return stream.ReadULong();
+                return stream.ReadULong(ref streamExceeded);
             }
 
             if ((b & 0b1010_0000) == 0b1010_0000)

@@ -39,7 +39,7 @@ namespace AdoNetCore.AseClient.Token
                 : DbRpcOptions.TDS_RPC_UNUSED));
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             throw new NotImplementedException();
         }

@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
@@ -92,6 +93,8 @@ namespace AdoNetCore.AseClient
             NamedParameters = connection.NamedParameters;
         }
 
+        internal IEventNotifier EventNotifier { private get; set; }
+
         /// <summary>
         /// Tries to cancel the execution of a <see cref="AseCommand" />.
         /// </summary>
@@ -111,6 +114,7 @@ namespace AdoNetCore.AseClient
             }
 
             Logger.Instance?.WriteLine("Cancel requested");
+            // Result handlers cleared in here
             _connection.InternalConnection.Cancel();
         }
 
@@ -159,7 +163,7 @@ namespace AdoNetCore.AseClient
             }
 
             LogExecution(nameof(ExecuteNonQuery));
-            return _connection.InternalConnection.ExecuteNonQuery(this, (AseTransaction)Transaction);
+            return _connection.InternalConnection.ExecuteNonQuery(this, Transaction);
         }
 
         /// <summary>
@@ -180,7 +184,7 @@ namespace AdoNetCore.AseClient
             }
 
             LogExecution(nameof(ExecuteReader));
-            return (AseDataReader)_connection.InternalConnection.ExecuteReader(behavior, this, (AseTransaction)Transaction);
+            return (AseDataReader)_connection.InternalConnection.ExecuteReader(behavior, this, Transaction);
         }
 
         /// <summary>		
@@ -203,6 +207,32 @@ namespace AdoNetCore.AseClient
         }
 
         /// <summary>
+        /// Sends the <see cref="CommandText" /> to the <see cref="Connection" /> and builds an internal <see cref="AseDataReader" /> which is not returned. Result sets are fetched through events.
+        /// </summary>
+        /// <param name="resultRowHandler">Delegate of type <see cref="ResultRowCallbackHandler" /> to be called when a row arrives.</param>
+        /// <param name="resultSetHandler">Delegate of type <see cref="ResultSetCallbackHandler" /> to be called when a new result set arrives (not called for the first result set).</param>
+        /// <param name="behavior">One of the <see cref="System.Data.CommandBehavior" /> values.</param>
+        /// <remarks>
+        /// <para>When the <see cref="CommandType" /> property is set to <b>StoredProcedure</b>, the <see cref="CommandText" /> property should be set to the 
+        /// name of the stored procedure. The command executes this stored procedure when you call ExecuteEventReader.</para>
+        /// <para>Additional implementation of a data reader. This requires the <see cref="AseCommand"/> events <see cref="ResultRowCallbackHandler"/> and/or <see cref="ResultSetCallbackHandler"/> to fetch rows and to be notified of subsequent result sets.
+        /// Rows and new result sets are fetched while the command is running, before this method returns, and, if running a stored procedure, before any stored proc result parameter is available.</para>
+        /// <para>NOTE: Do not attempt to read any stored procedure return value parameter until after this method returns.</para>
+        /// <para>The ExecuteEventReader method is an alternative version of <see cref="AseCommand.ExecuteReader(CommandBehavior)" />
+        /// for use with stored procedures result sets and will begin fetching results in a more timely fashion, i.e. before the stored procedure returns.</para>
+        /// </remarks>
+        public void ExecuteCallbackReader(ResultRowCallbackHandler resultRowHandler, ResultSetCallbackHandler resultSetHandler = null, CommandBehavior behavior = CommandBehavior.Default)
+        {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+
+            LogExecution(nameof(ExecuteCallbackReader));
+            _connection.InternalConnection.ExecuteCallbackReader(behavior, this, Transaction, resultRowHandler, resultSetHandler);
+        }
+
+        /// <summary>
         /// Executes the query, and returns the first column of the first row in the result set returned by the query. 
         /// Additional columns or rows are ignored.
         /// </summary>
@@ -221,7 +251,7 @@ namespace AdoNetCore.AseClient
             }
 
             LogExecution(nameof(ExecuteScalar));
-            return _connection.InternalConnection.ExecuteScalar(this, (AseTransaction)Transaction);
+            return _connection.InternalConnection.ExecuteScalar(this, Transaction);
         }
 
         private void LogExecution(string methodName)
@@ -437,6 +467,7 @@ namespace AdoNetCore.AseClient
                 return;
             }
 
+            EventNotifier?.ClearResultHandlers();
             _isDisposed = true;
         }
 
@@ -519,7 +550,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
-            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteNonQueryTaskRunnable(this, (AseTransaction)Transaction), cancellationToken);
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteNonQueryTaskRunnable(this, Transaction), cancellationToken);
         }
 
         protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
@@ -529,7 +560,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
-            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteReaderTaskRunnable(behavior, this, (AseTransaction)Transaction), cancellationToken);
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteReaderTaskRunnable(behavior, this, Transaction), cancellationToken);
         }
 
         public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)
@@ -611,4 +642,8 @@ namespace AdoNetCore.AseClient
             return XmlReader.Create(new StringReader((string)result));
         }
     }
+
+    public delegate void ResultSetCallbackHandler();
+
+    public delegate void ResultRowCallbackHandler(IAseDataCallbackReader reader);
 }

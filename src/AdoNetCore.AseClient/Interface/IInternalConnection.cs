@@ -63,6 +63,14 @@ namespace AdoNetCore.AseClient.Interface
         DbDataReader ExecuteReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
 
         /// <summary>
+        /// Additional implementation of a reader. This requires the <see cref="AseCommand"/> delefates <see cref="ResultRowCallbackHandler"/> and/or <see cref="ResultSetCallbackHandler"/> to fetch rows and to be notified of subsequent result sets.
+        /// Rows and new result sets are fetched while the command is running, before this method returns, and, if running a stored procedure, before any stored proc result parameter is available.
+        /// NOTE: Do not attempt to read any stored procedure return value parameter until after this method returns.
+        /// </summary>
+        void ExecuteCallbackReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction, ResultRowCallbackHandler resultRowHandler, ResultSetCallbackHandler resultSetHandler = null);
+        //void ExecuteEventReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction);
+
+        /// <summary>
         /// Internal implementation of <see cref="IDbCommand.ExecuteReader()"/>,
         /// but the result is wrapped in a Task to allow the caller to check IsCanceled
         /// </summary>
@@ -114,6 +122,6 @@ namespace AdoNetCore.AseClient.Interface
         /// <summary>
         /// The 'caller event' notifier for the connection
         /// </summary>
-        IInfoMessageEventNotifier EventNotifier { get; set; }
+        IEventNotifier EventNotifier { get; set; }
     }
 }

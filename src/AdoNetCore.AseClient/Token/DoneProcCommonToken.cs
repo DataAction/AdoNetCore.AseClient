@@ -47,11 +47,11 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
-            Status = (DoneProcStatus)stream.ReadUShort();
-            TransactionState = (TranState)stream.ReadUShort();
-            Count = stream.ReadInt();
+            Status = (DoneProcStatus)stream.ReadUShort(ref streamExceeded);
+            TransactionState = (TranState)stream.ReadUShort(ref streamExceeded);
+            Count = stream.ReadInt(ref streamExceeded);
             Logger.Instance?.WriteLine($"<- {Status}, {TransactionState}, {Count}");
         }
     }

@@ -15,15 +15,17 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             Logger.Instance?.WriteLine($"<- {Type}");
-            var remainingLength = stream.ReadUShort();
+            var remainingLength = stream.ReadUShort(ref streamExceeded);
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
                 for (var i = 0; i < previous.Formats.Length; i++)
                 {
-                    var customFormatInfo = ts.ReadByteLengthPrefixedString(env.Encoding);
+                    var customFormatInfo = ts.ReadByteLengthPrefixedString(env.Encoding, ref streamExceeded);
                     if (!string.IsNullOrWhiteSpace(customFormatInfo))
                     {
                         Logger.Instance?.WriteLine($"  <- Fmt: {customFormatInfo}");
@@ -32,10 +34,10 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public static ControlToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static ControlToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new ControlToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

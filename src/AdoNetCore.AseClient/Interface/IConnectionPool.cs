@@ -1,11 +1,11 @@
-namespace AdoNetCore.AseClient.Interface
+﻿namespace AdoNetCore.AseClient.Interface
 {
     internal interface IConnectionPool
     {
         /// <summary>
         /// Attempt to reserve an internal connection in the pool for use
         /// </summary>
-        IInternalConnection Reserve(IInfoMessageEventNotifier eventNotifier);
+        IInternalConnection Reserve(IEventNotifier eventNotifier);
         /// <summary>
         /// Release a used internal connection back into the pool for reuse or replacement
         /// </summary>

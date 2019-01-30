@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Data.Common;
@@ -7,11 +8,11 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
-    public sealed class AseDataReader : DbDataReader
+    public sealed class AseDataReader : DbDataReader, IAseDataCallbackReader
     {
         //private static readonly HashSet<TdsDataType> LongTdsTypes = new HashSet<TdsDataType> {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT};
 
-        private readonly TableResult[] _results;
+        private readonly IList<TableResult> _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
         private readonly CommandBehavior _behavior;
@@ -21,7 +22,8 @@ namespace AdoNetCore.AseClient
         private DataTable _currentSchemaTable;
 #endif
 
-        internal AseDataReader(TableResult[] results, AseCommand command, CommandBehavior behavior)
+        // ReSharper disable once UnusedParameter.Local
+        internal AseDataReader(IList<TableResult> results, AseCommand command, CommandBehavior behavior)
         {
             _results = results;
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
@@ -648,7 +650,7 @@ namespace AdoNetCore.AseClient
             _currentSchemaTable = null;
 #endif
 
-            if (_results.Length > _currentResult)
+            if (_results.Count > _currentResult)
             {
                 _currentRow = -1;
                 return true;
@@ -672,7 +674,7 @@ namespace AdoNetCore.AseClient
             if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
             {
                 // Jump to the end
-                _currentResult = _results.Length - 1;
+                _currentResult = _results.Count - 1;
                 _currentRow = _results[_currentResult].Rows.Count;
             }
             else
@@ -684,8 +686,8 @@ namespace AdoNetCore.AseClient
         }
 
         public override int Depth => 0;
-        public override bool IsClosed => _currentResult >= _results.Length;
-        public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
+        public override bool IsClosed => _currentResult >= _results.Count;
+        public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Count
             ? _results[_currentResult].Rows.Count
             : 0;
 
@@ -699,7 +701,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Confirm that the reader is pointing at a result set
         /// </summary>
-        private bool WithinResultSet => _currentResult >= 0 && _currentResult < _results.Length;
+        private bool WithinResultSet => _currentResult >= 0 && _currentResult < _results.Count;
 
         /// <summary>
         /// Confirm that the reader is pointing at a row within a result set

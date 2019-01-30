@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 #if ENABLE_SYSTEMEXCEPTION
 using System.Runtime.Serialization;
 #endif

@@ -16,28 +16,32 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken, ref bool streamExceeded)
         {
             Logger.Instance?.WriteLine($"<- {Type}");
-            var remainingLength = stream.ReadUInt();
+            var remainingLength = stream.ReadUInt(ref streamExceeded);
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
                 var formats = new List<FormatItem>();
-                var columnCount = ts.ReadUShort();
+                var columnCount = ts.ReadUShort(ref streamExceeded);
 
                 for (var i = 0; i < columnCount; i++)
                 {
-                    formats.Add(FormatItem.ReadForRow(ts, env.Encoding, Type));
+                    formats.Add(FormatItem.ReadForRow(ts, env.Encoding, Type, ref streamExceeded));
+                    if (streamExceeded)
+                        return;
                 }
 
                 Formats = formats.ToArray();
             }
         }
 
-        public static RowFormat2Token Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static RowFormat2Token Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new RowFormat2Token();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
 

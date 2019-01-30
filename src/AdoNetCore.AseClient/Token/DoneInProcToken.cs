@@ -8,10 +8,10 @@ namespace AdoNetCore.AseClient.Token
     internal class DoneInProcToken : DoneProcCommonToken, IToken
     {
         public TokenType Type => TokenType.TDS_DONEINPROC;
-        public static DoneInProcToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static DoneInProcToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new DoneInProcToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

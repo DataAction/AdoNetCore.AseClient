@@ -43,7 +43,7 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public IInternalConnection Reserve(IInfoMessageEventNotifier eventNotifier)
+        public IInternalConnection Reserve(IEventNotifier eventNotifier)
         {
             try
             {
@@ -109,7 +109,7 @@ namespace AdoNetCore.AseClient.Internal
                 : new AseException("Timed out trying to establish a connection");
         }
 
-        private async Task<IInternalConnection> ReservePooledConnection(CancellationToken cancellationToken, IInfoMessageEventNotifier eventNotifier)
+        private async Task<IInternalConnection> ReservePooledConnection(CancellationToken cancellationToken, IEventNotifier eventNotifier)
         {
             return FetchIdlePooledConnection(eventNotifier)
                    ?? (CheckAndIncrementPoolSize()
@@ -119,7 +119,7 @@ namespace AdoNetCore.AseClient.Internal
                        : WaitForPooledConnection(cancellationToken, eventNotifier));
         }
 
-        private IInternalConnection FetchIdlePooledConnection(IInfoMessageEventNotifier eventNotifier)
+        private IInternalConnection FetchIdlePooledConnection(IEventNotifier eventNotifier)
         {
             var now = DateTime.UtcNow;
             while (_available.TryTake(out var connection))
@@ -145,7 +145,7 @@ namespace AdoNetCore.AseClient.Internal
             return null;
         }
 
-        private async Task<IInternalConnection> CreateNewPooledConnection(CancellationToken cancellationToken, IInfoMessageEventNotifier eventNotifier)
+        private async Task<IInternalConnection> CreateNewPooledConnection(CancellationToken cancellationToken, IEventNotifier eventNotifier)
         {
             try
             {
@@ -160,7 +160,7 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private IInternalConnection WaitForPooledConnection(CancellationToken cancellationToken, IInfoMessageEventNotifier eventNotifier)
+        private IInternalConnection WaitForPooledConnection(CancellationToken cancellationToken, IEventNotifier eventNotifier)
         {
             Logger.Instance?.WriteLine($"{nameof(WaitForPooledConnection)} start");
             try

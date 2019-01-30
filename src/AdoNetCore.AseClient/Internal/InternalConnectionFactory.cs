@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient.Internal
             _parameters = parameters;
         }
 
-        public Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
+        public Task<IInternalConnection> GetNewConnection(CancellationToken token, IEventNotifier eventNotifier)
         {
             Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} start");
 

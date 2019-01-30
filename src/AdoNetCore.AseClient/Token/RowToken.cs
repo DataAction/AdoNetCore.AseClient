@@ -20,21 +20,23 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken, ref bool streamExceeded)
         {
             Logger.Instance?.WriteLine($"<- {Type}");
             var values = new List<object>();
             foreach (var format in previousFormatToken.Formats)
             {
-                values.Add(ValueReader.Read(stream, format, env));
+                values.Add(ValueReader.Read(stream, format, env, ref streamExceeded));
+                if (streamExceeded)
+                    return;
             }
             Values = values.ToArray();
         }
 
-        public static RowToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static RowToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new RowToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

@@ -18,10 +18,16 @@ namespace AdoNetCore.AseClient.Token
             stream.Write(_capabilityBytes);
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
-            var remainingLength = stream.ReadUShort();
+            var remainingLength = stream.ReadUShort(ref streamExceeded);
+            if (streamExceeded)
+                return;
             var capabilityBytes = new byte[remainingLength];
+            //if (stream.Position > stream.Length - remainingLength)
+            //    throw new InvalidOperationException();
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
             stream.Read(capabilityBytes, 0, remainingLength);
         }
 
@@ -65,10 +71,10 @@ CAPABILITY Token (0xE2); variable length.
 0x00 (00000000): (DATA_NOBIT), (DATA_NOINT4), (DATA_NOINT2), (DATA_NOINT1), (RES_NOPARAM), (RES_NOEED), (RES_NOMSG), (NONE) 
          */
 
-        public static CapabilityToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static CapabilityToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new CapabilityToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

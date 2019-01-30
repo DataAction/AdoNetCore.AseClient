@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace AdoNetCore.AseClient.Internal
@@ -40,7 +39,7 @@ namespace AdoNetCore.AseClient.Internal
                 return bytesRead;
             }
 
-            throw new InvalidOperationException();
+            throw new EndOfStreamException();
         }
 
         public override int ReadByte()
@@ -51,7 +50,7 @@ namespace AdoNetCore.AseClient.Internal
                 return _inner.ReadByte();
             }
 
-            throw new InvalidOperationException();
+            throw new EndOfStreamException();
         }
 
         public override long Seek(long offset, SeekOrigin origin)

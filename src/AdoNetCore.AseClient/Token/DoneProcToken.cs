@@ -9,10 +9,10 @@ namespace AdoNetCore.AseClient.Token
     {
         public TokenType Type => TokenType.TDS_DONEPROC;
 
-        public static DoneProcToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static DoneProcToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new DoneProcToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

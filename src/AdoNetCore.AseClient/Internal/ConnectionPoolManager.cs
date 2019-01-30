@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ namespace AdoNetCore.AseClient.Internal
     {
         private static readonly ConcurrentDictionary<string, IConnectionPool> Pools = new ConcurrentDictionary<string, IConnectionPool>(StringComparer.OrdinalIgnoreCase);
 
-        public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters, IInfoMessageEventNotifier eventNotifier)
+        public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters, IEventNotifier eventNotifier)
         {
             return Pools.GetOrAdd(connectionString, _ => new ConnectionPool(parameters, new InternalConnectionFactory(parameters))).Reserve(eventNotifier);
         }

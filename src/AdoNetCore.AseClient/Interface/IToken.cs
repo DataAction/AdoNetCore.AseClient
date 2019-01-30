@@ -8,6 +8,6 @@ namespace AdoNetCore.AseClient.Interface
     {
         TokenType Type { get; }
         void Write(Stream stream, DbEnvironment env);
-        void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken);
+        void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken, ref bool streamExceeded);
     }
 }

@@ -154,7 +154,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class ImmediateConnectionFactory : IInternalConnectionFactory
         {
-            public async Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
+            public async Task<IInternalConnection> GetNewConnection(CancellationToken token, IEventNotifier eventNotifier)
             {
                 return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection());
             }
@@ -190,6 +190,11 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 return null;
             }
 
+            public void ExecuteCallbackReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction,
+                ResultRowCallbackHandler resultRowHandler, ResultSetCallbackHandler resultSetHandler = null)
+            {
+            }
+
             public Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
             {
                 return Task.FromResult<DbDataReader>(null);
@@ -214,12 +219,12 @@ namespace AdoNetCore.AseClient.Tests.Unit
             {
                 return new Dictionary<string, long>();
             }
-            public IInfoMessageEventNotifier EventNotifier { get; set; }
+            public IEventNotifier EventNotifier { get; set; }
         }
 
         private class SlowConnectionFactory : IInternalConnectionFactory
         {
-            public Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
+            public Task<IInternalConnection> GetNewConnection(CancellationToken token, IEventNotifier eventNotifier)
             {
                 token.WaitHandle.WaitOne();
                 throw new TimeoutException($"Timed out attempting to create new connection");

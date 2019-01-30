@@ -104,6 +104,26 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private void ReceivePartialTokens(params ITokenHandler[] handlers)
+        {
+            Logger.Instance?.WriteLine();
+            Logger.Instance?.WriteLine("---------- Receive Partial Tokens ----------");
+            IEnumerable<IToken> tokens;
+            while ((tokens = _socket.ReceivePartialTokens(_environment)) != null)
+            {
+                foreach (var receivedToken in tokens)
+                {
+                    foreach (var handler in handlers)
+                    {
+                        if (handler != null && handler.CanHandle(receivedToken.Type))
+                        {
+                            handler.Handle(receivedToken);
+                        }
+                    }
+                }
+            }
+        }
+
         public void Login()
         {
             //socket is established already
@@ -206,7 +226,7 @@ namespace AdoNetCore.AseClient.Internal
         public string DataSource => $"{_parameters.Server},{_parameters.Port}";
         public string ServerVersion { get; private set; }
 
-        private void InternalExecuteAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<int> rowsAffectedSource = null, TaskCompletionSource<DbDataReader> readerSource = null, CommandBehavior behavior = CommandBehavior.Default)
+        private void InternalExecuteAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<int> rowsAffectedSource = null, TaskCompletionSource<DbDataReader> readerSource = null, ReaderSourceType readerSourceType = ReaderSourceType.Standard, CommandBehavior behavior = CommandBehavior.Default)
         {
             AssertExecutionStart();
 
@@ -216,14 +236,25 @@ namespace AdoNetCore.AseClient.Internal
 
                 var doneHandler = new DoneTokenHandler();
                 var messageHandler = new MessageTokenHandler(EventNotifier);
-                var dataReaderHandler = readerSource != null ? new DataReaderTokenHandler() : null;
 
-                ReceiveTokens(
-                    new EnvChangeTokenHandler(_environment),
-                    messageHandler,
-                    dataReaderHandler,
-                    new ResponseParameterTokenHandler(command.AseParameters),
-                    doneHandler);
+                // Only one of these two variables will not be null
+                var dataReaderHandler = readerSource != null && readerSourceType == ReaderSourceType.Standard ? new DataReaderTokenHandler() : null;
+                var dataReaderEventHandler = readerSource != null && readerSourceType == ReaderSourceType.ForCallback ? new DataReaderCallbackTokenHandler(command, behavior, EventNotifier) : null;
+
+                if (dataReaderEventHandler != null)
+                    ReceivePartialTokens(
+                        new EnvChangeTokenHandler(_environment),
+                        messageHandler,
+                        dataReaderEventHandler,
+                        new ResponseParameterTokenHandler(command.AseParameters),
+                        doneHandler);
+                else
+                    ReceiveTokens(
+                        new EnvChangeTokenHandler(_environment),
+                        messageHandler,
+                        dataReaderHandler,
+                        new ResponseParameterTokenHandler(command.AseParameters),
+                        doneHandler);
 
                 AssertExecutionCompletion(doneHandler);
 
@@ -242,7 +273,11 @@ namespace AdoNetCore.AseClient.Internal
                 else
                 {
                     rowsAffectedSource?.SetResult(doneHandler.RowsAffected);
-                    readerSource?.SetResult(new AseDataReader(dataReaderHandler.Results(), command, behavior));
+                    if (dataReaderHandler != null)
+                        readerSource?.SetResult(new AseDataReader(dataReaderHandler.Results(), command, behavior));
+                    else if (dataReaderEventHandler != null)
+                        // Set this so that Task.Wait will stop waiting
+                        readerSource?.SetResult(null);
                 }
             }
             catch (Exception ex)
@@ -289,10 +324,36 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        public void ExecuteCallbackReader(CommandBehavior behavior, AseCommand command, AseTransaction transaction, ResultRowCallbackHandler resultRowHandler, ResultSetCallbackHandler resultSetHandler = null)
+        {
+            try
+            {
+                EventNotifier.ResultRow = resultRowHandler;
+                EventNotifier.ResultSet = resultSetHandler;
+                var readerSource = new TaskCompletionSource<DbDataReader>();
+                InternalExecuteAsync(command, transaction, null, readerSource, ReaderSourceType.ForCallback, behavior);
+                readerSource.Task.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // TODO: Debug catch-all :-) to be removed.
+                throw;
+            }
+            finally
+            {
+                EventNotifier.ClearResultHandlers();
+            }
+        }
+
         public Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
         {
             var readerSource = new TaskCompletionSource<DbDataReader>();
-            InternalExecuteAsync(command, transaction, null, readerSource, behavior);
+            InternalExecuteAsync(command, transaction, null, readerSource, ReaderSourceType.Standard, behavior);
             return readerSource.Task;
         }
 
@@ -311,6 +372,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public void Cancel()
         {
+            EventNotifier?.ClearResultHandlers();
             if (TrySetState(InternalConnectionState.Canceled, s => s == InternalConnectionState.Active))
             {
                 Logger.Instance?.WriteLine("Canceling...");
@@ -548,6 +610,6 @@ SET FMTONLY OFF";
             return EmptyStatistics;
         }
 
-        public IInfoMessageEventNotifier EventNotifier { get; set; }
+        public IEventNotifier EventNotifier { get; set; }
     }
 }

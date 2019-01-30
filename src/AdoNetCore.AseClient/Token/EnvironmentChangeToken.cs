@@ -62,9 +62,11 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
-            var remainingLength = stream.ReadShort();
+            var remainingLength = stream.ReadShort(ref streamExceeded);
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
                 var changes = new List<EnvironmentChange>();
@@ -74,8 +76,8 @@ namespace AdoNetCore.AseClient.Token
                     var change = new EnvironmentChange
                     {
                         Type = (ChangeType)ts.ReadByte(),
-                        NewValue = ts.ReadByteLengthPrefixedString(env.Encoding),
-                        OldValue = ts.ReadByteLengthPrefixedString(env.Encoding)
+                        NewValue = ts.ReadByteLengthPrefixedString(env.Encoding, ref streamExceeded),
+                        OldValue = ts.ReadByteLengthPrefixedString(env.Encoding, ref streamExceeded)
                     };
                     changes.Add(change);
                 }
@@ -83,10 +85,10 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public static EnvironmentChangeToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static EnvironmentChangeToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new EnvironmentChangeToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

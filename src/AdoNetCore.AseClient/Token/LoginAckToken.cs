@@ -41,9 +41,11 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
-            var remainingLength = stream.ReadUShort();
+            var remainingLength = stream.ReadUShort(ref streamExceeded);
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
                 Status = (LoginStatus)ts.ReadByte();
@@ -51,7 +53,7 @@ namespace AdoNetCore.AseClient.Token
                 ts.Read(versionBuffer, 0, 4);
                 TdsVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}.{versionBuffer[3]}";
 
-                ProgramName = ts.ReadByteLengthPrefixedString(env.Encoding);
+                ProgramName = ts.ReadByteLengthPrefixedString(env.Encoding, ref streamExceeded);
 
                 ts.Read(versionBuffer, 0, 4);
                 ProgramVersion = $"{versionBuffer[0]}.{versionBuffer[1]}.{versionBuffer[2]}"; //Sybase driver only reports the first 3 version numbers, eg: 15.0.0
@@ -59,10 +61,10 @@ namespace AdoNetCore.AseClient.Token
             Logger.Instance?.WriteLine($"<- {Type}: TDS {TdsVersion}, {ProgramName} {ProgramVersion}");
         }
 
-        public static LoginAckToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static LoginAckToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new LoginAckToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

@@ -31,7 +31,7 @@ namespace AdoNetCore.AseClient.Token
             }
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var parameters = new List<Parameter>();
             foreach(var format in previous.Formats)
@@ -39,18 +39,20 @@ namespace AdoNetCore.AseClient.Token
                 var p = new Parameter
                 {
                     Format = format,
-                    Value = ValueReader.Read(stream, format, env)
+                    Value = ValueReader.Read(stream, format, env, ref streamExceeded)
                 };
+                if (streamExceeded)
+                    return;
                 parameters.Add(p);
             }
             Parameters = parameters.ToArray();
             Logger.Instance?.WriteLine($"<- {Type}: {Parameters.Length} parameters");
         }
 
-        public static ParametersToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static ParametersToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new ParametersToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

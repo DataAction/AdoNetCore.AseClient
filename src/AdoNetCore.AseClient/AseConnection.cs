@@ -232,7 +232,8 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseConnection));
             }
 
-            var aseCommand = new AseCommand(this) { NamedParameters = NamedParameters };
+            _eventNotifier?.ClearResultHandlers();
+            var aseCommand = new AseCommand(this) { NamedParameters = NamedParameters, EventNotifier = _eventNotifier };
 
             return aseCommand;
         }

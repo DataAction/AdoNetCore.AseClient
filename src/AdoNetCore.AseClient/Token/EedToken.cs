@@ -36,31 +36,33 @@ namespace AdoNetCore.AseClient.Token
             throw new NotImplementedException();
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
-            var remainingLength = stream.ReadUShort();
+            var remainingLength = stream.ReadUShort(ref streamExceeded);
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
 
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
-                MessageNumber = ts.ReadInt();
-                State = ts.ReadByte();
+                MessageNumber = ts.ReadInt(ref streamExceeded);
+                State = ts.ReadByte();                  // Already checked remainingLength so can use non-checking version
                 Severity = ts.ReadByte();
                 var sqlStateLen = ts.ReadByte();
                 SqlState = new byte[sqlStateLen];
                 ts.Read(SqlState, 0, sqlStateLen);
                 Status = (EedStatus)ts.ReadByte();
-                TransactionStatus = (TranState)ts.ReadUShort();
-                Message = ts.ReadShortLengthPrefixedString(env.Encoding);
-                ServerName = ts.ReadByteLengthPrefixedString(env.Encoding);
-                ProcedureName = ts.ReadByteLengthPrefixedString(env.Encoding);
-                LineNumber = ts.ReadUShort();
+                TransactionStatus = (TranState)ts.ReadUShort(ref streamExceeded);
+                Message = ts.ReadShortLengthPrefixedString(env.Encoding, ref streamExceeded);
+                ServerName = ts.ReadByteLengthPrefixedString(env.Encoding, ref streamExceeded);
+                ProcedureName = ts.ReadByteLengthPrefixedString(env.Encoding, ref streamExceeded);
+                LineNumber = ts.ReadUShort(ref streamExceeded);
             }
         }
 
-        public static EedToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static EedToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new EedToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

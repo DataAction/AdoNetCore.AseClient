@@ -32,21 +32,23 @@ namespace AdoNetCore.AseClient.Token
             stream.WriteBytePrefixedByteArray(Arguments);
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previousFormatToken, ref bool streamExceeded)
         {
-            var remainingLength = stream.ReadShort();
+            var remainingLength = stream.ReadShort(ref streamExceeded);
+            if (stream.CheckRequiredLength(remainingLength, ref streamExceeded) == false)
+                return;
             using (var ts = new ReadablePartialStream(stream, remainingLength))
             {
                 Command = (CommandType)ts.ReadByte();
                 Option = (OptionType)ts.ReadByte();
-                Arguments = ts.ReadByteLengthPrefixedByteArray();
+                Arguments = ts.ReadByteLengthPrefixedByteArray(ref streamExceeded);
             }
         }
 
-        public static OptionCommandToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static OptionCommandToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new OptionCommandToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
 

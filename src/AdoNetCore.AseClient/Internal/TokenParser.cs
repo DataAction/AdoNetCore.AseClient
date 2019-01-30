@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -9,41 +8,52 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal class TokenParser : ITokenParser
     {
-        public IToken[] Parse(Stream stream, DbEnvironment env)
-        {
-            return new List<IToken>(ParseInternal(stream, env)).ToArray();
-        }
+        private IFormatToken _previousFormatToken;
+        
+        public long LastStartPosition { get; private set; }
 
-        private IEnumerable<IToken> ParseInternal(Stream stream, DbEnvironment env)
+        public IEnumerable<IToken> Parse(Stream stream, DbEnvironment env, out bool streamExceeded)
         {
-            IFormatToken previousFormatToken = null;
+            var tokens = new List<IToken>();
+            streamExceeded = false;
             while (stream.Position < stream.Length)
             {
+                LastStartPosition = stream.Position;
                 var tokenType = (TokenType)stream.ReadByte();
 
                 if (Readers.ContainsKey(tokenType))
                 {
-                    var t = Readers[tokenType](stream, env, previousFormatToken);
+                    var t = Readers[tokenType](stream, env, _previousFormatToken, ref streamExceeded);
+                    if (streamExceeded)
+                        return tokens;
 
                     if (t is IFormatToken token)
                     {
-                        Logger.Instance?.WriteLine($"**Set new format token**");
-                        previousFormatToken = token;
+                        Logger.Instance?.WriteLine("**Set new format token**");
+                        _previousFormatToken = token;
                     }
 
-                    yield return t;
+                    tokens.Add(t);
                 }
                 else
                 {
                     Logger.Instance?.WriteLine($"!!! Hit unknown token type {tokenType} !!!");
                     var t = new CatchAllToken(tokenType);
-                    t.Read(stream, env, previousFormatToken);
-                    yield return t;
+                    t.Read(stream, env, _previousFormatToken, ref streamExceeded);
+                    if (streamExceeded)
+                        return tokens;
+                    tokens.Add(t);
                 }
+
+                if (tokenType == TokenType.TDS_DONE)
+                    _previousFormatToken = null;
             }
+            LastStartPosition = stream.Length;
+            return tokens;
         }
 
-        private static readonly Dictionary<TokenType, Func<Stream, DbEnvironment, IFormatToken, IToken>> Readers = new Dictionary<TokenType, Func<Stream, DbEnvironment, IFormatToken, IToken>>
+        private delegate IToken ReadersMethodDelegate(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded);
+        private static readonly Dictionary<TokenType, ReadersMethodDelegate> Readers = new Dictionary<TokenType, ReadersMethodDelegate>
         {
             {TokenType.TDS_ENVCHANGE, EnvironmentChangeToken.Create},
             {TokenType.TDS_EED, EedToken.Create },

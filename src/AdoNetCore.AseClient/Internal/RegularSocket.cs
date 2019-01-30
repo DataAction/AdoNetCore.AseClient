@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using AdoNetCore.AseClient.Enum;
@@ -85,7 +86,7 @@ namespace AdoNetCore.AseClient.Internal
             _inner.EnsureSend(buffer, 0, buffer.Length);
         }
 
-        public IToken[] ReceiveTokens(DbEnvironment env)
+        public IEnumerable<IToken> ReceiveTokens(DbEnvironment env)
         {
             using (var ms = new MemoryStream())
             {
@@ -124,7 +125,73 @@ namespace AdoNetCore.AseClient.Internal
                 ms.Seek(0, SeekOrigin.Begin);
 
                 LastActive = DateTime.UtcNow;
-                return _parser.Parse(ms, env);
+
+                var result = _parser.Parse(ms, env, out var streamExceeded);
+                if (!streamExceeded)
+                    return result;
+                throw new InvalidOperationException();
+            }
+        }
+
+        private bool _anyMorePartialTokens = true;
+        private bool _previouslyCancelled;
+        private byte[] _swap;
+        public IEnumerable<IToken> ReceivePartialTokens(DbEnvironment env)
+        {
+            if (_anyMorePartialTokens == false)
+            {
+                _anyMorePartialTokens = true;
+                _previouslyCancelled = false;
+                _swap = null;
+                return null;
+            }
+            using (var ms = new MemoryStream())
+            {
+                if (_swap != null)
+                {
+                    ms.Write(_swap);
+                    _swap = null;
+                }
+
+                var buffer = new byte[env.PacketSize];
+                _inner.EnsureReceive(buffer, 0, env.HeaderSize);
+                var length = buffer[2] << 8 | buffer[3];
+                var bufferStatus = (BufferStatus) buffer[1];
+                _inner.EnsureReceive(buffer, env.HeaderSize, length - env.HeaderSize);
+                ms.Write(buffer, env.HeaderSize, length - env.HeaderSize);
+
+                //" If TDS_BUFSTAT_ATTNACK not also TDS_BUFSTAT_EOM, continue reading packets until TDS_BUFSTAT_EOM."
+                _anyMorePartialTokens = !bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM);
+                _previouslyCancelled |= bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTNACK) ||
+                                        bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTN);
+                if (_previouslyCancelled)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(RegularSocket)} - received cancel status flag");
+                    return new IToken[]
+                    {
+                        new DoneToken
+                        {
+                            Count = 0,
+                            Status = DoneToken.DoneStatus.TDS_DONE_ATTN
+                        }
+                    };
+                }
+
+                ms.Seek(0, SeekOrigin.Begin);
+
+                LastActive = DateTime.UtcNow;
+                var result = _parser.Parse(ms, env, out var streamExceeded);
+                if (streamExceeded)
+                {
+                    if (_anyMorePartialTokens == false)
+                        throw new InvalidOperationException();
+
+                    // If we didn't read all of the last token then store the token fragment and copy to the start of the MemoryStream to add to it
+                    ms.Seek(_parser.LastStartPosition, SeekOrigin.Begin);
+                    _swap = new byte[ms.Length - _parser.LastStartPosition];
+                    ms.Read(_swap, 0, _swap.Length);
+                }
+                return result;
             }
         }
 

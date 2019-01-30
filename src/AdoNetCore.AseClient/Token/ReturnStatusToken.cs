@@ -17,16 +17,16 @@ namespace AdoNetCore.AseClient.Token
             stream.WriteInt(Status);
         }
 
-        public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
+        public void Read(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
-            Status = stream.ReadInt();
+            Status = stream.ReadInt(ref streamExceeded);
             Logger.Instance?.WriteLine($"<- {Type}: {Status}");
         }
 
-        public static ReturnStatusToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
+        public static ReturnStatusToken Create(Stream stream, DbEnvironment env, IFormatToken previous, ref bool streamExceeded)
         {
             var t = new ReturnStatusToken();
-            t.Read(stream, env, previous);
+            t.Read(stream, env, previous, ref streamExceeded);
             return t;
         }
     }

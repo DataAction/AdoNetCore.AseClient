@@ -126,13 +126,41 @@ namespace AdoNetCore.AseClient.Internal
             traceExit?.Invoke(_aseConnection, source, method, returnValue);
         }
 
+        /// <summary>
+        /// Callback methods for new result sets and rows.
+        /// </summary>
+        public ResultSetCallbackHandler ResultSet { private get; set; }
+        public void NotifyResultSet()
+        {
+            if (_aseConnection == null)
+                return;
+
+            ResultSet?.Invoke();
+        }
+
+        public ResultRowCallbackHandler ResultRow { private get; set; }
+        public void NotifyResultRow(IAseDataCallbackReader reader)
+        {
+            if (_aseConnection == null)
+                return;
+
+            ResultRow?.Invoke(reader);
+        }
+
         public void ClearAll()
         {
             StateChangeInternal = null;
             InfoMessageInternal = null;
             TraceEnterInternal = null;
             TraceExitInternal = null;
+            ClearResultHandlers();
             _aseConnection = null;
+        }
+
+        public void ClearResultHandlers()
+        {
+            ResultSet = null;
+            ResultRow = null;
         }
     }
 }

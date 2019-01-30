@@ -9,12 +9,13 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal static class ValueReader
     {
-        public static object Read(Stream stream, FormatItem format, DbEnvironment env)
+        public static object Read(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return ReadInternal(stream, format, env) ?? DBNull.Value;
+            return ReadInternal(stream, format, env, ref streamExceeded) ?? DBNull.Value;
         }
 
-        private static readonly Dictionary<TdsDataType, Func<Stream, FormatItem, DbEnvironment, object>> ReadMap = new Dictionary<TdsDataType, Func<Stream, FormatItem, DbEnvironment, object>>
+        private delegate object ReadMapMethodDelegate(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded);
+        private static readonly Dictionary<TdsDataType, ReadMapMethodDelegate> ReadMap = new Dictionary<TdsDataType, ReadMapMethodDelegate>
         {
             {TdsDataType.TDS_BIT, ReadTDS_BIT},
             {TdsDataType.TDS_INT1, ReadTDS_INT1},
@@ -57,11 +58,11 @@ namespace AdoNetCore.AseClient.Internal
             {TdsDataType.TDS_UNITEXT, ReadTDS_UNITEXT},
         };
 
-        private static object ReadInternal(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadInternal(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
             if (ReadMap.ContainsKey(format.DataType))
             {
-                return ReadMap[format.DataType](stream, format, env) ?? DBNull.Value;
+                return ReadMap[format.DataType](stream, format, env, ref streamExceeded) ?? DBNull.Value;
             }
 
             Debug.Assert(false, $"Unsupported data type {format.DataType}");
@@ -69,119 +70,122 @@ namespace AdoNetCore.AseClient.Internal
             return DBNull.Value; // Catch-all.
         }
 
-        private static object ReadTDS_BIT(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_BIT(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadBool();
+            return stream.ReadBool(ref streamExceeded);
         }
 
-        private static object ReadTDS_INT1(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_INT1(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return (byte)stream.ReadByte();
+            return (byte)stream.ReadByte(ref streamExceeded);
         }
 
-        private static object ReadTDS_SINT1(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_SINT1(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return (sbyte)stream.ReadByte();
+            return (sbyte)stream.ReadByte(ref streamExceeded);
         }
 
-        private static object ReadTDS_INT2(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_INT2(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadShort();
+            return stream.ReadShort(ref streamExceeded);
         }
 
-        private static object ReadTDS_UINT2(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_UINT2(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadUShort();
+            return stream.ReadUShort(ref streamExceeded);
         }
 
-        private static object ReadTDS_INT4(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_INT4(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadInt();
+            return stream.ReadInt(ref streamExceeded);
         }
 
-        private static object ReadTDS_UINT4(Stream stream, FormatItem format, DbEnvironment env) { return stream.ReadUInt(); }
+        private static object ReadTDS_UINT4(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded) { return stream.ReadUInt(ref streamExceeded); }
 
-        private static object ReadTDS_INT8(Stream stream, FormatItem format, DbEnvironment env) { return stream.ReadLong(); }
+        private static object ReadTDS_INT8(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded) { return stream.ReadLong(ref streamExceeded); }
 
-        private static object ReadTDS_UINT8(Stream stream, FormatItem format, DbEnvironment env) { return stream.ReadULong(); }
+        private static object ReadTDS_UINT8(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded) { return stream.ReadULong(ref streamExceeded); }
 
-        private static object ReadTDS_INTN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_INTN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
                 case 0: return DBNull.Value;
-                case 1: return (byte)stream.ReadByte(); //both INTN(1) and UINTN(1) are an INT1. Never an SINT1.
-                case 2: return stream.ReadShort();
-                case 4: return stream.ReadInt();
-                case 8: return stream.ReadLong();
+                case 1:
+                    if (stream.CheckRequiredLength(1, ref streamExceeded) == false)
+                        return (sbyte)0;
+                    return (byte)stream.ReadByte(); //both INTN(1) and UINTN(1) are an INT1. Never an SINT1.
+                case 2: return stream.ReadShort(ref streamExceeded);
+                case 4: return stream.ReadInt(ref streamExceeded);
+                case 8: return stream.ReadLong(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_UINTN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_UINTN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
                 case 0: return DBNull.Value;
-                case 1: return (byte)stream.ReadByte();
-                case 2: return stream.ReadUShort();
-                case 4: return stream.ReadUInt();
-                case 8: return stream.ReadULong();
+                case 1: return (byte)stream.ReadByte(ref streamExceeded);
+                case 2: return stream.ReadUShort(ref streamExceeded);
+                case 4: return stream.ReadUInt(ref streamExceeded);
+                case 8: return stream.ReadULong(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_FLT4(Stream stream, FormatItem format, DbEnvironment env) { return stream.ReadFloat(); }
+        private static object ReadTDS_FLT4(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded) { return stream.ReadFloat(ref streamExceeded); }
 
-        private static object ReadTDS_FLT8(Stream stream, FormatItem format, DbEnvironment env) { return stream.ReadDouble(); }
+        private static object ReadTDS_FLT8(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded) { return stream.ReadDouble(ref streamExceeded); }
 
-        private static object ReadTDS_FLTN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_FLTN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
                 case 0: return DBNull.Value;
-                case 4: return stream.ReadFloat();
-                case 8: return stream.ReadDouble();
+                case 4: return stream.ReadFloat(ref streamExceeded);
+                case 8: return stream.ReadDouble(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_CHAR(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_CHAR(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadNullableByteLengthPrefixedString(env.Encoding);
+            return stream.ReadNullableByteLengthPrefixedString(env.Encoding, ref streamExceeded);
         }
 
-        private static object ReadTDS_VARCHAR(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_VARCHAR(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadNullableByteLengthPrefixedString(env.Encoding);
+            return stream.ReadNullableByteLengthPrefixedString(env.Encoding, ref streamExceeded);
         }
 
-        private static object ReadTDS_BOUNDARY(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_BOUNDARY(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadNullableByteLengthPrefixedString(env.Encoding);
+            return stream.ReadNullableByteLengthPrefixedString(env.Encoding, ref streamExceeded);
         }
 
-        private static object ReadTDS_SENSITIVITY(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_SENSITIVITY(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadNullableByteLengthPrefixedString(env.Encoding);
+            return stream.ReadNullableByteLengthPrefixedString(env.Encoding, ref streamExceeded);
         }
 
-        private static object ReadTDS_BINARY(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_BINARY(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadNullableByteLengthPrefixedByteArray();
+            return stream.ReadNullableByteLengthPrefixedByteArray(ref streamExceeded);
         }
 
-        private static object ReadTDS_VARBINARY(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_VARBINARY(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadNullableByteLengthPrefixedByteArray();
+            return stream.ReadNullableByteLengthPrefixedByteArray(ref streamExceeded);
         }
 
-        private static object ReadTDS_LONGCHAR(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_LONGCHAR(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadNullableIntLengthPrefixedString(env.Encoding);
+            return stream.ReadNullableIntLengthPrefixedString(env.Encoding, ref streamExceeded);
         }
 
         /// <summary>
@@ -191,27 +195,27 @@ namespace AdoNetCore.AseClient.Internal
         /// TDS_LONGBINARY unichar 34 fixed length UTF-16 encoded data
         /// TDS_LONGBINARY univarchar 35 variable length UTF-16 encoded data
         /// </summary>
-        private static object ReadTDS_LONGBINARY(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_LONGBINARY(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
             //the UserType can affect how we need to interpret the result data
             switch (format.UserType)
             {
                 case 34:
                 case 35:
-                    return stream.ReadNullableIntLengthPrefixedString(Encoding.Unicode);
+                    return stream.ReadNullableIntLengthPrefixedString(Encoding.Unicode, ref streamExceeded);
                 default:
-                    return stream.ReadNullableIntLengthPrefixedByteArray();
+                    return stream.ReadNullableIntLengthPrefixedByteArray(ref streamExceeded);
             }
         }
 
-        private static object ReadTDS_DECN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_DECN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
             var precision = format.Precision ?? 1;
             var scale = format.Scale ?? 0;
 
             Logger.Instance?.WriteLine($"  <- {format.DisplayColumnName} ({precision}, {scale})");
 
-            var aseDecimal = stream.ReadAseDecimal(precision, scale);
+            var aseDecimal = stream.ReadAseDecimal(precision, scale, ref streamExceeded);
 
             return aseDecimal.HasValue
                 ? env.UseAseDecimal
@@ -220,14 +224,14 @@ namespace AdoNetCore.AseClient.Internal
                 : DBNull.Value;
         }
 
-        private static object ReadTDS_NUMN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_NUMN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
             var precision = format.Precision ?? 1;
             var scale = format.Scale ?? 0;
 
             Logger.Instance?.WriteLine($"  <- {format.DisplayColumnName} ({precision}, {scale})");
 
-            var aseDecimal = stream.ReadAseDecimal(precision, scale);
+            var aseDecimal = stream.ReadAseDecimal(precision, scale, ref streamExceeded);
 
             return aseDecimal.HasValue
                 ? env.UseAseDecimal
@@ -236,155 +240,169 @@ namespace AdoNetCore.AseClient.Internal
                 : DBNull.Value;
         }
 
-        private static object ReadTDS_MONEY(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_MONEY(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadMoney();
+            return stream.ReadMoney(ref streamExceeded);
         }
 
-        private static object ReadTDS_SHORTMONEY(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_SHORTMONEY(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadSmallMoney();
+            return stream.ReadSmallMoney(ref streamExceeded);
         }
 
-        private static object ReadTDS_MONEYN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_MONEYN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
                 case 0: return DBNull.Value;
                 case 4:
-                    return stream.ReadSmallMoney();
+                    return stream.ReadSmallMoney(ref streamExceeded);
                 case 8:
-                    return stream.ReadMoney();
+                    return stream.ReadMoney(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_DATETIME(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_DATETIME(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadIntPartDateTime();
+            return stream.ReadIntPartDateTime(ref streamExceeded);
         }
 
-        private static object ReadTDS_SHORTDATE(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_SHORTDATE(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadShortPartDateTime();
+            return stream.ReadShortPartDateTime(ref streamExceeded);
         }
 
-        private static object ReadTDS_DATETIMEN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_DATETIMEN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
                 case 0: return DBNull.Value;
                 case 4:
-                    return stream.ReadShortPartDateTime();
+                    return stream.ReadShortPartDateTime(ref streamExceeded);
                 case 8:
-                    return stream.ReadIntPartDateTime();
+                    return stream.ReadIntPartDateTime(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_BIGDATETIMEN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_BIGDATETIMEN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
-                case 8: return stream.ReadBigDateTime();
+                case 8: return stream.ReadBigDateTime(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_DATE(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_DATE(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadDate();
+            return stream.ReadDate(ref streamExceeded);
         }
 
-        private static object ReadTDS_DATEN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_DATEN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
                 case 0: return DBNull.Value;
                 case 4:
-                    return stream.ReadDate();
+                    return stream.ReadDate(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_TIME(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_TIME(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            return stream.ReadTime();
+            return stream.ReadTime(ref streamExceeded);
         }
 
-        private static object ReadTDS_TIMEN(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_TIMEN(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            switch (stream.ReadByte())
+            switch (stream.ReadByte(ref streamExceeded))
             {
                 case 0: return DBNull.Value;
                 case 4:
-                    return stream.ReadTime();
+                    return stream.ReadTime(ref streamExceeded);
             }
 
             return DBNull.Value;
         }
 
-        private static object ReadTDS_TEXT(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_TEXT(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            var textPtrLen = (byte)stream.ReadByte();
-            if (textPtrLen == 0)
+            var textPtrLen = (byte)stream.ReadByte(ref streamExceeded);
+            if (textPtrLen <= 0 || streamExceeded)
             {
                 return DBNull.Value;
             }
-            var textPtr = new byte[textPtrLen];
-            stream.Read(textPtr, 0, textPtrLen);
-            stream.ReadULong(); //timestamp
-            return stream.ReadNullableIntLengthPrefixedString(env.Encoding);
+            //var textPtr = new byte[textPtrLen];
+            //stream.Read(textPtr, 0, textPtrLen);
+            //stream.ReadULong(ref streamExceeded); //timestamp
+            if (stream.CheckRequiredLength(textPtrLen + 4, ref streamExceeded) == false)
+                return DBNull.Value;
+            stream.Seek(textPtrLen + 4, SeekOrigin.Current);
+            return stream.ReadNullableIntLengthPrefixedString(env.Encoding, ref streamExceeded);
         }
 
-        private static object ReadTDS_XML(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_XML(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            var textPtrLen = (byte)stream.ReadByte();
-            if (textPtrLen == 0)
+            var textPtrLen = (byte)stream.ReadByte(ref streamExceeded);
+            if (textPtrLen <= 0 || streamExceeded)
             {
                 return DBNull.Value;
             }
-            var textPtr = new byte[textPtrLen];
-            stream.Read(textPtr, 0, textPtrLen);
-            stream.ReadULong(); //timestamp
-            return stream.ReadNullableIntLengthPrefixedString(env.Encoding);
+            //var textPtr = new byte[textPtrLen];
+            //stream.Read(textPtr, 0, textPtrLen);
+            //stream.ReadULong(ref streamExceeded); //timestamp
+            if (stream.CheckRequiredLength(textPtrLen + 4, ref streamExceeded) == false)
+                return DBNull.Value;
+            stream.Seek(textPtrLen + 4, SeekOrigin.Current);
+            return stream.ReadNullableIntLengthPrefixedString(env.Encoding, ref streamExceeded);
         }
 
-        private static object ReadTDS_IMAGE(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_IMAGE(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            var textPtrLen = (byte)stream.ReadByte();
-            if (textPtrLen == 0)
+            var textPtrLen = (byte)stream.ReadByte(ref streamExceeded);
+            if (textPtrLen == 0 || streamExceeded)
             {
                 return DBNull.Value;
             }
-            var textPtr = new byte[textPtrLen];
-            stream.Read(textPtr, 0, textPtrLen);
-            stream.ReadULong(); //timestamp
-            var dataLen = stream.ReadInt();
-            if (dataLen == 0)
+            //var textPtr = new byte[textPtrLen];
+            //stream.Read(textPtr, 0, textPtrLen);
+            //stream.ReadULong(ref streamExceeded); //timestamp
+            if (stream.CheckRequiredLength(textPtrLen + 4, ref streamExceeded) == false)
+                return DBNull.Value;
+            stream.Seek(textPtrLen + 4, SeekOrigin.Current);
+            var dataLen = stream.ReadInt(ref streamExceeded);
+            if (dataLen <= 0)
             {
                 return DBNull.Value;
             }
+            if (stream.CheckRequiredLength(dataLen, ref streamExceeded) == false)
+                return DBNull.Value;
             var data = new byte[dataLen];
             stream.Read(data, 0, dataLen);
             return data;
         }
 
-        private static object ReadTDS_UNITEXT(Stream stream, FormatItem format, DbEnvironment env)
+        private static object ReadTDS_UNITEXT(Stream stream, FormatItem format, DbEnvironment env, ref bool streamExceeded)
         {
-            var textPtrLen = (byte)stream.ReadByte();
-            if (textPtrLen == 0)
+            var textPtrLen = (byte)stream.ReadByte(ref streamExceeded);
+            if (textPtrLen <= 0 || streamExceeded)
             {
                 return DBNull.Value;
             }
-            var textPtr = new byte[textPtrLen];
-            stream.Read(textPtr, 0, textPtrLen);
-            stream.ReadULong(); //timestamp
-            return stream.ReadNullableIntLengthPrefixedString(Encoding.Unicode);
+            //var textPtr = new byte[textPtrLen];
+            //stream.Read(textPtr, 0, textPtrLen);
+            //stream.ReadULong(ref streamExceeded); //timestamp
+            if (stream.CheckRequiredLength(textPtrLen + 4, ref streamExceeded) == false)
+                return DBNull.Value;
+            stream.Seek(textPtrLen + 4, SeekOrigin.Current);
+            return stream.ReadNullableIntLengthPrefixedString(Encoding.Unicode, ref streamExceeded);
         }
     }
 }

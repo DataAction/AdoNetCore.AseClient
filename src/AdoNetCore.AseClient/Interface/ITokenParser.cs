@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Interface
@@ -8,6 +9,8 @@ namespace AdoNetCore.AseClient.Interface
     /// </summary>
     internal interface ITokenParser
     {
-        IToken[] Parse(Stream stream, DbEnvironment env);
+        long LastStartPosition { get; }
+
+        IEnumerable<IToken> Parse(Stream stream, DbEnvironment env, out bool streamExceeded);
     }
 }

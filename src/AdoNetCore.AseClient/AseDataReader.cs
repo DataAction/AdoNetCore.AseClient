@@ -10,8 +10,6 @@ namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader, IAseDataCallbackReader
     {
-        //private static readonly HashSet<TdsDataType> LongTdsTypes = new HashSet<TdsDataType> {TdsDataType.TDS_BLOB, TdsDataType.TDS_IMAGE, TdsDataType.TDS_LONGBINARY, TdsDataType.TDS_LONGCHAR, TdsDataType.TDS_TEXT, TdsDataType.TDS_UNITEXT};
-
         private readonly IList<TableResult> _results;
         private int _currentResult = -1;
         private int _currentRow = -1;

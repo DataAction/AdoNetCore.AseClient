@@ -5,5 +5,6 @@
         IInternalConnection Reserve(string connectionString, IConnectionParameters parameters, IEventNotifier eventNotifier);
         void Release(string connectionString, IInternalConnection connection);
         void ClearPool(string connectionString);
+        void ClearPools();
     }
 }

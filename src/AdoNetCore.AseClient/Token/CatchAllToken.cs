@@ -41,6 +41,11 @@ namespace AdoNetCore.AseClient.Token
         {
             var b = (byte)type;
 
+            if (type == TokenType.TDS_ORDERBY)
+            {
+                return stream.ReadUShort();
+            }
+
             if ((b & 0b0011_0000) == 0b0011_0000)
             {
                 return Convert.ToUInt64(stream.ReadByte());

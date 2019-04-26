@@ -1231,5 +1231,24 @@ select (@a * @b)/100").First();
                 }
             }
         }
+
+        [TestCase("select *,* from master..syscolumns where 1 = 2 order by 1")]
+        [TestCase("select *,* from master..syscolumns where 1 = 2 order by 31, 32, 33")]
+        public void Ordered_Select_ShouldWork(string query)
+        {
+            using (var connection = GetConnection())
+            using (var command = connection.CreateCommand())
+            {
+                connection.Open();
+
+                command.CommandText = query;
+                command.CommandType = CommandType.Text;
+
+                using (var reader = command.ExecuteReader())
+                {
+                    Assert.IsFalse(reader.Read());
+                }
+            }
+        }
     }
 }

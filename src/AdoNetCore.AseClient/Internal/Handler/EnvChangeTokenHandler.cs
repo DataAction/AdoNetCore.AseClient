@@ -24,10 +24,12 @@ namespace AdoNetCore.AseClient.Internal.Handler
             {"utf8", () => Encoding.UTF8},
         };
         private readonly DbEnvironment _environment;
+        private readonly string _clientRequestedCharset;
 
-        public EnvChangeTokenHandler(DbEnvironment environment)
+        public EnvChangeTokenHandler(DbEnvironment environment, string clientRequestedCharset)
         {
             _environment = environment;
+            _clientRequestedCharset = clientRequestedCharset;
         }
 
         public bool CanHandle(TokenType type)
@@ -55,25 +57,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                                 }
                                 break;
                             case EnvironmentChangeToken.ChangeType.TDS_ENV_CHARSET:
-                                if (CharsetMap.ContainsKey(change.NewValue))
-                                {
-                                    _environment.Encoding = CharsetMap[change.NewValue]();
-                                }
-                                else
-                                {
-                                    try
-                                    {
-                                        // save it for later
-                                        var newEncoding = Encoding.GetEncoding(change.NewValue);
-                                        CharsetMap[change.NewValue] = () => newEncoding;
-
-                                        _environment.Encoding = newEncoding;
-                                    }
-                                    catch
-                                    {
-                                        throw new AseException($"Server environment changed to unsupported charset '{change.NewValue}'. To add support for this charset, register an EncodingProvider to handle targeting '{change.NewValue}'.");
-                                    }
-                                }
+                                ApplyNewEncoding(GetNewCharset(change.NewValue));
                                 break;
                         }
                     }
@@ -87,6 +71,44 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     break;
                 default:
                     return;
+            }
+        }
+
+        // If the change token does not specify the new charset
+        // then use the client requested charset instead
+        private string GetNewCharset(string newValue)
+        {
+            string newCharset = newValue ?? string.Empty;
+            if (newCharset.Equals(string.Empty))
+            {
+                newCharset = _clientRequestedCharset ?? string.Empty;
+            }
+            return newCharset;
+        }
+
+        private void ApplyNewEncoding(string newCharset)
+        {
+            if (!newCharset.Equals(string.Empty))
+            {
+                if (CharsetMap.ContainsKey(newCharset))
+                {
+                    _environment.Encoding = CharsetMap[newCharset]();
+                }
+                else
+                {
+                    try
+                    {
+                        // save it for later
+                        var newEncoding = Encoding.GetEncoding(newCharset);
+                        CharsetMap[newCharset] = () => newEncoding;
+
+                        _environment.Encoding = newEncoding;
+                    }
+                    catch
+                    {
+                        throw new AseException($"Server environment changed to unsupported charset '{newCharset}'. To add support for this charset, register an EncodingProvider to handle targeting '{newCharset}'.");
+                    }
+                }
             }
         }
     }

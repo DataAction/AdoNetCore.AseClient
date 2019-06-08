@@ -126,7 +126,7 @@ namespace AdoNetCore.AseClient.Internal
 
             ReceiveTokens(
                 ackHandler,
-                new EnvChangeTokenHandler(_environment),
+                new EnvChangeTokenHandler(_environment, _parameters.Charset),
                 messageHandler);
 
             messageHandler.AssertNoErrors();
@@ -194,7 +194,7 @@ namespace AdoNetCore.AseClient.Internal
             var messageHandler = new MessageTokenHandler(EventNotifier);
 
             ReceiveTokens(
-                new EnvChangeTokenHandler(_environment),
+                new EnvChangeTokenHandler(_environment, _parameters.Charset),
                 messageHandler);
 
             AssertExecutionCompletion();
@@ -219,7 +219,7 @@ namespace AdoNetCore.AseClient.Internal
                 var dataReaderHandler = readerSource != null ? new DataReaderTokenHandler() : null;
 
                 ReceiveTokens(
-                    new EnvChangeTokenHandler(_environment),
+                    new EnvChangeTokenHandler(_environment, _parameters.Charset),
                     messageHandler,
                     dataReaderHandler,
                     new ResponseParameterTokenHandler(command.AseParameters),
@@ -357,7 +357,7 @@ namespace AdoNetCore.AseClient.Internal
             var dataReaderHandler = new DataReaderTokenHandler();
 
             ReceiveTokens(
-                new EnvChangeTokenHandler(_environment),
+                new EnvChangeTokenHandler(_environment, _parameters.Charset),
                 messageHandler,
                 dataReaderHandler,
                 doneHandler);
@@ -380,7 +380,7 @@ namespace AdoNetCore.AseClient.Internal
             var dataReaderHandler = new DataReaderTokenHandler();
 
             ReceiveTokens(
-                new EnvChangeTokenHandler(_environment),
+                new EnvChangeTokenHandler(_environment, _parameters.Charset),
                 messageHandler,
                 dataReaderHandler,
                 doneHandler);

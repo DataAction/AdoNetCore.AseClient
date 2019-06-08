@@ -61,11 +61,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Write(Stream stream, DbEnvironment env)
         {
-            Logger.Instance?.WriteLine($"-> {Type}: {Status} ({Count})");
-            stream.WriteByte((byte)Type);
-            stream.WriteUShort((ushort)Status);
-            stream.WriteUShort((ushort)TransactionState);
-            stream.WriteInt(Count);
+            throw new NotImplementedException();
         }
 
         public void Read(Stream stream, DbEnvironment env, IFormatToken previous)

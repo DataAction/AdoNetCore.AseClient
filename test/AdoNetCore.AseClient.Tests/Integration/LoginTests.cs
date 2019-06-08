@@ -1,23 +1,33 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Internal;
+using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
-    [TestFixture]
     [Category("basic")]
-    public class LoginTests
+#if NET_FRAMEWORK
+    [TestFixture(typeof(SapConnectionProvider))]
+#endif
+    [TestFixture(typeof(CoreFxConnectionProvider))]
+    public class LoginTests<T> where T : IConnectionProvider
     {
+        private DbConnection GetConnection(string connectionString)
+        {
+            return Activator.CreateInstance<T>().GetConnection(connectionString);
+        }
+
         [TestCaseSource(nameof(Login_Success_Cases))]
         public void Login_Success(string cs)
         {
             Logger.Enable();
-            using (var connection = new AseConnection(cs))
+            using (var connection = GetConnection(cs))
             {
                 connection.Open();
                 Assert.IsTrue(connection.State == ConnectionState.Open, "Connection state should be Open after calling Open()");
@@ -28,12 +38,14 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             yield return new TestCaseData(ConnectionStrings.Pooled);
             yield return new TestCaseData(ConnectionStrings.BigPacketSize);
+            yield return new TestCaseData(ConnectionStrings.EncryptPassword1);
+            yield return new TestCaseData(ConnectionStrings.EncryptPassword2);
         }
 
         [Test]
         public void Login_Failure()
         {
-            using (var connection = new AseConnection(ConnectionStrings.BadPass))
+            using (var connection = GetConnection(ConnectionStrings.BadPass))
             {
                 var ex = Assert.Throws<AseException>(() => connection.Open());
                 Assert.AreEqual("Login failed.\n", ex.Message);
@@ -60,13 +72,13 @@ namespace AdoNetCore.AseClient.Tests.Integration
                     },
                     (_, __) =>
                     {
-                        using (var connection = new AseConnection(cs))
+                        using (var connection = GetConnection(cs))
                         {
                             connection.Open();
                         }
                     });
             }
-            catch(AggregateException ae)
+            catch (AggregateException ae)
             {
                 ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
                 throw;

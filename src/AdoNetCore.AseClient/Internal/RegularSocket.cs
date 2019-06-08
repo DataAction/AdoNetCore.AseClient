@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Sockets;
 using AdoNetCore.AseClient.Enum;
@@ -102,7 +102,7 @@ namespace AdoNetCore.AseClient.Internal
                     //" If TDS_BUFSTAT_ATTNACK not also TDS_BUFSTAT_EOM, continue reading packets until TDS_BUFSTAT_EOM."
                     canceled = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTNACK) || bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTN);
 
-                    if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM))
+                    if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == env.HeaderSize)
                     {
                         break;
                     }

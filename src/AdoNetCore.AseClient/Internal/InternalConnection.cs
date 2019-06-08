@@ -5,6 +5,8 @@ using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -108,7 +110,8 @@ namespace AdoNetCore.AseClient.Internal
         {
             //socket is established already
             //login
-            SendPacket(new LoginPacket(
+            SendPacket(
+                new LoginPacket(
                     _parameters.ClientHostName,
                     _parameters.Username,
                     _parameters.Password,
@@ -119,7 +122,8 @@ namespace AdoNetCore.AseClient.Internal
                     _parameters.Charset,
                     "ADO.NET",
                     _environment.PacketSize,
-                    new CapabilityToken()));
+                    new CapabilityToken(),
+                    _parameters.EncryptPassword));
 
             var ackHandler = new LoginTokenHandler();
             var messageHandler = new MessageTokenHandler(EventNotifier);
@@ -137,7 +141,11 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("No login ack found");
             }
 
-            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
+            if (ackHandler.LoginStatus == LoginAckToken.LoginStatus.TDS_LOG_NEGOTIATE)
+            {
+                NegotiatePassword(ackHandler.Message.MessageId, ackHandler.Parameters.Parameters, _parameters.Password);
+            }
+            else if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
             {
                 throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
             }
@@ -146,6 +154,49 @@ namespace AdoNetCore.AseClient.Internal
 
             Created = DateTime.UtcNow;
             SetState(InternalConnectionState.Ready);
+        }
+
+        private void NegotiatePassword(MessageToken.MsgId scheme, ParametersToken.Parameter[] parameters, string password)
+        {
+            try
+            {
+                switch (scheme)
+                {
+                    case MessageToken.MsgId.TDS_MSG_SEC_ENCRYPT3:
+                        DoEncrypt3Scheme(parameters, password);
+                        break;
+                    default:
+                        throw new NotSupportedException($"Server requested unsupported password encryption scheme");
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                //todo: expand on exception cases
+                Logger.Instance?.WriteLine($"{nameof(CryptographicException)} - {ex}");
+                throw new AseException("Password encryption failed");
+            }
+        }
+
+        private void DoEncrypt3Scheme(ParametersToken.Parameter[] parameters, string password)
+        {
+            var encryptedPassword = Encryption.EncryptPassword3((int) parameters[0].Value, (byte[]) parameters[1].Value, (byte[]) parameters[2].Value, Encoding.ASCII.GetBytes(password));
+            SendPacket(new NormalPacket(Encryption.BuildEncrypt3Tokens(encryptedPassword)));
+
+            // 5. Expect an ack
+            var ackHandler = new LoginTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
+
+            ReceiveTokens(
+                ackHandler,
+                new EnvChangeTokenHandler(_environment),
+                messageHandler);
+
+            messageHandler.AssertNoErrors();
+
+            if (ackHandler.LoginStatus != LoginAckToken.LoginStatus.TDS_LOG_SUCCEED)
+            {
+                throw new AseException("Login failed.\n", 4002); //just in case the server doesn't respond with an appropriate EED token
+            }
         }
 
         public DateTime Created { get; private set; }
@@ -447,7 +498,7 @@ namespace AdoNetCore.AseClient.Internal
 
             if ((behavior & CommandBehavior.SchemaOnly) == CommandBehavior.SchemaOnly)
             {
-                result = 
+                result =
 $@"SET FMTONLY ON
 {commandText}
 SET FMTONLY OFF";

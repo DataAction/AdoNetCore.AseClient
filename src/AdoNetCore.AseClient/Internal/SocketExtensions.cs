@@ -1,4 +1,4 @@
-﻿using System.Net.Sockets;
+using System.Net.Sockets;
 
 namespace AdoNetCore.AseClient.Internal
 {
@@ -18,6 +18,10 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void EnsureReceive(this Socket socket, byte[] buffer, int offset, int count)
         {
+            if (count == 0)
+            {
+                return;
+            }
             var remainingBytes = count;
             var totalReceivedBytes = 0;
             do

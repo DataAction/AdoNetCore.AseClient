@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;

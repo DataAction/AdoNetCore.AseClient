@@ -6,6 +6,10 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../../build/AdoNetCore.AseClient.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
+    <FileVersion>0.14.0</FileVersion>
+    <RepositoryUrl>https://github.com/DataAction/AdoNetCore.AseClient</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Version>0.14.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\AdoNetCore.AseClient\**\*.cs" Exclude="..\AdoNetCore.AseClient\Properties.cs;..\AdoNetCore.AseClient\obj\**\*.cs" />

@@ -149,7 +149,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `EnableBulkLoad`                                                                           | X
 | `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
 | `Encryption`                                                                               | X
-| `EncryptPassword`                                                                          | TODO | Submit a PR! Refer to issue [#27](https://github.com/DataAction/AdoNetCore.AseClient/issues/27)
+| `EncryptPassword`                                                                          | &#10003; | Values 0 (disabled) and 1 (enabled) are supported. The highest encryption standard of the ASE 15.x and 16x servers is implemented.
 | `Enlist`                                                                                   | X
 | `FetchArraySize`                                                                           | TODO
 | `HASession`                                                                                | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -8,20 +8,13 @@ namespace AdoNetCore.AseClient.Tests.Benchmark
 {
     public partial class Benchmarks<T> where T : IConnectionProvider
     {
-        // ReSharper disable once StaticMemberInGenericType
-        private static readonly string AseServer = Environment.MachineName; // NOTE set this for your own benchmarking tests.
-        private const int AsePort = 5000;          // NOTE set this for your own benchmarking tests.
-        private const string AseDatabase = "pubs2";  // NOTE set this for your own benchmarking tests.
-        private const string AseUsername = "sa";  // NOTE set this for your own benchmarking tests.
-        private const string AsePassword = "password";  // NOTE set this for your own benchmarking tests.
-
         // This connection string is used for setting up the database. It requires DDL permissions. Adjust accordingly.
         private string _setupConnectionString;
         private IConnectionProvider _connectionProvider;
 
-        public string UnpooledConnectionString { get; } = $"Data Source={AseServer};Port={AsePort};Database={AseDatabase};Uid={AseUsername};Pwd={AsePassword}";
+        public string UnpooledConnectionString { get; } =ConnectionStrings.NonPooled;
 
-        public string PooledConnectionString => $"{UnpooledConnectionString};Pooling=true;Min Pool Size=5;Max Pool Size=10";
+        public string PooledConnectionString => ConnectionStrings.Pooled10;
 
 
         private void Initialise(IConnectionProvider connectionProvider)

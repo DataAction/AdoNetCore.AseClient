@@ -188,7 +188,7 @@ namespace AdoNetCore.AseClient.Internal
 
             ReceiveTokens(
                 ackHandler,
-                new EnvChangeTokenHandler(_environment),
+                new EnvChangeTokenHandler(_environment, _parameters.Charset),
                 messageHandler);
 
             messageHandler.AssertNoErrors();

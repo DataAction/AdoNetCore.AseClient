@@ -1,4 +1,4 @@
-﻿// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedVariable
 // ReSharper disable InconsistentNaming
 
@@ -11,7 +11,7 @@ using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests
 {
-    [TestFixture]
+    [TestFixture, Explicit("Code samples are only encapsulated in tests so we can run them if we need to. We're not relying on them to test the data provider.")]
     internal sealed class CodeSamples
     {
         [SetUp]

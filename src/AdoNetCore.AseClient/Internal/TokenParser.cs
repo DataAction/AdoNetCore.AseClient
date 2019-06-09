@@ -19,7 +19,8 @@ namespace AdoNetCore.AseClient.Internal
             IFormatToken previousFormatToken = null;
             while (stream.Position < stream.Length)
             {
-                var tokenType = (TokenType)stream.ReadByte();
+                var rawTokenType = (byte) stream.ReadByte();
+                var tokenType = (TokenType)rawTokenType;
 
                 if (Readers.ContainsKey(tokenType))
                 {
@@ -36,7 +37,7 @@ namespace AdoNetCore.AseClient.Internal
                 else
                 {
                     Logger.Instance?.WriteLine($"!!! Hit unknown token type {tokenType} !!!");
-                    var t = new CatchAllToken(tokenType);
+                    var t = new CatchAllToken(rawTokenType);
                     t.Read(stream, env, previousFormatToken);
                     yield return t;
                 }

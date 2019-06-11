@@ -47,9 +47,20 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = GetConnection(ConnectionStrings.BadPass))
             {
-                var ex = Assert.Throws<AseException>(() => connection.Open());
-                Assert.AreEqual("Login failed.\n", ex.Message);
-                Assert.AreEqual(4002, ex.Errors[0].MessageNumber);
+#if NET_FRAMEWORK
+                if (typeof(T) == typeof(SapConnectionProvider))
+                {
+                    var ex = Assert.Throws<Sybase.Data.AseClient.AseException>(() => connection.Open());
+                    Assert.AreEqual("Login failed.\n", ex.Message);
+                    Assert.AreEqual(4002, ex.Errors[0].MessageNumber);
+                }
+#endif
+                if (typeof(T) == typeof(CoreFxConnectionProvider))
+                {
+                    var ex = Assert.Throws<AseException>(() => connection.Open());
+                    Assert.AreEqual("Login failed.\n", ex.Message);
+                    Assert.AreEqual(4002, ex.Errors[0].MessageNumber);
+                }
             }
         }
 

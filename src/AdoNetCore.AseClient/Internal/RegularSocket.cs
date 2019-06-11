@@ -87,6 +87,31 @@ namespace AdoNetCore.AseClient.Internal
 
         public IToken[] ReceiveTokens(DbEnvironment env)
         {
+            /*try
+            {
+                using (var networkStream = new NetworkStream(_inner)) // TODO why is there no lock on read???
+                {
+                    using (var tokenResponseStream = new TokenStream(networkStream, env))
+                    {
+                        LastActive = DateTime.UtcNow;
+                        return _parser.Parse(tokenResponseStream, env);
+                    }
+                }
+            }
+            catch(TokenStreamCancelledException ex)
+            {
+                Logger.Instance?.WriteLine($"{nameof(TokenStream)} - received cancel status flag");
+
+                return new IToken[]
+                {
+                        new DoneToken
+                        {
+                            Count = 0,
+                            Status = DoneToken.DoneStatus.TDS_DONE_ATTN
+                        }
+                };
+            }*/
+
             using (var ms = new MemoryStream())
             {
                 bool canceled;

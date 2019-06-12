@@ -6,6 +6,7 @@
     <FileVersion>$(VersionPrefix)</FileVersion>
     <Authors>dataaction</Authors>
     <PackageTags>Sybase ASE Adaptive SAP AseClient DbProvider</PackageTags>
+    <PackageIconUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/icon.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/DataAction/AdoNetCore.AseClient</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/LICENSE</PackageLicenseUrl>
     <PackageReleaseNotes>Refer to GitHub - https://github.com/DataAction/AdoNetCore.AseClient/releases/tag/0.14.0</PackageReleaseNotes>

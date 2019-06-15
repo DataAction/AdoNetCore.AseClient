@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using AdoNetCore.AseClient.Internal;
 using Dapper;
 using NUnit.Framework;
@@ -107,9 +106,9 @@ END
                         var selectedTime = result.Item1;
                         var processedTime = result.Item2;
 
-                        var expectedTime = processedTime.Subtract(selectedTime + sleep + TimeSpan.FromSeconds(0.5));
-
-                        Assert.Less(expectedTime, selectedTime); // We expect that the processing time occurs within 1s of the sleep time.
+                        var expectedTime = selectedTime + sleep + TimeSpan.FromSeconds(0.5);
+                        
+                        Assert.Less(processedTime, expectedTime); // We expect that the processing time occurs within 1s of the sleep time.
                     }
                 }
             }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Sockets;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Token;
@@ -9,15 +10,11 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal class TokenParser : ITokenParser
     {
-        public IToken[] Parse(Stream stream, DbEnvironment env)
-        {
-            return new List<IToken>(ParseInternal(stream, env)).ToArray();
-        }
-
-        private IEnumerable<IToken> ParseInternal(Stream stream, DbEnvironment env)
+        public IEnumerable<IToken> Parse(TokenStream stream, DbEnvironment env)
         {
             IFormatToken previousFormatToken = null;
-            while (stream.Position < stream.Length)
+
+            while (stream.DataAvailable)
             {
                 var rawTokenType = (byte) stream.ReadByte();
                 var tokenType = (TokenType)rawTokenType;
@@ -40,6 +37,18 @@ namespace AdoNetCore.AseClient.Internal
                     var t = new CatchAllToken(rawTokenType);
                     t.Read(stream, env, previousFormatToken);
                     yield return t;
+                }
+
+                if (stream.IsCancelled)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(TokenStream)} - received cancel status flag");
+
+                    yield return 
+                        new DoneToken
+                        {
+                            Count = 0,
+                            Status = DoneToken.DoneStatus.TDS_DONE_ATTN
+                        };
                 }
             }
         }

@@ -8,57 +8,38 @@ namespace AdoNetCore.AseClient.Internal
     /// <summary>
     /// The TokenStream is a read-only stream that can read token data from packets coming from the network.
     /// </summary>
-    internal sealed class TokenStream : Stream
+    /// Packet1|Packet2|Packet3|...
+    /// [header][body]|[header][body]|[header][body]|
+    internal sealed class TokenStream : NetworkStream
     {
         /// <summary>
         /// The network stream to read data from.
         /// </summary>
-        private readonly NetworkStream _networkStream;
         private readonly DbEnvironment _environment;
         private readonly byte[] _headerBuffer;
         private readonly byte[] _bodyBuffer;
         private int _bodyBufferPosition;
         private int _bodyBufferLength;
-        private bool _isEnd;
-        private bool _isCancelled;
         private bool _isDisposed;
+        private bool _bufferHasBytes;
+        private bool _networkHasBytes;
 
-        /// <summary>
-        /// Reading is supported.
-        /// </summary>
-        public override bool CanRead => true;
+        public bool IsCancelled { get; private set; }
 
-        /// <summary>
-        /// Seeking is not supported.
-        /// </summary>
-        public override bool CanSeek => false;
 
-        /// <summary>
-        /// Writing is not supported.
-        /// </summary>
-        public override bool CanWrite => false;
+        public override bool DataAvailable => _networkHasBytes || _bufferHasBytes;
 
-        /// <summary>
-        /// Length is not supported.
-        /// </summary>
-        public override long Length => throw new NotImplementedException();
-
-        /// <summary>
-        /// Position is not supported.
-        /// </summary>
-        public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public TokenStream(NetworkStream networkStream, DbEnvironment environment)
+        public TokenStream(Socket socket, DbEnvironment environment) : base(socket, false)
         {
-            _networkStream = networkStream;
             _environment = environment;
             _headerBuffer = new byte[_environment.HeaderSize];
             _bodyBuffer = new byte[_environment.PacketSize - environment.HeaderSize];
             _bodyBufferPosition = 0;
             _bodyBufferLength = 0;
-            _isEnd = false;
-            _isCancelled = false;
+            IsCancelled = false;
             _isDisposed = false;
+            _bufferHasBytes = false;
+            _networkHasBytes = true;
         }
 
 
@@ -91,13 +72,12 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             // If there is no more data, then stop.
-            if (_isCancelled || _isEnd)
+            if (IsCancelled || !DataAvailable)
             {
                 return 0;
             }
 
-            int bytesWrittenToBuffer = 0;
-
+            var bytesWrittenToBuffer = 0;
 
             // If we have some data in the bodyBuffer, we should use that up first.
             if (_bodyBufferPosition > 0)
@@ -107,87 +87,77 @@ namespace AdoNetCore.AseClient.Internal
                 // if this chunk is less than the amount requested, add it all.
                 if (bufferedBytes <= count)
                 {
-                    Array.Copy(_bodyBuffer, _bodyBufferPosition, buffer, 0, bufferedBytes);
+                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, 0, bufferedBytes);
                     bytesWrittenToBuffer += bufferedBytes;
 
                     // Nothing left in the buffer
                     _bodyBufferPosition = 0;
                     _bodyBufferLength = 0;
+                    _bufferHasBytes = false;
                 }
                 // else add part of it and save the rest.
                 else
                 {
-                    Array.Copy(_bodyBuffer, _bodyBufferPosition, buffer, bytesWrittenToBuffer, count);
+                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, bytesWrittenToBuffer, count);
                     bytesWrittenToBuffer += count;
 
                     _bodyBufferPosition += count;
+                    _bufferHasBytes = true;
                 }
             }
 
             // If we need more data, let's read if from the network until the buffer is full.
             while (bytesWrittenToBuffer < count)
             {
-                int received = _networkStream.Read(_headerBuffer, 0, _environment.HeaderSize);
-
-                if (received != _environment.HeaderSize)
-                {
-                    _isEnd = true;
-                    throw new IOException("Failed to read the packet header.");
-                }
+                BufferBytes(_headerBuffer, 0, _environment.HeaderSize);
 
                 var bufferStatus = (BufferStatus)_headerBuffer[1];
 
                 //" If TDS_BUFSTAT_ATTNACK not also TDS_BUFSTAT_EOM, continue reading packets until TDS_BUFSTAT_EOM."
-                _isCancelled = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTNACK) || bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTN);
+                IsCancelled = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTNACK) || bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTN);
 
                 var length = _headerBuffer[2] << 8 | _headerBuffer[3];
-
-                // If there is no more data, stop there.
-                if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == _environment.HeaderSize)
-                {
-                    _isEnd = true;
-                    break;
-                }
 
                 _bodyBufferLength = length - _environment.HeaderSize;
                 _bodyBufferPosition = 0;
 
-                received = _networkStream.Read(_bodyBuffer, 0, _bodyBufferLength);
-
-                if (received != _bodyBufferLength)
-                {
-                    _isEnd = true;
-                    throw new IOException("Failed to read the packet body.");
-                }
-
-                var bufferedBytes = _bodyBufferLength - _bodyBufferPosition;
+                BufferBytes(_bodyBuffer, 0, _bodyBufferLength);
 
                 // if this chunk is less than the amount requested, add it all, and then loop.
-                if (bufferedBytes <= count - bytesWrittenToBuffer)
+                if (bytesWrittenToBuffer + _bodyBufferLength < count)
                 {
-                    Array.Copy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer, _bodyBufferLength);
+                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer, _bodyBufferLength);
                     bytesWrittenToBuffer += _bodyBufferLength;
 
                     // Nothing left in the buffer
                     _bodyBufferPosition = 0;
                     _bodyBufferLength = 0;
+                    _bufferHasBytes = false;
                 }
                 // else add part of it and save the rest.
                 else
                 {
-                    _bodyBufferPosition = count - bytesWrittenToBuffer;
+                    var bytesInLastChunk = count - bytesWrittenToBuffer;
 
-                    Array.Copy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer, _bodyBufferPosition);
-                    bytesWrittenToBuffer += _bodyBufferPosition;
+                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer, bytesInLastChunk);
+                    bytesWrittenToBuffer += bytesInLastChunk;
+
+                    _bodyBufferPosition = bytesInLastChunk;
+                    _bufferHasBytes = true;
+                }
+
+                // If there is no more data, stop there.
+                if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == _environment.HeaderSize)
+                {
+                    _networkHasBytes = false;
+                    break;
                 }
             }
 
             // If cancelled, burn
-            if (_isCancelled && !_isEnd)
+            if (IsCancelled)
             {
                 BurnPackets();
-
-                throw new TokenStreamCancelledException();
             }
 
             return bytesWrittenToBuffer;
@@ -195,15 +165,9 @@ namespace AdoNetCore.AseClient.Internal
 
         private void BurnPackets()
         {
-            while (!_isEnd)
+            while (_networkHasBytes)
             {
-                int received = _networkStream.Read(_headerBuffer, 0, _environment.HeaderSize);
-
-                if (received != _environment.HeaderSize)
-                {
-                    _isEnd = true; // TODO - should I terminate here or try to read more, or throw?
-                    break;
-                }
+                BufferBytes(_headerBuffer, 0, _environment.HeaderSize);
 
                 var bufferStatus = (BufferStatus) _headerBuffer[1];
 
@@ -212,21 +176,19 @@ namespace AdoNetCore.AseClient.Internal
                 // If there is no more data, stop there.
                 if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == _environment.HeaderSize)
                 {
-                    _isEnd = true; 
+                    _networkHasBytes = false;
                     break;
                 }
 
                 _bodyBufferLength = length - _environment.HeaderSize;
                 _bodyBufferPosition = 0;
 
-                received = _networkStream.Read(_bodyBuffer, 0, _bodyBufferLength);
-
-                if (received != _bodyBufferLength)
-                {
-                    _isEnd = true; // TODO - should I terminate here or try to read more or throw?
-                    break;
-                }
+                BufferBytes(_bodyBuffer, 0, _bodyBufferLength);
             }
+
+            _bufferHasBytes = false;
+            _bodyBufferLength = 0;
+            _bodyBufferPosition = 0;
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -252,13 +214,26 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (!disposing)
                 {
-                    BurnPackets(); // TODO - is this dumb to clean this up in the Dispose method? Considering the case where the socket lives longer than the stream, and the stream is disposed without reading all of the data.
-
-                    _networkStream.Dispose();
+                    BurnPackets(); // Considering the case where the socket lives longer than the stream, and the stream is disposed without reading all of the data.
                 }
             }
 
             base.Dispose(disposing);
+        }
+
+        private void BufferBytes(byte[] buffer, int offset, int count)
+        {
+            if (count > 0)
+            {
+                var remainingBytes = count;
+                var totalReceivedBytes = 0;
+                do
+                {
+                    var receivedBytes = base.Read(buffer, offset + totalReceivedBytes, remainingBytes);
+                    remainingBytes -= receivedBytes;
+                    totalReceivedBytes += receivedBytes;
+                } while (remainingBytes > 0);
+            }
         }
     }
 }

@@ -48,6 +48,19 @@ namespace AdoNetCore.AseClient.Internal
             // Do nothing.
         }
 
+        public override int ReadByte()
+        {
+            byte[] buffer = new byte[1];
+
+            var result = Read(buffer, 0, buffer.Length);
+            if (result != buffer.Length)
+            {
+                return -1;
+            }
+
+            return buffer[0];
+        }
+
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (_isDisposed)

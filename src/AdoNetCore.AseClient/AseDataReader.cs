@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Data.Common;
@@ -9,7 +10,7 @@ namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader
     {
-        private readonly TableResult[] _results;
+        private readonly IEnumerator<TableResult> _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
         private readonly CommandBehavior _behavior;
@@ -19,9 +20,9 @@ namespace AdoNetCore.AseClient
         private DataTable _currentSchemaTable;
 #endif
 
-        internal AseDataReader(TableResult[] results, AseCommand command, CommandBehavior behavior)
+        internal AseDataReader(IEnumerable<TableResult> results, AseCommand command, CommandBehavior behavior)
         {
-            _results = results;
+            _results = results.GetEnumerator();
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _command = command;
 #endif
@@ -92,11 +93,6 @@ namespace AdoNetCore.AseClient
                 }
 
                 byteArray = Encoding.Unicode.GetBytes((string)obj);
-
-                if (byteArray == null)
-                {
-                    return 0;
-                }
                 byteArrayLength = byteArray.Length;
             }
 
@@ -148,7 +144,7 @@ namespace AdoNetCore.AseClient
             return convertible.ToChar(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
         }
 
-        public override long GetChars(int i, long fieldOffset, char[] buffer, int bufferoffset, int length)
+        public override long GetChars(int i, long fieldOffset, char[] buffer, int bufferOffset, int length)
         {
             if (IsDBNull(i))
             {
@@ -196,7 +192,7 @@ namespace AdoNetCore.AseClient
 
 #if NETCOREAPP1_0 || NETCOREAPP1_1
             var cIndex = fieldOffset;
-            var bIndex = (long)bufferoffset;
+            var bIndex = (long)bufferOffset;
 
             for (long index3 = 0; index3 < charsToRead; ++index3)
             {
@@ -205,7 +201,7 @@ namespace AdoNetCore.AseClient
                 ++cIndex;
             }
 #else
-            Array.Copy(charArray, fieldOffset, buffer, bufferoffset, charsToRead);
+            Array.Copy(charArray, fieldOffset, buffer, bufferOffset, charsToRead);
 #endif
             return charsToRead;
         }
@@ -641,12 +637,13 @@ namespace AdoNetCore.AseClient
             }
 
             _currentResult++;
+            
 
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _currentSchemaTable = null;
 #endif
 
-            if (_results.Length > _currentResult)
+            if (_results.MoveNext())
             {
                 _currentRow = -1;
                 return true;
@@ -661,7 +658,7 @@ namespace AdoNetCore.AseClient
         /// <returns>true if the reader is pointing at a row of data; false otherwise.</returns>
         public override bool Read()
         {
-            if (_currentResult < 0)
+            if (_results.Current == null)
             {
                 return false;
             }
@@ -670,22 +667,24 @@ namespace AdoNetCore.AseClient
             if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
             {
                 // Jump to the end
-                _currentResult = _results.Length - 1;
-                _currentRow = _results[_currentResult].Rows.Count;
+                while (_results.MoveNext())
+                {
+                    _currentResult++;
+                }
+
+                _currentRow = int.MaxValue;
             }
             else
             {
                 _currentRow++;
             }
 
-            return _results[_currentResult].Rows.Count > _currentRow;
+            return WithinRow;
         }
 
         public override int Depth => 0;
-        public override bool IsClosed => _currentResult >= _results.Length;
-        public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
-            ? _results[_currentResult].Rows.Count
-            : 0;
+        public override bool IsClosed => CurrentResultSet == null;
+        public override int RecordsAffected => CurrentResultSet?.Rows.Count ?? 0;
 
         public IList GetList()
         {
@@ -697,7 +696,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Confirm that the reader is pointing at a result set
         /// </summary>
-        private bool WithinResultSet => _currentResult >= 0 && _currentResult < _results.Length;
+        private bool WithinResultSet => CurrentResultSet != null;
 
         /// <summary>
         /// Confirm that the reader is pointing at a row within a result set
@@ -733,7 +732,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Get the current result set, or null if there is none
         /// </summary>
-        private TableResult CurrentResultSet => WithinResultSet ? _results[_currentResult] : null;
+        private TableResult CurrentResultSet => _results.Current;
 
         /// <summary>
         /// Get the current row, or null if there is none

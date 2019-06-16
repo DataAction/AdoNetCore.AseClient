@@ -644,7 +644,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         }
 
         [Test]
-        public void GetByte_WithValue_CastSuccessfullyFromNumberic()
+        public void GetByte_WithValue_CastSuccessfullyFromNumeric()
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {

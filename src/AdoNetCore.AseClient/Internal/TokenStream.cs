@@ -6,8 +6,12 @@ using AdoNetCore.AseClient.Enum;
 namespace AdoNetCore.AseClient.Internal
 {
     /// <summary>
-    /// The TokenStream is a read-only stream that can read token data from packets coming from the network.
+    /// The TokenStream is a read-only stream that can read token data from packets coming from the network. 
     /// </summary>
+    /// <remarks>
+    /// The design goal of the token stream is to support reading from the network in a lazy fashion so that the
+    /// <see cref="AseDataReader"/> can return results before the client has received all of the data.
+    /// This is particularly important for large data sets, or long running server commands</remarks>
     /// Packet1|Packet2|Packet3|...
     /// [header][body]|[header][body]|[header][body]|
     internal sealed class TokenStream : NetworkStream
@@ -16,9 +20,25 @@ namespace AdoNetCore.AseClient.Internal
         /// The network stream to read data from.
         /// </summary>
         private readonly DbEnvironment _environment;
+
+        /// <summary>
+        /// A buffer to store header information from the TDS packets. This data is read and discarded by the <see cref="TokenStream"/>.
+        /// </summary>
         private readonly byte[] _headerBuffer;
+
+        /// <summary>
+        /// A buffer to data that has been read by the <see cref="TokenStream"/>, but not returned to the client.
+        /// </summary>
         private readonly byte[] _bodyBuffer;
+
+        /// <summary>
+        /// A pointer to the next byte that should be read from the <see cref="_bodyBuffer"/>.
+        /// </summary>
         private int _bodyBufferPosition;
+
+        /// <summary>
+        /// The number of data bytes that are in the <see cref="_bodyBuffer"/>.
+        /// </summary>
         private int _bodyBufferLength;
         private bool _isDisposed;
         private bool _bufferHasBytes;
@@ -93,7 +113,7 @@ namespace AdoNetCore.AseClient.Internal
             var bytesWrittenToBuffer = 0;
 
             // If we have some data in the bodyBuffer, we should use that up first.
-            if (_bodyBufferPosition > 0)
+            if (_bufferHasBytes)
             {
                 var bufferedBytes = _bodyBufferLength - _bodyBufferPosition;
 
@@ -120,7 +140,7 @@ namespace AdoNetCore.AseClient.Internal
             }
 
             // If we need more data, let's read if from the network until the buffer is full.
-            while (bytesWrittenToBuffer < count)
+            while (bytesWrittenToBuffer < count && _networkHasBytes)
             {
                 BufferBytes(_headerBuffer, 0, _environment.HeaderSize);
 
@@ -176,6 +196,10 @@ namespace AdoNetCore.AseClient.Internal
             return bytesWrittenToBuffer;
         }
 
+        /// <summary>
+        /// It is possible that the caller doesn't process all of the data returned to the socket.
+        /// This method reads and discards all data, leaving the socket in a ready state for the next request.
+        /// </summary>
         private void BurnPackets()
         {
             while (_networkHasBytes)
@@ -186,32 +210,22 @@ namespace AdoNetCore.AseClient.Internal
 
                 var length = _headerBuffer[2] << 8 | _headerBuffer[3];
 
+                _bodyBufferLength = length - _environment.HeaderSize;
+                _bodyBufferPosition = 0;
+
+                BufferBytes(_bodyBuffer, 0, _bodyBufferLength);
+
                 // If there is no more data, stop there.
                 if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == _environment.HeaderSize)
                 {
                     _networkHasBytes = false;
                     break;
                 }
-
-                _bodyBufferLength = length - _environment.HeaderSize;
-                _bodyBufferPosition = 0;
-
-                BufferBytes(_bodyBuffer, 0, _bodyBufferLength);
             }
 
             _bufferHasBytes = false;
             _bodyBufferLength = 0;
             _bodyBufferPosition = 0;
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotImplementedException();
         }
 
         public override void Write(byte[] buffer, int offset, int count)
@@ -234,8 +248,17 @@ namespace AdoNetCore.AseClient.Internal
             base.Dispose(disposing);
         }
 
+        /// <summary>
+        /// Ensure that the requested bytes have been received. The base <see cref="NetworkStream"/> will
+        /// block until at least one byte is available, but not necessarily wait for all of the requested
+        /// bytes.
+        /// </summary>
+        /// <param name="buffer">The buffer to fill.</param>
+        /// <param name="offset">The position within the buffer to write data into.</param>
+        /// <param name="count">The number of bytes.</param>
         private void BufferBytes(byte[] buffer, int offset, int count)
         {
+            // TODO - this should not just loop, burning CPU.
             if (count > 0)
             {
                 var remainingBytes = count;

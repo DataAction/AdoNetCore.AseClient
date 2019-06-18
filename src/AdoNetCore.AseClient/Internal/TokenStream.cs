@@ -120,7 +120,7 @@ namespace AdoNetCore.AseClient.Internal
                 // if this chunk is less than the amount requested, add it all.
                 if (bufferedBytes <= count)
                 {
-                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, 0, bufferedBytes);
+                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, 0 + offset, bufferedBytes);
                     bytesWrittenToBuffer += bufferedBytes;
 
                     // Nothing left in the buffer
@@ -131,7 +131,7 @@ namespace AdoNetCore.AseClient.Internal
                 // else add part of it and save the rest.
                 else
                 {
-                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, bytesWrittenToBuffer, count);
+                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, bytesWrittenToBuffer + offset, count);
                     bytesWrittenToBuffer += count;
 
                     _bodyBufferPosition += count;
@@ -159,7 +159,7 @@ namespace AdoNetCore.AseClient.Internal
                 // if this chunk is less than the amount requested, add it all, and then loop.
                 if (bytesWrittenToBuffer + _bodyBufferLength < count)
                 {
-                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer, _bodyBufferLength);
+                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer + offset, _bodyBufferLength);
                     bytesWrittenToBuffer += _bodyBufferLength;
 
                     // Nothing left in the buffer
@@ -172,7 +172,7 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     var bytesInLastChunk = count - bytesWrittenToBuffer;
 
-                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer, bytesInLastChunk);
+                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer + offset, bytesInLastChunk);
                     bytesWrittenToBuffer += bytesInLastChunk;
 
                     _bodyBufferPosition = bytesInLastChunk;

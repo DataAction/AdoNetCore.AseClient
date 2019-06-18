@@ -638,7 +638,6 @@ namespace AdoNetCore.AseClient
 
             _currentResult++;
             
-
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _currentSchemaTable = null;
 #endif

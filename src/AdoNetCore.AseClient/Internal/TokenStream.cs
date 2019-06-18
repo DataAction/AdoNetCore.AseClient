@@ -46,7 +46,6 @@ namespace AdoNetCore.AseClient.Internal
 
         public bool IsCancelled { get; private set; }
 
-
         public override bool DataAvailable => _networkHasBytes || _bufferHasBytes;
 
         public TokenStream(Socket socket, DbEnvironment environment) : base(socket, false)
@@ -61,7 +60,6 @@ namespace AdoNetCore.AseClient.Internal
             _bufferHasBytes = false;
             _networkHasBytes = true;
         }
-
 
         public override void Flush()
         {
@@ -109,34 +107,13 @@ namespace AdoNetCore.AseClient.Internal
             {
                 return 0;
             }
-
+            
             var bytesWrittenToBuffer = 0;
 
             // If we have some data in the bodyBuffer, we should use that up first.
             if (_bufferHasBytes)
             {
-                var bufferedBytes = _bodyBufferLength - _bodyBufferPosition;
-
-                // if this chunk is less than the amount requested, add it all.
-                if (bufferedBytes <= count)
-                {
-                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, 0 + offset, bufferedBytes);
-                    bytesWrittenToBuffer += bufferedBytes;
-
-                    // Nothing left in the buffer
-                    _bodyBufferPosition = 0;
-                    _bodyBufferLength = 0;
-                    _bufferHasBytes = false;
-                }
-                // else add part of it and save the rest.
-                else
-                {
-                    Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, bytesWrittenToBuffer + offset, count);
-                    bytesWrittenToBuffer += count;
-
-                    _bodyBufferPosition += count;
-                    _bufferHasBytes = true;
-                }
+                bytesWrittenToBuffer = GetBufferedBytes(buffer, 0 + offset, count);
             }
 
             // If we need more data, let's read if from the network until the buffer is full.
@@ -156,28 +133,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 BufferBytes(_bodyBuffer, 0, _bodyBufferLength);
 
-                // if this chunk is less than the amount requested, add it all, and then loop.
-                if (bytesWrittenToBuffer + _bodyBufferLength < count)
-                {
-                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer + offset, _bodyBufferLength);
-                    bytesWrittenToBuffer += _bodyBufferLength;
-
-                    // Nothing left in the buffer
-                    _bodyBufferPosition = 0;
-                    _bodyBufferLength = 0;
-                    _bufferHasBytes = false;
-                }
-                // else add part of it and save the rest.
-                else
-                {
-                    var bytesInLastChunk = count - bytesWrittenToBuffer;
-
-                    Buffer.BlockCopy(_bodyBuffer, 0, buffer, bytesWrittenToBuffer + offset, bytesInLastChunk);
-                    bytesWrittenToBuffer += bytesInLastChunk;
-
-                    _bodyBufferPosition = bytesInLastChunk;
-                    _bufferHasBytes = true;
-                }
+                bytesWrittenToBuffer += GetBufferedBytes(buffer, bytesWrittenToBuffer + offset, count - bytesWrittenToBuffer);
 
                 // If there is no more data, stop there.
                 if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == _environment.HeaderSize)
@@ -270,6 +226,37 @@ namespace AdoNetCore.AseClient.Internal
                     totalReceivedBytes += receivedBytes;
                 } while (remainingBytes > 0);
             }
+        }
+
+        private int GetBufferedBytes(byte[] buffer, int offset, int count)
+        {
+            var written = 0;
+
+            
+            var bufferedBytes = _bodyBufferLength - _bodyBufferPosition;
+
+            // if this chunk is less than the amount requested, add it all.
+            if (bufferedBytes <= count)
+            {
+                Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, offset, bufferedBytes);
+                written = bufferedBytes;
+
+                // Nothing left in the buffer
+                _bodyBufferPosition = 0;
+                _bodyBufferLength = 0;
+                _bufferHasBytes = false;
+            }
+            // else add part of it and save the rest.
+            else
+            {
+                Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, offset, count);
+                written = count;
+
+                _bodyBufferPosition += count;
+                _bufferHasBytes = true;
+            }
+
+            return written;
         }
     }
 }

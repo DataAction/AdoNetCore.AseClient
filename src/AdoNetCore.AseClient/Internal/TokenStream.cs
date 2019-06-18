@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Net.Sockets;
 using AdoNetCore.AseClient.Enum;
 
@@ -230,8 +229,7 @@ namespace AdoNetCore.AseClient.Internal
 
         private int GetBufferedBytes(byte[] buffer, int offset, int count)
         {
-            var written = 0;
-
+            int written;
             
             var bufferedBytes = _bodyBufferLength - _bodyBufferPosition;
 

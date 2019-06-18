@@ -53,7 +53,7 @@ namespace AdoNetCore.AseClient.Internal
                             //split into chunks and send over the wire
                             var buffer = new byte[env.PacketSize];
                             var template = HeaderTemplate(packet.Type);
-                            Array.Copy(template, buffer, template.Length);
+                            Buffer.BlockCopy(template, 0, buffer, 0, template.Length);
                             var copied = ms.Read(buffer, template.Length, buffer.Length - template.Length);
                             var chunkLength = template.Length + copied;
                             buffer[1] = (byte) ((ms.Position >= ms.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE) | packet.Status);
@@ -115,7 +115,7 @@ namespace AdoNetCore.AseClient.Internal
             if (_hexDump)
             {
                 var buffer = new byte[length];
-                Array.Copy(bytes, buffer, length);
+                Buffer.BlockCopy(bytes, 0, buffer, 0, length);
                 DumpBytes(buffer);
             }
         }

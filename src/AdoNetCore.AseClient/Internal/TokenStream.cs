@@ -115,7 +115,7 @@ namespace AdoNetCore.AseClient.Internal
                 bytesWrittenToBuffer = GetBufferedBytes(buffer, 0 + offset, count);
             }
 
-            // If we need more data, let's read if from the network until the buffer is full.
+            // If we need more data, let's read it from the network until the buffer is full.
             while (bytesWrittenToBuffer < count && _networkHasBytes)
             {
                 BufferBytes(_headerBuffer, 0, _environment.HeaderSize);

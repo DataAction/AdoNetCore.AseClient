@@ -213,18 +213,23 @@ namespace AdoNetCore.AseClient.Internal
         /// <param name="count">The number of bytes.</param>
         private void BufferBytes(byte[] buffer, int offset, int count)
         {
-            // TODO - this should not just loop, burning CPU.
-            if (count > 0)
+            if (count <= 0)
             {
-                var remainingBytes = count;
-                var totalReceivedBytes = 0;
-                do
-                {
-                    var receivedBytes = base.Read(buffer, offset + totalReceivedBytes, remainingBytes);
-                    remainingBytes -= receivedBytes;
-                    totalReceivedBytes += receivedBytes;
-                } while (remainingBytes > 0);
+                return;
             }
+
+            var remainingBytes = count;
+            var totalReceivedBytes = 0;
+            do
+            {
+                var receivedBytes = base.Read(buffer, offset + totalReceivedBytes, remainingBytes);
+                if (receivedBytes == 0)
+                {
+                    throw new SocketException((int)SocketError.NotConnected);
+                }
+                remainingBytes -= receivedBytes;
+                totalReceivedBytes += receivedBytes;
+            } while (remainingBytes > 0);
         }
 
         private int GetBufferedBytes(byte[] buffer, int offset, int count)

@@ -16,8 +16,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
 BEGIN
     DROP PROCEDURE [dbo].[stream-result-sets]
 END";
+
         private static string TestProc =
-@"CREATE PROCEDURE [dbo].[stream-result-sets]
+$@"CREATE PROCEDURE [dbo].[stream-result-sets]
 (
     @sleepTime CHAR(8),
     @numberOfLoops INT
@@ -29,7 +30,8 @@ BEGIN
 
     WHILE (@index < @numberOfLoops)
     BEGIN
-        SELECT @index AS [Index], GETUTCDATE() AS Now
+        SELECT @index AS [Index], GETUTCDATE() AS Now, '{new string('x', 1024 * 8)}' AS LotsOfText
+        PRINT 'General Kenobi'
 
         SET @index = @index + 1
         WAITFOR DELAY @sleepTime
@@ -67,7 +69,7 @@ END
         public void DelayedResultSetTests()
         {
             const int NumLoops = 5;
-            TimeSpan sleep = TimeSpan.FromSeconds(1);
+            TimeSpan sleep = TimeSpan.FromSeconds(10);
 
             using (var connection = GetConnection())
             {

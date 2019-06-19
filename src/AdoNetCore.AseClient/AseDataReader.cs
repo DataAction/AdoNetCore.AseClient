@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Data;
 using System.Text;
 using System.Data.Common;
@@ -10,24 +10,45 @@ namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader
     {
-        private readonly IEnumerator<TableResult> _results;
+        private TableResult _currentTable;
+        private readonly BlockingCollection<TableResult> _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
         private readonly CommandBehavior _behavior;
+        private bool _hasFirst;
 
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         private readonly AseCommand _command;
         private DataTable _currentSchemaTable;
 #endif
 
-        internal AseDataReader(IEnumerable<TableResult> results, AseCommand command, CommandBehavior behavior)
+        internal AseDataReader(AseCommand command, CommandBehavior behavior)
         {
-            _results = results.GetEnumerator();
+            _results = new BlockingCollection<TableResult>();
+            _currentTable = null;
+            _hasFirst = false;
+
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _command = command;
 #endif
             _behavior = behavior;
-            NextResult();
+        }
+
+        internal void AddResult(TableResult result)
+        {
+            _results.Add(result);
+
+            // If this is the first result back, then we should automatically point at it.
+            if (!_hasFirst)
+            {
+                NextResult();
+                _hasFirst = true;
+            }
+        }
+
+        internal void CompleteAdding()
+        {
+            _results.CompleteAdding();
         }
 
         public override bool GetBoolean(int i)
@@ -208,17 +229,17 @@ namespace AdoNetCore.AseClient
 
         public override string GetDataTypeName(int ordinal)
         {
-            if (CurrentResultSet == null || ordinal < 0)
+            if (_currentTable == null || ordinal < 0)
             {
                 throw new IndexOutOfRangeException($"Column referenced by index ({ordinal}) does not exist");
             }
 
-            if (ordinal >= CurrentResultSet.Formats.Length)
+            if (ordinal >= _currentTable.Formats.Length)
             {
                 throw new AseException("The column specified does not exist.", 30118);
             }
 
-            return CurrentResultSet.Formats[ordinal].GetDataTypeName();
+            return _currentTable.Formats[ordinal].GetDataTypeName();
         }
 
         public override IEnumerator GetEnumerator()
@@ -489,7 +510,7 @@ namespace AdoNetCore.AseClient
                 throw new ArgumentException();
             }
 
-            var formats = CurrentResultSet?.Formats;
+            var formats = _currentTable?.Formats;
 
             if (formats == null)
             {
@@ -498,7 +519,7 @@ namespace AdoNetCore.AseClient
 
             name = name
                 .TrimStart('[')
-                .TrimEnd(']'); // TODO - this should be unnecessary - we should store the value in canonical form.
+                .TrimEnd(']');
 
             for (var i = 0; i < formats.Length; i++)
             {
@@ -569,7 +590,7 @@ namespace AdoNetCore.AseClient
             return CurrentRow.Items[i] == DBNull.Value;
         }
 
-        public override int FieldCount => CurrentResultSet?.Formats?.Length ?? 0;
+        public override int FieldCount => _currentTable?.Formats?.Length ?? 0;
 
         public override int VisibleFieldCount => FieldCount;
 
@@ -599,7 +620,7 @@ namespace AdoNetCore.AseClient
                 return;
             }
 
-            var formats = CurrentResultSet?.Formats;
+            var formats = _currentTable?.Formats;
 
             if (formats == null)
             {
@@ -642,7 +663,7 @@ namespace AdoNetCore.AseClient
             _currentSchemaTable = null;
 #endif
 
-            if (_results.MoveNext())
+            if (_results.TryTake(out _currentTable, -1))
             {
                 _currentRow = -1;
                 return true;
@@ -657,7 +678,7 @@ namespace AdoNetCore.AseClient
         /// <returns>true if the reader is pointing at a row of data; false otherwise.</returns>
         public override bool Read()
         {
-            if (_results.Current == null)
+            if (_currentTable == null)
             {
                 return false;
             }
@@ -666,7 +687,7 @@ namespace AdoNetCore.AseClient
             if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
             {
                 // Jump to the end
-                while (_results.MoveNext())
+                while (_results.TryTake(out _currentTable, -1))
                 {
                     _currentResult++;
                 }
@@ -682,8 +703,8 @@ namespace AdoNetCore.AseClient
         }
 
         public override int Depth => 0;
-        public override bool IsClosed => CurrentResultSet == null;
-        public override int RecordsAffected => CurrentResultSet?.Rows.Count ?? 0;
+        public override bool IsClosed => _currentTable == null;
+        public override int RecordsAffected => _currentTable?.Rows.Count ?? 0;
 
         public IList GetList()
         {
@@ -693,14 +714,9 @@ namespace AdoNetCore.AseClient
         public bool ContainsListCollection => false;
 
         /// <summary>
-        /// Confirm that the reader is pointing at a result set
-        /// </summary>
-        private bool WithinResultSet => CurrentResultSet != null;
-
-        /// <summary>
         /// Confirm that the reader is pointing at a row within a result set
         /// </summary>
-        private bool WithinRow => WithinResultSet && _currentRow >= 0 && _currentRow < CurrentResultSet.Rows.Count;
+        private bool WithinRow => _currentTable != null && _currentRow >= 0 && _currentRow < _currentTable.Rows.Count;
 
         /// <summary>
         /// Confirm that there is a value at the supplied index (does not confirm whether value is null or set)
@@ -717,7 +733,7 @@ namespace AdoNetCore.AseClient
         /// <returns>Returns the specified format item, or null</returns>
         private FormatItem GetFormat(int i)
         {
-            var formats = CurrentResultSet?.Formats;
+            var formats = _currentTable?.Formats;
             return formats != null && i >= 0 && i < formats.Length
                 ? formats[i]
                 : null;
@@ -726,16 +742,21 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Get the number of rows in the current result set, or 0 if there is no result set.
         /// </summary>
-        private int CurrentRowCount => CurrentResultSet?.Rows?.Count ?? 0;
-
-        /// <summary>
-        /// Get the current result set, or null if there is none
-        /// </summary>
-        private TableResult CurrentResultSet => _results.Current;
+        private int CurrentRowCount => _currentTable?.Rows?.Count ?? 0;
 
         /// <summary>
         /// Get the current row, or null if there is none
         /// </summary>
-        private RowResult CurrentRow => WithinRow ? CurrentResultSet.Rows[_currentRow] : null;
+        private RowResult CurrentRow => WithinRow ? _currentTable.Rows[_currentRow] : null;
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                _results.Dispose();
+            }
+        }
     }
 }

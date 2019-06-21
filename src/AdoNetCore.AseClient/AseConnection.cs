@@ -539,7 +539,37 @@ namespace AdoNetCore.AseClient
 
         public bool IsCaseSensitive()
         {
-            return _internal?.IsCaseSensitive() ?? false;
+            int result;
+            using (var command = CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = "SELECT value FROM master.dbo.sysconfigures WHERE name = 'default sortorder id'";
+
+                result = (int)command.ExecuteScalar();
+            }
+
+            switch (result)
+            {
+                case 39:
+                case 42:
+                case 44:
+                case 46:
+                case 48:
+                case 52:
+                case 53:
+                case 54:
+                case 56:
+                case 57:
+                case 59:
+                case 64:
+                case 70:
+                case 71:
+                case 73:
+                case 74:
+                    return false;
+                default:
+                    return true;
+            }
         }
 
         public IDictionary RetrieveStatistics()

@@ -25,11 +25,13 @@ namespace AdoNetCore.AseClient.Internal
 
         private enum InternalConnectionState
         {
+            // ReSharper disable InconsistentNaming
             None,
             Ready,
             Active,
             Canceled,
             Broken
+            // ReSharper restore InconsistentNaming
         }
 
         private InternalConnectionState _state = InternalConnectionState.None;
@@ -126,11 +128,12 @@ namespace AdoNetCore.AseClient.Internal
                     _parameters.EncryptPassword));
 
             var ackHandler = new LoginTokenHandler();
+            var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
             var messageHandler = new MessageTokenHandler(EventNotifier);
 
             ReceiveTokens(
                 ackHandler,
-                new EnvChangeTokenHandler(_environment, _parameters.Charset),
+                envChangeTokenHandler,
                 messageHandler);
 
             messageHandler.AssertNoErrors();
@@ -184,11 +187,12 @@ namespace AdoNetCore.AseClient.Internal
 
             // 5. Expect an ack
             var ackHandler = new LoginTokenHandler();
+            var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
             var messageHandler = new MessageTokenHandler(EventNotifier);
 
             ReceiveTokens(
                 ackHandler,
-                new EnvChangeTokenHandler(_environment, _parameters.Charset),
+                envChangeTokenHandler,
                 messageHandler);
 
             messageHandler.AssertNoErrors();
@@ -243,9 +247,10 @@ namespace AdoNetCore.AseClient.Internal
             }));
 
             var messageHandler = new MessageTokenHandler(EventNotifier);
+            var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
 
             ReceiveTokens(
-                new EnvChangeTokenHandler(_environment, _parameters.Charset),
+                envChangeTokenHandler,
                 messageHandler);
 
             AssertExecutionCompletion();
@@ -261,8 +266,6 @@ namespace AdoNetCore.AseClient.Internal
         {
             AssertExecutionStart();
 
-            var dataReader = new AseDataReader(command, behavior);
-
             try
             {
                 SendPacket(new NormalPacket(BuildCommandTokens(command, behavior)));
@@ -270,42 +273,16 @@ namespace AdoNetCore.AseClient.Internal
                 var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
                 var doneHandler = new DoneTokenHandler();
                 var messageHandler = new MessageTokenHandler(EventNotifier);
-                var dataReaderHandler = new StreamingDataReaderTokenHandler(readerSource, dataReader);
+                var dataReaderHandler = new DataReaderTokenHandler();
                 var responseParameterTokenHandler = new ResponseParameterTokenHandler(command.AseParameters);
 
-                Logger.Instance?.WriteLine();
-                Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
-                foreach (var receivedToken in _socket.ReceiveTokens(_environment))
-                {
-                    if (envChangeTokenHandler.CanHandle(receivedToken.Type))
-                    {
-                        envChangeTokenHandler.Handle(receivedToken);
-                    }
-
-                    if (doneHandler.CanHandle(receivedToken.Type))
-                    {
-                        doneHandler.Handle(receivedToken);
-                    }
-
-                    if (messageHandler.CanHandle(receivedToken.Type))
-                    {
-                        messageHandler.Handle(receivedToken);
-                    }
-
-                    if (dataReaderHandler.CanHandle(receivedToken.Type))
-                    {
-                        dataReaderHandler.Handle(receivedToken);
-                    }
-
-                    if (responseParameterTokenHandler.CanHandle(receivedToken.Type))
-                    {
-                        responseParameterTokenHandler.Handle(receivedToken);
-                    }
-                }
-
-                // This tells the data reader to stop waiting for more results.
-                dataReader.CompleteAdding();
-
+                ReceiveTokens(
+                    envChangeTokenHandler,
+                    doneHandler,
+                    messageHandler,
+                    dataReaderHandler,
+                    responseParameterTokenHandler);
+                
                 AssertExecutionCompletion(doneHandler);
 
                 if (transaction != null && doneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
@@ -317,12 +294,16 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (doneHandler.Canceled)
                 {
-                    readerSource?.TrySetCanceled(); // If we have already begun returning data, then this will get lost.
+                    readerSource.TrySetCanceled(); // If we have already begun returning data, then this will get lost.
+                }
+                else
+                {
+                    readerSource.TrySetResult(new AseDataReader(dataReaderHandler.Results(), command, behavior));
                 }
             }
             catch (Exception ex)
             {
-                readerSource?.TrySetException(ex); // If we have already begun returning data, then this will get lost.
+                readerSource.TrySetException(ex); // If we have already begun returning data, then this will get lost.
             }
         }
 
@@ -334,13 +315,16 @@ namespace AdoNetCore.AseClient.Internal
             {
                 SendPacket(new NormalPacket(BuildCommandTokens(command, CommandBehavior.Default)));
 
-                var doneHandler = new DoneTokenHandler();
+                var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
                 var messageHandler = new MessageTokenHandler(EventNotifier);
+                var responseParameterTokenHandler = new ResponseParameterTokenHandler(command.AseParameters);
+                var doneHandler = new DoneTokenHandler();
+
 
                 ReceiveTokens(
-                    new EnvChangeTokenHandler(_environment, _parameters.Charset),
+                    envChangeTokenHandler,
                     messageHandler,
-                    new ResponseParameterTokenHandler(command.AseParameters),
+                    responseParameterTokenHandler,
                     doneHandler);
 
                 AssertExecutionCompletion(doneHandler);
@@ -354,16 +338,16 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (doneHandler.Canceled)
                 {
-                    rowsAffectedSource?.SetCanceled();
+                    rowsAffectedSource.TrySetCanceled();
                 }
                 else
                 {
-                    rowsAffectedSource?.SetResult(doneHandler.RowsAffected);
+                    rowsAffectedSource.TrySetResult(doneHandler.RowsAffected);
                 }
             }
             catch (Exception ex)
             {
-                rowsAffectedSource?.SetException(ex);
+                rowsAffectedSource.TrySetException(ex);
             }
         }
 
@@ -463,23 +447,6 @@ namespace AdoNetCore.AseClient.Internal
             TrySetState(InternalConnectionState.Ready, s => s == InternalConnectionState.Active);
         }
 
-        public void GetTextSize()
-        {
-            SendPacket(new NormalPacket(OptionCommandToken.CreateGet(OptionCommandToken.OptionType.TDS_OPT_TEXTSIZE)));
-
-            var doneHandler = new DoneTokenHandler();
-            var messageHandler = new MessageTokenHandler();
-            var dataReaderHandler = new DataReaderTokenHandler();
-
-            ReceiveTokens(
-                new EnvChangeTokenHandler(_environment, _parameters.Charset),
-                messageHandler,
-                dataReaderHandler,
-                doneHandler);
-
-            messageHandler.AssertNoErrors();
-        }
-
         public void SetTextSize(int textSize)
         {
             //todo: may need to remove this, user scripts could change the textsize value
@@ -490,12 +457,13 @@ namespace AdoNetCore.AseClient.Internal
 
             SendPacket(new NormalPacket(OptionCommandToken.CreateSetTextSize(textSize)));
 
-            var doneHandler = new DoneTokenHandler();
+            var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
             var messageHandler = new MessageTokenHandler(EventNotifier);
             var dataReaderHandler = new DataReaderTokenHandler();
+            var doneHandler = new DoneTokenHandler();
 
             ReceiveTokens(
-                new EnvChangeTokenHandler(_environment, _parameters.Charset),
+                envChangeTokenHandler,
                 messageHandler,
                 dataReaderHandler,
                 doneHandler);
@@ -571,7 +539,7 @@ SET FMTONLY OFF";
             return result;
         }
 
-        // TODO - if namedParameters is false, then look for ? characters in the DoTheGoodStuff, and bind the parameters by position.
+        // TODO - if namedParameters is false, then look for ? characters in the command, and bind the parameters by position.
         private IToken[] BuildParameterTokens(AseParameterCollection parameters, bool namedParameters)
         {
             var formatItems = new List<FormatItem>();
@@ -618,14 +586,6 @@ SET FMTONLY OFF";
         }
 
         public static readonly IDictionary EmptyStatistics = new ReadOnlyDictionary<string, long>(new Dictionary<string, long>());
-
-        public bool IsCaseSensitive()
-        {
-            // todo: implement
-            // this should be derived from result of "select value from master.dbo.sysconfigures where name like 'default sortorder id'"
-            // return true if the result is not one of 39, 42, 44, 46, 48, 52, 53, 54, 56, 57, 59, 64, 70, 71, 73, 74
-            return false;
-        }
 
         public bool StatisticsEnabled
         {

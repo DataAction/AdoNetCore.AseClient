@@ -8,17 +8,17 @@ using NUnit.Framework;
 namespace AdoNetCore.AseClient.Tests.Integration
 {
     [TestFixture]
-    [Category("extra")]
+    [Category("streaming")]
     public class StreamingTests
     {
         private static string CleanUp =
-@"IF EXISTS(SELECT 1 FROM sysobjects WHERE name = 'stream-result-sets')
+@"IF EXISTS(SELECT 1 FROM sysobjects WHERE name = 'stream-messages')
 BEGIN
-    DROP PROCEDURE [dbo].[stream-result-sets]
+    DROP PROCEDURE [dbo].[stream-messages]
 END";
 
-        private static string TestProc =
-$@"CREATE PROCEDURE [dbo].[stream-result-sets]
+        private static readonly string TestProcStreamMessages =
+@"CREATE PROCEDURE [dbo].[stream-messages]
 (
     @sleepTime CHAR(8),
     @numberOfLoops INT
@@ -30,7 +30,6 @@ BEGIN
 
     WHILE (@index < @numberOfLoops)
     BEGIN
-        SELECT @index AS [Index], GETUTCDATE() AS Now, '{new string('x', 1024 * 8)}' AS LotsOfText
         PRINT 'General Kenobi'
 
         SET @index = @index + 1
@@ -50,7 +49,7 @@ END
             using (var connection = GetConnection())
             {
                 connection.Execute(CleanUp);
-                connection.Execute(TestProc);
+                connection.Execute(TestProcStreamMessages);
             }
         }
 
@@ -63,54 +62,57 @@ END
             }
         }
 
-        // TODO - a failing test that shows the result sets cannot be streamed.
-        // TODO - use this to implement an IEnumerable socket, an IEnumerable token reader, and make data reader work accordingly.
         [Test]
-        public void DelayedResultSetTests()
+        public void Connection_InfoMessage_WithSetFlushMessageOn_ReturnsInRealTime()
         {
-            const int NumLoops = 5;
-            TimeSpan sleep = TimeSpan.FromSeconds(10);
+            const int numLoops = 5;
+            var sleep = TimeSpan.FromSeconds(1);
+            var messages = new List<Tuple<string, DateTime>>();
 
             using (var connection = GetConnection())
             {
                 connection.Open();
 
+                connection.InfoMessage += (sender, args) =>
+                {
+                    messages.Add(new Tuple<string, DateTime>(args.Message, DateTime.UtcNow)); // Capture the time when the message was received.
+                };
+
                 using (var command = connection.CreateCommand())
                 {
+                    // Tell the server to flush the messages.
+                    command.CommandText = "SET FLUSHMESSAGE ON";
+                    command.CommandType = CommandType.Text;
+                    command.ExecuteNonQuery();
+
                     var sleepTime = command.CreateParameter();
                     sleepTime.ParameterName = "@sleepTime";
                     sleepTime.Value = sleep.ToString();
 
                     var numberOfLoops = command.CreateParameter();
                     numberOfLoops.ParameterName = "@numberOfLoops";
-                    numberOfLoops.Value = NumLoops;
+                    numberOfLoops.Value = numLoops;
 
-                    command.CommandText = "[dbo].[stream-result-sets]";
+                    command.CommandText = "[dbo].[stream-messages]";
                     command.CommandType = CommandType.StoredProcedure;
                     command.Parameters.Add(sleepTime);
                     command.Parameters.Add(numberOfLoops);
+                    
+                    command.ExecuteNonQuery();
 
-                    var results = new List<Tuple<DateTime, DateTime>>();
-                    using (var reader = command.ExecuteReader())
+                    Assert.AreEqual(numLoops, messages.Count, $"Expected there to be {numLoops} messages returned from the stored procedure.");
+
+
+                    for (var i = 0; i < messages.Count - 1; i++)
                     {
-                        do
-                        {
-                            while (reader.Read())
-                            {
-                                // Select the time that the server created the record, and the time that we are processing it.
-                                results.Add(new Tuple<DateTime, DateTime>(reader.GetDateTime(1), DateTime.UtcNow));
-                            }
-                        } while (reader.NextResult());
-                    }
+                        var current = messages[i];
+                        var next = messages[i + 1];
 
-                    foreach (var result in results)
-                    {
-                        var selectedTime = result.Item1;
-                        var processedTime = result.Item2;
+                        Assert.AreEqual("General Kenobi", current.Item1, "Unexpected message");
 
-                        var expectedTime = selectedTime + sleep + TimeSpan.FromSeconds(0.5);
-                        
-                        Assert.Less(processedTime, expectedTime); // We expect that the processing time occurs within 1s of the sleep time.
+                        var expectedTime = current.Item2 + sleep + TimeSpan.FromSeconds(0.5);
+
+                        Assert.Less(next.Item2, expectedTime); // We expect that the processing time occurs within 1s of the sleep time.
                     }
                 }
             }

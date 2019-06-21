@@ -320,7 +320,6 @@ namespace AdoNetCore.AseClient.Internal
                 var responseParameterTokenHandler = new ResponseParameterTokenHandler(command.AseParameters);
                 var doneHandler = new DoneTokenHandler();
 
-
                 ReceiveTokens(
                     envChangeTokenHandler,
                     messageHandler,

@@ -569,7 +569,6 @@ namespace AdoNetCore.AseClient
                     return false;
                 default:
                     return true;
-
             }
         }
 

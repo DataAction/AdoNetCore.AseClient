@@ -94,6 +94,11 @@ namespace AdoNetCore.AseClient.Interface
         /// </summary>
         bool IsDisposed { get; }
 
+        /// <summary>	
+        /// Indicates if this connection is case sensitive	
+        /// </summary>	
+        bool IsCaseSensitive();
+
         /// <summary>
         /// Indicates if statistics for this connection are enabled;
         /// Allows for statistics collection to be enabled/disabled

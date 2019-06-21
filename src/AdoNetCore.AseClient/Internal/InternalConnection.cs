@@ -586,6 +586,14 @@ SET FMTONLY OFF";
 
         public static readonly IDictionary EmptyStatistics = new ReadOnlyDictionary<string, long>(new Dictionary<string, long>());
 
+        public bool IsCaseSensitive()
+        {
+            // todo: implement	
+            // this should be derived from result of "select value from master.dbo.sysconfigures where name like 'default sortorder id'"	
+            // return true if the result is not one of 39, 42, 44, 46, 48, 52, 53, 54, 56, 57, 59, 64, 70, 71, 73, 74	
+            return false;
+        }
+
         public bool StatisticsEnabled
         {
             get => _statisticsEnabled;

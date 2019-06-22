@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -57,6 +57,16 @@ namespace AdoNetCore.AseClient.Token
                 Arguments = BitConverter.GetBytes(textSize),
                 Command = CommandType.TDS_OPT_SET,
                 Option = OptionType.TDS_OPT_TEXTSIZE
+            };
+        }
+
+        public static OptionCommandToken CreateSetAnsiNull(bool enabled)
+        {
+            return new OptionCommandToken
+            {
+                Arguments = new []{ enabled ? (byte)1 : (byte)0 },
+                Command = CommandType.TDS_OPT_SET,
+                Option = OptionType.TDS_OPT_ANSINULL
             };
         }
 

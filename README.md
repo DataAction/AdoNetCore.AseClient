@@ -134,7 +134,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | Property                                                                                   | Support   | Notes
 | ------------------------------------------------------------------------------------------ |:---------:| -----
 | `AlternateServers`                                                                         | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
-| `AnsiNull`                                                                                 | TODO | Submit a PR!
+| `AnsiNull`                                                                                 | &#10003; | By default (0) AnsiNull is disabled which means that SQL statements can use `= NULL` and `IS NULL` syntax. Set to 1 to instruct the connection to only permit `IS NULL` syntax.
 | `ApplicationName` or `Application Name`                                                    | &#10003;
 | `BufferCacheSize`                                                                          | TODO
 | `Charset`                                                                                  | &#10003; | If not specified, the server should dictate the character set

@@ -643,34 +643,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
             GetHelper_WithValue_ThrowsException(aseType, (reader, ordinal) => reader.GetByte(ordinal), exceptionType);
         }
 
-        [Test]
-        public void GetByte_WithValue_CastSuccessfullyFromNumeric()
-        {
-            using (var connection = new AseConnection(ConnectionStrings.Pooled))
-            {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT CAST(123.45 AS NUMERIC(18, 6)) AS[NUMERIC]";
-
-                    using (var reader = command.ExecuteReader(CommandBehavior.SingleRow))
-                    {
-                        var targetFieldOrdinal = reader.GetOrdinal("NUMERIC");
-
-                        Assert.IsTrue(reader.Read());
-
-                        byte value = reader.GetByte(targetFieldOrdinal);
-
-                        Assert.AreEqual(123, value);
-
-                        Assert.IsFalse(reader.Read());
-                        Assert.IsFalse(reader.NextResult());
-                    }
-                }
-            }
-        }
-
         [TestCase("INT")]
         [TestCase("BIGINT")]
         [TestCase("SMALLINT")]

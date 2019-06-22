@@ -92,7 +92,7 @@ namespace AdoNetCore.AseClient
             Debug.Assert(value.Length > 0);
 
             var data = new byte[value.Length - 1];
-            Array.Copy(value, 1, data, 0, data.Length);
+            Buffer.BlockCopy(value, 1, data, 0, data.Length);
             var bigInt = new BigInteger(data);
 
             Backing = value[0] != 0 //ase uses sign byte + big integer bytes, we need to translate to + or - bigInt
@@ -158,7 +158,7 @@ namespace AdoNetCore.AseClient
                 var result = new byte[BytesRequired];
                 var mantissaBytes = (Backing.Mantissa * Backing.Mantissa.Sign).ToByteArray();
 
-                Array.Copy(mantissaBytes, 0, result, 0, Math.Min(result.Length, mantissaBytes.Length));
+                Buffer.BlockCopy(mantissaBytes, 0, result, 0, Math.Min(result.Length, mantissaBytes.Length));
                 return result;
             }
         }

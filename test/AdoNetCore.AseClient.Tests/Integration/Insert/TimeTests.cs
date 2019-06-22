@@ -10,11 +10,17 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
 {
     [Category("basic")]
 #if NET_FRAMEWORK
-    [TestFixture(typeof(SapConnectionProvider))]
+    [TestFixture(typeof(SapConnectionProvider), Explicit = true, Reason = "SAP AseClient tests are run for compatibility purposes.")]
 #endif
     [TestFixture(typeof(CoreFxConnectionProvider))]
     public class TimeTests<T> where T : IConnectionProvider
     {
+        private const string CleanUpSql =
+@"IF EXISTS(SELECT 1 FROM sysobjects WHERE name = 'insert_time_tests')
+BEGIN
+    drop table [dbo].[insert_time_tests]
+END";
+
         private DbConnection GetConnection()
         {
             return Activator.CreateInstance<T>().GetConnection(ConnectionStrings.Pooled);
@@ -25,6 +31,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
         {
             using (var connection = GetConnection())
             {
+                connection.Execute(CleanUpSql);
                 connection.Execute("create table [dbo].[insert_time_tests] (time_field time null)");
             }
         }
@@ -34,7 +41,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
         {
             using (var connection = GetConnection())
             {
-                connection.Execute("drop table [dbo].[insert_time_tests]");
+                connection.Execute(CleanUpSql);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Token;
@@ -15,12 +15,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
         };
         private readonly List<IToken> _tokens = new List<IToken>();
 
-        public TableResult[] Results()
-        {
-            return new List<TableResult>(ResultsInternal()).ToArray();
-        }
-
-        public IEnumerable<TableResult> ResultsInternal()
+        public IEnumerable<TableResult> Results()
         {
             TableResult current = null;
             foreach (var token in _tokens)

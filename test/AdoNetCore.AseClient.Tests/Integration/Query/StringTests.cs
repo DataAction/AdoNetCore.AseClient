@@ -13,7 +13,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
     /// </summary>
     [Category("basic")]
 #if NET_FRAMEWORK
-    [TestFixture(typeof(SapConnectionProvider))]
+    [TestFixture(typeof(SapConnectionProvider), Explicit = true, Reason = "SAP AseClient tests are run for compatibility purposes.")]
 #endif
     [TestFixture(typeof(CoreFxConnectionProvider))]
     public class StringTests<T> where T : IConnectionProvider

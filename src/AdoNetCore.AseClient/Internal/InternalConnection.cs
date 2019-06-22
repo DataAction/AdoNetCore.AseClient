@@ -445,11 +445,12 @@ namespace AdoNetCore.AseClient.Internal
         {
             SendPacket(new NormalPacket(OptionCommandToken.CreateSetAnsiNull(enabled)));
 
-            var doneHandler = new DoneTokenHandler();
+            var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
             var messageHandler = new MessageTokenHandler(EventNotifier);
+            var doneHandler = new DoneTokenHandler();
 
             ReceiveTokens(
-                new EnvChangeTokenHandler(_environment, _parameters.Charset),
+                envChangeTokenHandler,
                 messageHandler,
                 doneHandler);
 

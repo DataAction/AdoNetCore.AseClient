@@ -1,4 +1,6 @@
-# AdoNetCore.AseClient - a .NET Core DB Provider for SAP ASE
+# ![icon](icon.png "icon") AdoNetCore.AseClient
+
+A .NET Core DB Provider for SAP ASE
 
 [![CodeFactor](https://www.codefactor.io/repository/github/dataaction/adonetcore.aseclient/badge)](https://www.codefactor.io/repository/github/dataaction/adonetcore.aseclient)
 [![Join the chat at https://gitter.im/DataAction/AdoNetCore.AseClient](https://badges.gitter.im/DataAction/AdoNetCore.AseClient.svg)](https://gitter.im/DataAction/AdoNetCore.AseClient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
@@ -45,7 +47,7 @@ The latest stable release of the AdoNetCore.AseClient is [available on NuGet](ht
     * AseErrorCollection
     * AseException
     * AseInfoMessageEventArgs
-    * AseInfoMessageEventHandler 
+    * AseInfoMessageEventHandler
     * AseParameter
     * AseParameterCollection
     * AseRowUpdatedEventArgs - .NET Core 2.0+
@@ -107,7 +109,7 @@ Open a connection (pooled) and invoke AseCommand.ExecuteReader(...) once, readin
 
 We perform these tests for .NET Core 1.1, .NET Core 2.0, and .NET Standard 4.6 using the `AdoNetCore.AseClient`. For comparison, we also perform these tests on .NET Standard 4.6 using the `Sybase.Data.AseClient` from SAP.
 
-### Environment 
+### Environment
 The goal of the benchmarking is not to establish the absolute performance of the driver or the ASE Server, but to show its equivalence as a substitute. As such, the test client and database server have been held constant in all tests.
 
 #### Server:

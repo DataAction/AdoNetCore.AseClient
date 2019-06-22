@@ -57,6 +57,7 @@ namespace AdoNetCore.AseClient.Internal
             {"TextSize", ParseTextSize},
             {"UseAseDecimal", ParseUseAseDecimal},
             {"EncryptPassword", ParseEncryptPassword},
+            {"AnsiNull", ParseAnsiNull},
         };
 
         public static ConnectionParameters Parse(string connectionString)
@@ -265,6 +266,11 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static void ParseAnsiNull(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.AnsiNull = Convert.ToInt32(item.PropertyValue) == 1;
+        }
+
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private static void ValidateConnectionParameters(ConnectionParameters result)
         {
@@ -341,5 +347,6 @@ namespace AdoNetCore.AseClient.Internal
         public bool UseAseDecimal { get; private set; }
 
         public bool EncryptPassword { get; private set; }
+        public bool AnsiNull { get; private set; }
     }
 }

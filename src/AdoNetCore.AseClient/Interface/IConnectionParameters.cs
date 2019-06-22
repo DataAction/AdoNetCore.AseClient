@@ -23,5 +23,6 @@ namespace AdoNetCore.AseClient.Interface
         int TextSize { get; }
         bool UseAseDecimal { get; }
         bool EncryptPassword { get; }
+        bool AnsiNull { get; }
     }
 }

@@ -441,6 +441,21 @@ namespace AdoNetCore.AseClient.Internal
             _environment.TextSize = textSize;
         }
 
+        public void SetAnsiNull(bool enabled)
+        {
+            SendPacket(new NormalPacket(OptionCommandToken.CreateSetAnsiNull(enabled)));
+
+            var doneHandler = new DoneTokenHandler();
+            var messageHandler = new MessageTokenHandler(EventNotifier);
+
+            ReceiveTokens(
+                new EnvChangeTokenHandler(_environment, _parameters.Charset),
+                messageHandler,
+                doneHandler);
+
+            messageHandler.AssertNoErrors();
+        }
+
         private bool _isDoomed;
         public bool IsDoomed
         {

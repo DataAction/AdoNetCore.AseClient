@@ -85,6 +85,12 @@ namespace AdoNetCore.AseClient.Interface
         void SetTextSize(int textSize);
 
         /// <summary>
+        /// Set ANSI NULL behaviour for the connection.
+        /// </summary>
+        /// <param name="enabled">When true, the ANSI NULL behaviour will be enabled.</param>
+        void SetAnsiNull(bool enabled);
+
+        /// <summary>
         /// Indicates if this connection is doomed to destruction
         /// </summary>
         bool IsDoomed { get; set; }

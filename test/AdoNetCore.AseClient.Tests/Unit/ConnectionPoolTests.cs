@@ -202,6 +202,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             public void Cancel() { }
             public void SetTextSize(int textSize) { }
+            public void SetAnsiNull(bool enabled) { }
+
             public bool IsDoomed { get; set; }
             public bool IsDisposed { get; }
             public bool IsCaseSensitive()
@@ -249,6 +251,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public int TextSize { get; }
             public bool UseAseDecimal { get; } = false;
             public bool EncryptPassword { get; } = false;
+            public bool AnsiNull { get; } = false;
         }
     }
 }

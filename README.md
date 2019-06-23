@@ -150,7 +150,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `DSURL` or `Directory Service URL`                                                         | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
 | `EnableBulkLoad`                                                                           | X
 | `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
-| `Encryption`                                                                               | X
+| `Encryption`                                                                               | &#10003; | The designated encryption. Possible values: ssl, none.
 | `EncryptPassword`                                                                          | &#10003; | Values 0 (disabled) and 1 (enabled) are supported. The highest encryption standard of the ASE 15.x and 16x servers is implemented.
 | `Enlist`                                                                                   | X
 | `FetchArraySize`                                                                           | TODO
@@ -168,7 +168,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Secondary Server Port`                                                                    | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
 | `TextSize`                                                                                 | &#10003;
 | `TightlyCoupledTransaction`                                                                | X
-| `TrustedFile`                                                                              | X
+| `TrustedFile`                                                                              | &#10003; | This property must be used along with `Encryption=ssl`. The value must be set to the path to the trusted file.
 | `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;
 | `UseAseDecimal`                                                                            | &#10003;
 | `UseCursor`                                                                                | X

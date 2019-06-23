@@ -57,6 +57,8 @@ namespace AdoNetCore.AseClient.Internal
             {"TextSize", ParseTextSize},
             {"UseAseDecimal", ParseUseAseDecimal},
             {"EncryptPassword", ParseEncryptPassword},
+            {"Encryption", ParseEncryption},
+            {"TrustedFile", ParseTrustedFile},
         };
 
         public static ConnectionParameters Parse(string connectionString)
@@ -151,6 +153,16 @@ namespace AdoNetCore.AseClient.Internal
         private static void ParsePort(ConnectionStringItem item, ConnectionParameters result)
         {
             result.Port = Convert.ToInt32(item.PropertyValue);
+        }
+
+        private static void ParseEncryption(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Encryption = string.Equals(item.PropertyValue?.Trim(), "ssl", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ParseTrustedFile(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.TrustedFile = item.PropertyValue;
         }
 
         private static void ParseDatabase(ConnectionStringItem item, ConnectionParameters result)
@@ -317,6 +329,11 @@ namespace AdoNetCore.AseClient.Internal
             {
                 throw new ArgumentException("Min Pool Size must be at most the same as Max Pool Size");
             }
+
+            if (result.Encryption && string.IsNullOrWhiteSpace(result.TrustedFile))
+            {
+                throw new ArgumentException("TrustedFile must be set when Encryption=ssl");
+            }
         }
 
         public string Server { get; private set; } = string.Empty;
@@ -341,5 +358,7 @@ namespace AdoNetCore.AseClient.Internal
         public bool UseAseDecimal { get; private set; }
 
         public bool EncryptPassword { get; private set; }
+        public bool Encryption { get; private set; }
+        public string TrustedFile { get; private set; }
     }
 }

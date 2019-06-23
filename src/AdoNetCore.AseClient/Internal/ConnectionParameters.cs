@@ -59,6 +59,7 @@ namespace AdoNetCore.AseClient.Internal
             {"EncryptPassword", ParseEncryptPassword},
             {"Encryption", ParseEncryption},
             {"TrustedFile", ParseTrustedFile},
+            {"AnsiNull", ParseAnsiNull},
         };
 
         public static ConnectionParameters Parse(string connectionString)
@@ -277,6 +278,11 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static void ParseAnsiNull(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.AnsiNull = Convert.ToInt32(item.PropertyValue) == 1;
+        }
+
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private static void ValidateConnectionParameters(ConnectionParameters result)
         {
@@ -360,5 +366,6 @@ namespace AdoNetCore.AseClient.Internal
         public bool EncryptPassword { get; private set; }
         public bool Encryption { get; private set; }
         public string TrustedFile { get; private set; }
+        public bool AnsiNull { get; private set; }
     }
 }

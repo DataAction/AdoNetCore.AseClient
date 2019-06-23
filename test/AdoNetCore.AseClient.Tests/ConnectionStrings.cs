@@ -24,6 +24,9 @@ namespace AdoNetCore.AseClient.Tests
         public static string PooledUnique => $"{Pooled}; UniqueID={{{Guid.NewGuid()}}}";
         public static string BadPass => $"Data Source={Server}; Port={Port}; Uid={User}; Pwd=XXXXXXXX; db={Database};";
 
+        public static string AnsiNullOn => $"{Prefix}; AnsiNull=1";
+        public static string AnsiNullOff => $"{Prefix}; AnsiNull=0";
+
         private static IDictionary<string, string> _loginDetails;
         private static IDictionary<string, string> LoginDetails => _loginDetails ?? (_loginDetails = Load());
         private static string Server => LoginDetails["Server"];

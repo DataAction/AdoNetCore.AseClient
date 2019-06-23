@@ -9,7 +9,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Query
 {
     [Category("basic")]
 #if NET_FRAMEWORK
-    [TestFixture(typeof(SapConnectionProvider))]
+    [TestFixture(typeof(SapConnectionProvider), Explicit = true, Reason = "SAP AseClient tests are run for compatibility purposes.")]
 #endif
     [TestFixture(typeof(CoreFxConnectionProvider))]
     public class InferenceTests<T> where T : IConnectionProvider

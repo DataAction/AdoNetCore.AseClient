@@ -25,5 +25,6 @@ namespace AdoNetCore.AseClient.Interface
         bool EncryptPassword { get; }
         bool Encryption { get; }
         string TrustedFile { get; }
+        bool AnsiNull { get; }
     }
 }

@@ -5,7 +5,9 @@ namespace AdoNetCore.AseClient.Internal
 {
     public sealed class Logger
     {
+#if DEBUG
         private static Logger _instance;
+#endif
         public static Logger Instance
         {
             get
@@ -32,7 +34,9 @@ namespace AdoNetCore.AseClient.Internal
 
         public static void Disable()
         {
+#if DEBUG
             _instance = null;
+#endif
         }
 
         private bool ToConsole { get; set; } = true;

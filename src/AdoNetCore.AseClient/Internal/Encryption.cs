@@ -97,8 +97,8 @@ namespace AdoNetCore.AseClient.Internal
                 rsa.ImportParameters(rsaParams);
 
                 var noncedBytes = new byte[passwordBytes.Length + nonce.Length];
-                Array.Copy(nonce, 0, noncedBytes, 0, nonce.Length);
-                Array.Copy(passwordBytes, 0, noncedBytes, nonce.Length, passwordBytes.Length);
+                Buffer.BlockCopy(nonce, 0, noncedBytes, 0, nonce.Length);
+                Buffer.BlockCopy(passwordBytes, 0, noncedBytes, nonce.Length, passwordBytes.Length);
                 encryptedPassword = rsa.Encrypt(noncedBytes, RSAEncryptionPadding.OaepSHA1);
             }
 
@@ -158,7 +158,7 @@ namespace AdoNetCore.AseClient.Internal
 
             if (newBytes.Length > 0)
             {
-                Array.Copy(bytes, 1, newBytes, 0, newBytes.Length);
+                Buffer.BlockCopy(bytes, 1, newBytes, 0, newBytes.Length);
             }
 
             return newBytes;

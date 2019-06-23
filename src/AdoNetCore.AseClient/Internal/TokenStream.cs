@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Sockets;
 using AdoNetCore.AseClient.Enum;
 
@@ -13,7 +14,7 @@ namespace AdoNetCore.AseClient.Internal
     /// This is particularly important for large data sets, or long running server commands</remarks>
     /// Packet1|Packet2|Packet3|...
     /// [header][body]|[header][body]|[header][body]|
-    internal sealed class TokenStream : NetworkStream
+    internal sealed class TokenStream : Stream
     {
         /// <summary>
         /// The network stream to read data from.
@@ -45,10 +46,13 @@ namespace AdoNetCore.AseClient.Internal
 
         public bool IsCancelled { get; private set; }
 
-        public override bool DataAvailable => _networkHasBytes || _bufferHasBytes;
+        public bool DataAvailable => _networkHasBytes || _bufferHasBytes;
 
-        public TokenStream(Socket socket, DbEnvironment environment) : base(socket, false)
+        private readonly Stream _innerStream;
+
+        public TokenStream(Stream innerStream, DbEnvironment environment)
         {
+            _innerStream = innerStream;
             _environment = environment;
             _headerBuffer = new byte[_environment.HeaderSize];
             _bodyBuffer = new byte[_environment.PacketSize - environment.HeaderSize];
@@ -63,6 +67,26 @@ namespace AdoNetCore.AseClient.Internal
         public override void Flush()
         {
             // Do nothing.
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotImplementedException();
+        public override long Position
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
         }
 
         public override int ReadByte()
@@ -196,6 +220,8 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (!disposing)
                 {
+                    _innerStream.Dispose();
+
                     BurnPackets(); // Considering the case where the socket lives longer than the stream, and the stream is disposed without reading all of the data.
                 }
             }
@@ -222,7 +248,7 @@ namespace AdoNetCore.AseClient.Internal
             var totalReceivedBytes = 0;
             do
             {
-                var receivedBytes = base.Read(buffer, offset + totalReceivedBytes, remainingBytes);
+                var receivedBytes = _innerStream.Read(buffer, offset + totalReceivedBytes, remainingBytes);
                 if (receivedBytes == 0)
                 {
                     throw new SocketException((int)SocketError.NotConnected);

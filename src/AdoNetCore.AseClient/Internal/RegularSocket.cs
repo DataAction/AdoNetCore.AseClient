@@ -37,16 +37,25 @@ namespace AdoNetCore.AseClient.Internal
                 {
                     using (var ms = new MemoryStream())
                     {
-                        packet.Write(ms, env);
+                        var bodyPacket = packet as IBodyPacket;
 
-                        ms.Seek(0, SeekOrigin.Begin);
-
-                        if (ms.Length == 0)
+                        if (bodyPacket == null)
                         {
                             //eg for cancel tokens
-                            SendJustHeader(packet);
+                            var buffer = HeaderTemplate(packet.Type);
+                            buffer[1] = (byte)(BufferStatus.TDS_BUFSTAT_EOM | packet.Status);
+                            buffer[2] = (byte)(buffer.Length >> 8);
+                            buffer[3] = (byte)buffer.Length;
+
+                            DumpBytes(buffer);
+
+                            _innerSocket.EnsureSend(buffer, 0, buffer.Length);
                             return;
                         }
+
+                        bodyPacket.Write(ms, env);
+
+                        ms.Seek(0, SeekOrigin.Begin);
 
                         while (ms.Position < ms.Length)
                         {
@@ -73,28 +82,19 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        private void SendJustHeader(IPacket packet)
-        {
-            var buffer = HeaderTemplate(packet.Type);
-            buffer[1] = (byte) (BufferStatus.TDS_BUFSTAT_EOM | packet.Status);
-            buffer[2] = (byte) (buffer.Length >> 8);
-            buffer[3] = (byte) buffer.Length;
-
-            DumpBytes(buffer);
-
-            _innerSocket.EnsureSend(buffer, 0, buffer.Length);
-        }
-
         public IEnumerable<IToken> ReceiveTokens(DbEnvironment env)
         {
             try
             {
                 // ReSharper disable once InconsistentlySynchronizedField
-                using (var tokenResponseStream = new TokenStream(_innerSocket, env))
+                using (var networkStream = new NetworkStream(_innerSocket, false))
                 {
-                    foreach (var token in _parser.Parse(tokenResponseStream, env))
+                    using (var tokenResponseStream = new TokenStream(networkStream, env))
                     {
-                        yield return token;
+                        foreach (var token in _parser.Parse(tokenResponseStream, env))
+                        {
+                            yield return token;
+                        }
                     }
                 }
             }

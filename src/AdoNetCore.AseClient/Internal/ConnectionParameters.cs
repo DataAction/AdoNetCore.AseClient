@@ -335,11 +335,6 @@ namespace AdoNetCore.AseClient.Internal
             {
                 throw new ArgumentException("Min Pool Size must be at most the same as Max Pool Size");
             }
-
-            if (result.Encryption && string.IsNullOrWhiteSpace(result.TrustedFile))
-            {
-                throw new ArgumentException("TrustedFile must be set when Encryption=ssl");
-            }
         }
 
         public string Server { get; private set; } = string.Empty;

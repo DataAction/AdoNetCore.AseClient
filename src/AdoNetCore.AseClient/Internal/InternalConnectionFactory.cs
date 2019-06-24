@@ -70,6 +70,9 @@ namespace AdoNetCore.AseClient.Internal
 
         private InternalConnection CreateConnection(Socket socket, CancellationToken token)
         {
+            NetworkStream networkStream = null;
+            TokenStream tokenStream = null;
+
             try
             {
 #if NET_FRAMEWORK
@@ -85,17 +88,26 @@ namespace AdoNetCore.AseClient.Internal
                     throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
                 }
 
-                return new InternalConnection(_parameters, new RegularSocket(socket, new TokenReader()));
+                var environment = new DbEnvironment();
+                var reader = new TokenReader();
+
+                networkStream = new NetworkStream(socket, true);
+
+                return new InternalConnection(_parameters, networkStream, reader, environment);
             }
             catch (OperationCanceledException)
             {
                 Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
+                tokenStream?.Dispose();
+                networkStream?.Dispose();
                 socket?.Dispose();
                 throw;
             }
             catch(Exception)
             {
-                socket.Dispose();
+                tokenStream?.Dispose();
+                networkStream?.Dispose();
+                socket?.Dispose();
                 throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
             }
         }

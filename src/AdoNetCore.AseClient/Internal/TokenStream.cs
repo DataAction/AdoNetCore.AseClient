@@ -9,9 +9,11 @@ namespace AdoNetCore.AseClient.Internal
     /// The TokenStream is a read-only stream that can read token data from packets coming from the network. 
     /// </summary>
     /// <remarks>
-    /// The design goal of the token stream is to support reading from the network in a lazy fashion so that the
+    /// <para>The design goal of the token stream is to support reading from the network in a lazy fashion so that the
     /// ASE server can return info messages as they occur, rather than once all data has been received.
-    /// This is particularly important for large data sets, or long running server commands</remarks>
+    /// This is particularly important for large data sets, or long running server commands.</para>
+    /// <para>The lifecycle of the <see cref="TokenStream"/> should be one request or one response.</para>
+    /// </remarks>
     internal sealed class TokenStream : Stream
     {
         /// <summary>

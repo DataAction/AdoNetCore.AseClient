@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -19,8 +20,10 @@ namespace AdoNetCore.AseClient.Internal
     internal class InternalConnection : IInternalConnection
     {
         private readonly IConnectionParameters _parameters;
-        private readonly ISocket _socket;
-        private readonly DbEnvironment _environment = new DbEnvironment();
+        private readonly Stream _networkStream;
+        private readonly ITokenReader _reader;
+        private readonly DbEnvironment _environment;
+        private readonly object _sendMutex;
         private bool _statisticsEnabled;
 
         private enum InternalConnectionState
@@ -69,12 +72,15 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-        public InternalConnection(IConnectionParameters parameters, ISocket socket)
+        public InternalConnection(IConnectionParameters parameters, Stream networkStream, ITokenReader reader, DbEnvironment environment)
         {
             _parameters = parameters;
-            _socket = socket;
+            _networkStream = networkStream;
+            _reader = reader;
+            _environment = environment;
             _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
             _environment.UseAseDecimal = parameters.UseAseDecimal;
+            _sendMutex = new object();
         }
 
         private void SendPacket(IPacket packet)
@@ -83,12 +89,27 @@ namespace AdoNetCore.AseClient.Internal
             Logger.Instance?.WriteLine("----------  Send packet   ----------");
             try
             {
-                _socket.SendPacket(packet, _environment);
+                lock (_sendMutex)
+                {
+                    using (var tokenStream = new TokenStream(_networkStream, _environment))
+                    {
+                        // ReSharper disable once InconsistentlySynchronizedField
+                        tokenStream.SetBufferType(packet.Type, packet.Status);
+
+                        packet.Write(tokenStream, _environment);
+
+                        tokenStream.Flush();
+                    }
+                }
             }
             catch
             {
                 IsDoomed = true;
                 throw;
+            }
+            finally
+            {
+                LastActive = DateTime.UtcNow;
             }
         }
 
@@ -96,15 +117,25 @@ namespace AdoNetCore.AseClient.Internal
         {
             Logger.Instance?.WriteLine();
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
-            foreach (var receivedToken in _socket.ReceiveTokens(_environment))
+            try
             {
-                foreach (var handler in handlers)
+                using (var tokenStream = new TokenStream(_networkStream, _environment))
                 {
-                    if (handler != null && handler.CanHandle(receivedToken.Type))
+                    foreach (var receivedToken in _reader.Read(tokenStream, _environment))
                     {
-                        handler.Handle(receivedToken);
+                        foreach (var handler in handlers)
+                        {
+                            if (handler != null && handler.CanHandle(receivedToken.Type))
+                            {
+                                handler.Handle(receivedToken);
+                            }
+                        }
                     }
                 }
+            }
+            finally
+            {
+                LastActive = DateTime.UtcNow;
             }
         }
 
@@ -169,7 +200,7 @@ namespace AdoNetCore.AseClient.Internal
                         DoEncrypt3Scheme(parameters, password);
                         break;
                     default:
-                        throw new NotSupportedException($"Server requested unsupported password encryption scheme");
+                        throw new NotSupportedException("Server requested unsupported password encryption scheme");
                 }
             }
             catch (CryptographicException ex)
@@ -204,7 +235,7 @@ namespace AdoNetCore.AseClient.Internal
         }
 
         public DateTime Created { get; private set; }
-        public DateTime LastActive => _socket.LastActive;
+        public DateTime LastActive { get; private set; }
 
         public bool Ping()
         {
@@ -597,7 +628,7 @@ SET FMTONLY OFF";
             }
 
             IsDisposed = true;
-            _socket.Dispose();
+            _networkStream.Dispose();
         }
 
         public static readonly IDictionary EmptyStatistics = new ReadOnlyDictionary<string, long>(new Dictionary<string, long>());

@@ -5,10 +5,10 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal class HexDump
     {
-        public static string Dump(byte[] bytes, int bytesPerLine = 16)
+        public static string Dump(byte[] bytes, int offset = 0, int length = -1, int bytesPerLine = 16)
         {
             if (bytes == null) return "<null>";
-            var bytesLength = bytes.Length;
+            var bytesLength = length > -1 ? length : bytes.Length;
 
             var hexChars = "0123456789ABCDEF".ToCharArray();
 
@@ -29,7 +29,7 @@ namespace AdoNetCore.AseClient.Internal
             var expectedLines = (bytesLength + bytesPerLine - 1) / bytesPerLine;
             var result = new StringBuilder(expectedLines * lineLength);
 
-            for (var i = 0; i < bytesLength; i += bytesPerLine)
+            for (var i = offset; i < bytesLength; i += bytesPerLine)
             {
                 line[0] = hexChars[(i >> 28) & 0xF];
                 line[1] = hexChars[(i >> 24) & 0xF];

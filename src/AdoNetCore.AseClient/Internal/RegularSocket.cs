@@ -1,24 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Sockets;
-using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal class RegularSocket : ISocket
+    internal sealed class RegularSocket : ISocket
     {
         private readonly Socket _innerSocket;
-        private readonly ITokenParser _parser;
-        private readonly bool _hexDump = false;
+        private readonly ITokenReader _reader;
 
         public DateTime LastActive { get; private set; }
 
-        public RegularSocket(Socket inner, ITokenParser parser)
+        public RegularSocket(Socket inner, ITokenReader reader)
         {
             _innerSocket = inner;
-            _parser = parser;
+            _reader = reader;
         }
 
         public void Dispose()
@@ -26,7 +23,6 @@ namespace AdoNetCore.AseClient.Internal
             _innerSocket.Dispose();
         }
 
-        private byte[] HeaderTemplate(BufferType type) => new byte[] { (byte) type, 0, 0, 0, 0, 0, 0, 0 };
         private readonly object _sendMutex = new object();
 
         public void SendPacket(IPacket packet, DbEnvironment env)
@@ -35,43 +31,16 @@ namespace AdoNetCore.AseClient.Internal
             {
                 try
                 {
-                    using (var ms = new MemoryStream())
+                    // ReSharper disable once InconsistentlySynchronizedField
+                    using (var networkStream = new NetworkStream(_innerSocket, false))
                     {
-                        var bodyPacket = packet as IBodyPacket;
-
-                        if (bodyPacket == null)
+                        using (var tokenStream = new TokenStream(networkStream, env))
                         {
-                            //eg for cancel tokens
-                            var buffer = HeaderTemplate(packet.Type);
-                            buffer[1] = (byte)(BufferStatus.TDS_BUFSTAT_EOM | packet.Status);
-                            buffer[2] = (byte)(buffer.Length >> 8);
-                            buffer[3] = (byte)buffer.Length;
+                            tokenStream.SetBufferType(packet.Type, packet.Status);
 
-                            DumpBytes(buffer);
+                            packet.Write(tokenStream, env);
 
-                            _innerSocket.EnsureSend(buffer, 0, buffer.Length);
-                            return;
-                        }
-
-                        bodyPacket.Write(ms, env);
-
-                        ms.Seek(0, SeekOrigin.Begin);
-
-                        while (ms.Position < ms.Length)
-                        {
-                            //split into chunks and send over the wire
-                            var buffer = new byte[env.PacketSize];
-                            var template = HeaderTemplate(packet.Type);
-                            Buffer.BlockCopy(template, 0, buffer, 0, template.Length);
-                            var copied = ms.Read(buffer, template.Length, buffer.Length - template.Length);
-                            var chunkLength = template.Length + copied;
-                            buffer[1] = (byte) ((ms.Position >= ms.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE) | packet.Status);
-                            buffer[2] = (byte) (chunkLength >> 8);
-                            buffer[3] = (byte) chunkLength;
-
-                            DumpBytes(buffer, chunkLength);
-
-                            _innerSocket.EnsureSend(buffer, 0, chunkLength);
+                            tokenStream.Flush();
                         }
                     }
                 }
@@ -89,9 +58,9 @@ namespace AdoNetCore.AseClient.Internal
                 // ReSharper disable once InconsistentlySynchronizedField
                 using (var networkStream = new NetworkStream(_innerSocket, false))
                 {
-                    using (var tokenResponseStream = new TokenStream(networkStream, env))
+                    using (var tokenStream = new TokenStream(networkStream, env))
                     {
-                        foreach (var token in _parser.Parse(tokenResponseStream, env))
+                        foreach (var token in _reader.Read(tokenStream, env))
                         {
                             yield return token;
                         }
@@ -101,31 +70,6 @@ namespace AdoNetCore.AseClient.Internal
             finally
             {
                 LastActive = DateTime.UtcNow;
-            }
-        }
-
-        private void DumpBytes(byte[] bytes, int length)
-        {
-            if (bytes.Length == length)
-            {
-                DumpBytes(bytes);
-                return;
-            }
-
-            if (_hexDump)
-            {
-                var buffer = new byte[length];
-                Buffer.BlockCopy(bytes, 0, buffer, 0, length);
-                DumpBytes(buffer);
-            }
-        }
-
-        private void DumpBytes(byte[] bytes)
-        {
-            if (_hexDump)
-            {
-                Logger.Instance?.Write(Environment.NewLine);
-                Logger.Instance?.Write(HexDump.Dump(bytes));
             }
         }
     }

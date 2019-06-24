@@ -7,9 +7,9 @@ using AdoNetCore.AseClient.Token;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal class TokenParser : ITokenParser
+    internal class TokenReader : ITokenReader
     {
-        public IEnumerable<IToken> Parse(TokenStream stream, DbEnvironment env)
+        public IEnumerable<IToken> Read(TokenStream stream, DbEnvironment env)
         {
             IFormatToken previousFormatToken = null;
 

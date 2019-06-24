@@ -33,14 +33,14 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (AseException)
             {
-                connection?.Dispose();
+                connection.Dispose();
                 socket?.Dispose();
                 throw;
             }
             catch(Exception ex)
             {
                 Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} encountered exception: {ex}");
-                connection?.Dispose();
+                connection.Dispose();
                 socket?.Dispose();
                 throw new OperationCanceledException();
             }
@@ -85,7 +85,7 @@ namespace AdoNetCore.AseClient.Internal
                     throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
                 }
 
-                return new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
+                return new InternalConnection(_parameters, new RegularSocket(socket, new TokenReader()));
             }
             catch (OperationCanceledException)
             {

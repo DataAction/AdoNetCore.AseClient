@@ -6,7 +6,7 @@ using AdoNetCore.AseClient.Token;
 
 namespace AdoNetCore.AseClient.Packet
 {
-    internal class LoginPacket : IBodyPacket
+    internal class LoginPacket : IPacket
     {
         public string Hostname { get; set; }
         public string Username { get; set; }

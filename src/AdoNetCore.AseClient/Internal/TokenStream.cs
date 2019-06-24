@@ -10,10 +10,8 @@ namespace AdoNetCore.AseClient.Internal
     /// </summary>
     /// <remarks>
     /// The design goal of the token stream is to support reading from the network in a lazy fashion so that the
-    /// <see cref="AseDataReader"/> can return results before the client has received all of the data.
+    /// ASE server can return info messages as they occur, rather than once all data has been received.
     /// This is particularly important for large data sets, or long running server commands</remarks>
-    /// Packet1|Packet2|Packet3|...
-    /// [header][body]|[header][body]|[header][body]|
     internal sealed class TokenStream : Stream
     {
         /// <summary>
@@ -22,51 +20,143 @@ namespace AdoNetCore.AseClient.Internal
         private readonly DbEnvironment _environment;
 
         /// <summary>
+        /// Whether or not this has been disposed.
+        /// </summary>
+        private bool _isDisposed;
+
+        /// <summary>
         /// A buffer to store header information from the TDS packets. This data is read and discarded by the <see cref="TokenStream"/>.
         /// </summary>
-        private readonly byte[] _headerBuffer;
+        private readonly byte[] _headerReadBuffer;
 
         /// <summary>
         /// A buffer to data that has been read by the <see cref="TokenStream"/>, but not returned to the client.
         /// </summary>
-        private readonly byte[] _bodyBuffer;
+        private readonly byte[] _bodyReadBuffer;
 
         /// <summary>
-        /// A pointer to the next byte that should be read from the <see cref="_bodyBuffer"/>.
+        /// A pointer to the next byte that should be read from the <see cref="_bodyReadBuffer"/>.
         /// </summary>
-        private int _bodyBufferPosition;
+        private int _bodyReadBufferPosition;
 
         /// <summary>
-        /// The number of data bytes that are in the <see cref="_bodyBuffer"/>.
+        /// The number of data bytes that are in the <see cref="_bodyReadBuffer"/>.
         /// </summary>
-        private int _bodyBufferLength;
-        private bool _isDisposed;
-        private bool _bufferHasBytes;
-        private bool _networkHasBytes;
+        private int _bodyReadBufferLength;
+
+        /// <summary>
+        /// Whether or not the <see cref="_bodyReadBuffer"/> has data in it to read.
+        /// </summary>
+        private bool _readBufferHasBytes;
+
+        /// <summary>
+        /// Whether or not the <see cref="_innerStream"/> has data in it to read.
+        /// </summary>
+        private bool _innerStreamHasBytes;
 
         public bool IsCancelled { get; private set; }
 
-        public bool DataAvailable => _networkHasBytes || _bufferHasBytes;
+        /// <summary>
+        /// Whether or not there is data available to read.
+        /// </summary>
+        public bool DataAvailable => _innerStreamHasBytes || _readBufferHasBytes;
 
+        /// <summary>
+        /// The stream decorated by this type. Data is ultimately read from and written to the inner stream.
+        /// </summary>
         private readonly Stream _innerStream;
 
+        /// <summary>
+        /// When writing data, it is buffered first and then written out as chunks during <see cref="Flush"/>.
+        /// </summary>
+        private readonly MemoryStream _innerWriteBufferStream;
+
+        /// <summary>
+        /// The type of write response to send.
+        /// </summary>
+        private BufferType _writeBufferType;
+
+        /// <summary>
+        /// The default status of the packets to send.
+        /// </summary>
+        private BufferStatus _writeBufferStatus;
+
+        // Debug only.
+        private readonly bool _hexDump = false;
+
+        /// <summary>
+        /// Constructor function for a <see cref="TokenStream"/> instance.
+        /// </summary>
+        /// <param name="innerStream">The stream being decorated.</param>
+        /// <param name="environment">The environment settings.</param>
         public TokenStream(Stream innerStream, DbEnvironment environment)
         {
             _innerStream = innerStream;
+            _innerWriteBufferStream = new MemoryStream();
             _environment = environment;
-            _headerBuffer = new byte[_environment.HeaderSize];
-            _bodyBuffer = new byte[_environment.PacketSize - environment.HeaderSize];
-            _bodyBufferPosition = 0;
-            _bodyBufferLength = 0;
+            _headerReadBuffer = new byte[_environment.HeaderSize];
+            _bodyReadBuffer = new byte[_environment.PacketSize - environment.HeaderSize];
+            _bodyReadBufferPosition = 0;
+            _bodyReadBufferLength = 0;
             IsCancelled = false;
             _isDisposed = false;
-            _bufferHasBytes = false;
-            _networkHasBytes = true;
+            _readBufferHasBytes = false;
+            _innerStreamHasBytes = true;
         }
 
         public override void Flush()
         {
-            // Do nothing.
+            // Point at the start of the stream for reading.
+            _innerWriteBufferStream.Seek(0, SeekOrigin.Begin);
+
+            try
+            {
+                if (_innerWriteBufferStream.Length == 0)
+                {
+                    // Add an 8 byte header block for cancellation.
+                    var header = new byte[] { (byte)_writeBufferType, 0, 0, 0, 0, 0, 0, 0 };
+
+                    // Set the header bytes to describe what is being transmitted
+                    header[1] = (byte)(BufferStatus.TDS_BUFSTAT_EOM | _writeBufferStatus);
+                    header[2] = (byte)(header.Length >> 8);
+                    header[3] = (byte)header.Length;
+
+                    DumpBytes(header, header.Length);
+
+                    _innerStream.Write(header, 0, header.Length);
+                }
+                else
+                {
+                    while (_innerWriteBufferStream.Position < _innerWriteBufferStream.Length)
+                    {
+                        //split into chunks and send over the wire
+                        var buffer = new byte[_environment.PacketSize];
+
+                        // Add an 8 byte header block to each chunk.
+                        var header = new byte[] { (byte)_writeBufferType, 0, 0, 0, 0, 0, 0, 0 };
+                        Buffer.BlockCopy(header, 0, buffer, 0, header.Length);
+
+                        // Write the body block into the remaining space.
+                        var bodyLength = _innerWriteBufferStream.Read(buffer, header.Length, buffer.Length - header.Length);
+
+                        // Set the header bytes to describe what is being transmitted
+                        var chunkLength = header.Length + bodyLength;
+                        buffer[1] = (byte)((_innerWriteBufferStream.Position >= _innerWriteBufferStream.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE) | _writeBufferStatus);
+                        buffer[2] = (byte)(chunkLength >> 8);
+                        buffer[3] = (byte)chunkLength;
+
+                        DumpBytes(buffer, chunkLength);
+
+                        _innerStream.Write(buffer, 0, chunkLength);
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up if something goes wrong.
+                _innerWriteBufferStream.SetLength(0);
+                _innerStream.Flush();
+            }
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -77,6 +167,17 @@ namespace AdoNetCore.AseClient.Internal
         public override void SetLength(long value)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Sets the type of buffer for write operations.
+        /// </summary>
+        /// <param name="type">The type of buffer being written.</param>
+        /// <param name="status">The default status of the buffer.</param>
+        public void SetBufferType(BufferType type, BufferStatus status)
+        {
+            _writeBufferType = type;
+            _writeBufferStatus = status;
         }
 
         public override bool CanRead => true;
@@ -134,34 +235,34 @@ namespace AdoNetCore.AseClient.Internal
             var bytesWrittenToBuffer = 0;
 
             // If we have some data in the bodyBuffer, we should use that up first.
-            if (_bufferHasBytes)
+            if (_readBufferHasBytes)
             {
                 bytesWrittenToBuffer = GetBufferedBytes(buffer, 0 + offset, count);
             }
 
             // If we need more data, let's read it from the network until the buffer is full.
-            while (bytesWrittenToBuffer < count && _networkHasBytes)
+            while (bytesWrittenToBuffer < count && _innerStreamHasBytes)
             {
-                BufferBytes(_headerBuffer, 0, _environment.HeaderSize);
+                BufferBytes(_headerReadBuffer, 0, _environment.HeaderSize);
 
-                var bufferStatus = (BufferStatus)_headerBuffer[1];
+                var bufferStatus = (BufferStatus)_headerReadBuffer[1];
 
                 //" If TDS_BUFSTAT_ATTNACK not also TDS_BUFSTAT_EOM, continue reading packets until TDS_BUFSTAT_EOM."
                 IsCancelled = bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTNACK) || bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_ATTN);
 
-                var length = _headerBuffer[2] << 8 | _headerBuffer[3];
+                var length = _headerReadBuffer[2] << 8 | _headerReadBuffer[3];
 
-                _bodyBufferLength = length - _environment.HeaderSize;
-                _bodyBufferPosition = 0;
+                _bodyReadBufferLength = length - _environment.HeaderSize;
+                _bodyReadBufferPosition = 0;
 
-                BufferBytes(_bodyBuffer, 0, _bodyBufferLength);
+                BufferBytes(_bodyReadBuffer, 0, _bodyReadBufferLength);
 
                 bytesWrittenToBuffer += GetBufferedBytes(buffer, bytesWrittenToBuffer + offset, count - bytesWrittenToBuffer);
 
                 // If there is no more data, stop there.
                 if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == _environment.HeaderSize)
                 {
-                    _networkHasBytes = false;
+                    _innerStreamHasBytes = false;
                     break;
                 }
             }
@@ -181,35 +282,36 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         private void BurnPackets()
         {
-            while (_networkHasBytes)
+            while (_innerStreamHasBytes)
             {
-                BufferBytes(_headerBuffer, 0, _environment.HeaderSize);
+                BufferBytes(_headerReadBuffer, 0, _environment.HeaderSize);
 
-                var bufferStatus = (BufferStatus) _headerBuffer[1];
+                var bufferStatus = (BufferStatus) _headerReadBuffer[1];
 
-                var length = _headerBuffer[2] << 8 | _headerBuffer[3];
+                var length = _headerReadBuffer[2] << 8 | _headerReadBuffer[3];
 
-                _bodyBufferLength = length - _environment.HeaderSize;
-                _bodyBufferPosition = 0;
+                _bodyReadBufferLength = length - _environment.HeaderSize;
+                _bodyReadBufferPosition = 0;
 
-                BufferBytes(_bodyBuffer, 0, _bodyBufferLength);
+                BufferBytes(_bodyReadBuffer, 0, _bodyReadBufferLength);
 
                 // If there is no more data, stop there.
                 if (bufferStatus.HasFlag(BufferStatus.TDS_BUFSTAT_EOM) || length == _environment.HeaderSize)
                 {
-                    _networkHasBytes = false;
+                    _innerStreamHasBytes = false;
                     break;
                 }
             }
 
-            _bufferHasBytes = false;
-            _bodyBufferLength = 0;
-            _bodyBufferPosition = 0;
+            _readBufferHasBytes = false;
+            _bodyReadBufferLength = 0;
+            _bodyReadBufferPosition = 0;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            // Buffer the data and process it on Flush.
+            _innerWriteBufferStream.Write(buffer, offset, count);
         }
 
         protected override void Dispose(bool disposing)
@@ -221,6 +323,7 @@ namespace AdoNetCore.AseClient.Internal
                 if (!disposing)
                 {
                     _innerStream.Dispose();
+                    _innerWriteBufferStream.Dispose();
 
                     BurnPackets(); // Considering the case where the socket lives longer than the stream, and the stream is disposed without reading all of the data.
                 }
@@ -262,30 +365,39 @@ namespace AdoNetCore.AseClient.Internal
         {
             int written;
             
-            var bufferedBytes = _bodyBufferLength - _bodyBufferPosition;
+            var bufferedBytes = _bodyReadBufferLength - _bodyReadBufferPosition;
 
             // if this chunk is less than the amount requested, add it all.
             if (bufferedBytes <= count)
             {
-                Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, offset, bufferedBytes);
+                Buffer.BlockCopy(_bodyReadBuffer, _bodyReadBufferPosition, buffer, offset, bufferedBytes);
                 written = bufferedBytes;
 
                 // Nothing left in the buffer
-                _bodyBufferPosition = 0;
-                _bodyBufferLength = 0;
-                _bufferHasBytes = false;
+                _bodyReadBufferPosition = 0;
+                _bodyReadBufferLength = 0;
+                _readBufferHasBytes = false;
             }
             // else add part of it and save the rest.
             else
             {
-                Buffer.BlockCopy(_bodyBuffer, _bodyBufferPosition, buffer, offset, count);
+                Buffer.BlockCopy(_bodyReadBuffer, _bodyReadBufferPosition, buffer, offset, count);
                 written = count;
 
-                _bodyBufferPosition += count;
-                _bufferHasBytes = true;
+                _bodyReadBufferPosition += count;
+                _readBufferHasBytes = true;
             }
 
             return written;
+        }
+
+        private void DumpBytes(byte[] bytes, int length)
+        {
+            if (_hexDump)
+            {
+                Logger.Instance?.Write(Environment.NewLine);
+                Logger.Instance?.Write(HexDump.Dump(bytes, 0, length));
+            }
         }
     }
 }

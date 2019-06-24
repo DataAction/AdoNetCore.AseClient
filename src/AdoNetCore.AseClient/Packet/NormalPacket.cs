@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Packet
 {
-    internal class NormalPacket : IBodyPacket
+    internal class NormalPacket : IPacket
     {
         private readonly IEnumerable<IToken> _tokens;
 

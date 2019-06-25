@@ -148,7 +148,7 @@ namespace AdoNetCore.AseClient.Internal
                 return false;
             }
 
-            IDictionary<string, X509Certificate> certificates;
+            IDictionary<string, X509Certificate> rootCertificates;
 
             // The TrustedFile is a file containing the public keys, in PEM format of the trusted
             // root certificates that this client is willing to accept TLS connections from.
@@ -157,7 +157,7 @@ namespace AdoNetCore.AseClient.Internal
                 var trustedRootCertificatesPem = File.ReadAllText(_parameters.TrustedFile, Encoding.ASCII); // TODO - what about access denied errors? How should these be returned?
 
                 var parser = new PemParser();
-                certificates =
+                rootCertificates =
                     parser.ParseCertificates(trustedRootCertificatesPem)
                         .ToDictionary(GetCertificateKey);
             }
@@ -166,14 +166,14 @@ namespace AdoNetCore.AseClient.Internal
             {
                 using (var rootStore = new X509Store(StoreName.Root, StoreLocation.CurrentUser)) // This should also find certificates installed under StoreLocation.LocalMachine.
                 {
-                    certificates = rootStore.Certificates
+                    rootCertificates = rootStore.Certificates
                         .OfType<X509Certificate>()
                         .ToDictionary(GetCertificateKey);
                 }
             }
 
             // If the server certificate itself is the root, weird, but ok.
-            if (certificates.ContainsKey(GetCertificateKey(serverCertificate)))
+            if (rootCertificates.ContainsKey(GetCertificateKey(serverCertificate)))
             {
                 return true;
             }
@@ -183,7 +183,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 var key = GetCertificateKey(chainElement.Certificate);
 
-                if (certificates.ContainsKey(key))
+                if (rootCertificates.ContainsKey(key))
                 {
                     return true;
                 }

@@ -56,22 +56,8 @@ The latest stable release of the AdoNetCore.AseClient is [available on NuGet](ht
     * AseRowUpdatingEventHandler - .NET Core 2.0+
     * TraceEnterEventHandler
     * TraceExitEventHandler
-* The following features are not *yet* supported:
-    * `Bulk Copy` - no reason this can't be supported, just hasn't been a priority thus far. As such the following types have not yet been implemented:
-        * [AseBulkCopy](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409524288.html)
-        * [AseBulkCopyColumnMapping](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409528570.html)
-        * [AseBulkCopyColumnMappingCollection](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409530992.html)
-        * [AseBulkCopyOptions](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409533851.html)
-        * [AseRowsCopiedEventArgs](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409610666.html)
-        * [AseRowsCopiedEventHandler](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409612103.html)
-    * `Failover` - no reason this can't be supported, just hasn't been a priority thus far. As such the following types have not yet been implemented:
-        * [AseFailoverException](http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409597900.html)
-* The following features are not supported:
-    * `Code Access Security` - CAS is [no longer recommended by Microsoft](https://docs.microsoft.com/en-us/dotnet/framework/misc/code-access-security) and [will not be supported in .NET Core](https://github.com/dotnet/corefx/blob/master/Documentation/project-docs/porting.md#code-access-security-cas). For binary compatibility the following stubs have been added in .NET Core 2.0+ but they do nothing:
-        * AseClientPermission
-        * AseClientPermissionAttribute
-    * `ASE Functions` - The SAP `Sybase.Data.AseClient` provides an `AseFunctions` type filled with utility functions that aren't implemented. This type will not be supported as it doesn't do anything. Consumers should remove references to this type.
 
+* Not all features are currently supported, and some features will not be supported. Refer to [Unsupported features](https://github.com/DataAction/AdoNetCore.AseClient/wiki/Unsupported-features)
 * Performance equivalent to or better than that of `Sybase.Data.AseClient` provided by SAP. This is possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
 * Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1)
 * Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the `Sybase.Data.AseClient`
@@ -146,7 +132,6 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Database` or `Db` or `Initial Catalog`                                                    | &#10003;
 | `Data Source` or `DataSource` or `Address` or `Addr` or `Network Address` or `Server Name` | &#10003;
 | `DSURL` or `Directory Service URL`                                                         | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
-| `EnableBulkLoad`                                                                           | X
 | `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
 | `Encryption`                                                                               | TODO | Refer to issue [#98](https://github.com/DataAction/AdoNetCore.AseClient/issues/98)
 | `EncryptPassword`                                                                          | &#10003; | Values 0 (disabled) and 1 (enabled) are supported. The highest encryption standard of the ASE 15.x and 16x servers is implemented.
@@ -163,33 +148,6 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `TrustedFile`                                                                              | TODO | Refer to issue [#98](https://github.com/DataAction/AdoNetCore.AseClient/issues/98)
 | `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;
 | `UseAseDecimal`                                                                            | &#10003;
-
-### High Availability/Disaster Recovery (HA/DR)
-Although we plan to add HA/DR support in future, there is no support in the data provider presently. Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64). As such the following connection string properties are not implemented:
-
-| Property                                                                                   | Support   | Notes
-| ------------------------------------------------------------------------------------------ |:---------:| -----
-| `AlternateServers`                                                                         | TODO | A comma-separated list of alternative servers to connect when opening a connection. Format: server:port[,server:port/*...*/,server:port].
-| `HASession`                                                                                | TODO | When set to 1 this means we need to operate in a mode which supports failover.
-| `Secondary Data Source`                                                                    | TODO | Alternative way to specfy an alternative server:port.
-| `Secondary Server Port`                                                                    | TODO | Alternative way to specfy an alternative server:port.
-
-### Cursors
-ADO.NET doesn't have first-class cursor support, so this feature doesn't appear to be relevant. It's possible that AseClient supported this as a hangover from ADO.
-
-| Property                                                                                   | Support
-| ------------------------------------------------------------------------------------------ |:---------:
-| `FetchArraySize`                                                                           | X
-| `UseCursor`                                                                                | X
-
-### Distributed Transactions
-Although supported by .NET Framework, .NET Core does not support distributed transactions. As such, there are no plans to implement this feature.
-
-| Property                                                                                   | Support
-| ------------------------------------------------------------------------------------------ |:---------:
-| `DistributedTransactionProtocol`                                                           | X
-| `Enlist`                                                                                   | X
-| `TightlyCoupledTransaction`                                                                | X
 
 ## Supported types
 ### Types supported when sending requests to the database

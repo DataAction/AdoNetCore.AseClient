@@ -8,6 +8,6 @@ namespace AdoNetCore.AseClient.Interface
     /// </summary>
     internal interface ITokenReader
     {
-        IEnumerable<IToken> Read(TokenStream stream, DbEnvironment env);
+        IEnumerable<IToken> Read(TokenReceiveStream stream, DbEnvironment env);
     }
 }

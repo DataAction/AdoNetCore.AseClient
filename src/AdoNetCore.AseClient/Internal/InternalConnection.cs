@@ -91,7 +91,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 lock (_sendMutex)
                 {
-                    using (var tokenStream = new TokenStream(_networkStream, _environment))
+                    using (var tokenStream = new TokenReceiveStream(_networkStream, _environment))
                     {
                         // ReSharper disable once InconsistentlySynchronizedField
                         tokenStream.SetBufferType(packet.Type, packet.Status);
@@ -119,7 +119,7 @@ namespace AdoNetCore.AseClient.Internal
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
             try
             {
-                using (var tokenStream = new TokenStream(_networkStream, _environment))
+                using (var tokenStream = new TokenReceiveStream(_networkStream, _environment))
                 {
                     foreach (var receivedToken in _reader.Read(tokenStream, _environment))
                     {

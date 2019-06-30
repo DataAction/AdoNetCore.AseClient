@@ -6,15 +6,15 @@ using AdoNetCore.AseClient.Enum;
 namespace AdoNetCore.AseClient.Internal
 {
     /// <summary>
-    /// The TokenStream is a read-only stream that can read token data from packets coming from the network. 
+    /// The TokenReceiveStream is a read-only stream that can read token data from packets coming from the network. 
     /// </summary>
     /// <remarks>
     /// <para>The design goal of the token stream is to support reading from the network in a lazy fashion so that the
     /// ASE server can return info messages as they occur, rather than once all data has been received.
     /// This is particularly important for large data sets, or long running server commands.</para>
-    /// <para>The lifecycle of the <see cref="TokenStream"/> should be one request or one response.</para>
+    /// <para>The lifecycle of the <see cref="TokenReceiveStream"/> should be one request or one response.</para>
     /// </remarks>
-    internal sealed class TokenStream : Stream
+    internal sealed class TokenReceiveStream : Stream
     {
         /// <summary>
         /// The network stream to read data from.
@@ -27,12 +27,12 @@ namespace AdoNetCore.AseClient.Internal
         private bool _isDisposed;
 
         /// <summary>
-        /// A buffer to store header information from the TDS packets. This data is read and discarded by the <see cref="TokenStream"/>.
+        /// A buffer to store header information from the TDS packets. This data is read and discarded by the <see cref="TokenReceiveStream"/>.
         /// </summary>
         private readonly byte[] _headerReadBuffer;
 
         /// <summary>
-        /// A buffer to data that has been read by the <see cref="TokenStream"/>, but not returned to the client.
+        /// A buffer to data that has been read by the <see cref="TokenReceiveStream"/>, but not returned to the client.
         /// </summary>
         private readonly byte[] _bodyReadBuffer;
 
@@ -87,11 +87,11 @@ namespace AdoNetCore.AseClient.Internal
         private readonly bool _hexDump = false;
 
         /// <summary>
-        /// Constructor function for a <see cref="TokenStream"/> instance.
+        /// Constructor function for a <see cref="TokenReceiveStream"/> instance.
         /// </summary>
         /// <param name="innerStream">The stream being decorated.</param>
         /// <param name="environment">The environment settings.</param>
-        public TokenStream(Stream innerStream, DbEnvironment environment)
+        public TokenReceiveStream(Stream innerStream, DbEnvironment environment)
         {
             _innerStream = innerStream;
             _innerWriteBufferStream = new MemoryStream();

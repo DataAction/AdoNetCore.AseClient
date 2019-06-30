@@ -9,7 +9,7 @@ namespace AdoNetCore.AseClient.Internal
     internal sealed class ConnectionPoolManager : IConnectionPoolManager, IEnumerable<IConnectionPool>
     {
 #if ENABLE_ARRAY_POOL
-        private static readonly System.Buffers.ArrayPool<byte> BufferPool = System.Buffers.ArrayPool<byte>.Create();
+        private static readonly System.Buffers.ArrayPool<byte> BufferPool = System.Buffers.ArrayPool<byte>.Shared;
 #endif
 
         private static readonly ConcurrentDictionary<string, IConnectionPool> Pools = new ConcurrentDictionary<string, IConnectionPool>(StringComparer.OrdinalIgnoreCase);

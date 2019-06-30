@@ -165,9 +165,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `UseAseDecimal`                                                                            | &#10003;
 
 ### High Availability/Disaster Recovery (HA/DR)
-Although we plan to add HA/DR support in future, there is no support in the data provider presently. Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
-
-As such the following connection string properties are not implemented:
+Although we plan to add HA/DR support in future, there is no support in the data provider presently. Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64). As such the following connection string properties are not implemented:
 
 | Property                                                                                   | Support   | Notes
 | ------------------------------------------------------------------------------------------ |:---------:| -----
@@ -179,16 +177,16 @@ As such the following connection string properties are not implemented:
 ### Cursors
 ADO.NET doesn't have first-class cursor support, so this feature doesn't appear to be relevant. It's possible that AseClient supported this as a hangover from ADO.
 
-| Property                                                                                   | Support   | Notes
-| ------------------------------------------------------------------------------------------ |:---------:| -----
+| Property                                                                                   | Support
+| ------------------------------------------------------------------------------------------ |:---------:
 | `FetchArraySize`                                                                           | X
 | `UseCursor`                                                                                | X
 
 ### Distributed Transactions
 Although supported by .NET Framework, .NET Core does not support distributed transactions. As such, there are no plans to implement this feature.
 
-| Property                                                                                   | Support   | Notes
-| ------------------------------------------------------------------------------------------ |:---------:| -----
+| Property                                                                                   | Support
+| ------------------------------------------------------------------------------------------ |:---------:
 | `DistributedTransactionProtocol`                                                           | X
 | `Enlist`                                                                                   | X
 | `TightlyCoupledTransaction`                                                                | X

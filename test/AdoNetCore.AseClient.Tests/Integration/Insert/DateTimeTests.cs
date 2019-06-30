@@ -25,6 +25,11 @@ namespace AdoNetCore.AseClient.Tests.Integration.Insert
         {
             using (var connection = GetConnection())
             {
+                connection.Execute(
+@"if exists(select 1 FROM sysobjects where id = object_id('[dbo].[insert_datetime_tests]'))
+begin
+drop table [dbo].[insert_datetime_tests]
+end");
                 connection.Execute("create table [dbo].[insert_datetime_tests] (datetime_field datetime null)");
             }
         }

@@ -133,7 +133,6 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 
 | Property                                                                                   | Support   | Notes
 | ------------------------------------------------------------------------------------------ |:---------:| -----
-| `AlternateServers`                                                                         | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
 | `AnsiNull`                                                                                 | &#10003; | By default (0) AnsiNull is disabled which means that SQL statements can use `= NULL` and `IS NULL` syntax. Set to 1 to instruct the connection to only permit `IS NULL` syntax.
 | `ApplicationName` or `Application Name`                                                    | &#10003;
 | `BufferCacheSize`                                                                          | TODO
@@ -146,15 +145,11 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `CumulativeRecordCount`                                                                    | TODO
 | `Database` or `Db` or `Initial Catalog`                                                    | &#10003;
 | `Data Source` or `DataSource` or `Address` or `Addr` or `Network Address` or `Server Name` | &#10003;
-| `DistributedTransactionProtocol`                                                           | X
 | `DSURL` or `Directory Service URL`                                                         | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
 | `EnableBulkLoad`                                                                           | X
 | `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
-| `Encryption`                                                                               | X
+| `Encryption`                                                                               | TODO | Refer to issue [#98](https://github.com/DataAction/AdoNetCore.AseClient/issues/98)
 | `EncryptPassword`                                                                          | &#10003; | Values 0 (disabled) and 1 (enabled) are supported. The highest encryption standard of the ASE 15.x and 16x servers is implemented.
-| `Enlist`                                                                                   | X
-| `FetchArraySize`                                                                           | TODO
-| `HASession`                                                                                | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
 | `LoginTimeOut` or `Connect Timeout` or `Connection Timeout`                                | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
 | `Max Pool Size`                                                                            | &#10003;
 | `Min Pool Size`                                                                            | &#10003; | <ul><li>The pool will attempt to prime itself on creation up to this size (in a thread)</li><li>When a connection is killed, the pool will attempt to replace it if the pool size is less than Min</li></ul>
@@ -164,14 +159,37 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Port` or `Server Port`                                                                    | &#10003;
 | `Pwd` or `Password`                                                                        | &#10003;
 | `RestrictMaximum PacketSize`                                                               | TODO | May not be supported any more by capability bits
-| `Secondary Data Source`                                                                    | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
-| `Secondary Server Port`                                                                    | TODO | Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
 | `TextSize`                                                                                 | &#10003;
-| `TightlyCoupledTransaction`                                                                | X
-| `TrustedFile`                                                                              | X
+| `TrustedFile`                                                                              | TODO | Refer to issue [#98](https://github.com/DataAction/AdoNetCore.AseClient/issues/98)
 | `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;
 | `UseAseDecimal`                                                                            | &#10003;
+
+### High Availability/Disaster Recovery (HA/DR)
+Although we plan to add HA/DR support in future, there is no support in the data provider presently. Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
+
+As such the following connection string properties are not implemented:
+| Property                                                                                   | Support   | Notes
+| ------------------------------------------------------------------------------------------ |:---------:| -----
+| `AlternateServers`                                                                         | TODO | A comma-separated list of alternative servers to connect when opening a connection. Format: server:port[,server:port/*...*/,server:port].
+| `HASession`                                                                                | TODO | When set to 1 this means we need to operate in a mode which supports failover.
+| `Secondary Data Source`                                                                    | TODO | Alternative way to specfy an alternative server:port.
+| `Secondary Server Port`                                                                    | TODO | Alternative way to specfy an alternative server:port.
+
+### Cursors
+ADO.NET doesn't have first-class cursor support, so this feature doesn't appear to be relevant. It's possible that AseClient supported this as a hangover from ADO.
+| Property                                                                                   | Support   | Notes
+| ------------------------------------------------------------------------------------------ |:---------:| -----
+| `FetchArraySize`                                                                           | X
 | `UseCursor`                                                                                | X
+
+### Distributed Transactions
+Although supported by .NET Framework, .NET Core does not support distributed transactions. As such, there are no plans to implement this feature.
+
+| Property                                                                                   | Support   | Notes
+| ------------------------------------------------------------------------------------------ |:---------:| -----
+| `DistributedTransactionProtocol`                                                           | X
+| `Enlist`                                                                                   | X
+| `TightlyCoupledTransaction`                                                                | X
 
 ## Supported types
 ### Types supported when sending requests to the database

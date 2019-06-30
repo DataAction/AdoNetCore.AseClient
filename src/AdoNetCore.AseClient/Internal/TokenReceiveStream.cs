@@ -21,6 +21,12 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         private readonly DbEnvironment _environment;
 
+#if ENABLE_ARRAY_POOL
+        /// <summary>
+        /// The <see cref="System.Buffers.ArrayPool{T}"/> to use for efficient buffer allocation.
+        /// </summary>
+        private readonly System.Buffers.ArrayPool<byte> _arrayPool;
+#endif
         /// <summary>
         /// Whether or not this has been disposed.
         /// </summary>
@@ -69,16 +75,27 @@ namespace AdoNetCore.AseClient.Internal
         private readonly Stream _innerStream;
 
         /// <summary>
-        /// Constructor function for a <see cref="TokenReceiveStream"/> instance.
+        /// The length of the <see cref="_headerReadBuffer"/>.
         /// </summary>
-        /// <param name="innerStream">The stream being decorated.</param>
-        /// <param name="environment">The environment settings.</param>
+        private readonly int _headerReadBufferLength;
+
+#if ENABLE_ARRAY_POOL
+        public TokenReceiveStream(Stream innerStream, DbEnvironment environment, System.Buffers.ArrayPool<byte> arrayPool)
+#else
         public TokenReceiveStream(Stream innerStream, DbEnvironment environment)
+#endif
         {
             _innerStream = innerStream;
             _environment = environment;
-            _headerReadBuffer = new byte[_environment.HeaderSize];
-            _bodyReadBuffer = new byte[_environment.PacketSize - environment.HeaderSize];
+            _headerReadBufferLength = environment.HeaderSize;
+#if ENABLE_ARRAY_POOL
+            _arrayPool = arrayPool;
+            _headerReadBuffer = arrayPool.Rent(_headerReadBufferLength);
+            _bodyReadBuffer = arrayPool.Rent(_environment.PacketSize - _headerReadBufferLength);
+#else
+            _headerReadBuffer = new byte[_headerReadBufferLength];
+            _bodyReadBuffer = new byte[_environment.PacketSize - _headerReadBufferLength];
+#endif
             _bodyReadBufferPosition = 0;
             _bodyReadBufferLength = 0;
             IsCancelled = false;
@@ -89,27 +106,27 @@ namespace AdoNetCore.AseClient.Internal
 
         public override void Flush()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override bool CanRead => true;
         public override bool CanSeek => false;
         public override bool CanWrite => false;
-        public override long Length => throw new NotImplementedException();
+        public override long Length => throw new NotSupportedException();
         public override long Position
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
         }
 
         public override int ReadByte()
@@ -165,7 +182,7 @@ namespace AdoNetCore.AseClient.Internal
             // If we need more data, let's read it from the network until the buffer is full.
             while (bytesWrittenToBuffer < count && _innerStreamHasBytes)
             {
-                BufferBytes(_headerReadBuffer, 0, _environment.HeaderSize);
+                BufferBytes(_headerReadBuffer, 0, _headerReadBufferLength);
 
                 var bufferStatus = (BufferStatus)_headerReadBuffer[1];
 
@@ -206,7 +223,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             while (_innerStreamHasBytes)
             {
-                BufferBytes(_headerReadBuffer, 0, _environment.HeaderSize);
+                BufferBytes(_headerReadBuffer, 0, _headerReadBufferLength);
 
                 var bufferStatus = (BufferStatus) _headerReadBuffer[1];
 
@@ -232,7 +249,7 @@ namespace AdoNetCore.AseClient.Internal
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         protected override void Dispose(bool disposing)
@@ -246,6 +263,10 @@ namespace AdoNetCore.AseClient.Internal
                     _innerStream.Dispose();
 
                     BurnPackets(); // Considering the case where the socket lives longer than the stream, and the stream is disposed without reading all of the data.
+#if ENABLE_ARRAY_POOL
+                    _arrayPool.Return(_bodyReadBuffer, true);
+                    _arrayPool.Return(_headerReadBuffer, true);
+#endif
                 }
             }
 

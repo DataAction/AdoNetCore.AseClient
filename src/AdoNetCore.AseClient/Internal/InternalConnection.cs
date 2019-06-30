@@ -26,6 +26,12 @@ namespace AdoNetCore.AseClient.Internal
         private readonly object _sendMutex;
         private bool _statisticsEnabled;
 
+#if ENABLE_ARRAY_POOL
+        /// <summary>
+        /// The <see cref="System.Buffers.ArrayPool{T}"/> to use for efficient buffer allocation.
+        /// </summary>
+        private readonly System.Buffers.ArrayPool<byte> _arrayPool;
+#endif
         private enum InternalConnectionState
         {
             // ReSharper disable InconsistentNaming
@@ -72,7 +78,11 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+#if ENABLE_ARRAY_POOL
+        public InternalConnection(IConnectionParameters parameters, Stream networkStream, ITokenReader reader, DbEnvironment environment, System.Buffers.ArrayPool<byte> arrayPool)
+#else
         public InternalConnection(IConnectionParameters parameters, Stream networkStream, ITokenReader reader, DbEnvironment environment)
+#endif
         {
             _parameters = parameters;
             _networkStream = networkStream;
@@ -81,6 +91,9 @@ namespace AdoNetCore.AseClient.Internal
             _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
             _environment.UseAseDecimal = parameters.UseAseDecimal;
             _sendMutex = new object();
+#if ENABLE_ARRAY_POOL
+            _arrayPool = arrayPool;
+#endif
         }
 
         private void SendPacket(IPacket packet)
@@ -91,7 +104,11 @@ namespace AdoNetCore.AseClient.Internal
             {
                 lock (_sendMutex)
                 {
+#if ENABLE_ARRAY_POOL
+                    using (var tokenStream = new TokenSendStream(_networkStream, _environment, _arrayPool))
+#else
                     using (var tokenStream = new TokenSendStream(_networkStream, _environment))
+#endif
                     {
                         // ReSharper disable once InconsistentlySynchronizedField
                         tokenStream.SetBufferType(packet.Type, packet.Status);
@@ -119,7 +136,11 @@ namespace AdoNetCore.AseClient.Internal
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
             try
             {
+#if ENABLE_ARRAY_POOL
+                using (var tokenStream = new TokenReceiveStream(_networkStream, _environment, _arrayPool))
+#else
                 using (var tokenStream = new TokenReceiveStream(_networkStream, _environment))
+#endif
                 {
                     foreach (var receivedToken in _reader.Read(tokenStream, _environment))
                     {

@@ -17,11 +17,22 @@ namespace AdoNetCore.AseClient.Internal
     internal class InternalConnectionFactory : IInternalConnectionFactory
     {
         private readonly IConnectionParameters _parameters;
+#if ENABLE_ARRAY_POOL
+        private readonly System.Buffers.ArrayPool<byte> _arrayPool;
+#endif
         private IPEndPoint _endpoint;
 
+#if ENABLE_ARRAY_POOL
+        public InternalConnectionFactory(IConnectionParameters parameters, System.Buffers.ArrayPool<byte> arrayPool)
+#else
         public InternalConnectionFactory(IConnectionParameters parameters)
+#endif
+
         {
             _parameters = parameters;
+#if ENABLE_ARRAY_POOL
+            _arrayPool = arrayPool;
+#endif
         }
 
         public Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
@@ -93,9 +104,6 @@ namespace AdoNetCore.AseClient.Internal
                     throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
                 }
 
-                var environment = new DbEnvironment();
-                var reader = new TokenReader();
-
                 networkStream = new NetworkStream(socket, true);
 
                 if (_parameters.Encryption)
@@ -115,9 +123,10 @@ namespace AdoNetCore.AseClient.Internal
                         throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}"); // TODO - what error should we raise for a TLS failure?
                     }
 
-                    return new InternalConnection(_parameters, sslStream, reader, environment);
+                    return CreateConnectionInternal(sslStream);
                 }
-                return new InternalConnection(_parameters, networkStream, reader, environment);
+
+                return CreateConnectionInternal(networkStream);
             }
             catch (OperationCanceledException)
             {
@@ -134,6 +143,18 @@ namespace AdoNetCore.AseClient.Internal
                 socket?.Dispose();
                 throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
             }
+        }
+
+        private InternalConnection CreateConnectionInternal(Stream networkStream)
+        {
+            var environment = new DbEnvironment();
+            var reader = new TokenReader();
+
+#if ENABLE_ARRAY_POOL
+            return new InternalConnection(_parameters, networkStream, reader, environment, _arrayPool);
+#else   
+                return new InternalConnection(_parameters, networkStream, reader, environment);
+#endif
         }
 
         private bool UserCertificateValidationCallback(object sender, X509Certificate serverCertificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)

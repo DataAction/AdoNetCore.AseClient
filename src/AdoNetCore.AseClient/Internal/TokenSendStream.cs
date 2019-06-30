@@ -14,12 +14,17 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         private readonly DbEnvironment _environment;
 
+#if ENABLE_ARRAY_POOL
+        /// <summary>
+        /// The <see cref="System.Buffers.ArrayPool{T}"/> to use for efficient buffer allocation.
+        /// </summary>
+        private readonly System.Buffers.ArrayPool<byte> _arrayPool;
+#endif
+
         /// <summary>
         /// Whether or not this has been disposed.
         /// </summary>
         private bool _isDisposed;
-
-        public bool IsCancelled { get; private set; }
 
         /// <summary>
         /// The stream decorated by this type. Data is ultimately read from and written to the inner stream.
@@ -44,18 +49,20 @@ namespace AdoNetCore.AseClient.Internal
         // Debug only.
         private readonly bool _hexDump = false;
 
-        /// <summary>
-        /// Constructor function for a <see cref="TokenSendStream"/> instance.
-        /// </summary>
-        /// <param name="innerStream">The stream being decorated.</param>
-        /// <param name="environment">The environment settings.</param>
+#if ENABLE_ARRAY_POOL
+        public TokenSendStream(Stream innerStream, DbEnvironment environment, System.Buffers.ArrayPool<byte> arrayPool)
+#else
         public TokenSendStream(Stream innerStream, DbEnvironment environment)
+#endif
         {
+
             _innerStream = innerStream;
             _innerWriteBufferStream = new MemoryStream();
             _environment = environment;
-            IsCancelled = false;
             _isDisposed = false;
+#if ENABLE_ARRAY_POOL
+            _arrayPool = arrayPool;
+#endif
         }
 
         public override void Flush()
@@ -63,45 +70,71 @@ namespace AdoNetCore.AseClient.Internal
             // Point at the start of the stream for reading.
             _innerWriteBufferStream.Seek(0, SeekOrigin.Begin);
 
+            var headerLength = _environment.HeaderSize;
+
             try
             {
                 if (_innerWriteBufferStream.Length == 0)
                 {
                     // Add an 8 byte header block for cancellation.
-                    var header = new byte[] { (byte)_writeBufferType, 0, 0, 0, 0, 0, 0, 0 };
+#if ENABLE_ARRAY_POOL
+                    byte[] header = _arrayPool.Rent(headerLength);
+#else
+                    byte[] header = new byte[headerLength];
+#endif
+                    try
+                    {
+                        // Set the header bytes to describe what is being transmitted
+                        header[0] = (byte)_writeBufferType;
+                        header[1] = (byte)(BufferStatus.TDS_BUFSTAT_EOM | _writeBufferStatus);
+                        header[2] = (byte)(header.Length >> 8);
+                        header[3] = (byte)header.Length;
 
-                    // Set the header bytes to describe what is being transmitted
-                    header[1] = (byte)(BufferStatus.TDS_BUFSTAT_EOM | _writeBufferStatus);
-                    header[2] = (byte)(header.Length >> 8);
-                    header[3] = (byte)header.Length;
+                        DumpBytes(header, header.Length);
 
-                    DumpBytes(header, header.Length);
-
-                    _innerStream.Write(header, 0, header.Length);
+                        _innerStream.Write(header, 0, headerLength);
+                    }
+                    finally
+                    {
+#if ENABLE_ARRAY_POOL
+                        _arrayPool.Return(header, true);
+#endif
+                    }
                 }
                 else
                 {
                     while (_innerWriteBufferStream.Position < _innerWriteBufferStream.Length)
                     {
                         //split into chunks and send over the wire
+#if ENABLE_ARRAY_POOL
+                        var buffer = _arrayPool.Rent(_environment.PacketSize);
+#else
                         var buffer = new byte[_environment.PacketSize];
+#endif
+                        try
+                        {
+                            // We will add an 8 byte header to each chunk, so leave some space.
+                            // Write the body block into the remaining space.
+                            var bodyLength = _innerWriteBufferStream.Read(buffer, headerLength, buffer.Length - headerLength);
 
-                        // Add an 8 byte header block to each chunk.
-                        var header = new byte[] { (byte)_writeBufferType, 0, 0, 0, 0, 0, 0, 0 };
-                        Buffer.BlockCopy(header, 0, buffer, 0, header.Length);
+                            // Set the header bytes to describe what is being transmitted
+                            var chunkLength = headerLength + bodyLength;
+                            buffer[0] = (byte)_writeBufferType;
+                            buffer[1] = (byte)((_innerWriteBufferStream.Position >= _innerWriteBufferStream.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE) | _writeBufferStatus);
+                            buffer[2] = (byte)(chunkLength >> 8);
+                            buffer[3] = (byte)chunkLength;
 
-                        // Write the body block into the remaining space.
-                        var bodyLength = _innerWriteBufferStream.Read(buffer, header.Length, buffer.Length - header.Length);
+                            DumpBytes(buffer, chunkLength);
 
-                        // Set the header bytes to describe what is being transmitted
-                        var chunkLength = header.Length + bodyLength;
-                        buffer[1] = (byte)((_innerWriteBufferStream.Position >= _innerWriteBufferStream.Length ? BufferStatus.TDS_BUFSTAT_EOM : BufferStatus.TDS_BUFSTAT_NONE) | _writeBufferStatus);
-                        buffer[2] = (byte)(chunkLength >> 8);
-                        buffer[3] = (byte)chunkLength;
-
-                        DumpBytes(buffer, chunkLength);
-
-                        _innerStream.Write(buffer, 0, chunkLength);
+                            _innerStream.Write(buffer, 0, chunkLength);
+                        }
+                        finally
+                        {
+#if ENABLE_ARRAY_POOL
+                            _arrayPool.Return(buffer, true);
+#endif
+                        }
+                        
                     }
                 }
             }
@@ -115,12 +148,12 @@ namespace AdoNetCore.AseClient.Internal
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void SetLength(long value)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         /// <summary>
@@ -137,16 +170,16 @@ namespace AdoNetCore.AseClient.Internal
         public override bool CanRead => false;
         public override bool CanSeek => false;
         public override bool CanWrite => true;
-        public override long Length => throw new NotImplementedException();
+        public override long Length => throw new NotSupportedException();
         public override long Position
         {
-            get => throw new NotImplementedException();
-            set => throw new NotImplementedException();
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void Write(byte[] buffer, int offset, int count)

@@ -168,6 +168,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 Although we plan to add HA/DR support in future, there is no support in the data provider presently. Refer to issue [#64](https://github.com/DataAction/AdoNetCore.AseClient/issues/64)
 
 As such the following connection string properties are not implemented:
+
 | Property                                                                                   | Support   | Notes
 | ------------------------------------------------------------------------------------------ |:---------:| -----
 | `AlternateServers`                                                                         | TODO | A comma-separated list of alternative servers to connect when opening a connection. Format: server:port[,server:port/*...*/,server:port].
@@ -177,6 +178,7 @@ As such the following connection string properties are not implemented:
 
 ### Cursors
 ADO.NET doesn't have first-class cursor support, so this feature doesn't appear to be relevant. It's possible that AseClient supported this as a hangover from ADO.
+
 | Property                                                                                   | Support   | Notes
 | ------------------------------------------------------------------------------------------ |:---------:| -----
 | `FetchArraySize`                                                                           | X

@@ -55,7 +55,6 @@ namespace AdoNetCore.AseClient.Internal
         public TokenSendStream(Stream innerStream, DbEnvironment environment)
 #endif
         {
-
             _innerStream = innerStream;
             _innerWriteBufferStream = new MemoryStream();
             _environment = environment;
@@ -77,13 +76,14 @@ namespace AdoNetCore.AseClient.Internal
                 if (_innerWriteBufferStream.Length == 0)
                 {
                     // Add an 8 byte header block for cancellation.
-#if ENABLE_ARRAY_POOL
-                    byte[] header = _arrayPool.Rent(headerLength);
-#else
+#if !ENABLE_ARRAY_POOL
                     byte[] header = new byte[headerLength];
-#endif
+#else
+                    byte[] header = _arrayPool.Rent(headerLength); 
+
                     try
                     {
+#endif
                         // Set the header bytes to describe what is being transmitted
                         header[0] = (byte)_writeBufferType;
                         header[1] = (byte)(BufferStatus.TDS_BUFSTAT_EOM | _writeBufferStatus);
@@ -93,26 +93,27 @@ namespace AdoNetCore.AseClient.Internal
                         DumpBytes(header, header.Length);
 
                         _innerStream.Write(header, 0, headerLength);
+#if ENABLE_ARRAY_POOL
                     }
                     finally
                     {
-#if ENABLE_ARRAY_POOL
                         _arrayPool.Return(header, true);
-#endif
                     }
+#endif
                 }
                 else
                 {
                     while (_innerWriteBufferStream.Position < _innerWriteBufferStream.Length)
                     {
                         //split into chunks and send over the wire
-#if ENABLE_ARRAY_POOL
-                        var buffer = _arrayPool.Rent(_environment.PacketSize);
-#else
+#if !ENABLE_ARRAY_POOL
                         var buffer = new byte[_environment.PacketSize];
-#endif
+#else
+                        var buffer = _arrayPool.Rent(_environment.PacketSize);
+
                         try
                         {
+#endif
                             // We will add an 8 byte header to each chunk, so leave some space.
                             // Write the body block into the remaining space.
                             var bodyLength = _innerWriteBufferStream.Read(buffer, headerLength, buffer.Length - headerLength);
@@ -127,14 +128,13 @@ namespace AdoNetCore.AseClient.Internal
                             DumpBytes(buffer, chunkLength);
 
                             _innerStream.Write(buffer, 0, chunkLength);
+#if ENABLE_ARRAY_POOL
                         }
                         finally
                         {
-#if ENABLE_ARRAY_POOL
                             _arrayPool.Return(buffer, true);
-#endif
                         }
-                        
+#endif
                     }
                 }
             }

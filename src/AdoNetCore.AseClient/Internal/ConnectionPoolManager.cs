@@ -16,8 +16,6 @@ namespace AdoNetCore.AseClient.Internal
 
         public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters, IInfoMessageEventNotifier eventNotifier)
         {
-
-
             return Pools.GetOrAdd(connectionString, _ =>
             {
 #if ENABLE_ARRAY_POOL

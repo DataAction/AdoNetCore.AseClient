@@ -27,7 +27,6 @@ namespace AdoNetCore.AseClient.Internal
 #else
         public InternalConnectionFactory(IConnectionParameters parameters)
 #endif
-
         {
             _parameters = parameters;
 #if ENABLE_ARRAY_POOL

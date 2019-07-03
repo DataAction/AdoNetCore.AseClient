@@ -121,11 +121,11 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | ------------------------------------------------------------------------------------------ |:---------:| -----
 | `AnsiNull`                                                                                 | &#10003; | By default (0) AnsiNull is disabled which means that SQL statements can use `= NULL` and `IS NULL` syntax. Set to 1 to instruct the connection to only permit `IS NULL` syntax.
 | `ApplicationName` or `Application Name`                                                    | &#10003;
-| `BufferCacheSize`                                                                          | TODO
+| `BufferCacheSize`                                                                          | &#10003; | Buffer caching is automatically managed via an internal [ArrayPool<T>](https://docs.microsoft.com/en-us/dotnet/api/system.buffers.arraypool-1.create?view=netstandard-2.1). Setting this value in the connection string does nothing, but the behaviour is supported.
 | `Charset`                                                                                  | &#10003; | If not specified, the server should dictate the character set
 | `ClientHostName`                                                                           | &#10003;
 | `ClientHostProc`                                                                           | &#10003;
-| `CodePageType`                                                                             | TODO
+| `CodePageType`                                                                             | &#10005; | This doesn't appear to be relevant any more. You can specify the `Charset` without reference to a code page type, or allow the server to set the `Charset` which is the default behaviour.
 | `Connection Lifetime` or `ConnectionLifetime`                                              | &#10003;
 | `ConnectionIdleTimeout` or `Connection IdleTimeout` or `Connection Idle Timeout`           | &#10003;
 | `CumulativeRecordCount`                                                                    | TODO

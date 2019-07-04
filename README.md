@@ -143,7 +143,6 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Pooling`                                                                                  | &#10003;
 | `Port` or `Server Port`                                                                    | &#10003;
 | `Pwd` or `Password`                                                                        | &#10003;
-| `RestrictMaximum PacketSize`                                                               | &#10003;
 | `TextSize`                                                                                 | &#10003;
 | `TrustedFile`                                                                              | TODO | Refer to issue [#98](https://github.com/DataAction/AdoNetCore.AseClient/issues/98)
 | `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;

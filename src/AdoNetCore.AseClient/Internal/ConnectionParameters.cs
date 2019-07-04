@@ -283,7 +283,6 @@ namespace AdoNetCore.AseClient.Internal
                 result.EnableServerPacketSize = boolValue;
             }
         }
-        
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private static void ValidateConnectionParameters(ConnectionParameters result)

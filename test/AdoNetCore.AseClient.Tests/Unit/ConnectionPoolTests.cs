@@ -252,6 +252,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public bool UseAseDecimal { get; } = false;
             public bool EncryptPassword { get; } = false;
             public bool AnsiNull { get; } = false;
+            public bool EnableServerPacketSize { get; } = true;
         }
     }
 }

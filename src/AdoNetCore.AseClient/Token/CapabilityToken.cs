@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
@@ -9,6 +9,14 @@ namespace AdoNetCore.AseClient.Token
     {
         //todo: create fields to represent capabilities
         public TokenType Type => TokenType.TDS_CAPABILITY;
+
+        public CapabilityToken(bool enableServerPacketSize = true)
+        {
+            if (!enableServerPacketSize)
+            {
+                _capabilityBytes[6] &= 0b_0111_1111; // Clear the most significant bit - REQ_SRVPKTSIZE.
+            }
+        }
 
         public void Write(Stream stream, DbEnvironment env)
         {

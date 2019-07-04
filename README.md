@@ -132,7 +132,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Database` or `Db` or `Initial Catalog`                                                    | &#10003;
 | `Data Source` or `DataSource` or `Address` or `Addr` or `Network Address` or `Server Name` | &#10003;
 | `DSURL` or `Directory Service URL`                                                         | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
-| `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
+| `EnableServerPacketSize`                                                                   | &#10003;
 | `Encryption`                                                                               | TODO | Refer to issue [#98](https://github.com/DataAction/AdoNetCore.AseClient/issues/98)
 | `EncryptPassword`                                                                          | &#10003; | Values 0 (disabled) and 1 (enabled) are supported. The highest encryption standard of the ASE 15.x and 16x servers is implemented.
 | `LoginTimeOut` or `Connect Timeout` or `Connection Timeout`                                | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
@@ -143,7 +143,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Pooling`                                                                                  | &#10003;
 | `Port` or `Server Port`                                                                    | &#10003;
 | `Pwd` or `Password`                                                                        | &#10003;
-| `RestrictMaximum PacketSize`                                                               | TODO | May not be supported any more by capability bits
+| `RestrictMaximum PacketSize`                                                               | &#10003;
 | `TextSize`                                                                                 | &#10003;
 | `TrustedFile`                                                                              | TODO | Refer to issue [#98](https://github.com/DataAction/AdoNetCore.AseClient/issues/98)
 | `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;

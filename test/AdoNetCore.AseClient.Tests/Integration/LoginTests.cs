@@ -104,5 +104,17 @@ namespace AdoNetCore.AseClient.Tests.Integration
             yield return new TestCaseData(100, 1000, ConnectionStrings.Pooled100);
             yield return new TestCaseData(100, 10000, ConnectionStrings.Pooled100);
         }
+
+        [Test]
+        public void Login_EnableServerPacketSizeDisabled_Success()
+        {
+            using (var connection = GetConnection(ConnectionStrings.EnableServerPacketSize))
+            {
+                if (typeof(T) == typeof(CoreFxConnectionProvider))
+                {
+                    connection.Open();
+                }
+            }
+        }
     }
 }

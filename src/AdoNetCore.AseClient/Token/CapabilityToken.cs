@@ -6,15 +6,15 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient.Token
 {
-    internal class CapabilityToken : IToken
+    internal class ClientCapabilityToken : IToken
     {
         public TokenType Type => TokenType.TDS_CAPABILITY;
 
         private readonly byte[] _capabilityBytes;
 
-        public CapabilityToken(bool enableServerPacketSize = true)
+        public ClientCapabilityToken(bool enableServerPacketSize = true)
         {
-            var enableServerPacketSizeBit = enableServerPacketSize ? Byte6.REQ_SRVPKTSIZE : Byte6.None;
+            var packetSizeRequestBit = enableServerPacketSize ? Byte6.REQ_SRVPKTSIZE : Byte6.None;
 
             _capabilityBytes =  new[] {
                 //cap request
@@ -24,7 +24,7 @@ namespace AdoNetCore.AseClient.Token
                 ((byte)(Byte3.REQ_LOGPARAMS | Byte3.REQ_ROWCOUNT_FOR_SELECT | Byte3.DATA_LOBLOCATOR/*| Byte3.REQ_RPC_BATCH*/| Byte3.REQ_LANG_BATCH | Byte3.REQ_DYN_BATCH | Byte3.REQ_GRID | Byte3.REQ_INSTID)),
                 ((byte)(Byte4.RPCPARAM_LOB | Byte4.DATA_USECS | Byte4.DATA_BIGDATETIME | Byte4.REQ_UNUSED4 | Byte4.REQ_UNUSED5 | Byte4.MULTI_REQUESTS | Byte4.REQ_MIGRATE | Byte4.REQ_UNUSED8)),
                 ((byte)(/*Byte5.REQ_DBRPC2 | */Byte5.REQ_CURINFO3 | Byte5.DATA_XML/* | Byte5.REQ_BLOB_NCHAR_16*/ | Byte5.REQ_LARGEIDENT/* | Byte5.DATA_SINT1 | Byte5.CAP_CLUSTERFAILOVER*/ | Byte5.DATA_UNITEXT)),
-                ((byte)(enableServerPacketSizeBit/* | Byte6.CSR_KEYSETDRIVEN*/ | Byte6.CSR_SEMISENSITIVE | Byte6.CSR_INSENSITIVE/* | Byte6.CSR_SENSITIVE*/ | Byte6.CSR_SCROLL | Byte6.DATA_INTERVAL | Byte6.DATA_TIME)),
+                ((byte)(packetSizeRequestBit/* | Byte6.CSR_KEYSETDRIVEN*/ | Byte6.CSR_SEMISENSITIVE | Byte6.CSR_INSENSITIVE/* | Byte6.CSR_SENSITIVE*/ | Byte6.CSR_SCROLL | Byte6.DATA_INTERVAL | Byte6.DATA_TIME)),
                 ((byte)(Byte7.DATA_DATE | Byte7.BLOB_NCHAR_SCSU | Byte7.BLOB_NCHAR_8 | Byte7.BLOB_NCHAR_16 | Byte7.IMAGE_NCHAR | Byte7.DATA_NLBIN/* | Byte7.CUR_IMPLICIT*/ | Byte7.DATA_UINTN)),
                 ((byte)(Byte8.DATA_UINT8 | Byte8.DATA_UINT4 | Byte8.DATA_UINT2 | Byte8.REQ_RESERVED2 | Byte8.WIDETABLE | Byte8.DATA_COLUMNSTATUS | Byte8.OBJECT_BINARY | Byte8.REQ_RESERVED1)),
                 ((byte)(Byte9.OBJECT_CHAR/* | Byte9.OBJECT_JAVA1*/ | Byte9.DOL_BULK/* | Byte9.DATA_VOID*/ | Byte9.DATA_INT8 | Byte9.DATA_BITN | Byte9.DATA_FLTN | Byte9.PROTO_DYNPROC)),
@@ -65,16 +65,7 @@ namespace AdoNetCore.AseClient.Token
 
         public void Read(Stream stream, DbEnvironment env, IFormatToken previous)
         {
-            var remainingLength = stream.ReadUShort();
-            var capabilityBytes = new byte[remainingLength];
-            stream.Read(capabilityBytes, 0, remainingLength);
-        }
-
-        public static CapabilityToken Create(Stream stream, DbEnvironment env, IFormatToken previous)
-        {
-            var t = new CapabilityToken();
-            t.Read(stream, env, previous);
-            return t;
+            throw new NotSupportedException();
         }
 
         // ReSharper disable UnusedMember.Local
@@ -362,7 +353,7 @@ namespace AdoNetCore.AseClient.Token
             RES_NOXNLDATA = 0b0010_0000,
             NONINT_RETURN_VALUE = 0b0001_0000,
             RES_NODATA_XML = 0b0000_1000,
-            NO_SRVPKTSIZE = 0b0000_0100,
+            NO_SRVPKTSIZE = 0b0000_0100, // You would think this tells the server not to respond with TDS_ENV_PACKSIZE tokens, but it doesn't seem to.
             RES_NOBLOB_NCHAR_16 = 0b0000_0010,
             RES_NOLARGEIDENT = 0b0000_0001
         }

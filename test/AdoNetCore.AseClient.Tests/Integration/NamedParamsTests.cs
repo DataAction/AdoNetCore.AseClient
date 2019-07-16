@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -139,14 +140,63 @@ END";
                     Assert.IsFalse(command.NamedParameters);
                     
                     command.CommandType = CommandType.Text;
-                    command.AseParameters.Add(0, "syscolumns");
-                    command.CommandText = "SELECT TOP 1 Name FROM sysobjects WHERE Name = ?";
+                    command.AseParameters.Add(new AseParameter { Value = "syscolumns" } );
+                    command.CommandText = "SELECT TOP 1 name FROM sysobjects WHERE name = ?";
 
                     var result = command.ExecuteScalar();
 
                     Assert.AreEqual("syscolumns", result);
                 }
             }
+        }
+
+        [Test]
+        public void ExecuteQuery_WithNamedParametersTrue_ReturnsParameterValues2()
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                Assert.IsTrue(connection.NamedParameters);
+
+                using (var command = connection.CreateCommand())
+                {
+                    Assert.IsTrue(command.NamedParameters);
+                    
+                    command.CommandType = CommandType.Text;
+                    command.AseParameters.Add("@objectName", "syscolumns");
+                    command.CommandText = "SELECT TOP 1 name FROM sysobjects WHERE name = @objectName";
+
+                    var result = command.ExecuteScalar();
+
+                    Assert.AreEqual("syscolumns", result);
+                }
+            }
+        }
+
+        [TestCase("SELECT 1 FROM myTable WHERE myColumn = ?", "SELECT 1 FROM myTable WHERE myColumn = @p0")]
+        [TestCase("SELECT 1 FROM myTable WHERE myColumn=?", "SELECT 1 FROM myTable WHERE myColumn=@p0")]
+        [TestCase("SELECT 1, [some column ?] FROM myTable WHERE myColumn = ?", "SELECT 1, [some column ?] FROM myTable WHERE myColumn = @p0")]
+        [TestCase(@"SELECT 1, ""What is going on ?"" FROM myTable WHERE myColumn = ?", @"SELECT 1, ""What is going on ?"" FROM myTable WHERE myColumn = @p0")]
+        [TestCase("SELECT 1, 'What is going on ?' FROM myTable WHERE myColumn = ?", @"SELECT 1,'What is going on ?' FROM myTable WHERE myColumn = @p0")]
+        public void TestReplacement(string input, string expected)
+        {
+            // Match a literal question mark if preceded by a comparison operator.
+            // BUG - this matches the operator and the whitespace.
+            var regex = new System.Text.RegularExpressions.Regex(
+                @"(?:>=|<=|<>|!=|!>|!<|[^><!]=|[^<!]>|[^!]<)\s*([?])",
+                RegexOptions.Compiled | RegexOptions.Multiline);
+
+            int i = 0;
+
+            MatchEvaluator evaluator = delegate(Match match)
+            {
+                return $"@p{i++}";
+            };
+
+            var actual = regex.Replace(input, evaluator);
+
+            Assert.AreEqual(expected, actual);
         }
     }
 }

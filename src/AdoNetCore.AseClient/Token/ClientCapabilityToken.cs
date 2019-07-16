@@ -14,44 +14,44 @@ namespace AdoNetCore.AseClient.Token
 
         public ClientCapabilityToken(bool enableServerPacketSize = true)
         {
-            var packetSizeRequestBit = enableServerPacketSize ? Byte6.REQ_SRVPKTSIZE : Byte6.None;
+            var packetSizeRequestBit = enableServerPacketSize ? Request4.REQ_SRVPKTSIZE : Request4.None;
 
             _capabilityBytes =  new[] {
                 //cap request
-                ((byte)Byte0.Unknown),
-                ((byte)Byte1.Unknown),
-                ((byte)(/*Byte2.REQ_UNUSED1 | Byte2.REQ_UNUSED2 | Byte2.REQ_UNUSED3 | Byte2.REQ_UNUSED4 | Byte2.REQ_UNUSED5 | Byte2.REQ_COMMAND_ENCRYPTION | Byte2.REQ_READONLY |*/ Byte2.REQ_DYNAMIC_SUPPRESS_PARAMFMT)),
-                ((byte)(Byte3.REQ_LOGPARAMS | Byte3.REQ_ROWCOUNT_FOR_SELECT | Byte3.DATA_LOBLOCATOR/*| Byte3.REQ_RPC_BATCH*/| Byte3.REQ_LANG_BATCH | Byte3.REQ_DYN_BATCH | Byte3.REQ_GRID | Byte3.REQ_INSTID)),
-                ((byte)(Byte4.RPCPARAM_LOB | Byte4.DATA_USECS | Byte4.DATA_BIGDATETIME | Byte4.REQ_UNUSED4 | Byte4.REQ_UNUSED5 | Byte4.MULTI_REQUESTS | Byte4.REQ_MIGRATE | Byte4.REQ_UNUSED8)),
-                ((byte)(/*Byte5.REQ_DBRPC2 | */Byte5.REQ_CURINFO3 | Byte5.DATA_XML/* | Byte5.REQ_BLOB_NCHAR_16*/ | Byte5.REQ_LARGEIDENT/* | Byte5.DATA_SINT1 | Byte5.CAP_CLUSTERFAILOVER*/ | Byte5.DATA_UNITEXT)),
-                ((byte)(packetSizeRequestBit/* | Byte6.CSR_KEYSETDRIVEN*/ | Byte6.CSR_SEMISENSITIVE | Byte6.CSR_INSENSITIVE/* | Byte6.CSR_SENSITIVE*/ | Byte6.CSR_SCROLL | Byte6.DATA_INTERVAL | Byte6.DATA_TIME)),
-                ((byte)(Byte7.DATA_DATE | Byte7.BLOB_NCHAR_SCSU | Byte7.BLOB_NCHAR_8 | Byte7.BLOB_NCHAR_16 | Byte7.IMAGE_NCHAR | Byte7.DATA_NLBIN/* | Byte7.CUR_IMPLICIT*/ | Byte7.DATA_UINTN)),
-                ((byte)(Byte8.DATA_UINT8 | Byte8.DATA_UINT4 | Byte8.DATA_UINT2 | Byte8.REQ_RESERVED2 | Byte8.WIDETABLE | Byte8.DATA_COLUMNSTATUS | Byte8.OBJECT_BINARY | Byte8.REQ_RESERVED1)),
-                ((byte)(Byte9.OBJECT_CHAR/* | Byte9.OBJECT_JAVA1*/ | Byte9.DOL_BULK/* | Byte9.DATA_VOID*/ | Byte9.DATA_INT8 | Byte9.DATA_BITN | Byte9.DATA_FLTN | Byte9.PROTO_DYNPROC)),
-                ((byte)(/*Byte10.PROTO_DYNAMIC | */Byte10.DATA_BOUNDARY | Byte10.DATA_SENSITIVITY/* | Byte10.REQ_URGEVT | Byte10.PROTO_BULK*/ | Byte10.PROTO_TEXT/* | Byte10.CON_LOGICAL*/ | Byte10.CON_INBAND)),
-                ((byte)(/*Byte11.CON_OOB | */Byte11.CSR_MULTI/* | Byte11.CSR_REL | Byte11.CSR_ABS | Byte11.CSR_LAST | Byte11.CSR_FIRST | Byte11.CSR_PREV*/ | Byte11.DATA_MONEYN)),
-                ((byte)(Byte12.DATA_DATETIMEN | Byte12.DATA_INTN | Byte12.DATA_LBIN | Byte12.DATA_LCHAR | Byte12.DATA_DEC | Byte12.DATA_IMAGE | Byte12.DATA_TEXT | Byte12.DATA_NUM)),
-                ((byte)(Byte13.DATA_FLT8 | Byte13.DATA_FLT4 | Byte13.DATA_DATE4 | Byte13.DATA_DATE8 | Byte13.DATA_MNY4 | Byte13.DATA_MNY8 | Byte13.DATA_VBIN | Byte13.DATA_BIN)),
-                ((byte)(Byte14.DATA_VCHAR | Byte14.DATA_CHAR | Byte14.DATA_BIT | Byte14.DATA_INT4 | Byte14.DATA_INT2 | Byte14.DATA_INT1 | Byte14.REQ_PARAM | Byte14.REQ_MSG)),
-                ((byte)(Byte15.REQ_DYNF | Byte15.REQ_CURSOR/* | Byte15.REQ_BCP*/ | Byte15.REQ_MSTMT/* | Byte15.REQ_EVT*/ | Byte15.REQ_RPC | Byte15.REQ_LANG/* | Byte15.NONE*/)),
+                ((byte)TDS_CAPABILITY_TYPE.TDS_CAP_REQUEST),
+                ((byte)14), // Request capability bits length
+                ((byte)(/*Request0.REQ_UNUSED1 | Request0.REQ_UNUSED2 | Request0.REQ_UNUSED3 | Request0.REQ_UNUSED4 | Request0.REQ_UNUSED5 | Request0.REQ_COMMAND_ENCRYPTION | Request0.REQ_READONLY |*/ Request0.REQ_DYNAMIC_SUPPRESS_PARAMFMT)),
+                ((byte)(Request1.REQ_LOGPARAMS | Request1.REQ_ROWCOUNT_FOR_SELECT | Request1.DATA_LOBLOCATOR/*| Request1.REQ_RPC_BATCH*/| Request1.REQ_LANG_BATCH | Request1.REQ_DYN_BATCH | Request1.REQ_GRID | Request1.REQ_INSTID)),
+                ((byte)(Request2.RPCPARAM_LOB | Request2.DATA_USECS | Request2.DATA_BIGDATETIME | Request2.REQ_UNUSED4 | Request2.REQ_UNUSED5 | Request2.MULTI_REQUESTS | Request2.REQ_MIGRATE | Request2.REQ_UNUSED8)),
+                ((byte)(/*Request3.REQ_DBRPC2 | */Request3.REQ_CURINFO3 | Request3.DATA_XML/* | Request3.REQ_BLOB_NCHAR_16*/ | Request3.REQ_LARGEIDENT/* | Request3.DATA_SINT1 | Request3.CAP_CLUSTERFAILOVER*/ | Request3.DATA_UNITEXT)),
+                ((byte)(packetSizeRequestBit/* | Request4.CSR_KEYSETDRIVEN*/ | Request4.CSR_SEMISENSITIVE | Request4.CSR_INSENSITIVE/* | Request4.CSR_SENSITIVE*/ | Request4.CSR_SCROLL | Request4.DATA_INTERVAL | Request4.DATA_TIME)),
+                ((byte)(Request5.DATA_DATE | Request5.BLOB_NCHAR_SCSU | Request5.BLOB_NCHAR_8 | Request5.BLOB_NCHAR_16 | Request5.IMAGE_NCHAR | Request5.DATA_NLBIN/* | Request5.CUR_IMPLICIT*/ | Request5.DATA_UINTN)),
+                ((byte)(Request6.DATA_UINT8 | Request6.DATA_UINT4 | Request6.DATA_UINT2 | Request6.REQ_RESERVED2 | Request6.WIDETABLE | Request6.DATA_COLUMNSTATUS | Request6.OBJECT_BINARY | Request6.REQ_RESERVED1)),
+                ((byte)(Request7.OBJECT_CHAR/* | Request7.OBJECT_JAVA1*/ | Request7.DOL_BULK/* | Request7.DATA_VOID*/ | Request7.DATA_INT8 | Request7.DATA_BITN | Request7.DATA_FLTN | Request7.PROTO_DYNPROC)),
+                ((byte)(/*Request8.PROTO_DYNAMIC | */Request8.DATA_BOUNDARY | Request8.DATA_SENSITIVITY/* | Request8.REQ_URGEVT | Request8.PROTO_BULK*/ | Request8.PROTO_TEXT/* | Request8.CON_LOGICAL*/ | Request8.CON_INBAND)),
+                ((byte)(/*Request9.CON_OOB | */Request9.CSR_MULTI/* | Request9.CSR_REL | Request9.CSR_ABS | Request9.CSR_LAST | Request9.CSR_FIRST | Request9.CSR_PREV*/ | Request9.DATA_MONEYN)),
+                ((byte)(Request10.DATA_DATETIMEN | Request10.DATA_INTN | Request10.DATA_LBIN | Request10.DATA_LCHAR | Request10.DATA_DEC | Request10.DATA_IMAGE | Request10.DATA_TEXT | Request10.DATA_NUM)),
+                ((byte)(Request11.DATA_FLT8 | Request11.DATA_FLT4 | Request11.DATA_DATE4 | Request11.DATA_DATE8 | Request11.DATA_MNY4 | Request11.DATA_MNY8 | Request11.DATA_VBIN | Request11.DATA_BIN)),
+                ((byte)(Request12.DATA_VCHAR | Request12.DATA_CHAR | Request12.DATA_BIT | Request12.DATA_INT4 | Request12.DATA_INT2 | Request12.DATA_INT1 | Request12.REQ_PARAM | Request12.REQ_MSG)),
+                ((byte)(Request13.REQ_DYNF | Request13.REQ_CURSOR/* | Request13.REQ_BCP*/ | Request13.REQ_MSTMT/* | Request13.REQ_EVT*/ | Request13.REQ_RPC | Request13.REQ_LANG/* | Request13.NONE*/)),
 
                 //cap response
-                ((byte)Byte16.Unknown),
-                ((byte)Byte17.Unknown),
-                ((byte)Byte18.Unknown),
-                ((byte)Byte19.Unknown),
-                ((byte)Byte20.Unknown),
-                ((byte)Byte21.Unknown),
-                ((byte)Byte22.Unknown),
-                ((byte)(Byte23.RES_UNUSED1/* | Byte23.DATA_NOLOBLOCATOR | Byte23.RES_UNUSED2 | Byte23.RPCPARAM_NOLOB*/ | Byte23.RES_NO_TDSCONTROL/* | Byte23.DATA_NOUSECS | Byte23.DATA_NOBIGDATETIME | Byte23.RES_FORCE_ROWFMT2*/)),
-                ((byte)(/*Byte24.RES_SUPPRESS_DONEINPROC | */Byte24.RES_SUPPRESS_FMT/* | Byte24.RES_NOXNLDATA | Byte24.NONINT_RETURN_VALUE | Byte24.RES_NODATA_XML | Byte24.NO_SRVPKTSIZE | Byte24.RES_NOBLOB_NCHAR_16 | Byte24.RES_NOLARGEIDENT*/)),
-                ((byte)(Byte25.None/* | Byte25.DATA_NOSINT1 | Byte25.DATA_NOUNITEXT | Byte25.DATA_NOINTERVAL | Byte25.DATA_NOTIME | Byte25.DATA_NODATE | Byte25.BLOB_NONCHAR_SCSU | Byte25.BLOB_NONCHAR_8 | Byte25.BLOB_NONCHAR_16*/)),
-                ((byte)(/*Byte26.IMAGE_NONCHAR | Byte26.DATA_NONLBIN | Byte26.NO_WIDETABLES | Byte26.DATA_NOUINTN | Byte26.DATA_NOUINT8 | Byte26.DATA_NOUINT4 | Byte26.DATA_NOUINT2 | */Byte26.RES_RESERVED1)),
-                ((byte)(/*Byte27.OBJECT_NOBINARY | Byte27.DATA_NOCOLUMNSTATUS | Byte27.OBJECT_NOCHAR | Byte27.OBJECT_NOJAVA1 | Byte27.DATA_NOINT8 | Byte27.RES_NOSTRIPBLANKS | */Byte27.RES_NOTDSDEBUG /*| Byte27.DATA_NOBOUNDARY*/)),
-                ((byte)(/*Byte28.DATA_NOSENSITIVITY | */Byte28.PROTO_NOBULK/* | Byte28.PROTO_NOTEXT | Byte28.CON_NOINBAND*/ | Byte28.CON_NOOOB/* | Byte28.DATA_NOMONEYN | Byte28.DATA_NODATETIMEN | Byte28.DATA_NOINTN*/)),
-                ((byte)(Byte29.None/* | Byte29.DATA_NOLBIN | Byte29.DATA_NOLCHAR | Byte29.DATA_NODEC | Byte29.DATA_NOIMAGE | Byte29.DATA_NOTEXT | Byte29.DATA_NONUM | Byte29.DATA_NOFLT8 | Byte29.DATA_NOFLT4*/)),
-                ((byte)(Byte30.None/* | Byte30.DATA_NODATE4 | Byte30.DATA_NODATE8 | Byte30.DATA_NOMNY4 | Byte30.DATA_NOMNY8 | Byte30.DATA_NOVBIN | Byte30.DATA_NOBIN | Byte30.DATA_NOVCHAR | Byte30.DATA_NOCHAR*/)),
-                ((byte)(Byte31.None/* | Byte31.DATA_NOBIT | Byte31.DATA_NOINT4 | Byte31.DATA_NOINT2 | Byte31.DATA_NOINT1 | Byte31.RES_NOPARAM | Byte31.RES_NOEED | Byte31.RES_NOMSG | Byte31.NONE*/)),
+                ((byte)TDS_CAPABILITY_TYPE.TDS_CAP_RESPONSE),
+                ((byte)14), // Response capability bits length
+                ((byte)Response0.RES_UNUSED),
+                ((byte)Response1.RES_UNUSED),
+                ((byte)Response2.RES_UNUSED),
+                ((byte)Response3.RES_UNUSED),
+                ((byte)Response4.RES_UNUSED),
+                ((byte)(Response5.RES_UNUSED1/* | Response5.DATA_NOLOBLOCATOR | Response5.RES_UNUSED2 | Response5.RPCPARAM_NOLOB*/ | Response5.RES_NO_TDSCONTROL/* | Response5.DATA_NOUSECS | Response5.DATA_NOBIGDATETIME | Response5.RES_FORCE_ROWFMT2*/)),
+                ((byte)(/*Response6.RES_SUPPRESS_DONEINPROC | */Response6.RES_SUPPRESS_FMT/* | Response6.RES_NOXNLDATA | Response6.NONINT_RETURN_VALUE | Response6.RES_NODATA_XML | Response6.NO_SRVPKTSIZE | Response6.RES_NOBLOB_NCHAR_16 | Response6.RES_NOLARGEIDENT*/)),
+                ((byte)(Response7.None/* | Response7.DATA_NOSINT1 | Response7.DATA_NOUNITEXT | Response7.DATA_NOINTERVAL | Response7.DATA_NOTIME | Response7.DATA_NODATE | Response7.BLOB_NONCHAR_SCSU | Response7.BLOB_NONCHAR_8 | Response7.BLOB_NONCHAR_16*/)),
+                ((byte)(/*Response8.IMAGE_NONCHAR | Response8.DATA_NONLBIN | Response8.NO_WIDETABLES | Response8.DATA_NOUINTN | Response8.DATA_NOUINT8 | Response8.DATA_NOUINT4 | Response8.DATA_NOUINT2 | */Response8.RES_RESERVED1)),
+                ((byte)(/*Response9.OBJECT_NOBINARY | Response9.DATA_NOCOLUMNSTATUS | Response9.OBJECT_NOCHAR | Response9.OBJECT_NOJAVA1 | Response9.DATA_NOINT8 | Response9.RES_NOSTRIPBLANKS | */Response9.RES_NOTDSDEBUG /*| Response9.DATA_NOBOUNDARY*/)),
+                ((byte)(/*Response10.DATA_NOSENSITIVITY | */Response10.PROTO_NOBULK/* | Response10.PROTO_NOTEXT | Response10.CON_NOINBAND*/ | Response10.CON_NOOOB/* | Response10.DATA_NOMONEYN | Response10.DATA_NODATETIMEN | Response10.DATA_NOINTN*/)),
+                ((byte)(Response11.None/* | Response11.DATA_NOLBIN | Response11.DATA_NOLCHAR | Response11.DATA_NODEC | Response11.DATA_NOIMAGE | Response11.DATA_NOTEXT | Response11.DATA_NONUM | Response11.DATA_NOFLT8 | Response11.DATA_NOFLT4*/)),
+                ((byte)(Response12.None/* | Response12.DATA_NODATE4 | Response12.DATA_NODATE8 | Response12.DATA_NOMNY4 | Response12.DATA_NOMNY8 | Response12.DATA_NOVBIN | Response12.DATA_NOBIN | Response12.DATA_NOVCHAR | Response12.DATA_NOCHAR*/)),
+                ((byte)(Response13.None/* | Response13.DATA_NOBIT | Response13.DATA_NOINT4 | Response13.DATA_NOINT2 | Response13.DATA_NOINT1 | Response13.RES_NOPARAM | Response13.RES_NOEED | Response13.RES_NOMSG | Response13.NONE*/)),
             };
         }
 
@@ -71,22 +71,16 @@ namespace AdoNetCore.AseClient.Token
         // ReSharper disable UnusedMember.Local
         // ReSharper disable IdentifierTypo
 
-        [Flags]
-        private enum Byte0 : byte
+        // ReSharper disable InconsistentNaming
+        private enum TDS_CAPABILITY_TYPE : byte
         {
-            None = 0,
-            Unknown = 0b0000_0001
+            TDS_CAP_REQUEST = 1,
+            TDS_CAP_RESPONSE = 2
         }
+        // ReSharper restore InconsistentNaming
 
         [Flags]
-        private enum Byte1 : byte
-        {
-            None = 0,
-            Unknown = 0b0000_1110
-        }
-
-        [Flags]
-        private enum Byte2 : byte
+        private enum Request0 : byte
         {
             None = 0,
             REQ_UNUSED1 = 0b1000_0000,
@@ -100,7 +94,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte3 : byte
+        private enum Request1 : byte
         {
             None = 0,
             REQ_LOGPARAMS = 0b1000_0000,
@@ -114,7 +108,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte4 : byte
+        private enum Request2 : byte
         {
             None = 0,
             RPCPARAM_LOB = 0b1000_0000,
@@ -128,7 +122,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte5 : byte
+        private enum Request3 : byte
         {
             None = 0,
             REQ_DBRPC2 = 0b1000_0000,
@@ -142,7 +136,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte6 : byte
+        private enum Request4 : byte
         {
             None = 0,
             REQ_SRVPKTSIZE = 0b1000_0000,
@@ -156,7 +150,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte7 : byte
+        private enum Request5 : byte
         {
             None = 0,
             DATA_DATE = 0b1000_0000,
@@ -170,7 +164,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte8 : byte
+        private enum Request6 : byte
         {
             None = 0,
             DATA_UINT8 = 0b1000_0000,
@@ -184,7 +178,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte9 : byte
+        private enum Request7 : byte
         {
             None = 0,
             OBJECT_CHAR = 0b1000_0000,
@@ -198,7 +192,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte10 : byte
+        private enum Request8 : byte
         {
             None = 0,
             PROTO_DYNAMIC = 0b1000_0000,
@@ -212,7 +206,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte11 : byte
+        private enum Request9 : byte
         {
             None = 0,
             CON_OOB = 0b1000_0000,
@@ -226,7 +220,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte12 : byte
+        private enum Request10 : byte
         {
             None = 0,
             DATA_DATETIMEN = 0b1000_0000,
@@ -240,7 +234,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte13 : byte
+        private enum Request11 : byte
         {
             None = 0,
             DATA_FLT8 = 0b1000_0000,
@@ -254,7 +248,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte14 : byte
+        private enum Request12 : byte
         {
             None = 0,
             DATA_VCHAR = 0b1000_0000,
@@ -268,7 +262,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte15 : byte
+        private enum Request13 : byte
         {
             None = 0,
             REQ_DYNF = 0b1000_0000,
@@ -282,56 +276,42 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte16 : byte
+        private enum Response0 : byte
         {
             None = 0,
-            Unknown = 0b0000_0010
+            RES_UNUSED = None
         }
 
         [Flags]
-        private enum Byte17 : byte
+        private enum Response1 : byte
         {
             None = 0,
-            Unknown = 0b0000_1110
+            RES_UNUSED = None
         }
 
         [Flags]
-        private enum Byte18 : byte
+        private enum Response2 : byte
         {
             None = 0,
-            Unknown = None
+            RES_UNUSED = None
         }
 
         [Flags]
-        private enum Byte19 : byte
+        private enum Response3 : byte
         {
             None = 0,
-            Unknown = None
+            RES_UNUSED = None
         }
 
         [Flags]
-        private enum Byte20 : byte
+        private enum Response4 : byte
         {
             None = 0,
-            Unknown = None
-        }
-
-        [Flags]
-        private enum Byte21 : byte
-        {
-            None = 0,
-            Unknown = None
-        }
-
-        [Flags]
-        private enum Byte22 : byte
-        {
-            None = 0,
-            Unknown = None
+            RES_UNUSED = None
         }
         
         [Flags]
-        private enum Byte23 : byte
+        private enum Response5 : byte
         {
             None = 0,
             RES_UNUSED1 = 0b1000_0000,
@@ -345,7 +325,7 @@ namespace AdoNetCore.AseClient.Token
     }
 
         [Flags]
-        private enum Byte24 : byte
+        private enum Response6 : byte
         {
             None = 0,
             RES_SUPPRESS_DONEINPROC = 0b1000_0000,
@@ -359,7 +339,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte25 : byte
+        private enum Response7 : byte
         {
             None = 0,
             DATA_NOSINT1 = 0b1000_0000,
@@ -373,7 +353,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte26 : byte
+        private enum Response8 : byte
         {
             None = 0,
             IMAGE_NONCHAR = 0b1000_0000,
@@ -387,7 +367,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte27 : byte
+        private enum Response9 : byte
         {
             None = 0,
             OBJECT_NOBINARY = 0b1000_0000,
@@ -401,7 +381,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte28 : byte
+        private enum Response10 : byte
         {
             None = 0,
             DATA_NOSENSITIVITY = 0b1000_0000,
@@ -415,7 +395,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte29 : byte
+        private enum Response11 : byte
         {
             None = 0,
             DATA_NOLBIN = 0b1000_0000,
@@ -429,7 +409,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte30 : byte
+        private enum Response12 : byte
         {
             None = 0,
             DATA_NODATE4 = 0b1000_0000,
@@ -443,7 +423,7 @@ namespace AdoNetCore.AseClient.Token
         }
 
         [Flags]
-        private enum Byte31 : byte
+        private enum Response13 : byte
         {
             None = 0,
             DATA_NOBIT = 0b1000_0000,

@@ -486,7 +486,7 @@ namespace AdoNetCore.AseClient
 
         public static explicit operator AseDecimal(double value)
         {
-            return new AseDecimal((BigDecimal) value);
+            return new AseDecimal(value);
         }
 
         public static explicit operator AseDecimal(decimal value)

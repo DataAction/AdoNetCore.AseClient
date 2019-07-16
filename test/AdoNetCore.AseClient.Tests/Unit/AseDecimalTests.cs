@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using AdoNetCore.AseClient.Internal;
@@ -27,7 +27,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(input >= 0, aseDecimal.IsPositive, $"IsPositive should be {input >= 0}");
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ConstructedFromDecimal_CalculatesCorrectPrecisionAndScale_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ConstructedFromDecimal_CalculatesCorrectPrecisionAndScale_Cases()
         {
             yield return new TestCaseData(0m, 1, 0);
             yield return new TestCaseData(0.1m, 2, 1);
@@ -117,7 +117,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(sExpected, result.Scale);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_CanParse_StrangerInputs_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_CanParse_StrangerInputs_Cases()
         {
             yield return new TestCaseData("09", "9", 1, 0);
             yield return new TestCaseData("0.90", "0.9", 2, 1);
@@ -139,10 +139,10 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [TestCaseSource(nameof(AseDecimal_TryParse_DoesNotThrow_Cases))]
         public void AseDecimal_TryParse_DoesNotThrow(string input, bool expected)
         {
-            Assert.AreEqual(expected, AseDecimal.TryParse(input, out var result));
+            Assert.AreEqual(expected, AseDecimal.TryParse(input, out _));
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_TryParse_DoesNotThrow_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_TryParse_DoesNotThrow_Cases()
         {
             yield return new TestCaseData("a", false);
             yield return new TestCaseData("1", true);
@@ -161,7 +161,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(input.Replace("-", string.Empty).Replace(".", string.Empty).Length, result.Precision);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_CanParse_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_CanParse_Cases()
         {
             yield return new TestCaseData("90");
             yield return new TestCaseData("9");
@@ -480,7 +480,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(input.ToString(CultureInfo.InvariantCulture), new AseDecimal(input).ToString());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToString_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToString_Cases()
         {
             yield return new TestCaseData(0m);
             yield return new TestCaseData(1m);
@@ -507,7 +507,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, input.BinData);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_GetBytes_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_GetBytes_Cases()
         {
             yield return new TestCaseData(new AseDecimal(1m), new byte[] { 1 });
             yield return new TestCaseData(new AseDecimal(-1m), new byte[] { 1 }); //the sign is handled elsewhere
@@ -538,7 +538,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(parsedExpected, result);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_Round_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_Round_Cases()
         {
             yield return new TestCaseData("5.5111", "5.5");
             yield return new TestCaseData("5.5222", "5.5");
@@ -595,7 +595,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(parsedExpected, result);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_Truncate_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_Truncate_Cases()
         {
             yield return new TestCaseData("0.5", "0.5");
             yield return new TestCaseData("5.5555", "5.5");
@@ -623,7 +623,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(parsedExpected, result);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_Floor_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_Floor_Cases()
         {
             yield return new TestCaseData("0.1", "0");
             yield return new TestCaseData("5.5555", "5");
@@ -644,7 +644,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(parsedExpected, result);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToAseDecimal_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToAseDecimal_Cases()
         {
             yield return new TestCaseData("-5.5444", 5, 0, "-5");
             yield return new TestCaseData("-5.5444", 5, 1, "-5.5");
@@ -694,7 +694,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(30128, ex.Errors[0].MessageNumber);
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToAseDecimal_WouldCauseDataOverflow_ThrowsAseException_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToAseDecimal_WouldCauseDataOverflow_ThrowsAseException_Cases()
         {
             yield return new TestCaseData("55", 2, 1);
         }
@@ -705,7 +705,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.Throws<FormatException>(() => AseDecimal.Parse(input));
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ParseInvalidInput_ThrowsFormatException_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ParseInvalidInput_ThrowsFormatException_Cases()
         {
             yield return new TestCaseData("-a");
             yield return new TestCaseData("bbb");
@@ -732,7 +732,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(expected).ToDecimal());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToDecimal_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToDecimal_Cases()
         {
             yield return new TestCaseData(0m);
             yield return new TestCaseData(0.1m);
@@ -748,7 +748,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToSByte());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToSByte_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToSByte_Cases()
         {
             yield return new TestCaseData(0m, (sbyte)0);
             yield return new TestCaseData(0.1m, (sbyte)0);
@@ -764,7 +764,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToByte());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToByte_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToByte_Cases()
         {
             yield return new TestCaseData(0m, (byte)0);
             yield return new TestCaseData(0.1m, (byte)0);
@@ -780,7 +780,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToInt16());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToInt16_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToInt16_Cases()
         {
             yield return new TestCaseData(0m, (short)0);
             yield return new TestCaseData(0.1m, (short)0);
@@ -796,7 +796,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToUInt16());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToUInt16_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToUInt16_Cases()
         {
             yield return new TestCaseData(0m, (ushort)0);
             yield return new TestCaseData(0.1m, (ushort)0);
@@ -812,7 +812,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToUInt32());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToUInt32_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToUInt32_Cases()
         {
             yield return new TestCaseData(0m, (uint)0);
             yield return new TestCaseData(0.1m, (uint)0);
@@ -828,7 +828,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToUInt64());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToUInt64_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToUInt64_Cases()
         {
             yield return new TestCaseData(0m, (ulong)0);
             yield return new TestCaseData(0.1m, (ulong)0);
@@ -844,7 +844,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToInt32());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToInt32_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToInt32_Cases()
         {
             yield return new TestCaseData(0m, 0);
             yield return new TestCaseData(0.1m, 0);
@@ -860,7 +860,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToInt64());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToInt64_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToInt64_Cases()
         {
             yield return new TestCaseData(0m, (long)0);
             yield return new TestCaseData(0.1m, (long)0);
@@ -876,7 +876,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToSingle());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToSingle_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToSingle_Cases()
         {
             yield return new TestCaseData(0m, 0f);
             yield return new TestCaseData(0.1m, 0.1f);
@@ -892,7 +892,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(expected, new AseDecimal(input).ToDouble());
         }
 
-        public static IEnumerable<TestCaseData> AseDecimal_ToDouble_Cases()
+        private static IEnumerable<TestCaseData> AseDecimal_ToDouble_Cases()
         {
             yield return new TestCaseData(0m, 0d);
             yield return new TestCaseData(0.1m, 0.1d);

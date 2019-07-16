@@ -85,7 +85,10 @@ print 'BBB'", commandType: CommandType.Text);
                 {
                     connection.Execute(@"raiserror 17001 'AAA'", commandType: CommandType.Text);
                 }
-                catch { }
+                catch
+                {
+                    // ignored
+                }
 
                 connection.InfoMessage -= handlerFunc;
 

@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using Dapper;
 using NUnit.Framework;
+// ReSharper disable All
 #pragma warning disable 219
 
 namespace AdoNetCore.AseClient.Tests

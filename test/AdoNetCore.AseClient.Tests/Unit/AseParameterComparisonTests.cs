@@ -34,22 +34,6 @@ namespace AdoNetCore.AseClient.Tests.Unit
             }
         }
 
-        private void AssertDifferingParameterTypes(DbParameter p, DbType expectedDbTypeCore, string expectedAseDbTypeCore, DbType expectedDbTypeSap, string expectedAseDbTypeSap)
-        {
-#if NET_FRAMEWORK
-            if (p is Sybase.Data.AseClient.AseParameter pSap)
-            {
-                Assert.AreEqual(expectedDbTypeSap, p.DbType);
-                Assert.AreEqual(expectedAseDbTypeSap, pSap.AseDbType.ToString());
-            }
-#endif
-            if (p is AseParameter pCore)
-            {
-                Assert.AreEqual(expectedDbTypeCore, p.DbType);
-                Assert.AreEqual(expectedAseDbTypeCore, pCore.AseDbType.ToString());
-            }
-        }
-
         [TestCaseSource(nameof(CreateAseParameter_WithAseDbType_HasExpectedProperties_Cases))]
         public void CreateAseParameter_WithAseDbType_HasExpectedProperties(string aseDbType, DbType expectedDbType, string expectedAseDbType, int expectedPrecision, int expectedScale)
         {
@@ -133,7 +117,18 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.IsNull(p.SourceColumn);
             Assert.AreEqual(null, p.Value);
 
-            AssertDifferingParameterTypes(p, DbType.Int16, AseDbType.SmallInt.ToString(), DbType.Guid, AseDbType.Unsupported.ToString());
+#if NET_FRAMEWORK
+            if (p is Sybase.Data.AseClient.AseParameter pSap)
+            {
+                Assert.AreEqual(DbType.Guid, p.DbType);
+                Assert.AreEqual(AseDbType.Unsupported.ToString(), pSap.AseDbType.ToString());
+            }
+#endif
+            if (p is AseParameter pCore)
+            {
+                Assert.AreEqual(DbType.Int16, p.DbType);
+                Assert.AreEqual(AseDbType.SmallInt.ToString(), pCore.AseDbType.ToString());
+            }
         }
 
         public static IEnumerable<TestCaseData> CreateAseParameter_WithDbType_HasExpectedAseDbType_Cases()

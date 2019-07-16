@@ -45,14 +45,14 @@ namespace AdoNetCore.AseClient.Internal
             {
                 var serviceNameLine = reader.ReadLine();
 
-                if (ServiceRegex.IsMatch(serviceNameLine))
+                if (serviceNameLine != null && ServiceRegex.IsMatch(serviceNameLine))
                 {
                     while (!reader.EndOfStream)
                     {
-                        var dataLine = reader.ReadLine().Trim();
+                        var dataLine = reader.ReadLine()?.Trim();
 
                         // If we are still reading data.
-                        if (!ServiceRegex.IsMatch(dataLine))
+                        if (dataLine != null && !ServiceRegex.IsMatch(dataLine))
                         {
                             var match = IniEntryRegex.Match(dataLine);
 
@@ -82,14 +82,14 @@ namespace AdoNetCore.AseClient.Internal
             {
                 var serviceNameLine = reader.ReadLine();
 
-                if (serviceNameRegex.IsMatch(serviceNameLine))
+                if (serviceNameLine != null && serviceNameRegex.IsMatch(serviceNameLine))
                 {
                     while (!reader.EndOfStream)
                     {
-                        var dataLine = reader.ReadLine().Trim();
+                        var dataLine = reader.ReadLine()?.Trim();
 
                         // If we are still reading data.
-                        if (!ServiceRegex.IsMatch(dataLine))
+                        if (dataLine != null && !ServiceRegex.IsMatch(dataLine))
                         {
                             var match = IniEntryRegex.Match(dataLine);
 

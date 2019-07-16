@@ -298,7 +298,11 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 else
                 {
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
                     readerSource.TrySetResult(new AseDataReader(dataReaderHandler.Results(), command, behavior));
+#else
+                    readerSource.TrySetResult(new AseDataReader(dataReaderHandler.Results(), behavior));
+#endif
                 }
             }
             catch (Exception ex)
@@ -360,7 +364,7 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (AggregateException ae)
             {
-                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                 throw;
             }
         }
@@ -382,7 +386,7 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (AggregateException ae)
             {
-                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                 throw;
             }
         }

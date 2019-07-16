@@ -33,14 +33,14 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (AseException)
             {
-                connection?.Dispose();
+                connection.Dispose();
                 socket?.Dispose();
                 throw;
             }
             catch(Exception ex)
             {
                 Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} encountered exception: {ex}");
-                connection?.Dispose();
+                connection.Dispose();
                 socket?.Dispose();
                 throw new OperationCanceledException();
             }
@@ -117,7 +117,7 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (AggregateException ae)
             {
-                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                 throw;
             }
 

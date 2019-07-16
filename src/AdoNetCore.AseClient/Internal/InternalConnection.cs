@@ -488,6 +488,12 @@ namespace AdoNetCore.AseClient.Internal
             messageHandler.AssertNoErrors();
         }
 
+        public bool NamedParameters
+        {
+            get;
+            set;
+        }
+
         private bool _isDoomed;
         public bool IsDoomed
         {
@@ -601,7 +607,7 @@ SET FMTONLY OFF";
         }
 
         public static readonly IDictionary EmptyStatistics = new ReadOnlyDictionary<string, long>(new Dictionary<string, long>());
-        
+
         public bool StatisticsEnabled
         {
             get => _statisticsEnabled;

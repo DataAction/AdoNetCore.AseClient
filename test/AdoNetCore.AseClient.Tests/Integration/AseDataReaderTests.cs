@@ -996,8 +996,7 @@ SELECT 5";
 
         public static IEnumerable<TestCaseData> GetFieldType_ReturnsNonNullableType_Cases()
         {
-            //todo: implement bigdatetime support
-            //yield return new TestCaseData("select convert(bigdatetime, null)", typeof(DateTime));
+            yield return new TestCaseData("select convert(bigdatetime, null)", typeof(DateTime));
             yield return new TestCaseData("select convert(bigint, null)", typeof(long));
             //todo: implement bigtime support
             //yield return new TestCaseData("select convert(bigtime, null)", typeof(DateTime));

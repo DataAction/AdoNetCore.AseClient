@@ -1,5 +1,6 @@
 using System.Data;
 using System.Text.RegularExpressions;
+using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -178,23 +179,19 @@ END";
         [TestCase("SELECT 1 FROM myTable WHERE myColumn=?", "SELECT 1 FROM myTable WHERE myColumn=@p0")]
         [TestCase("SELECT 1, [some column ?] FROM myTable WHERE myColumn = ?", "SELECT 1, [some column ?] FROM myTable WHERE myColumn = @p0")]
         [TestCase(@"SELECT 1, ""What is going on ?"" FROM myTable WHERE myColumn = ?", @"SELECT 1, ""What is going on ?"" FROM myTable WHERE myColumn = @p0")]
-        [TestCase("SELECT 1, 'What is going on ?' FROM myTable WHERE myColumn = ?", @"SELECT 1,'What is going on ?' FROM myTable WHERE myColumn = @p0")]
-        public void TestReplacement(string input, string expected)
+        [TestCase("SELECT 1, 'What is going on ?' FROM myTable WHERE myColumn = ?", @"SELECT 1, 'What is going on ?' FROM myTable WHERE myColumn = @p0")]
+        [TestCase("SELECT 1 FROM myTable WHERE myColumn1 = ? AND myColumn2 = ?", "SELECT 1 FROM myTable WHERE myColumn1 = @p0 AND myColumn2 = @p1")]
+        [TestCase("SELECT 1 FROM myTable WHERE myColumn1 = ? AND myColumn2 = 'A question?' AND myColumn3 = ?", "SELECT 1 FROM myTable WHERE myColumn1 = @p0 AND myColumn2 = 'A question?' AND myColumn3 = @p1")]
+        [TestCase("SELECT 1, 'What is going on ?', \"What is going on ?\", [What is going on ?] FROM myTable WHERE myColumn = ?", "SELECT 1, 'What is going on ?', \"What is going on ?\", [What is going on ?] FROM myTable WHERE myColumn = @p0")]
+        [TestCase("SELECT 1, 'What is going on \"arggh\"', \"What is going on ?\" FROM myTable WHERE myColumn = ?", "SELECT 1, 'What is going on \"arggh\"', \"What is going on ?\" FROM myTable WHERE myColumn = @p0")]
+        [TestCase("SELECT 1, 'What is going on \"arggh', \"What is going on ?\" FROM myTable WHERE myColumn = ?", "SELECT 1, 'What is going on \"arggh', \"What is going on ?\" FROM myTable WHERE myColumn = @p0")]
+        [TestCase("SELECT 1, 'What is going on \"arggh?', \"What is going on ?\" FROM myTable WHERE myColumn = ?", "SELECT 1, 'What is going on \"arggh?', \"What is going on ?\" FROM myTable WHERE myColumn = @p0")]
+        [TestCase("SELECT 1, 'What is going on \"arggh?\"', \"What is going on ?\" FROM myTable WHERE myColumn = ?", "SELECT 1, 'What is going on \"arggh?\"', \"What is going on ?\" FROM myTable WHERE myColumn = @p0")]
+        [TestCase("EXEC myProc ?,?,?,?", "EXEC myProc @p0,@p1,@p2,@p3")]
+        [TestCase("EXEC myProc ?, ?, ?, ?", "EXEC myProc @p0, @p1, @p2, @p3")]
+        public void ToNamedParameters_WithQuestionMarkQuery_SubstitutesCorrectly(string input, string expected)
         {
-            // Match a literal question mark if preceded by a comparison operator.
-            // BUG - this matches the operator and the whitespace.
-            var regex = new System.Text.RegularExpressions.Regex(
-                @"(?:>=|<=|<>|!=|!>|!<|[^><!]=|[^<!]>|[^!]<)\s*([?])",
-                RegexOptions.Compiled | RegexOptions.Multiline);
-
-            int i = 0;
-
-            MatchEvaluator evaluator = delegate(Match match)
-            {
-                return $"@p{i++}";
-            };
-
-            var actual = regex.Replace(input, evaluator);
+            var actual = input.ToNamedParameters();
 
             Assert.AreEqual(expected, actual);
         }

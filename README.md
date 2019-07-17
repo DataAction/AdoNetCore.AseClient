@@ -138,6 +138,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `LoginTimeOut` or `Connect Timeout` or `Connection Timeout`                                | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
 | `Max Pool Size`                                                                            | &#10003;
 | `Min Pool Size`                                                                            | &#10003; | <ul><li>The pool will attempt to prime itself on creation up to this size (in a thread)</li><li>When a connection is killed, the pool will attempt to replace it if the pool size is less than Min</li></ul>
+| `NamedParameters`                                                                          | &#10003;
 | `PacketSize` or `Packet Size`                        |                                      &#10003; | The server can decide to change this value
 | `Ping Server`                                                                              | &#10003;
 | `Pooling`                                                                                  | &#10003;

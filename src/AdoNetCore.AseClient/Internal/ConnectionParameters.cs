@@ -285,7 +285,6 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-
         private static void ParseNamedParameters(ConnectionStringItem item, ConnectionParameters result)
         {
             if (int.TryParse(item.PropertyValue?.Trim(), out var intValue))

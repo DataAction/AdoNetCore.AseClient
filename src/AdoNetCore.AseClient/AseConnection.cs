@@ -518,7 +518,6 @@ namespace AdoNetCore.AseClient
         {
             get
             {
-
                 if(_namedParameters.HasValue)
                 {
                     return _namedParameters.Value;

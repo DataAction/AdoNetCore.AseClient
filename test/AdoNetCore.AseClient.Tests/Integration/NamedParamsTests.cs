@@ -1,5 +1,4 @@
 using System.Data;
-using System.Text.RegularExpressions;
 using AdoNetCore.AseClient.Internal;
 using NUnit.Framework;
 

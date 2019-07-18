@@ -1,14 +1,14 @@
-using System;
-using System.Security.Cryptography.X509Certificates;
+using System.IO;
 using Dapper;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration.Connection
 {
     [TestFixture]
-    public class TlsConnection
+    public class TlsConnectionTests
     {
-        private X509Certificate2 _certificate;
+        private string _trusted;
+        private string _connectionString;
 
         [OneTimeSetUp]
         public void TestFixtureSetup()
@@ -35,34 +35,30 @@ namespace AdoNetCore.AseClient.Tests.Integration.Connection
             {
                 Assert.Ignore($"Failed to resolve the server name {ConnectionStrings.TlsHostname} to an IP address. Perhaps a hosts file entry is required.");
             }
+            
+            // Install the public key into the trusted.txt file.
+            var temporaryFile = Path.GetTempFileName();
 
-            // Install the public key into the Trusted Root certificate store.
-            string password = null;
-            _certificate = new X509Certificate2(ConnectionStrings.TlsTrustedText, password);
+            _trusted = Path.ChangeExtension(temporaryFile, ".txt");
 
-            var trustedRootStore = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-            trustedRootStore.Certificates.Add(_certificate);
+            File.WriteAllText(_trusted, ConnectionStrings.TlsTrustedText);
+
+            _connectionString = ConnectionStrings.Tls + $";TrustedFile='{_trusted}'";
         }
 
         [OneTimeTearDown]
         public void TestFixtureTearDown()
         {
-            if (_certificate != null)
+            if (File.Exists(_trusted))
             {
-                var trustedRootStore = new X509Store(StoreName.Root, StoreLocation.CurrentUser);
-                trustedRootStore.Certificates.Remove(_certificate);
+                File.Delete(_trusted);
             }
-        }
-
-        private AseConnection GetConnection()
-        {
-            return new AseConnection(ConnectionStrings.Tls);
         }
 
         [Test]
         public void Open_WithTlsConfigured_Works()
         {
-            using (var connection = GetConnection())
+            using (var connection = new AseConnection(_connectionString))
             {
                 connection.Open();
 

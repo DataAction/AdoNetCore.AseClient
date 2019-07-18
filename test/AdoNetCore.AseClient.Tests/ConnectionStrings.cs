@@ -23,6 +23,7 @@ namespace AdoNetCore.AseClient.Tests
         public static string NonPooledUnique => $"{NonPooled}; UniqueID={{{Guid.NewGuid()}}}";
         public static string PooledUnique => $"{Pooled}; UniqueID={{{Guid.NewGuid()}}}";
         public static string BadPass => $"Data Source={Server}; Port={Port}; Uid={User}; Pwd=XXXXXXXX; db={Database};";
+        public static string EnableServerPacketSize => $"{Prefix}; EnableServerPacketSize=0;";
 
         public static string AnsiNullOn => $"{Prefix}; AnsiNull=1";
         public static string AnsiNullOff => $"{Prefix}; AnsiNull=0";

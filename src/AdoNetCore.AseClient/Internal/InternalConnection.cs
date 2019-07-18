@@ -176,7 +176,7 @@ namespace AdoNetCore.AseClient.Internal
                     _parameters.Charset,
                     "ADO.NET",
                     _environment.PacketSize,
-                    new CapabilityToken(),
+                    new CapabilityToken(_parameters.EnableServerPacketSize),
                     _parameters.EncryptPassword));
 
             var ackHandler = new LoginTokenHandler();

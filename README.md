@@ -132,7 +132,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Database` or `Db` or `Initial Catalog`                                                    | &#10003;
 | `Data Source` or `DataSource` or `Address` or `Addr` or `Network Address` or `Server Name` | &#10003;
 | `DSURL` or `Directory Service URL`                                                         | &#10003; | Multiple URLs are not supported; network drivers other than NLWNSCK (TCP/IP socket) are not supported; LDAP is not supported
-| `EnableServerPacketSize`                                                                   | TODO | May not be supported any more by capability bits
+| `EnableServerPacketSize`                                                                   | &#10003;
 | `Encryption`                                                                               | &#10003; | The designated encryption. Possible values: ssl, none.
 | `EncryptPassword`                                                                          | &#10003; | Values 0 (disabled) and 1 (enabled) are supported. The highest encryption standard of the ASE 15.x and 16x servers is implemented.
 | `LoginTimeOut` or `Connect Timeout` or `Connection Timeout`                                | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
@@ -143,7 +143,6 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `Pooling`                                                                                  | &#10003;
 | `Port` or `Server Port`                                                                    | &#10003;
 | `Pwd` or `Password`                                                                        | &#10003;
-| `RestrictMaximum PacketSize`                                                               | TODO | May not be supported any more by capability bits
 | `TextSize`                                                                                 | &#10003;
 | `TrustedFile`                                                                              | &#10003; | This property must be used along with `Encryption=ssl`. The value must be set to the path to the trusted file.
 | `Uid` or `UserID` or `User ID` or `User`                                                   | &#10003;

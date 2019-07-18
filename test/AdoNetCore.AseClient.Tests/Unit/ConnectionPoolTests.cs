@@ -254,6 +254,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public bool Encryption { get; } = false;
             public string TrustedFile { get; } = string.Empty;
             public bool AnsiNull { get; } = false;
+            public bool EnableServerPacketSize { get; } = true;
         }
     }
 }

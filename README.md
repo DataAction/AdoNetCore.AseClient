@@ -59,7 +59,7 @@ The latest stable release of the AdoNetCore.AseClient is [available on NuGet](ht
 
 * Not all features are currently supported, and some features will not be supported. Refer to [Unsupported features](https://github.com/DataAction/AdoNetCore.AseClient/wiki/Unsupported-features).
 * Performance equivalent to or better than that of `Sybase.Data.AseClient` provided by SAP. This is possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
-* Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1)
+* Target all versions of .NET Core (1.0, 1.1, 2.0, 2.1 and 2.2)
 * Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the `Sybase.Data.AseClient`
 
 ## Performance benchmarks

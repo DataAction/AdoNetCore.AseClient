@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -181,37 +180,61 @@ namespace AdoNetCore.AseClient.Internal
 
         private bool UserCertificateValidationCallback(object sender, X509Certificate serverCertificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
+            var certificateChainPolicyErrors = (sslPolicyErrors & SslPolicyErrors.RemoteCertificateChainErrors) == SslPolicyErrors.RemoteCertificateChainErrors;
+            var otherPolicyErrors = (sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != SslPolicyErrors.None;
+
             // We're not concerned with chain errors as we verify the chain below.
-            if ((sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != SslPolicyErrors.None )
+            if (otherPolicyErrors)
             {
                 Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to policy errors: {sslPolicyErrors}");
                 return false;
             }
 
+            var untrustedRootChainStatusFlags = false;
+            var otherChainStatusFlags = false;
+
             // We're not concerned with UntrustedRoot errors as we verify that below.
             foreach (var status in chain.ChainStatus)
             {
-                if((status.Status & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError)
+                untrustedRootChainStatusFlags |= (status.Status & X509ChainStatusFlags.UntrustedRoot) == X509ChainStatusFlags.UntrustedRoot;
+                otherChainStatusFlags |= (status.Status & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError;
+
+                if (otherChainStatusFlags)
                 {
                     Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to chain status: {status.Status}");
                     return false;
                 }
             }
 
-            IDictionary<string, X509Certificate> rootCertificates;
-
             // The TrustedFile is a file containing the public keys, in PEM format of the trusted
             // root certificates that this client is willing to accept TLS connections from.
-            if (!string.IsNullOrWhiteSpace(_parameters.TrustedFile) && File.Exists(_parameters.TrustedFile))
+            if ((certificateChainPolicyErrors || untrustedRootChainStatusFlags) && !string.IsNullOrWhiteSpace(_parameters.TrustedFile) && File.Exists(_parameters.TrustedFile))
             {
                 try
                 {
                     var trustedRootCertificatesPem = File.ReadAllText(_parameters.TrustedFile, Encoding.ASCII);
 
                     var parser = new PemParser();
-                    rootCertificates =
+                    var rootCertificates =
                         parser.ParseCertificates(trustedRootCertificatesPem)
                             .ToDictionary(GetCertificateKey);
+
+                    // If the server certificate itself is the root, weird, but ok.
+                    if (rootCertificates.ContainsKey(GetCertificateKey(serverCertificate)))
+                    {
+                        return true;
+                    }
+
+                    // If any certificates in the chain are trusted, then we will trust the server certificate.
+                    foreach (var chainElement in chain.ChainElements)
+                    {
+                        var key = GetCertificateKey(chainElement.Certificate);
+
+                        if (rootCertificates.ContainsKey(key))
+                        {
+                            return true;
+                        }
+                    }
                 }
                 catch (CryptographicException e)
                 {
@@ -219,34 +242,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 catch (Exception e) when (e is PathTooLongException || e is FileNotFoundException || e is DirectoryNotFoundException || e is UnauthorizedAccessException)
                 {
-                    throw new AseException("Failed to extract open the TrustedFile.", e);
-                }
-            }
-            // We're going a bit beyond the SAP AseClient here, as that does not support the X509Store.
-            else
-            {
-                using (var rootStore = new X509Store(StoreName.Root, StoreLocation.CurrentUser)) // This should also find certificates installed under StoreLocation.LocalMachine.
-                {
-                    rootCertificates = rootStore.Certificates
-                        .OfType<X509Certificate>()
-                        .ToDictionary(GetCertificateKey);
-                }
-            }
-
-            // If the server certificate itself is the root, weird, but ok.
-            if (rootCertificates.ContainsKey(GetCertificateKey(serverCertificate)))
-            {
-                return true;
-            }
-
-            // If any certificates in the chain are trusted, then we will trust the server certificate.
-            foreach (var chainElement in chain.ChainElements)
-            {
-                var key = GetCertificateKey(chainElement.Certificate);
-
-                if (rootCertificates.ContainsKey(key))
-                {
-                    return true;
+                    throw new AseException("Failed to open the TrustedFile.", e);
                 }
             }
 

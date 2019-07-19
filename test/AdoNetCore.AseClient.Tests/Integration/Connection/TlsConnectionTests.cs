@@ -69,5 +69,51 @@ namespace AdoNetCore.AseClient.Tests.Integration.Connection
                 Assert.IsNotEmpty(result);
             }
         }
+
+        [Test]
+        public void Open_WithTlsConfiguredWithBadTrustedFilePath_AseException()
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Tls + @";TrustedFile='x:\some-file-that-doesn't-exist.txt'"))
+            {
+                Assert.Throws<AseException>(() => { connection.Open(); });
+            }
+        }
+
+        [Test]
+        public void Open_WithTlsConfiguredWithBadTrustedFileContent_AseException()
+        {
+            string trusted = null;
+            try
+            {
+                // Install the public key into the trusted.txt file.
+                var temporaryFile = Path.GetTempFileName();
+
+                trusted = Path.ChangeExtension(temporaryFile, ".txt");
+
+                File.WriteAllText(trusted, "Not a public key");
+
+                using (var connection = new AseConnection(ConnectionStrings.Tls + $";TrustedFile='{trusted}'"))
+                {
+                    Assert.Throws<AseException>(() => { connection.Open(); });
+                }
+            }
+            finally
+            {
+                if (trusted != null)
+                {
+                    File.Delete(trusted);
+                }   
+            }
+        }
+
+        [Test]
+        public void Open_WithTlsConfiguredWithUntrustedCertificate_AseException()
+        {
+            // No TrustedFile - so it will rely on the certificate store which won't have the certificate in it.
+            using (var connection = new AseConnection(ConnectionStrings.Tls))
+            {
+                Assert.Throws<AseException>(() => { connection.Open(); });
+            }
+        }
     }
 }

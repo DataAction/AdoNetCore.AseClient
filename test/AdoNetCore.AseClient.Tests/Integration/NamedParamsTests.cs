@@ -298,6 +298,8 @@ END";
         [TestCase("/*abc//def*/ghi", "/*abc//def*/ghi")]
         [TestCase("abc/*def\nghi*//jkl", "abc/*def\nghi*//jkl")]
         [TestCase("abc/*def\nghi*///jkl", "abc/*def\nghi*///jkl")]
+        [TestCase("abc//*def\n*/ghi", "abc//*def\n*/ghi")]
+        [TestCase("abc//*def*/ghi", "abc//*def*/ghi")]
         public void ToNamedParameters_WithQuestionMarkQuery_SubstitutesCorrectly(string input, string expected)
         {
             var actual = input.ToNamedParameters();
@@ -409,6 +411,8 @@ END";
                 new object[] { "/*abc//def*/ghi", new[] { "/*abc//def*/", "ghi" } },
                 new object[] { "abc/*def\nghi*//jkl", new[] { "abc", "/*def\nghi*/", "/jkl" } },
                 new object[] { "abc/*def\nghi*///jkl", new[] { "abc", "/*def\nghi*/", "//jkl" } },
+                new object[] { "abc//*def\n*/ghi", new[] { "abc", "//*def\n", "*/ghi" } },
+                new object[] { "abc//*def*/ghi", new[] { "abc", "//*def*/ghi" } },
                 new object[] { "select 'abcdef', ?, 'ghijki', ? from foo", new[] { "select ", "'abcdef'", ", ", ", ", "'ghijki'", ", ", " from foo" } },
                 new object[] { "select 'abc?def', ?, 'ghi?jki', ? from foo", new[] { "select ", "'abc?def'", ", ", ", ", "'ghi?jki'", ", ", " from foo" } },
                 new object[] { "select 'abc\"def', ?, 'ghi\"jki', ? from foo", new[] { "select ", "'abc\"def'", ", ", ", ", "'ghi\"jki'", ", ", " from foo" } },
@@ -515,6 +519,8 @@ END";
                 new object[] { "/*abc//def*/ghi", new[] { "*abc", "/def*/ghi" } },
                 new object[] { "abc/*def\nghi*//jkl", new[] { "abc", "*def\nghi*", "/jkl" } },
                 new object[] { "abc/*def\nghi*///jkl", new[] { "abc", "*def\nghi*", "/jkl" } },
+                new object[] { "abc//*def\n*/ghi", new[] { "abc", "*def\n*/ghi" } },
+                new object[] { "abc//*def*/ghi", new[] { "abc", "*def*/ghi" } },
             };
 
         // Ansi quoted sql string uses 'apostrophes' at the start and end.
@@ -641,6 +647,8 @@ END";
                 new object[] { "/*abc//def*/ghi", new[] { "/*abc//def*/" } },
                 new object[] { "abc/*def\nghi*//jkl", new[] { "/*def\nghi*/" } },
                 new object[] { "abc/*def\nghi*///jkl", new[] { "/*def\nghi*/", "//jkl" } },
+                new object[] { "abc//*def\n*/ghi", new[] { "//*def\n" } },
+                new object[] { "abc//*def*/ghi", new[] { "//*def*/ghi" } },
             };
     }
 }

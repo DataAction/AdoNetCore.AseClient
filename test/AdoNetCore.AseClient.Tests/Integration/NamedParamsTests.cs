@@ -188,6 +188,54 @@ END";
         [TestCase("SELECT 1, 'What is going on \"arggh?\"', \"What is going on ?\" FROM myTable WHERE myColumn = ?", "SELECT 1, 'What is going on \"arggh?\"', \"What is going on ?\" FROM myTable WHERE myColumn = @p0")]
         [TestCase("EXEC myProc ?,?,?,?", "EXEC myProc @p0,@p1,@p2,@p3")]
         [TestCase("EXEC myProc ?, ?, ?, ?", "EXEC myProc @p0, @p1, @p2, @p3")]
+        [TestCase("select 'abcdef', ?, 'ghijki', ? from foo", "select 'abcdef', @p0, 'ghijki', @p1 from foo")]
+        [TestCase("select 'abc\"def', ?, 'ghi\"jki', ? from foo", "select 'abc\"def', @p0, 'ghi\"jki', @p1 from foo")]
+        [TestCase("select 'abc''def', ?, 'ghi''jki', ? from foo", "select 'abc''def', @p0, 'ghi''jki', @p1 from foo")]
+        [TestCase("select 'abc[def', ?, 'ghi]jki', ? from foo", "select 'abc[def', @p0, 'ghi]jki', @p1 from foo")]
+        [TestCase("select 'abc--def', ?, 'ghi--jki', ? from foo", "select 'abc--def', @p0, 'ghi--jki', @p1 from foo")]
+        [TestCase("select 'abc//def', ?, 'ghi//jki', ? from foo", "select 'abc//def', @p0, 'ghi//jki', @p1 from foo")]
+        [TestCase("select 'abc/*def', ?, 'ghi*/jki', ? from foo", "select 'abc/*def', @p0, 'ghi*/jki', @p1 from foo")]
+        [TestCase("select \"abcdef\", ?, \"ghijki\", ? from foo", "select \"abcdef\", @p0, \"ghijki\", @p1 from foo")]
+        [TestCase("select \"abc[def\", ?, \"ghi]jki\", ? from foo", "select \"abc[def\", @p0, \"ghi]jki\", @p1 from foo")]
+        [TestCase("select \"abc\"\"def\", ?, \"ghi\"\"jki\", ? from foo", "select \"abc\"\"def\", @p0, \"ghi\"\"jki\", @p1 from foo")]
+        [TestCase("select \"abc'def\", ?, \"ghi'jki\", ? from foo", "select \"abc'def\", @p0, \"ghi'jki\", @p1 from foo")]
+        [TestCase("select \"abc--def\", ?, \"ghi--jki\", ? from foo", "select \"abc--def\", @p0, \"ghi--jki\", @p1 from foo")]
+        [TestCase("select \"abc//def\", ?, \"ghi//jki\", ? from foo", "select \"abc//def\", @p0, \"ghi//jki\", @p1 from foo")]
+        [TestCase("select \"abc/*def\", ?, \"ghi*/jki\", ? from foo", "select \"abc/*def\", @p0, \"ghi*/jki\", @p1 from foo")]
+        [TestCase("select [abcdef], ?, [ghijki], ? from foo", "select [abcdef], @p0, [ghijki], @p1 from foo")]
+        [TestCase("select [abc[def], ?, [ghi]]jki], ? from foo", "select [abc[def], @p0, [ghi]]jki], @p1 from foo")]
+        [TestCase("select [abc\"def], ?, [ghi\"jki], ? from foo", "select [abc\"def], @p0, [ghi\"jki], @p1 from foo")]
+        [TestCase("select [abc'def], ?, [ghi'jki], ? from foo", "select [abc'def], @p0, [ghi'jki], @p1 from foo")]
+        [TestCase("select [abc--def], ?, [ghi--jki], ? from foo", "select [abc--def], @p0, [ghi--jki], @p1 from foo")]
+        [TestCase("select [abc//def], ?, [ghi//jki], ? from foo", "select [abc//def], @p0, [ghi//jki], @p1 from foo")]
+        [TestCase("select [abc/*def], ?, [ghi*/jki], ? from foo", "select [abc/*def], @p0, [ghi*/jki], @p1 from foo")]
+        [TestCase("select /*abcdef*/, ?, /*ghijki*/, ? from foo", "select /*abcdef*/, @p0, /*ghijki*/, @p1 from foo")]
+        [TestCase("select /*abc\"def*/, ?, /*ghi\"jki*/, ? from foo", "select /*abc\"def*/, @p0, /*ghi\"jki*/, @p1 from foo")]
+        [TestCase("select /*abc'def*/, ?, /*ghi'jki*/, ? from foo", "select /*abc'def*/, @p0, /*ghi'jki*/, @p1 from foo")]
+        [TestCase("select /*abc[def*/, ?, /*ghi]jki*/, ? from foo", "select /*abc[def*/, @p0, /*ghi]jki*/, @p1 from foo")]
+        [TestCase("select /*abc--def*/, ?, /*ghi--jki*/, ? from foo", "select /*abc--def*/, @p0, /*ghi--jki*/, @p1 from foo")]
+        [TestCase("select /*abc//def*/, ?, /*ghi//jki*/, ? from foo", "select /*abc//def*/, @p0, /*ghi//jki*/, @p1 from foo")]
+        [TestCase("select /*abc/*def*/, ?, /*ghi*/jki*/, ? from foo", "select /*abc/*def*/, @p0, /*ghi*/jki*/, @p1 from foo")]
+        [TestCase("select ?, -- abcdef, ?, ghijkl, ? from foo", "select @p0, -- abcdef, ?, ghijkl, ? from foo")]
+        [TestCase("select ?, -- abcdef, ?,\n ghijkl, ? from foo", "select @p0, -- abcdef, ?,\n ghijkl, @p1 from foo")]
+        [TestCase("select ?, // abcdef, ?, ghijkl, ? from foo", "select @p0, // abcdef, ?, ghijkl, ? from foo")]
+        [TestCase("select ?, // abcdef, ?,\n ghijkl, ? from foo", "select @p0, // abcdef, ?,\n ghijkl, @p1 from foo")]
+        [TestCase("select foo.*, bar.x/bar.y [xy?! ratio], bar.a-bar.b \"ab?! difference\", -- these names are awful, what are they for?\n"
+            + " coalesce(bar.g, '/*??*/') \"abc \"\" def\" /* using block comments with ? as a null placeholder value for legacy code handling */, "
+            + " ?/?+bar-? [[var1?]]], // why are all these names so bad?  why do they all contains ?\n"
+            + " ? / ? * bar.z - ? \"\"\"var2?\"\"\"--,\n"
+            + " /* // this seems unused? commenting out for testing \n ? / ? * bar.y - ? \"\"\"var3?\"\"\" */\n"
+            + " from [table1] [foo]\n"
+            + " left join \"table2\" \"bar\" on foo.k == bar.k\n"
+            + " where bar.l == ? and bar.e == 'no value'",
+            "select foo.*, bar.x/bar.y [xy?! ratio], bar.a-bar.b \"ab?! difference\", -- these names are awful, what are they for?\n"
+            + " coalesce(bar.g, '/*??*/') \"abc \"\" def\" /* using block comments with ? as a null placeholder value for legacy code handling */, "
+            + " @p0/@p1+bar-@p2 [[var1?]]], // why are all these names so bad?  why do they all contains ?\n"
+            + " @p3 / @p4 * bar.z - @p5 \"\"\"var2?\"\"\"--,\n"
+            + " /* // this seems unused? commenting out for testing \n ? / ? * bar.y - ? \"\"\"var3?\"\"\" */\n"
+            + " from [table1] [foo]\n"
+            + " left join \"table2\" \"bar\" on foo.k == bar.k\n"
+            + " where bar.l == @p6 and bar.e == 'no value'")]
         public void ToNamedParameters_WithQuestionMarkQuery_SubstitutesCorrectly(string input, string expected)
         {
             var actual = input.ToNamedParameters();

@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
+using System.Security.Authentication;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -113,13 +115,13 @@ namespace AdoNetCore.AseClient.Internal
 
                     authenticate.Wait(token);
 
-                    if(authenticate.IsCanceled)
+                    if (authenticate.IsCanceled)
                     {
                         socket.Dispose();
                         networkStream.Dispose();
                         sslStream.Dispose();
 
-                        throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}"); // TODO - what error should we raise for a TLS failure?
+                        throw new TimeoutException($"Timed out attempting to connect securely to {_parameters.Server},{_parameters.Port}");
                     }
 
                     return CreateConnectionInternal(sslStream);
@@ -127,20 +129,41 @@ namespace AdoNetCore.AseClient.Internal
 
                 return CreateConnectionInternal(networkStream);
             }
-            catch (OperationCanceledException)
-            {
-                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
-                sslStream?.Dispose();
-                networkStream?.Dispose();
-                socket?.Dispose();
-                throw;
-            }
-            catch(Exception)
+            catch (Exception ex)
             {
                 sslStream?.Dispose();
                 networkStream?.Dispose();
                 socket?.Dispose();
-                throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
+
+                if (ex is OperationCanceledException)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
+
+                    throw;
+                }
+
+                if (ex is AggregateException ae)
+                {
+                    ex = ae.InnerException;
+                }
+
+                if (ex is AseException)
+                {
+                    ExceptionDispatchInfo.Capture(ex).Throw();
+                    throw;
+                }
+
+                if (ex is SocketException || ex is TimeoutException)
+                {
+                    throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
+                }
+
+                if (ex is AuthenticationException)
+                {
+                    throw new AseException($"The secure connection could not be established at {_parameters.Server}:{_parameters.Port}.", ex);
+                }
+
+                throw new AseException($"Failed to establish a connection at {_parameters.Server}:{_parameters.Port}.", ex);
             }
         }
 
@@ -158,14 +181,21 @@ namespace AdoNetCore.AseClient.Internal
 
         private bool UserCertificateValidationCallback(object sender, X509Certificate serverCertificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-            if (sslPolicyErrors != SslPolicyErrors.None)
+            // We're not concerned with chain errors as we verify the chain below.
+            if ((sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != SslPolicyErrors.None )
             {
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to policy errors: {sslPolicyErrors}");
                 return false;
             }
 
-            if (!Array.TrueForAll(chain.ChainStatus, status => status.Status == X509ChainStatusFlags.NoError))
+            // We're not concerned with UntrustedRoot errors as we verify that below.
+            foreach (var status in chain.ChainStatus)
             {
-                return false;
+                if((status.Status & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to chain status: {status.Status}");
+                    return false;
+                }
             }
 
             IDictionary<string, X509Certificate> rootCertificates;
@@ -174,12 +204,23 @@ namespace AdoNetCore.AseClient.Internal
             // root certificates that this client is willing to accept TLS connections from.
             if (!string.IsNullOrWhiteSpace(_parameters.TrustedFile) && File.Exists(_parameters.TrustedFile))
             {
-                var trustedRootCertificatesPem = File.ReadAllText(_parameters.TrustedFile, Encoding.ASCII); // TODO - what about access denied errors? How should these be returned?
+                try
+                {
+                    var trustedRootCertificatesPem = File.ReadAllText(_parameters.TrustedFile, Encoding.ASCII);
 
-                var parser = new PemParser();
-                rootCertificates =
-                    parser.ParseCertificates(trustedRootCertificatesPem)
-                        .ToDictionary(GetCertificateKey);
+                    var parser = new PemParser();
+                    rootCertificates =
+                        parser.ParseCertificates(trustedRootCertificatesPem)
+                            .ToDictionary(GetCertificateKey);
+                }
+                catch (CryptographicException e)
+                {
+                    throw new AseException("Failed to extract a public key from the TrustedFile.", e);
+                }
+                catch (Exception e) when (e is PathTooLongException || e is FileNotFoundException || e is DirectoryNotFoundException || e is UnauthorizedAccessException)
+                {
+                    throw new AseException("Failed to extract open the TrustedFile.", e);
+                }
             }
             // We're going a bit beyond the SAP AseClient here, as that does not support the X509Store.
             else
@@ -208,6 +249,8 @@ namespace AdoNetCore.AseClient.Internal
                     return true;
                 }
             }
+
+            Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to missing root or intermediate certificate in the certificate store, or the TrustedFile.");
 
             return false;
         }

@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Dapper;
 using NUnit.Framework;
@@ -64,6 +65,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Connection
 
                 var result = connection.QueryFirst<string>("SELECT @@ssl_ciphersuite");
 
+                Console.WriteLine(result);
                 Assert.IsNotEmpty(result);
             }
         }

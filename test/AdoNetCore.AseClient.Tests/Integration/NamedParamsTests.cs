@@ -307,13 +307,13 @@ END";
             Assert.AreEqual(expected, actual);
         }
 
-        [TestCaseSource(nameof(SplitQuestionMarksInvalidSqlTestInput))]
+        [TestCaseSource(nameof(ToNamedParameters_WithQuestionMarkQuery_InvalidSql_Input))]
         public void ToNamedParameters_WithQuestionMarkQuery_InvalidSql_Fails(string input)
         {
             Assert.Throws<ArgumentException>(() => input.ToNamedParameters());
         }
 
-        public static IEnumerable<object[]> SplitQuestionMarksInvalidSqlTestInput =>
+        public static IEnumerable<object[]> ToNamedParameters_WithQuestionMarkQuery_InvalidSql_Input =>
             new List<object[]>
             {
                 // Right braces are not relevant; they are only a special character when in a left-brace quoted string

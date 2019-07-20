@@ -551,7 +551,14 @@ namespace AdoNetCore.AseClient.Internal
 
             if (!namedParameters)
             {
-                result = result.ToNamedParameters();
+                try
+                {
+                    result = result.ToNamedParameters();
+                }
+                catch (ArgumentException)
+                {
+                    throw new AseException("Incorrect syntax. Possible mismatched quotes on string literal, or identifier delimiter.");
+                }
             }
 
             if ((behavior & CommandBehavior.SchemaOnly) == CommandBehavior.SchemaOnly)

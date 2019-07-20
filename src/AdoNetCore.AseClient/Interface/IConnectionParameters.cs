@@ -25,5 +25,6 @@ namespace AdoNetCore.AseClient.Interface
         bool EncryptPassword { get; }
         bool AnsiNull { get; }
         bool EnableServerPacketSize { get; }
+        bool NamedParameters { get; }
     }
 }

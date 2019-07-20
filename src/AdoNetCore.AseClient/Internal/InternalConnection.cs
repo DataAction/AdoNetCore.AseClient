@@ -488,6 +488,12 @@ namespace AdoNetCore.AseClient.Internal
             messageHandler.AssertNoErrors();
         }
 
+        public bool NamedParameters
+        {
+            get;
+            set;
+        }
+
         private bool _isDoomed;
         public bool IsDoomed
         {
@@ -515,7 +521,7 @@ namespace AdoNetCore.AseClient.Internal
                 ? BuildRpcToken(command, behavior)
                 : BuildLanguageToken(command, behavior);
 
-            foreach (var token in BuildParameterTokens(command.AseParameters, command.NamedParameters))
+            foreach (var token in BuildParameterTokens(command.AseParameters))
             {
                 yield return token;
             }
@@ -525,7 +531,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             return new LanguageToken
             {
-                CommandText = MakeCommand(command.CommandText, behavior),
+                CommandText = MakeCommand(command.CommandText, behavior, command.NamedParameters),
                 HasParameters = command.HasSendableParameters
             };
         }
@@ -539,23 +545,34 @@ namespace AdoNetCore.AseClient.Internal
             };
         }
 
-        private string MakeCommand(string commandText, CommandBehavior behavior)
+        private string MakeCommand(string commandText, CommandBehavior behavior, bool namedParameters = true)
         {
             var result = commandText;
+
+            if (!namedParameters)
+            {
+                try
+                {
+                    result = result.ToNamedParameters();
+                }
+                catch (ArgumentException)
+                {
+                    throw new AseException("Incorrect syntax. Possible mismatched quotes on string literal, or identifier delimiter.");
+                }
+            }
 
             if ((behavior & CommandBehavior.SchemaOnly) == CommandBehavior.SchemaOnly)
             {
                 result =
 $@"SET FMTONLY ON
-{commandText}
+{result}
 SET FMTONLY OFF";
             }
 
             return result;
         }
 
-        // TODO - if namedParameters is false, then look for ? characters in the command, and bind the parameters by position.
-        private IToken[] BuildParameterTokens(AseParameterCollection parameters, bool namedParameters)
+        private IToken[] BuildParameterTokens(AseParameterCollection parameters)
         {
             var formatItems = new List<FormatItem>();
             var parameterItems = new List<ParametersToken.Parameter>();
@@ -601,7 +618,7 @@ SET FMTONLY OFF";
         }
 
         public static readonly IDictionary EmptyStatistics = new ReadOnlyDictionary<string, long>(new Dictionary<string, long>());
-        
+
         public bool StatisticsEnabled
         {
             get => _statisticsEnabled;

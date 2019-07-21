@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient.Packet
         public string Charset { get; set; }
         public string ClientLibrary { get; set; }
 
-        public CapabilityToken Capability { get; set; }
+        public ClientCapabilityToken Capability { get; set; }
 
         public LInt2 LInt2 { get; set; } = LInt2.TDS_INT2_LSB_LO;
         public LInt4 LInt4 { get; set; } = LInt4.TDS_INT4_LSB_LO;
@@ -36,7 +36,7 @@ namespace AdoNetCore.AseClient.Packet
         public int PacketSize { get; set; }
         public bool EncryptPassword { get; set; }
 
-        public LoginPacket(string hostname, string username, string password, string processId, string applicationName, string serverName, string language, string charset, string clientLibrary, int packetSize, CapabilityToken capability, bool encryptPassword)
+        public LoginPacket(string hostname, string username, string password, string processId, string applicationName, string serverName, string language, string charset, string clientLibrary, int packetSize, ClientCapabilityToken capability, bool encryptPassword)
         {
             Capability = capability;
             Hostname = hostname ?? string.Empty;

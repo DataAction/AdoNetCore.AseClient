@@ -108,7 +108,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [Test]
         public void Login_EnableServerPacketSizeDisabled_Success()
         {
-            using (var connection = GetConnection(ConnectionStrings.EnableServerPacketSize))
+            using (var connection = GetConnection(ConnectionStrings.Default))
             {
                 if (typeof(T) == typeof(CoreFxConnectionProvider))
                 {

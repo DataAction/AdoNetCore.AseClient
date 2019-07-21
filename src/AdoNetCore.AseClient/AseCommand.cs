@@ -26,6 +26,7 @@ namespace AdoNetCore.AseClient
         private int _commandTimeout = DefaultCommandTimeout;
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
+        private bool? _namedParameters;
 
         /// <summary>
         /// Constructor function for an <see cref="AseCommand"/> instance.
@@ -34,7 +35,6 @@ namespace AdoNetCore.AseClient
         public AseCommand()
         {
             AseParameters = new AseParameterCollection();
-            NamedParameters = true;
         }
 
         /// <summary>
@@ -45,7 +45,6 @@ namespace AdoNetCore.AseClient
         public AseCommand(string commandText)
         {
             AseParameters = new AseParameterCollection();
-            NamedParameters = true;
 
             CommandText = commandText;
         }
@@ -61,7 +60,6 @@ namespace AdoNetCore.AseClient
             _transaction = connection.Transaction;
 
             AseParameters = new AseParameterCollection();
-            NamedParameters = connection.NamedParameters;
 
             CommandText = commandText;
         }
@@ -78,7 +76,6 @@ namespace AdoNetCore.AseClient
             _transaction = transaction;
 
             AseParameters = new AseParameterCollection();
-            NamedParameters = connection.NamedParameters;
 
             CommandText = commandText;
         }
@@ -89,7 +86,6 @@ namespace AdoNetCore.AseClient
             _transaction = connection.Transaction;
 
             AseParameters = new AseParameterCollection();
-            NamedParameters = connection.NamedParameters;
         }
 
         /// <summary>
@@ -345,7 +341,6 @@ namespace AdoNetCore.AseClient
                 }
 
                 _connection = value;
-                NamedParameters = _connection?.NamedParameters ?? false;
             }
         }
 
@@ -391,7 +386,23 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// When true then the ? syntax is not supported, and a name is expected.
         /// </remarks>
-        public bool NamedParameters { get; set; } // TODO - implement
+        public bool NamedParameters
+        {
+            get
+            {
+                if(_namedParameters.HasValue)
+                {
+                    return _namedParameters.Value;
+                }
+                if(_connection != null)
+                {
+                    return _connection.NamedParameters;
+                }
+
+                return true;
+            }
+            set => _namedParameters = value;
+        }
 
         /// <summary>
         /// Gets the <see cref="AseParameterCollection" /> used by this instance of the AseCommand. 

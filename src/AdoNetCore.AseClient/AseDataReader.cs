@@ -665,7 +665,7 @@ namespace AdoNetCore.AseClient
         /// <returns>true if the reader is pointing at a row of data; false otherwise.</returns>
         public override bool Read()
         {
-            if (_currentResult < 0)
+            if (_currentResult < 0 || _currentResult >= _results.Length)
             {
                 return false;
             }

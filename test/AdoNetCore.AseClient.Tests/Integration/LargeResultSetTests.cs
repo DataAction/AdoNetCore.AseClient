@@ -28,7 +28,7 @@ BEGIN
     DECLARE @text CHAR(4000)
     SET @text = REPLICATE('X', 4000)
 
-    CREATE TABLE #thousand (Id INT, Description0 CHAR(4000))
+    CREATE TABLE #thousand (Id INT, Description0 TEXT)
 
     WHILE (@index < 1000)
     BEGIN

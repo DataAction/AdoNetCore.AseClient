@@ -8,11 +8,24 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal sealed class ConnectionPoolManager : IConnectionPoolManager, IEnumerable<IConnectionPool>
     {
+#if ENABLE_ARRAY_POOL
+        private static readonly System.Buffers.ArrayPool<byte> BufferPool = System.Buffers.ArrayPool<byte>.Shared;
+#endif
+
         private static readonly ConcurrentDictionary<string, IConnectionPool> Pools = new ConcurrentDictionary<string, IConnectionPool>(StringComparer.OrdinalIgnoreCase);
 
         public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters, IInfoMessageEventNotifier eventNotifier)
         {
-            return Pools.GetOrAdd(connectionString, _ => new ConnectionPool(parameters, new InternalConnectionFactory(parameters))).Reserve(eventNotifier);
+            return Pools.GetOrAdd(connectionString, _ =>
+            {
+#if ENABLE_ARRAY_POOL
+                var internalConnectionFactory = new InternalConnectionFactory(parameters, BufferPool);
+#else
+                var internalConnectionFactory = new InternalConnectionFactory(parameters);
+#endif
+
+                return new ConnectionPool(parameters, internalConnectionFactory);
+            }).Reserve(eventNotifier);
         }
 
         public void Release(string connectionString, IInternalConnection connection)

@@ -4,10 +4,10 @@ using AdoNetCore.AseClient.Internal;
 namespace AdoNetCore.AseClient.Interface
 {
     /// <summary>
-    /// Parse out tokens from a bunch of bytes
+    /// Read out tokens from a bunch of bytes
     /// </summary>
-    internal interface ITokenParser
+    internal interface ITokenReader
     {
-        IEnumerable<IToken> Parse(TokenStream stream, DbEnvironment env);
+        IEnumerable<IToken> Read(TokenReceiveStream stream, DbEnvironment env);
     }
 }

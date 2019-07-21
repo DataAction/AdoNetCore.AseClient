@@ -175,6 +175,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public string Database { get; }
             public string DataSource { get; }
             public string ServerVersion { get; }
+            public bool NamedParameters { get; set; }
+
             public int ExecuteNonQuery(AseCommand command, AseTransaction transaction)
             {
                 return 0;
@@ -255,6 +257,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public string TrustedFile { get; } = string.Empty;
             public bool AnsiNull { get; } = false;
             public bool EnableServerPacketSize { get; } = true;
+
+            public bool NamedParameters { get; } = true;
         }
     }
 }

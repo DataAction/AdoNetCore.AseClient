@@ -27,5 +27,6 @@ namespace AdoNetCore.AseClient.Interface
         string TrustedFile { get; }
         bool AnsiNull { get; }
         bool EnableServerPacketSize { get; }
+        bool NamedParameters { get; }
     }
 }

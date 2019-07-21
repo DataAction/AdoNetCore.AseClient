@@ -26,6 +26,7 @@ namespace AdoNetCore.AseClient.Tests
         public static string EnableServerPacketSize => $"{Prefix}; EnableServerPacketSize=0;";
 
         public static string AnsiNullOn => $"{Prefix}; AnsiNull=1";
+        public static string NamedParametersOff => $"{Prefix}; NamedParameters=false";
         public static string AnsiNullOff => $"{Prefix}; AnsiNull=0";
         public static string Tls => $"Data Source={TlsHostname}; Port={TlsPort}; Uid={User}; Pwd={Pass}; db={Database}; charset={Charset}; Encryption=ssl";
 

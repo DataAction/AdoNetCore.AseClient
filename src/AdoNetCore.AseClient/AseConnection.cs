@@ -24,6 +24,7 @@ namespace AdoNetCore.AseClient
         private bool _isDisposed;
         private AseTransaction _transaction;
         private readonly IEventNotifier _eventNotifier;
+        private bool? _namedParameters;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AseConnection" /> class.
@@ -113,7 +114,6 @@ namespace AdoNetCore.AseClient
             ConnectionString = connectionString;
             InternalConnectionTimeout = 15; // Default to 15s as per the SAP AseClient http://infocenter.sybase.com/help/topic/com.sybase.infocenter.dc20066.1570100/doc/html/san1364409555258.html
             _connectionPoolManager = connectionPoolManager;
-            NamedParameters = true;
             _isDisposed = false;
             _eventNotifier = new EventNotifier(this);
         }
@@ -234,7 +234,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseConnection));
             }
 
-            var aseCommand = new AseCommand(this) { NamedParameters = NamedParameters };
+            var aseCommand = new AseCommand(this);
 
             return aseCommand;
         }
@@ -514,10 +514,22 @@ namespace AdoNetCore.AseClient
         /// <remarks>
         /// This can be either set by the ConnectionString (NamedParameters='true'/'false') or the user can set it directly through an instance of AseConnection.
         /// </remarks>
-        public bool NamedParameters // TODO - implement
+        public bool NamedParameters
         {
-            get;
-            set;
+            get
+            {
+                if(_namedParameters.HasValue)
+                {
+                    return _namedParameters.Value;
+                }
+                if(_internal != null)
+                {
+                    return _internal.NamedParameters;
+                }
+
+                return true;
+            }
+            set => _namedParameters = value;
         }
 
 #if ENABLE_CLONEABLE_INTERFACE

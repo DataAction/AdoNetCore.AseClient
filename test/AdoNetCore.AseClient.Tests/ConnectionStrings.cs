@@ -26,6 +26,7 @@ namespace AdoNetCore.AseClient.Tests
         public static string EnableServerPacketSize => $"{Prefix}; EnableServerPacketSize=0;";
 
         public static string AnsiNullOn => $"{Prefix}; AnsiNull=1";
+        public static string NamedParametersOff => $"{Prefix}; NamedParameters=false";
         public static string AnsiNullOff => $"{Prefix}; AnsiNull=0";
 
         private static IDictionary<string, string> _loginDetails;

@@ -59,7 +59,7 @@ The latest stable release of the AdoNetCore.AseClient is [available on NuGet](ht
 
 * Not all features are currently supported, and some features will not be supported. Refer to [Unsupported features](https://github.com/DataAction/AdoNetCore.AseClient/wiki/Unsupported-features).
 * Performance equivalent to or better than that of `Sybase.Data.AseClient` provided by SAP. This is possible as we are eliminating the COM and OLE DB layers from this driver and .NET Core is fast.
-* Target all versions of .NET Core (1.0, 1.1, 2.0, and 2.1)
+* Target all versions of .NET Core (1.0, 1.1, 2.0, 2.1 and 2.2)
 * Should work with [Dapper](https://github.com/StackExchange/Dapper) at least as well as the `Sybase.Data.AseClient`
 
 ## Performance benchmarks
@@ -138,6 +138,7 @@ In all of the test cases the `AdoNetCore.AseClient` performed better or equivale
 | `LoginTimeOut` or `Connect Timeout` or `Connection Timeout`                                | &#10003; | For pooled connections this translates to the time it takes to reserve a connection from the pool
 | `Max Pool Size`                                                                            | &#10003;
 | `Min Pool Size`                                                                            | &#10003; | <ul><li>The pool will attempt to prime itself on creation up to this size (in a thread)</li><li>When a connection is killed, the pool will attempt to replace it if the pool size is less than Min</li></ul>
+| `NamedParameters`                                                                          | &#10003;
 | `PacketSize` or `Packet Size`                        |                                      &#10003; | The server can decide to change this value
 | `Ping Server`                                                                              | &#10003;
 | `Pooling`                                                                                  | &#10003;

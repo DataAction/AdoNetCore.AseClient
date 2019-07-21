@@ -91,6 +91,18 @@ namespace AdoNetCore.AseClient.Interface
         void SetAnsiNull(bool enabled);
 
         /// <summary>
+        /// Governs the default behavior of the AseCommand objects associated with this connection.
+        /// </summary>
+        /// <remarks>
+        /// This can be either set by the ConnectionString (NamedParameters='true'/'false') or the user can set it directly through an instance of AseConnection.
+        /// </remarks>
+        bool NamedParameters
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Indicates if this connection is doomed to destruction
         /// </summary>
         bool IsDoomed { get; set; }

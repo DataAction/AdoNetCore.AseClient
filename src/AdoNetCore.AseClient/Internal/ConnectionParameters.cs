@@ -59,6 +59,7 @@ namespace AdoNetCore.AseClient.Internal
             {"EncryptPassword", ParseEncryptPassword},
             {"AnsiNull", ParseAnsiNull},
             {"EnableServerPacketSize", ParseEnableServerPacketSize},
+            {"NamedParameters", ParseNamedParameters},
         };
 
         public static ConnectionParameters Parse(string connectionString)
@@ -284,6 +285,18 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static void ParseNamedParameters(ConnectionStringItem item, ConnectionParameters result)
+        {
+            if (int.TryParse(item.PropertyValue?.Trim(), out var intValue))
+            {
+                result.NamedParameters = intValue != 0;
+            }
+            else if (bool.TryParse(item.PropertyValue?.Trim(), out var boolValue))
+            {
+                result.NamedParameters = boolValue;
+            }
+        }
+
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private static void ValidateConnectionParameters(ConnectionParameters result)
         {
@@ -362,5 +375,7 @@ namespace AdoNetCore.AseClient.Internal
         public bool EncryptPassword { get; private set; }
         public bool AnsiNull { get; private set; }
         public bool EnableServerPacketSize { get; private set; } = true;
+
+        public bool NamedParameters { get; private set; } = true;
     }
 }

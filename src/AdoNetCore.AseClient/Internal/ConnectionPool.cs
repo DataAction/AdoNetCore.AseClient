@@ -66,6 +66,7 @@ namespace AdoNetCore.AseClient.Internal
 
                     connection.ChangeDatabase(_parameters.Database);
                     connection.SetTextSize(_parameters.TextSize);
+                    connection.NamedParameters = _parameters.NamedParameters;
 
                     if (_parameters.AnsiNull)
                     {

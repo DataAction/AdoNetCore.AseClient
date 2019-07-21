@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Xml;
 using AdoNetCore.AseClient.Internal;
+using AdoNetCore.AseClient.Tests.Util;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -117,16 +118,20 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         public static IEnumerable<TestCaseData> GetDataTypeName_ShouldWork_Cases()
         {
-            yield return new TestCaseData("convert(char(1), 'a')", "char");
-            yield return new TestCaseData("convert(char(1), null)", "char");
-            yield return new TestCaseData("convert(nchar(2), 'À')", "char");
-            yield return new TestCaseData("convert(nchar(2), null)", "char");
+            if (CharsetUtility.IsCharset(ConnectionStrings.Pooled, "utf-8"))
+            {
+                yield return new TestCaseData("convert(char(1), 'a')", "char");
+                yield return new TestCaseData("convert(char(1), null)", "char");
+                yield return new TestCaseData("convert(nchar(2), 'À')", "char");
+                yield return new TestCaseData("convert(nchar(2), null)", "char");
+                yield return new TestCaseData("convert(varchar(1), 'a')", "varchar");
+                yield return new TestCaseData("convert(varchar(1), null)", "varchar");
+                yield return new TestCaseData("convert(nvarchar(2), 'a')", "nvarchar");
+                yield return new TestCaseData("convert(nvarchar(2), null)", "nvarchar");
+            }
+
             yield return new TestCaseData("convert(unichar(2), 'À')", "unichar");
             yield return new TestCaseData("convert(unichar(2), null)", "unichar");
-            yield return new TestCaseData("convert(varchar(1), 'a')", "varchar");
-            yield return new TestCaseData("convert(varchar(1), null)", "varchar");
-            yield return new TestCaseData("convert(nvarchar(2), 'a')", "nvarchar");
-            yield return new TestCaseData("convert(nvarchar(2), null)", "nvarchar");
             yield return new TestCaseData("convert(univarchar(2), 'a')", "univarchar");
             yield return new TestCaseData("convert(univarchar(2), null)", "univarchar");
             yield return new TestCaseData("convert(text, 'a')", "text");

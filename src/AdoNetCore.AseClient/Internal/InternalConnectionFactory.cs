@@ -1,7 +1,14 @@
 using System;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
+using System.Security.Authentication;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Interface;
@@ -11,11 +18,21 @@ namespace AdoNetCore.AseClient.Internal
     internal class InternalConnectionFactory : IInternalConnectionFactory
     {
         private readonly IConnectionParameters _parameters;
+#if ENABLE_ARRAY_POOL
+        private readonly System.Buffers.ArrayPool<byte> _arrayPool;
+#endif
         private IPEndPoint _endpoint;
 
+#if ENABLE_ARRAY_POOL
+        public InternalConnectionFactory(IConnectionParameters parameters, System.Buffers.ArrayPool<byte> arrayPool)
+#else
         public InternalConnectionFactory(IConnectionParameters parameters)
+#endif
         {
             _parameters = parameters;
+#if ENABLE_ARRAY_POOL
+            _arrayPool = arrayPool;
+#endif
         }
 
         public Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
@@ -70,6 +87,8 @@ namespace AdoNetCore.AseClient.Internal
 
         private InternalConnection CreateConnection(Socket socket, CancellationToken token)
         {
+            NetworkStream networkStream = null;
+            SslStream sslStream = null;
             try
             {
 #if NET_FRAMEWORK
@@ -85,19 +104,156 @@ namespace AdoNetCore.AseClient.Internal
                     throw new TimeoutException($"Timed out attempting to connect to {_parameters.Server},{_parameters.Port}");
                 }
 
-                return new InternalConnection(_parameters, new RegularSocket(socket, new TokenParser()));
+                networkStream = new NetworkStream(socket, true);
+
+                if (_parameters.Encryption)
+                {
+                    sslStream = new SslStream(networkStream, false, UserCertificateValidationCallback);
+
+                    var authenticate = sslStream.AuthenticateAsClientAsync(_parameters.Server);
+
+                    authenticate.Wait(token);
+
+                    if (authenticate.IsCanceled)
+                    {
+                        socket.Dispose();
+                        networkStream.Dispose();
+                        sslStream.Dispose();
+
+                        throw new TimeoutException($"Timed out attempting to connect securely to {_parameters.Server},{_parameters.Port}");
+                    }
+
+                    return CreateConnectionInternal(sslStream);
+                }
+
+                return CreateConnectionInternal(networkStream);
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
+                sslStream?.Dispose();
+                networkStream?.Dispose();
                 socket?.Dispose();
-                throw;
+
+                if (ex is OperationCanceledException)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetNewConnection)} canceled operation");
+
+                    throw;
+                }
+
+                if (ex is AggregateException ae)
+                {
+                    ex = ae.InnerException;
+                }
+
+                if (ex is AseException)
+                {
+                    ExceptionDispatchInfo.Capture(ex).Throw();
+                    throw;
+                }
+
+                if (ex is SocketException || ex is TimeoutException)
+                {
+                    throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
+                }
+
+                if (ex is AuthenticationException)
+                {
+                    throw new AseException($"The secure connection could not be established at {_parameters.Server}:{_parameters.Port}.", ex);
+                }
+
+                throw new AseException($"Failed to establish a connection at {_parameters.Server}:{_parameters.Port}.", ex);
             }
-            catch(Exception)
+        }
+
+        private InternalConnection CreateConnectionInternal(Stream networkStream)
+        {
+            var environment = new DbEnvironment();
+            var reader = new TokenReader();
+
+#if ENABLE_ARRAY_POOL
+            return new InternalConnection(_parameters, networkStream, reader, environment, _arrayPool);
+#else   
+                return new InternalConnection(_parameters, networkStream, reader, environment);
+#endif
+        }
+
+        private bool UserCertificateValidationCallback(object sender, X509Certificate serverCertificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            var certificateChainPolicyErrors = (sslPolicyErrors & SslPolicyErrors.RemoteCertificateChainErrors) == SslPolicyErrors.RemoteCertificateChainErrors;
+            var otherPolicyErrors = (sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != SslPolicyErrors.None;
+
+            // We're not concerned with chain errors as we verify the chain below.
+            if (otherPolicyErrors)
             {
-                socket.Dispose();
-                throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to policy errors: {sslPolicyErrors}");
+                return false;
             }
+
+            var untrustedRootChainStatusFlags = false;
+            var otherChainStatusFlags = false;
+
+            // We're not concerned with UntrustedRoot errors as we verify that below.
+            foreach (var status in chain.ChainStatus)
+            {
+                untrustedRootChainStatusFlags |= (status.Status & X509ChainStatusFlags.UntrustedRoot) == X509ChainStatusFlags.UntrustedRoot;
+                otherChainStatusFlags |= (status.Status & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError;
+
+                if (otherChainStatusFlags)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to chain status: {status.Status}");
+                    return false;
+                }
+            }
+
+            // The TrustedFile is a file containing the public keys, in PEM format of the trusted
+            // root certificates that this client is willing to accept TLS connections from.
+            if ((certificateChainPolicyErrors || untrustedRootChainStatusFlags) && !string.IsNullOrWhiteSpace(_parameters.TrustedFile) && File.Exists(_parameters.TrustedFile))
+            {
+                try
+                {
+                    var trustedRootCertificatesPem = File.ReadAllText(_parameters.TrustedFile, Encoding.ASCII);
+
+                    var parser = new PemParser();
+                    var rootCertificates =
+                        parser.ParseCertificates(trustedRootCertificatesPem)
+                            .ToDictionary(GetCertificateKey);
+
+                    // If the server certificate itself is the root, weird, but ok.
+                    if (rootCertificates.ContainsKey(GetCertificateKey(serverCertificate)))
+                    {
+                        return true;
+                    }
+
+                    // If any certificates in the chain are trusted, then we will trust the server certificate.
+                    foreach (var chainElement in chain.ChainElements)
+                    {
+                        var key = GetCertificateKey(chainElement.Certificate);
+
+                        if (rootCertificates.ContainsKey(key))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                catch (CryptographicException e)
+                {
+                    throw new AseException("Failed to extract a public key from the TrustedFile.", e);
+                }
+                catch (Exception e) when (e is PathTooLongException || e is FileNotFoundException || e is DirectoryNotFoundException || e is UnauthorizedAccessException)
+                {
+                    throw new AseException("Failed to open the TrustedFile.", e);
+                }
+            }
+
+            Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to missing root or intermediate certificate in the certificate store, or the TrustedFile.");
+
+            return false;
+        }
+
+        private static string GetCertificateKey(X509Certificate certificate)
+        {
+            return $"{certificate.Issuer}|{Convert.ToBase64String(certificate.GetSerialNumber())}";
         }
 
         private static IPEndPoint CreateEndpoint(string server, int port, CancellationToken token)

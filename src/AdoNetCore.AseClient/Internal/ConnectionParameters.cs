@@ -57,6 +57,8 @@ namespace AdoNetCore.AseClient.Internal
             {"TextSize", ParseTextSize},
             {"UseAseDecimal", ParseUseAseDecimal},
             {"EncryptPassword", ParseEncryptPassword},
+            {"Encryption", ParseEncryption},
+            {"TrustedFile", ParseTrustedFile},
             {"AnsiNull", ParseAnsiNull},
             {"EnableServerPacketSize", ParseEnableServerPacketSize},
             {"NamedParameters", ParseNamedParameters},
@@ -154,6 +156,16 @@ namespace AdoNetCore.AseClient.Internal
         private static void ParsePort(ConnectionStringItem item, ConnectionParameters result)
         {
             result.Port = Convert.ToInt32(item.PropertyValue);
+        }
+
+        private static void ParseEncryption(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.Encryption = string.Equals(item.PropertyValue?.Trim(), "ssl", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ParseTrustedFile(ConnectionStringItem item, ConnectionParameters result)
+        {
+            result.TrustedFile = item.PropertyValue;
         }
 
         private static void ParseDatabase(ConnectionStringItem item, ConnectionParameters result)
@@ -373,6 +385,8 @@ namespace AdoNetCore.AseClient.Internal
         public bool UseAseDecimal { get; private set; }
 
         public bool EncryptPassword { get; private set; }
+        public bool Encryption { get; private set; }
+        public string TrustedFile { get; private set; }
         public bool AnsiNull { get; private set; }
         public bool EnableServerPacketSize { get; private set; } = true;
 

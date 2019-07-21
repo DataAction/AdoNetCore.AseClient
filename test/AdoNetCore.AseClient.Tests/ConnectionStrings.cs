@@ -28,17 +28,22 @@ namespace AdoNetCore.AseClient.Tests
         public static string AnsiNullOn => $"{Prefix}; AnsiNull=1";
         public static string NamedParametersOff => $"{Prefix}; NamedParameters=false";
         public static string AnsiNullOff => $"{Prefix}; AnsiNull=0";
+        public static string Tls => $"Data Source={TlsHostname}; Port={TlsPort}; Uid={User}; Pwd={Pass}; db={Database}; charset={Charset}; Encryption=ssl";
 
         private static IDictionary<string, string> _loginDetails;
         private static IDictionary<string, string> LoginDetails => _loginDetails ?? (_loginDetails = Load());
         private static string Server => LoginDetails["Server"];
         private static string Port => LoginDetails["Port"];
+        private static string TlsPort => LoginDetails["TlsPort"];
+        public static string TlsHostname => LoginDetails["TlsHostname"];
+        public static string TlsTrustedText => LoginDetails["TlsTrustedText"];
         private static string Database => LoginDetails["Database"];
         private static string User => LoginDetails["User"];
         private static string Pass => LoginDetails["Pass"];
         private static string Charset => LoginDetails.ContainsKey("Charset") ? LoginDetails["Charset"] : "utf8";
         private static string Prefix => $"Data Source={Server}; Port={Port}; Uid={User}; Pwd={Pass}; db={Database}; charset={Charset}";
         private static string PrefixNoCharSet => $"Data Source={Server}; Port={Port}; Uid={User}; Pwd={Pass}; db={Database}";
+        
 
         private const string DocoLocation = "https://github.com/DataAction/AdoNetCore.AseClient/wiki/Running-the-integration-tests";
         private static IDictionary<string, string> Load()

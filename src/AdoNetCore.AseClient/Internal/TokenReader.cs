@@ -7,9 +7,9 @@ using AdoNetCore.AseClient.Token;
 
 namespace AdoNetCore.AseClient.Internal
 {
-    internal class TokenParser : ITokenParser
+    internal class TokenReader : ITokenReader
     {
-        public IEnumerable<IToken> Parse(TokenStream stream, DbEnvironment env)
+        public IEnumerable<IToken> Read(TokenReceiveStream stream, DbEnvironment env)
         {
             IFormatToken previousFormatToken = null;
 
@@ -40,7 +40,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (stream.IsCancelled)
                 {
-                    Logger.Instance?.WriteLine($"{nameof(TokenStream)} - received cancel status flag");
+                    Logger.Instance?.WriteLine($"{nameof(TokenReceiveStream)} - received cancel status flag");
 
                     yield return 
                         new DoneToken

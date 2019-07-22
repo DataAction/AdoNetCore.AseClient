@@ -613,6 +613,631 @@ namespace AdoNetCore.AseClient
                 return _transaction;
             }
         }
+
+#if ENABLE_DB_GETSCHEMA
+        /// <summary>
+        /// Returns schema information for the data source of this <see cref="AseConnection"/>.
+        /// </summary>
+        /// <returns>A <see cref="DataTable"/> that contains schema information.</returns>
+        public override DataTable GetSchema()
+        {
+            return GetSchema("MetaDataCollections");
+        }
+
+        /// <summary>
+        /// Returns schema information for the data source of this <see cref="AseConnection"/> using the specified string for the schema name.
+        /// </summary>
+        /// <param name="collectionName">The name of the collection to retrieve detailed results for.</param>
+        /// <returns>A <see cref="DataTable"/> that contains schema information.</returns>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="collectionName"/> is null, or does not represent a supported schema collection.</exception>
+        public override DataTable GetSchema(string collectionName)
+        {
+            var result = new DataTable();
+
+            switch (collectionName?.ToLowerInvariant())
+            {
+                case "metadatacollections":
+                    // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/common-schema-collections#metadatacollections
+                    result.TableName = "MetadataCollections";
+                    result.Columns.Add("CollectionName", typeof(string));
+                    result.Columns.Add("NumberOfRestrictions", typeof(int));
+                    result.Columns.Add("NumberOfIdentifierParts", typeof(int));
+
+                    result.LoadDataRow(new object[] { "MetaDataCollections", 0, 0 }, true);
+                    result.LoadDataRow(new object[] { "DataSourceInformation", 0, 0 }, true);
+                    result.LoadDataRow(new object[] { "DataTypes", 0, 0 }, true);
+                    result.LoadDataRow(new object[] { "Restrictions", 0, 0 }, true);
+                    result.LoadDataRow(new object[] { "ReservedWords", 0, 0 }, true);
+                    result.LoadDataRow(new object[] { "Users", 1, 1 }, true);
+                    result.LoadDataRow(new object[] { "Databases", 1, 1 }, true);
+                    result.LoadDataRow(new object[] { "Tables", 4, 3 }, true);
+                    result.LoadDataRow(new object[] { "Columns", 4, 4 }, true);
+                    result.LoadDataRow(new object[] { "Views", 3, 3 }, true);
+                    result.LoadDataRow(new object[] { "ViewColumns", 4, 4 }, true);
+                    result.LoadDataRow(new object[] { "ProcedureParameters", 4, 1 }, true);
+                    result.LoadDataRow(new object[] { "Procedures", 4, 3 }, true);
+                    result.LoadDataRow(new object[] { "ForeignKeys", 4, 3 }, true);
+                    result.LoadDataRow(new object[] { "IndexColumns", 5, 4 }, true);
+                    result.LoadDataRow(new object[] { "Indexes", 4, 3 }, true);
+                    result.LoadDataRow(new object[] { "UserDefinedTypes", 2, 1 }, true);
+                    break;
+                case "datasourceinformation":
+                    // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/common-schema-collections#datasourceinformation
+                    break; // TODO - Reference driver throws AccessViolationException... not sure what the desired behaviour is for this one.
+                case "datatypes":
+                    // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/common-schema-collections#datatypes
+                    result.TableName = "DataTypes";
+                    result.Columns.Add("TypeName", typeof(string));
+                    result.Columns.Add("ProviderDbType", typeof(int));
+                    result.Columns.Add("ColumnSize", typeof(long));
+                    result.Columns.Add("CreateFormat", typeof(string));
+                    result.Columns.Add("CreateParameters", typeof(string));
+                    result.Columns.Add("DataType", typeof(string));
+                    result.Columns.Add("IsAutoincrementable", typeof(bool));
+                    result.Columns.Add("IsBestMatch", typeof(bool));
+                    result.Columns.Add("IsCaseSensitive", typeof(bool));
+                    result.Columns.Add("IsFixedLength", typeof(bool));
+                    result.Columns.Add("IsFixedPrecisionScale", typeof(bool));
+                    result.Columns.Add("IsLong", typeof(bool));
+                    result.Columns.Add("IsNullable", typeof(bool));
+                    result.Columns.Add("IsSearchable", typeof(bool));
+                    result.Columns.Add("IsSearchableWithLike", typeof(bool));
+                    result.Columns.Add("IsUnsigned", typeof(bool));
+                    result.Columns.Add("MaximumScale", typeof(short));
+                    result.Columns.Add("MinimumScale", typeof(short));
+                    result.Columns.Add("IsConcurrencyType", typeof(string));
+                    result.Columns.Add("IsLiteralSupported", typeof(bool));
+                    result.Columns.Add("LiteralPrefix", typeof(string));
+                    result.Columns.Add("LiteralSuffix", typeof(string));
+                    //result.Columns.Add("NativeDataType", typeof(string));
+
+                    result.LoadDataRow(new object[] { "smallint", AseDbType.SmallInt, 5, "smallint", null, "System.Int16", true, true, false, true, true, false, true, true, false, false, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "int", AseDbType.Integer, 10, "int", null, "System.Int32", true, true, false, true, true, false, true, true, false, false, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "real", AseDbType.Real, 7, "real", null, "System.Single", false, true, false, true, false, false, true, true, false, false, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "float", AseDbType.Double, 53, "float({ 0 })", "number of bits used to store the mantissa", "System.Double", false, true, false, true, false, false, true, true, false, false, null, null, false, null, null, null}, true);
+                    result.LoadDataRow(new object[] { "money", AseDbType.Money, 19, "money", null, "System.Decimal", false, false, false, true, true, false, true, true, false, false, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "smallmoney", AseDbType.SmallMoney, 10, "smallmoney", null, "System.Decimal", false, false, false, true, true, false, true, true, false, false, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "bit", AseDbType.Bit, 1, "bit", null, "System.Boolean", false, false, false, true, false, false, true, true, false, null, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "tinyint", AseDbType.TinyInt, 3, "tinyint", null, "System.SByte", true, true, false, true, true, false, true, true, false, true, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "bigint", AseDbType.BigInt, 19, "bigint", null, "System.Int64", true, true, false, true, true, false, true, true, false, false, null, null, false, null, null, null }, true);
+                    result.LoadDataRow(new object[] { "timestamp", AseDbType.TimeStamp, 8, "timestamp", null, "System.Byte[]", false, false, false, true, false, false, false, true, false, null, null, null, true, null, "0x", null }, true);
+                    result.LoadDataRow(new object[] { "binary", AseDbType.Binary, 8000, "binary({ 0 })", "length", "System.Byte[]", false, true, false, true, false, false, true, true, false, null, null, null, false, null, "0x", null}, true);
+                    result.LoadDataRow(new object[] { "image", AseDbType.Image, 2147483647, "image", null, "System.Byte[]", false, true, false, false, false, true, true, false, false, null, null, null, false, null, "0x", null}, true);
+                    result.LoadDataRow(new object[] { "text", AseDbType.Text, 2147483647, "text", null, "System.String", false, true, false, false, false, true, true, false, true, null, null, null, false, null, "', '"}, true);
+                    //result.LoadDataRow(new object[] { "ntext", TODO, 1073741823, "ntext", null, "System.String", false, true, false, false, false, true, true, false, true, null, null, null, false, null, "N', '"}, true);
+                    result.LoadDataRow(new object[] { "decimal", AseDbType.Decimal, 38, "decimal ({0}, {1})", "precision,scale", "System.Decimal", true, true, false, true, false, false, true, true, false, false, 38, 0, false, null, null, null}, true);
+                    result.LoadDataRow(new object[] { "numeric", AseDbType.Numeric, 38, "numeric({ 0}, {1})", "precision,scale", "System.Decimal", true, true, false, true, false, false, true, true, false, false, 38, 0, false, null, null, null}, true);
+                    result.LoadDataRow(new object[] { "datetime", AseDbType.DateTime, 23, "datetime", null, "System.DateTime", false, true, false, true, false, false, true, true, true, null, null, null, false, null, "{ts ', '}"}, true);
+                    result.LoadDataRow(new object[] { "smalldatetime", AseDbType.SmallDateTime, 16, "smalldatetime", null, "System.DateTime", false, true, false, true, false, false, true, true, true, null, null, null, false, null, "{ts ', '}"}, true);
+                    result.LoadDataRow(new object[] { "sql_variant", 23, null, "sql_variant", null, "System.Object", false, true, false, false, false, false, true, true, false, null, null, null, false, false, null, null}, true);
+                    result.LoadDataRow(new object[] { "xml", 25, 2147483647, "xml", null, "System.String", false, false, false, false, false, true, true, false, false, null, null, null, false, false, null, null}, true);
+                    result.LoadDataRow(new object[] { "varchar", AseDbType.VarChar, 2147483647, "varchar({0})", "max length", "System.String", false, true, false, false, false, false, true, true, true, null, null, null, false, null, "', '"}, true);
+                    result.LoadDataRow(new object[] { "char", AseDbType.Char, 2147483647, "char ({0})", "length", "System.String", false, true, false, true, false, false, true, true, true, null, null, null, false, null, "', '"}, true);
+                    result.LoadDataRow(new object[] { "nchar", AseDbType.NChar, 1073741823, "nchar({0})", "length", "System.String", false, true, false, true, false, false, true, true, true, null, null, null, false, null, "N', '"}, true);
+                    result.LoadDataRow(new object[] { "nvarchar", AseDbType.NVarChar, 1073741823, "nvarchar({0})", "max length", "System.String", false, true, false, false, false, false, true, true, true, null, null, null, false, null, "N', '"}, true);
+                    result.LoadDataRow(new object[] { "varbinary", AseDbType.VarBinary, 1073741823, "varbinary({0})", "max length", "System.Byte[]", false, true, false, false, false, false, true, true, false, null, null, null, false, null, "0x", null}, true);
+                    //result.LoadDataRow(new object[] { "uniqueidentifier", TODO, 16, "uniqueidentifier", null, "System.Guid", false, true, false, true, false, false, true, true, false, null, null, null, false, null, "', '"}, true);
+                    break;
+                case "restrictions":
+                    // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/common-schema-collections#restrictions
+                    result.TableName = "Restrictions";
+                    result.Columns.Add("CollectionName", typeof(string));
+                    result.Columns.Add("RestrictionName", typeof(string));
+                    result.Columns.Add("ParameterName", typeof(string));
+                    result.Columns.Add("RestrictionDefault", typeof(string));
+                    result.Columns.Add("RestrictionNumber", typeof(string));
+
+                    result.LoadDataRow(new object[] { "Users", "User_Name", "@Name", "name", 1 }, true);
+                    result.LoadDataRow(new object[] { "Databases", "Name", "@Name", "Name", 1 }, true);
+                    result.LoadDataRow(new object[] { "Tables", "Catalog", "@Catalog", "TABLE_CATALOG", 1 }, true);
+                    result.LoadDataRow(new object[] { "Tables", "Owner", "@Owner", "TABLE_SCHEMA", 2 }, true);
+                    result.LoadDataRow(new object[] { "Tables", "Table", "@Name", "TABLE_NAME", 3 }, true);
+                    result.LoadDataRow(new object[] { "Tables", "TableType", "@TableType", "TABLE_TYPE", 4 }, true);
+                    result.LoadDataRow(new object[] { "Columns", "Catalog", "@Catalog", "TABLE_CATALOG", 1 }, true);
+                    result.LoadDataRow(new object[] { "Columns", "Owner", "@Owner", "TABLE_SCHEMA", 2 }, true);
+                    result.LoadDataRow(new object[] { "Columns", "Table", "@Table", "TABLE_NAME", 3 }, true);
+                    result.LoadDataRow(new object[] { "Columns", "Column", "@Column", "COLUMN_NAME", 4 }, true);
+                    result.LoadDataRow(new object[] { "Views", "Catalog", "@Catalog", "TABLE_CATALOG", 1 }, true);
+                    result.LoadDataRow(new object[] { "Views", "Owner", "@Owner", "TABLE_SCHEMA", 2 }, true);
+                    result.LoadDataRow(new object[] { "Views", "Table", "@Table", "TABLE_NAME", 3 }, true);
+                    result.LoadDataRow(new object[] { "ViewColumns", "Catalog", "@Catalog", "VIEW_CATALOG", 1 }, true);
+                    result.LoadDataRow(new object[] { "ViewColumns", "Owner", "@Owner", "VIEW_SCHEMA", 2 }, true);
+                    result.LoadDataRow(new object[] { "ViewColumns", "Table", "@Table", "VIEW_NAME", 3 }, true);
+                    result.LoadDataRow(new object[] { "ViewColumns", "Column", "@Column", "COLUMN_NAME", 4 }, true);
+                    result.LoadDataRow(new object[] { "ProcedureParameters", "Catalog", "@Catalog", "SPECIFIC_CATALOG", 1 }, true);
+                    result.LoadDataRow(new object[] { "ProcedureParameters", "Owner", "@Owner", "SPECIFIC_SCHEMA", 2 }, true);
+                    result.LoadDataRow(new object[] { "ProcedureParameters", "Name", "@Name", "SPECIFIC_NAME", 3 }, true);
+                    result.LoadDataRow(new object[] { "ProcedureParameters", "Parameter", "@Parameter", "PARAMETER_NAME", 4 }, true);
+                    result.LoadDataRow(new object[] { "Procedures", "Catalog", "@Catalog", "SPECIFIC_CATALOG", 1 }, true);
+                    result.LoadDataRow(new object[] { "Procedures", "Owner", "@Owner", "SPECIFIC_SCHEMA", 2 }, true);
+                    result.LoadDataRow(new object[] { "Procedures", "Name", "@Name", "SPECIFIC_NAME", 3 }, true);
+                    result.LoadDataRow(new object[] { "Procedures", "Type", "@Type", "ROUTINE_TYPE", 4 }, true);
+                    result.LoadDataRow(new object[] { "IndexColumns", "Catalog", "@Catalog", "db_name()", 1 }, true);
+                    result.LoadDataRow(new object[] { "IndexColumns", "Owner", "@Owner", "user_name()", 2 }, true);
+                    result.LoadDataRow(new object[] { "IndexColumns", "Table", "@Table", "o.name", 3 }, true);
+                    result.LoadDataRow(new object[] { "IndexColumns", "ConstraintName", "@ConstraintName", "x.name", 4 }, true);
+                    result.LoadDataRow(new object[] { "IndexColumns", "Column", "@Column", "c.name", 5 }, true);
+                    result.LoadDataRow(new object[] { "Indexes", "Catalog", "@Catalog", "db_name()", 1 }, true);
+                    result.LoadDataRow(new object[] { "Indexes", "Owner", "@Owner", "user_name()", 2 }, true);
+                    result.LoadDataRow(new object[] { "Indexes", "Table", "@Table", "o.name", 3 }, true);
+                    result.LoadDataRow(new object[] { "Indexes", "Name", "@Name", "x.name", 4 }, true);
+                    result.LoadDataRow(new object[] { "UserDefinedTypes", "assembly_name", "@AssemblyName", "assemblies.name", 1 }, true);
+                    result.LoadDataRow(new object[] { "UserDefinedTypes", "udt_name", "@UDTName", "types.assembly_class", 2 }, true);
+                    result.LoadDataRow(new object[] { "ForeignKeys", "Catalog", "@Catalog", "CONSTRAINT_CATALOG", 1 }, true);
+                    result.LoadDataRow(new object[] { "ForeignKeys", "Owner", "@Owner", "CONSTRAINT_SCHEMA", 2 }, true);
+                    result.LoadDataRow(new object[] { "ForeignKeys", "Table", "@Table", "TABLE_NAME", 3 }, true);
+                    result.LoadDataRow(new object[] { "ForeignKeys","Name","@Name","CONSTRAINT_NAME", 4 }, true);
+
+                    break;
+                case "reservedwords":
+                    result.TableName = "ReservedWords";
+                    result.Columns.Add("ReservedWord", typeof(string));
+                    result.LoadDataRow(new object[] { "ADD" }, true);
+                    result.LoadDataRow(new object[] { "EXCEPT" }, true);
+                    result.LoadDataRow(new object[] { "PERCENT" }, true);
+                    result.LoadDataRow(new object[] { "ALL" }, true);
+                    result.LoadDataRow(new object[] { "EXEC" }, true);
+                    result.LoadDataRow(new object[] { "PLAN" }, true);
+                    result.LoadDataRow(new object[] { "ALTER" }, true);
+                    result.LoadDataRow(new object[] { "EXECUTE" }, true);
+                    result.LoadDataRow(new object[] { "PRECISION" }, true);
+                    result.LoadDataRow(new object[] { "AND" }, true);
+                    result.LoadDataRow(new object[] { "EXISTS" }, true);
+                    result.LoadDataRow(new object[] { "PRIMARY" }, true);
+                    result.LoadDataRow(new object[] { "ANY" }, true);
+                    result.LoadDataRow(new object[] { "EXIT" }, true);
+                    result.LoadDataRow(new object[] { "PRINT" }, true);
+                    result.LoadDataRow(new object[] { "AS" }, true);
+                    result.LoadDataRow(new object[] { "FETCH" }, true);
+                    result.LoadDataRow(new object[] { "PROC" }, true);
+                    result.LoadDataRow(new object[] { "ASC" }, true);
+                    result.LoadDataRow(new object[] { "FILE" }, true);
+                    result.LoadDataRow(new object[] { "PROCEDURE" }, true);
+                    result.LoadDataRow(new object[] { "AUTHORIZATION" }, true);
+                    result.LoadDataRow(new object[] { "FILLFACTOR" }, true);
+                    result.LoadDataRow(new object[] { "PUBLIC" }, true);
+                    result.LoadDataRow(new object[] { "BACKUP" }, true);
+                    result.LoadDataRow(new object[] { "FOR" }, true);
+                    result.LoadDataRow(new object[] { "RAISERROR" }, true);
+                    result.LoadDataRow(new object[] { "BEGIN" }, true);
+                    result.LoadDataRow(new object[] { "FOREIGN" }, true);
+                    result.LoadDataRow(new object[] { "READ" }, true);
+                    result.LoadDataRow(new object[] { "BETWEEN" }, true);
+                    result.LoadDataRow(new object[] { "FREETEXT" }, true);
+                    result.LoadDataRow(new object[] { "READTEXT" }, true);
+                    result.LoadDataRow(new object[] { "BREAK" }, true);
+                    result.LoadDataRow(new object[] { "FREETEXTTABLE" }, true);
+                    result.LoadDataRow(new object[] { "RECONFIGURE" }, true);
+                    result.LoadDataRow(new object[] { "BROWSE" }, true);
+                    result.LoadDataRow(new object[] { "FROM" }, true);
+                    result.LoadDataRow(new object[] { "REFERENCES" }, true);
+                    result.LoadDataRow(new object[] { "BULK" }, true);
+                    result.LoadDataRow(new object[] { "FULL" }, true);
+                    result.LoadDataRow(new object[] { "REPLICATION" }, true);
+                    result.LoadDataRow(new object[] { "BY" }, true);
+                    result.LoadDataRow(new object[] { "FUNCTION" }, true);
+                    result.LoadDataRow(new object[] { "RESTORE" }, true);
+                    result.LoadDataRow(new object[] { "CASCADE" }, true);
+                    result.LoadDataRow(new object[] { "GOTO" }, true);
+                    result.LoadDataRow(new object[] { "RESTRICT" }, true);
+                    result.LoadDataRow(new object[] { "CASE" }, true);
+                    result.LoadDataRow(new object[] { "GRANT" }, true);
+                    result.LoadDataRow(new object[] { "RETURN" }, true);
+                    result.LoadDataRow(new object[] { "CHECK" }, true);
+                    result.LoadDataRow(new object[] { "GROUP" }, true);
+                    result.LoadDataRow(new object[] { "REVOKE" }, true);
+                    result.LoadDataRow(new object[] { "CHECKPOINT" }, true);
+                    result.LoadDataRow(new object[] { "HAVING" }, true);
+                    result.LoadDataRow(new object[] { "RIGHT" }, true);
+                    result.LoadDataRow(new object[] { "CLOSE" }, true);
+                    result.LoadDataRow(new object[] { "HOLDLOCK" }, true);
+                    result.LoadDataRow(new object[] { "ROLLBACK" }, true);
+                    result.LoadDataRow(new object[] { "CLUSTERED" }, true);
+                    result.LoadDataRow(new object[] { "IDENTITY" }, true);
+                    result.LoadDataRow(new object[] { "ROWCOUNT" }, true);
+                    result.LoadDataRow(new object[] { "COALESCE" }, true);
+                    result.LoadDataRow(new object[] { "IDENTITY_INSERT" }, true);
+                    result.LoadDataRow(new object[] { "ROWGUIDCOL" }, true);
+                    result.LoadDataRow(new object[] { "COLLATE" }, true);
+                    result.LoadDataRow(new object[] { "IDENTITYCOL" }, true);
+                    result.LoadDataRow(new object[] { "RULE" }, true);
+                    result.LoadDataRow(new object[] { "COLUMN" }, true);
+                    result.LoadDataRow(new object[] { "IF" }, true);
+                    result.LoadDataRow(new object[] { "SAVE" }, true);
+                    result.LoadDataRow(new object[] { "COMMIT" }, true);
+                    result.LoadDataRow(new object[] { "IN" }, true);
+                    result.LoadDataRow(new object[] { "SCHEMA" }, true);
+                    result.LoadDataRow(new object[] { "COMPUTE" }, true);
+                    result.LoadDataRow(new object[] { "INDEX" }, true);
+                    result.LoadDataRow(new object[] { "SELECT" }, true);
+                    result.LoadDataRow(new object[] { "CONSTRAINT" }, true);
+                    result.LoadDataRow(new object[] { "INNER" }, true);
+                    result.LoadDataRow(new object[] { "SESSION_USER" }, true);
+                    result.LoadDataRow(new object[] { "CONTAINS" }, true);
+                    result.LoadDataRow(new object[] { "INSERT" }, true);
+                    result.LoadDataRow(new object[] { "SET" }, true);
+                    result.LoadDataRow(new object[] { "CONTAINSTABLE" }, true);
+                    result.LoadDataRow(new object[] { "INTERSECT" }, true);
+                    result.LoadDataRow(new object[] { "SETUSER" }, true);
+                    result.LoadDataRow(new object[] { "CONTINUE" }, true);
+                    result.LoadDataRow(new object[] { "INTO" }, true);
+                    result.LoadDataRow(new object[] { "SHUTDOWN" }, true);
+                    result.LoadDataRow(new object[] { "CONVERT" }, true);
+                    result.LoadDataRow(new object[] { "IS" }, true);
+                    result.LoadDataRow(new object[] { "SOME" }, true);
+                    result.LoadDataRow(new object[] { "CREATE" }, true);
+                    result.LoadDataRow(new object[] { "JOIN" }, true);
+                    result.LoadDataRow(new object[] { "STATISTICS" }, true);
+                    result.LoadDataRow(new object[] { "CROSS" }, true);
+                    result.LoadDataRow(new object[] { "KEY" }, true);
+                    result.LoadDataRow(new object[] { "SYSTEM_USER" }, true);
+                    result.LoadDataRow(new object[] { "CURRENT" }, true);
+                    result.LoadDataRow(new object[] { "KILL" }, true);
+                    result.LoadDataRow(new object[] { "TABLE" }, true);
+                    result.LoadDataRow(new object[] { "CURRENT_DATE" }, true);
+                    result.LoadDataRow(new object[] { "LEFT" }, true);
+                    result.LoadDataRow(new object[] { "TEXTSIZE" }, true);
+                    result.LoadDataRow(new object[] { "CURRENT_TIME" }, true);
+                    result.LoadDataRow(new object[] { "LIKE" }, true);
+                    result.LoadDataRow(new object[] { "THEN" }, true);
+                    result.LoadDataRow(new object[] { "CURRENT_TIMESTAMP" }, true);
+                    result.LoadDataRow(new object[] { "LINENO" }, true);
+                    result.LoadDataRow(new object[] { "TO" }, true);
+                    result.LoadDataRow(new object[] { "CURRENT_USER" }, true);
+                    result.LoadDataRow(new object[] { "LOAD" }, true);
+                    result.LoadDataRow(new object[] { "TOP" }, true);
+                    result.LoadDataRow(new object[] { "CURSOR" }, true);
+                    result.LoadDataRow(new object[] { "NATIONAL " }, true);
+                    result.LoadDataRow(new object[] { "TRAN" }, true);
+                    result.LoadDataRow(new object[] { "DATABASE" }, true);
+                    result.LoadDataRow(new object[] { "NOCHECK" }, true);
+                    result.LoadDataRow(new object[] { "TRANSACTION" }, true);
+                    result.LoadDataRow(new object[] { "DBCC" }, true);
+                    result.LoadDataRow(new object[] { "NONCLUSTERED" }, true);
+                    result.LoadDataRow(new object[] { "TRIGGER" }, true);
+                    result.LoadDataRow(new object[] { "DEALLOCATE" }, true);
+                    result.LoadDataRow(new object[] { "NOT" }, true);
+                    result.LoadDataRow(new object[] { "TRUNCATE" }, true);
+                    result.LoadDataRow(new object[] { "DECLARE" }, true);
+                    result.LoadDataRow(new object[] { "NULL" }, true);
+                    result.LoadDataRow(new object[] { "TSEQUAL" }, true);
+                    result.LoadDataRow(new object[] { "DEFAULT" }, true);
+                    result.LoadDataRow(new object[] { "NULLIF" }, true);
+                    result.LoadDataRow(new object[] { "UNION" }, true);
+                    result.LoadDataRow(new object[] { "DELETE" }, true);
+                    result.LoadDataRow(new object[] { "OF" }, true);
+                    result.LoadDataRow(new object[] { "UNIQUE" }, true);
+                    result.LoadDataRow(new object[] { "DENY" }, true);
+                    result.LoadDataRow(new object[] { "OFF" }, true);
+                    result.LoadDataRow(new object[] { "UPDATE" }, true);
+                    result.LoadDataRow(new object[] { "DESC" }, true);
+                    result.LoadDataRow(new object[] { "OFFSETS" }, true);
+                    result.LoadDataRow(new object[] { "UPDATETEXT" }, true);
+                    result.LoadDataRow(new object[] { "DISK" }, true);
+                    result.LoadDataRow(new object[] { "ON" }, true);
+                    result.LoadDataRow(new object[] { "USE" }, true);
+                    result.LoadDataRow(new object[] { "DISTINCT" }, true);
+                    result.LoadDataRow(new object[] { "OPEN" }, true);
+                    result.LoadDataRow(new object[] { "USER" }, true);
+                    result.LoadDataRow(new object[] { "DISTRIBUTED" }, true);
+                    result.LoadDataRow(new object[] { "OPENDATASOURCE" }, true);
+                    result.LoadDataRow(new object[] { "VALUES" }, true);
+                    result.LoadDataRow(new object[] { "DOUBLE" }, true);
+                    result.LoadDataRow(new object[] { "OPENQUERY" }, true);
+                    result.LoadDataRow(new object[] { "VARYING" }, true);
+                    result.LoadDataRow(new object[] { "DROP" }, true);
+                    result.LoadDataRow(new object[] { "OPENROWSET" }, true);
+                    result.LoadDataRow(new object[] { "VIEW" }, true);
+                    result.LoadDataRow(new object[] { "DUMMY" }, true);
+                    result.LoadDataRow(new object[] { "OPENXML" }, true);
+                    result.LoadDataRow(new object[] { "WAITFOR" }, true);
+                    result.LoadDataRow(new object[] { "DUMP" }, true);
+                    result.LoadDataRow(new object[] { "OPTION" }, true);
+                    result.LoadDataRow(new object[] { "WHEN" }, true);
+                    result.LoadDataRow(new object[] { "ELSE" }, true);
+                    result.LoadDataRow(new object[] { "OR" }, true);
+                    result.LoadDataRow(new object[] { "WHERE" }, true);
+                    result.LoadDataRow(new object[] { "END" }, true);
+                    result.LoadDataRow(new object[] { "ORDER" }, true);
+                    result.LoadDataRow(new object[] { "WHILE" }, true);
+                    result.LoadDataRow(new object[] { "ERRLVL" }, true);
+                    result.LoadDataRow(new object[] { "OUTER" }, true);
+                    result.LoadDataRow(new object[] { "WITH" }, true);
+                    result.LoadDataRow(new object[] { "ESCAPE" }, true);
+                    result.LoadDataRow(new object[] { "OVER" }, true);
+                    result.LoadDataRow(new object[] { "WRITETEXT" }, true);
+                    result.LoadDataRow(new object[] { "ABSOLUTE" }, true);
+                    result.LoadDataRow(new object[] { "FOUND" }, true);
+                    result.LoadDataRow(new object[] { "PRESERVE" }, true);
+                    result.LoadDataRow(new object[] { "ACTION" }, true);
+                    result.LoadDataRow(new object[] { "FREE" }, true);
+                    result.LoadDataRow(new object[] { "PRIOR" }, true);
+                    result.LoadDataRow(new object[] { "ADMIN" }, true);
+                    result.LoadDataRow(new object[] { "GENERAL" }, true);
+                    result.LoadDataRow(new object[] { "PRIVILEGES" }, true);
+                    result.LoadDataRow(new object[] { "AFTER" }, true);
+                    result.LoadDataRow(new object[] { "GET" }, true);
+                    result.LoadDataRow(new object[] { "READS" }, true);
+                    result.LoadDataRow(new object[] { "AGGREGATE" }, true);
+                    result.LoadDataRow(new object[] { "GLOBAL" }, true);
+                    result.LoadDataRow(new object[] { "REAL" }, true);
+                    result.LoadDataRow(new object[] { "ALIAS" }, true);
+                    result.LoadDataRow(new object[] { "GO" }, true);
+                    result.LoadDataRow(new object[] { "RECURSIVE" }, true);
+                    result.LoadDataRow(new object[] { "ALLOCATE" }, true);
+                    result.LoadDataRow(new object[] { "GROUPING" }, true);
+                    result.LoadDataRow(new object[] { "REF" }, true);
+                    result.LoadDataRow(new object[] { "ARE" }, true);
+                    result.LoadDataRow(new object[] { "HOST" }, true);
+                    result.LoadDataRow(new object[] { "REFERENCING" }, true);
+                    result.LoadDataRow(new object[] { "ARRAY" }, true);
+                    result.LoadDataRow(new object[] { "HOUR" }, true);
+                    result.LoadDataRow(new object[] { "RELATIVE" }, true);
+                    result.LoadDataRow(new object[] { "ASSERTION" }, true);
+                    result.LoadDataRow(new object[] { "IGNORE" }, true);
+                    result.LoadDataRow(new object[] { "RESULT" }, true);
+                    result.LoadDataRow(new object[] { "AT" }, true);
+                    result.LoadDataRow(new object[] { "IMMEDIATE" }, true);
+                    result.LoadDataRow(new object[] { "RETURNS" }, true);
+                    result.LoadDataRow(new object[] { "BEFORE" }, true);
+                    result.LoadDataRow(new object[] { "INDICATOR" }, true);
+                    result.LoadDataRow(new object[] { "ROLE" }, true);
+                    result.LoadDataRow(new object[] { "BINARY" }, true);
+                    result.LoadDataRow(new object[] { "INITIALIZE" }, true);
+                    result.LoadDataRow(new object[] { "ROLLUP" }, true);
+                    result.LoadDataRow(new object[] { "BIT" }, true);
+                    result.LoadDataRow(new object[] { "INITIALLY" }, true);
+                    result.LoadDataRow(new object[] { "ROUTINE" }, true);
+                    result.LoadDataRow(new object[] { "BLOB" }, true);
+                    result.LoadDataRow(new object[] { "INOUT" }, true);
+                    result.LoadDataRow(new object[] { "ROW" }, true);
+                    result.LoadDataRow(new object[] { "BOOLEAN" }, true);
+                    result.LoadDataRow(new object[] { "INPUT" }, true);
+                    result.LoadDataRow(new object[] { "ROWS" }, true);
+                    result.LoadDataRow(new object[] { "BOTH" }, true);
+                    result.LoadDataRow(new object[] { "INT" }, true);
+                    result.LoadDataRow(new object[] { "SAVEPOINT" }, true);
+                    result.LoadDataRow(new object[] { "BREADTH" }, true);
+                    result.LoadDataRow(new object[] { "INTEGER" }, true);
+                    result.LoadDataRow(new object[] { "SCROLL" }, true);
+                    result.LoadDataRow(new object[] { "CALL" }, true);
+                    result.LoadDataRow(new object[] { "INTERVAL" }, true);
+                    result.LoadDataRow(new object[] { "SCOPE" }, true);
+                    result.LoadDataRow(new object[] { "CASCADED" }, true);
+                    result.LoadDataRow(new object[] { "ISOLATION" }, true);
+                    result.LoadDataRow(new object[] { "SEARCH" }, true);
+                    result.LoadDataRow(new object[] { "CAST" }, true);
+                    result.LoadDataRow(new object[] { "ITERATE" }, true);
+                    result.LoadDataRow(new object[] { "SECOND" }, true);
+                    result.LoadDataRow(new object[] { "CATALOG" }, true);
+                    result.LoadDataRow(new object[] { "LANGUAGE" }, true);
+                    result.LoadDataRow(new object[] { "SECTION" }, true);
+                    result.LoadDataRow(new object[] { "CHAR" }, true);
+                    result.LoadDataRow(new object[] { "LARGE" }, true);
+                    result.LoadDataRow(new object[] { "SEQUENCE" }, true);
+                    result.LoadDataRow(new object[] { "CHARACTER" }, true);
+                    result.LoadDataRow(new object[] { "LAST" }, true);
+                    result.LoadDataRow(new object[] { "SESSION" }, true);
+                    result.LoadDataRow(new object[] { "CLASS" }, true);
+                    result.LoadDataRow(new object[] { "LATERAL" }, true);
+                    result.LoadDataRow(new object[] { "SETS" }, true);
+                    result.LoadDataRow(new object[] { "CLOB" }, true);
+                    result.LoadDataRow(new object[] { "LEADING" }, true);
+                    result.LoadDataRow(new object[] { "SIZE" }, true);
+                    result.LoadDataRow(new object[] { "COLLATION" }, true);
+                    result.LoadDataRow(new object[] { "LESS" }, true);
+                    result.LoadDataRow(new object[] { "SMALLINT" }, true);
+                    result.LoadDataRow(new object[] { "COMPLETION" }, true);
+                    result.LoadDataRow(new object[] { "LEVEL" }, true);
+                    result.LoadDataRow(new object[] { "SPACE" }, true);
+                    result.LoadDataRow(new object[] { "CONNECT" }, true);
+                    result.LoadDataRow(new object[] { "LIMIT" }, true);
+                    result.LoadDataRow(new object[] { "SPECIFIC" }, true);
+                    result.LoadDataRow(new object[] { "CONNECTION" }, true);
+                    result.LoadDataRow(new object[] { "LOCAL" }, true);
+                    result.LoadDataRow(new object[] { "SPECIFICTYPE" }, true);
+                    result.LoadDataRow(new object[] { "CONSTRAINTS" }, true);
+                    result.LoadDataRow(new object[] { "LOCALTIME" }, true);
+                    result.LoadDataRow(new object[] { "SQL" }, true);
+                    result.LoadDataRow(new object[] { "CONSTRUCTOR" }, true);
+                    result.LoadDataRow(new object[] { "LOCALTIMESTAMP" }, true);
+                    result.LoadDataRow(new object[] { "SQLEXCEPTION" }, true);
+                    result.LoadDataRow(new object[] { "CORRESPONDING" }, true);
+                    result.LoadDataRow(new object[] { "LOCATOR" }, true);
+                    result.LoadDataRow(new object[] { "SQLSTATE" }, true);
+                    result.LoadDataRow(new object[] { "CUBE" }, true);
+                    result.LoadDataRow(new object[] { "MAP" }, true);
+                    result.LoadDataRow(new object[] { "SQLWARNING" }, true);
+                    result.LoadDataRow(new object[] { "CURRENT_PATH" }, true);
+                    result.LoadDataRow(new object[] { "MATCH" }, true);
+                    result.LoadDataRow(new object[] { "START" }, true);
+                    result.LoadDataRow(new object[] { "CURRENT_ROLE" }, true);
+                    result.LoadDataRow(new object[] { "MINUTE" }, true);
+                    result.LoadDataRow(new object[] { "STATE" }, true);
+                    result.LoadDataRow(new object[] { "CYCLE" }, true);
+                    result.LoadDataRow(new object[] { "MODIFIES" }, true);
+                    result.LoadDataRow(new object[] { "STATEMENT" }, true);
+                    result.LoadDataRow(new object[] { "DATA" }, true);
+                    result.LoadDataRow(new object[] { "MODIFY" }, true);
+                    result.LoadDataRow(new object[] { "STATIC" }, true);
+                    result.LoadDataRow(new object[] { "DATE" }, true);
+                    result.LoadDataRow(new object[] { "MODULE" }, true);
+                    result.LoadDataRow(new object[] { "STRUCTURE" }, true);
+                    result.LoadDataRow(new object[] { "DAY" }, true);
+                    result.LoadDataRow(new object[] { "MONTH" }, true);
+                    result.LoadDataRow(new object[] { "TEMPORARY" }, true);
+                    result.LoadDataRow(new object[] { "DEC" }, true);
+                    result.LoadDataRow(new object[] { "NAMES" }, true);
+                    result.LoadDataRow(new object[] { "TERMINATE" }, true);
+                    result.LoadDataRow(new object[] { "DECIMAL" }, true);
+                    result.LoadDataRow(new object[] { "NATURAL" }, true);
+                    result.LoadDataRow(new object[] { "THAN" }, true);
+                    result.LoadDataRow(new object[] { "DEFERRABLE" }, true);
+                    result.LoadDataRow(new object[] { "NCHAR" }, true);
+                    result.LoadDataRow(new object[] { "TIME" }, true);
+                    result.LoadDataRow(new object[] { "DEFERRED" }, true);
+                    result.LoadDataRow(new object[] { "NCLOB" }, true);
+                    result.LoadDataRow(new object[] { "TIMESTAMP" }, true);
+                    result.LoadDataRow(new object[] { "DEPTH" }, true);
+                    result.LoadDataRow(new object[] { "NEW" }, true);
+                    result.LoadDataRow(new object[] { "TIMEZONE_HOUR" }, true);
+                    result.LoadDataRow(new object[] { "DEREF" }, true);
+                    result.LoadDataRow(new object[] { "NEXT" }, true);
+                    result.LoadDataRow(new object[] { "TIMEZONE_MINUTE" }, true);
+                    result.LoadDataRow(new object[] { "DESCRIBE" }, true);
+                    result.LoadDataRow(new object[] { "NO" }, true);
+                    result.LoadDataRow(new object[] { "TRAILING" }, true);
+                    result.LoadDataRow(new object[] { "DESCRIPTOR" }, true);
+                    result.LoadDataRow(new object[] { "NONE" }, true);
+                    result.LoadDataRow(new object[] { "TRANSLATION" }, true);
+                    result.LoadDataRow(new object[] { "DESTROY" }, true);
+                    result.LoadDataRow(new object[] { "NUMERIC" }, true);
+                    result.LoadDataRow(new object[] { "TREAT" }, true);
+                    result.LoadDataRow(new object[] { "DESTRUCTOR" }, true);
+                    result.LoadDataRow(new object[] { "OBJECT" }, true);
+                    result.LoadDataRow(new object[] { "TRUE" }, true);
+                    result.LoadDataRow(new object[] { "DETERMINISTIC" }, true);
+                    result.LoadDataRow(new object[] { "OLD" }, true);
+                    result.LoadDataRow(new object[] { "UNDER" }, true);
+                    result.LoadDataRow(new object[] { "DICTIONARY" }, true);
+                    result.LoadDataRow(new object[] { "ONLY" }, true);
+                    result.LoadDataRow(new object[] { "UNKNOWN" }, true);
+                    result.LoadDataRow(new object[] { "DIAGNOSTICS" }, true);
+                    result.LoadDataRow(new object[] { "OPERATION" }, true);
+                    result.LoadDataRow(new object[] { "UNNEST" }, true);
+                    result.LoadDataRow(new object[] { "DISCONNECT" }, true);
+                    result.LoadDataRow(new object[] { "ORDINALITY" }, true);
+                    result.LoadDataRow(new object[] { "USAGE" }, true);
+                    result.LoadDataRow(new object[] { "DOMAIN" }, true);
+                    result.LoadDataRow(new object[] { "OUT" }, true);
+                    result.LoadDataRow(new object[] { "USING" }, true);
+                    result.LoadDataRow(new object[] { "DYNAMIC" }, true);
+                    result.LoadDataRow(new object[] { "OUTPUT" }, true);
+                    result.LoadDataRow(new object[] { "VALUE" }, true);
+                    result.LoadDataRow(new object[] { "EACH" }, true);
+                    result.LoadDataRow(new object[] { "PAD" }, true);
+                    result.LoadDataRow(new object[] { "VARCHAR" }, true);
+                    result.LoadDataRow(new object[] { "END-EXEC" }, true);
+                    result.LoadDataRow(new object[] { "PARAMETER" }, true);
+                    result.LoadDataRow(new object[] { "VARIABLE" }, true);
+                    result.LoadDataRow(new object[] { "EQUALS" }, true);
+                    result.LoadDataRow(new object[] { "PARAMETERS" }, true);
+                    result.LoadDataRow(new object[] { "WHENEVER" }, true);
+                    result.LoadDataRow(new object[] { "EVERY" }, true);
+                    result.LoadDataRow(new object[] { "PARTIAL" }, true);
+                    result.LoadDataRow(new object[] { "WITHOUT" }, true);
+                    result.LoadDataRow(new object[] { "EXCEPTION" }, true);
+                    result.LoadDataRow(new object[] { "PATH" }, true);
+                    result.LoadDataRow(new object[] { "WORK" }, true);
+                    result.LoadDataRow(new object[] { "EXTERNAL" }, true);
+                    result.LoadDataRow(new object[] { "POSTFIX" }, true);
+                    result.LoadDataRow(new object[] { "WRITE" }, true);
+                    result.LoadDataRow(new object[] { "FALSE" }, true);
+                    result.LoadDataRow(new object[] { "PREFIX" }, true);
+                    result.LoadDataRow(new object[] { "YEAR" }, true);
+                    result.LoadDataRow(new object[] { "FIRST" }, true);
+                    result.LoadDataRow(new object[] { "PREORDER" }, true);
+                    result.LoadDataRow(new object[] { "ZONE" }, true);
+                    result.LoadDataRow(new object[] { "FLOAT" }, true);
+                    result.LoadDataRow(new object[] { "PREPARE" }, true);
+                    result.LoadDataRow(new object[] { "ADA" }, true);
+                    result.LoadDataRow(new object[] { "AVG" }, true);
+                    result.LoadDataRow(new object[] { "BIT_LENGTH" }, true);
+                    result.LoadDataRow(new object[] { "CHAR_LENGTH" }, true);
+                    result.LoadDataRow(new object[] { "CHARACTER_LENGTH" }, true);
+                    result.LoadDataRow(new object[] { "COUNT" }, true);
+                    result.LoadDataRow(new object[] { "EXTRACT" }, true);
+                    result.LoadDataRow(new object[] { "FORTRAN" }, true);
+                    result.LoadDataRow(new object[] { "INCLUDE" }, true);
+                    result.LoadDataRow(new object[] { "INSENSITIVE" }, true);
+                    result.LoadDataRow(new object[] { "LOWER" }, true);
+                    result.LoadDataRow(new object[] { "MAX" }, true);
+                    result.LoadDataRow(new object[] { "MIN" }, true);
+                    result.LoadDataRow(new object[] { "OCTET_LENGTH" }, true);
+                    result.LoadDataRow(new object[] { "OVERLAPS" }, true);
+                    result.LoadDataRow(new object[] { "PASCAL" }, true);
+                    result.LoadDataRow(new object[] { "POSITION" }, true);
+                    result.LoadDataRow(new object[] { "SQLCA" }, true);
+                    result.LoadDataRow(new object[] { "SQLCODE" }, true);
+                    result.LoadDataRow(new object[] { "SQLERROR" }, true);
+                    result.LoadDataRow(new object[] { "SUBSTRING" }, true);
+                    result.LoadDataRow(new object[] { "SUM" }, true);
+                    result.LoadDataRow(new object[] { "TRANSLATE" }, true);
+                    result.LoadDataRow(new object[] { "TRIM" }, true);
+                    result.LoadDataRow(new object[] { "UPPER" }, true);
+
+                    break;
+                case "users":
+                    // TODO
+                    break;
+                case "databases":
+                    // TODO
+                    break;
+                case "tables":
+                    // TODO
+                    break;
+                case "columns":
+                    // TODO
+                    break;
+                case "views":
+                    // TODO
+                    break;
+                case "viewcolumns":
+                    // TODO
+                    break;
+                case "procedureparameters":
+                    // TODO
+                    break;
+                case "procedures":
+                    // TODO
+                    break;
+                case "foreignkeys":
+                    // TODO
+                    break;
+                case "indexcolumns":
+                    // TODO
+                    break;
+                case "indexes":
+                    // TODO
+                    break;
+                case "userdefinedtypes":
+                    // TODO
+                    break;
+                default:
+                    throw new ArgumentException("The specified collection name is not supported.", nameof(collectionName));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Returns schema information for the data source of this <see cref="AseConnection"/> using the specified string for the schema name
+        /// and the specified string array for the restriction values..
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///     The restrictionValues parameter can supply n depth of values, which are specified by the restrictions collection for a
+        ///     specific collection. In order to set values on a given restriction, and not set the values of other restrictions, you need
+        ///     to set the preceding restrictions to null and then put the appropriate value in for the restriction that you would like to
+        ///     specify a value for.
+        ///     </para>
+        ///     <para>
+        ///     An example of this is the "Tables" collection.If the "Tables" collection has three restrictions (database,
+        ///     owner, and table name) and you want to get back only the tables associated with the owner "Carl", you must pass in
+        ///     the following values at least: null, "Carl". If a restriction value is not passed in, the default values are used
+        ///     for that restriction. This is the same mapping as passing in null, which is different from passing in an empty string
+        ///     for the parameter value.In that case, the empty string ("") is considered to be the value for the specified parameter.
+        ///     </para>
+        /// </remarks>
+        /// <param name="collectionName">The name of the collection to retrieve detailed results for.</param>
+        /// <param name="restrictionValues">Specifies a set of restriction values for the requested schema.</param>
+        /// <returns>A <see cref="DataTable"/> that contains schema information.</returns>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="collectionName"/> is null, or does not represent a supported schema collection.</exception>
+        public override DataTable GetSchema(string collectionName, string[] restrictionValues)
+        {
+            return base.GetSchema(collectionName, restrictionValues);
+        }
+#endif
     }
 
     /// <summary>

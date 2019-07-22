@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 #if ENABLE_SYSTEMEXCEPTION
 using System.Runtime.Serialization;
 #endif
@@ -27,13 +26,13 @@ namespace AdoNetCore.AseClient
         /// </remarks>
         public AseErrorCollection Errors
         {
-            get; private set;
+            get;
         }
 
         /// <summary>
         /// This method returns the message of the most severe error.
         /// </summary>
-        public override string Message => this.Errors.MainError == null ? string.Empty : this.Errors.MainError.Message;
+        public override string Message => Errors.MainError == null ? string.Empty : Errors.MainError.Message;
 
         /// <summary>
         /// Constructor function for an <see cref="AseException" /> instance.

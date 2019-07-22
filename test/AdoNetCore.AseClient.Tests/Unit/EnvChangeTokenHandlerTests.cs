@@ -17,7 +17,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var handler = new EnvChangeTokenHandler(environment, string.Empty);
             handler.Handle(new EnvironmentChangeToken()
             {
-                Changes = new EnvironmentChangeToken.EnvironmentChange[]
+                Changes = new[]
                 {
                     new EnvironmentChangeToken.EnvironmentChange()
                     {
@@ -36,7 +36,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var handler = new EnvChangeTokenHandler(environment, string.Empty);
             handler.Handle(new EnvironmentChangeToken()
             {
-                Changes = new EnvironmentChangeToken.EnvironmentChange[]
+                Changes = new[]
                 {
                     new EnvironmentChangeToken.EnvironmentChange()
                     {
@@ -65,7 +65,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var handler = new EnvChangeTokenHandler(environment, clientRequestedCharset);
             handler.Handle(new EnvironmentChangeToken()
             {
-                Changes = new EnvironmentChangeToken.EnvironmentChange[]
+                Changes = new[]
                 {
                     new EnvironmentChangeToken.EnvironmentChange()
                     {
@@ -86,7 +86,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             string unknownCharsetName = "UNKNOWN-CHARSET";
             var exception = Assert.Throws<AseException>(() => handler.Handle(new EnvironmentChangeToken()
             {
-                Changes = new EnvironmentChangeToken.EnvironmentChange[]
+                Changes = new[]
                 {
                     new EnvironmentChangeToken.EnvironmentChange()
                     {

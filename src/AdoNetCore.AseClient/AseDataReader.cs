@@ -19,14 +19,21 @@ namespace AdoNetCore.AseClient
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         private readonly AseCommand _command;
         private DataTable _currentSchemaTable;
-#endif
 
         internal AseDataReader(IEnumerable<TableResult> results, AseCommand command, CommandBehavior behavior)
         {
             _results = results.ToArray();
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _command = command;
+
+            _behavior = behavior;
+            NextResult();
+        }
 #endif
+
+        internal AseDataReader(IEnumerable<TableResult> results, CommandBehavior behavior)
+        {
+            _results = results.ToArray();
+
             _behavior = behavior;
             NextResult();
         }

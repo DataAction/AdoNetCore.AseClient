@@ -34,7 +34,6 @@ namespace AdoNetCore.AseClient.Token
         /// The token's length or the length of its remaining length indicator is encoded in the token's type.
         /// </summary>
         /// <param name="stream"></param>
-        /// <param name="type"></param>
         /// <returns></returns>
         private uint CalculateRemainingLength(Stream stream)
         {

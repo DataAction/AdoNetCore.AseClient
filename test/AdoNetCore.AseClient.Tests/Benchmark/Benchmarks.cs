@@ -10,14 +10,14 @@ namespace AdoNetCore.AseClient.Tests.Benchmark
     {
         // This connection string is used for setting up the database. It requires DDL permissions. Adjust accordingly.
         private string _setupConnectionString;
-        private IConnectionProvider _connectionProvider;
+        private T _connectionProvider;
 
         public string UnpooledConnectionString { get; } =ConnectionStrings.NonPooled;
 
         public string PooledConnectionString => ConnectionStrings.Pooled10;
 
 
-        private void Initialise(IConnectionProvider connectionProvider)
+        private void Initialise(T connectionProvider)
         {
             _connectionProvider = connectionProvider;
             _setupConnectionString = _setupConnectionString ?? UnpooledConnectionString;
@@ -259,6 +259,7 @@ WHERE
         /// <summary>
         /// The Name of the records from the database.
         /// </summary>
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public string Name { get; set; }
 
         /// <summary>

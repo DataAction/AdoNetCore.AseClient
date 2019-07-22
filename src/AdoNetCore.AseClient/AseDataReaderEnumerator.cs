@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 
 namespace AdoNetCore.AseClient
@@ -12,7 +12,7 @@ namespace AdoNetCore.AseClient
 
         public AseDataReaderEnumerator(AseDataReader dataReader)
         {
-            this._dataReader = dataReader;
+            _dataReader = dataReader;
         }
 
         public void Reset()

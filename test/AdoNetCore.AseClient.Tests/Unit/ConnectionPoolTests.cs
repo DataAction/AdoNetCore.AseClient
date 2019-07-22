@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -105,7 +106,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 }
                 catch (AggregateException ae)
                 {
-                    ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                    ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                     throw;
                 }
                 
@@ -160,6 +161,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
             }
         }
 
+        [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty")]
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
         private class DoNothingInternalConnection : IInternalConnection
         {
             public void Dispose() { }
@@ -226,10 +229,11 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
             {
                 token.WaitHandle.WaitOne();
-                throw new TimeoutException($"Timed out attempting to create new connection");
+                throw new TimeoutException("Timed out attempting to create new connection");
             }
         }
 
+        [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty")]
         private class TestConnectionParameters : IConnectionParameters
         {
             public string Server { get; }

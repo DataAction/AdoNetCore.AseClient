@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 /*
@@ -34,8 +34,8 @@ SOFTWARE.
 using System;
 using System.Diagnostics;
 using System.Globalization;
-// ReSharper disable InconsistentNaming
-// ReSharper disable MemberCanBePrivate.Global
+
+// ReSharper disable All
 
 namespace AdoNetCore.AseClient.Internal
 {

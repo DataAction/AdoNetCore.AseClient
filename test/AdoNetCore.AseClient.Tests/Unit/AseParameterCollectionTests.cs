@@ -10,6 +10,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [Test]
         public void ConstructParameterCollection_WithNoArgs_NoErrors()
         {
+            // ReSharper disable once CollectionNeverUpdated.Local
             var parameterCollection = new AseParameterCollection();
 
             Assert.IsEmpty(parameterCollection);

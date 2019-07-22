@@ -7,7 +7,7 @@ namespace AdoNetCore.AseClient.Tests.ParameterProvider
     {
         public DbParameter GetParameter()
         {
-            return new AdoNetCore.AseClient.AseParameter();
+            return new AseParameter();
         }
         public DbParameter GetParameter(string parameterName, string aseDbType)
         {

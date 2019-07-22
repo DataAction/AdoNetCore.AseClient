@@ -521,7 +521,10 @@ namespace AdoNetCore.AseClient
         /// <param name="index">The starting index of the array.</param>
         public override void CopyTo(Array array, int index)
         {
-            ((IList)_parameters).CopyTo(array, index);
+            if (array != null)
+            {
+                ((IList)_parameters).CopyTo(array, index);
+            }
         }
 
         /// <summary>

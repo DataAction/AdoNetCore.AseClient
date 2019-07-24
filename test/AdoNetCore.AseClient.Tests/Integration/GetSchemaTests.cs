@@ -75,7 +75,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("ForeignKeys")]
         [TestCase("IndexColumns")]
         [TestCase("Indexes")]
-        [TestCase("UserDefinedTypes")]
+        //[TestCase("UserDefinedTypes")]
         public void AseConnection_GetSchemaForCollection_ReturnsResults(string collectionName)
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
@@ -98,7 +98,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
         //[TestCase("ForeignKeys")]
         //[TestCase("IndexColumns")]
         //[TestCase("Indexes")]
-        //[TestCase("UserDefinedTypes")]
         public void AseConnection_GetSchemaForCollection_ReturnsResults(string collectionName, string restriction1)
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))

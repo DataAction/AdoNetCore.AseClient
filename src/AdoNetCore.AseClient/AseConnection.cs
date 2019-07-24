@@ -667,7 +667,7 @@ namespace AdoNetCore.AseClient
             result.LoadDataRow(new object[] { "ForeignKeys", 4, 3 }, true);
             result.LoadDataRow(new object[] { "IndexColumns", 5, 4 }, true);
             result.LoadDataRow(new object[] { "Indexes", 4, 3 }, true);
-            result.LoadDataRow(new object[] { "UserDefinedTypes", 2, 1 }, true);
+            //result.LoadDataRow(new object[] { "UserDefinedTypes", 2, 1 }, true);
             result.EndLoadData();
             
             return result;
@@ -709,39 +709,30 @@ namespace AdoNetCore.AseClient
         /// <exception cref="ArgumentException">Thrown if <paramref name="collectionName"/> is null, or does not represent a supported schema collection.</exception>
         public override DataTable GetSchema(string collectionName, string[] restrictionValues)
         {
-            DataTable metaDataCollections = null;
-
             if (collectionName == null)
             {
                 throw new AseException("Wrong CollectionName");
             }
 
-            if (restrictionValues == null)
-            {
-                restrictionValues = new string[0];
-            }
-            else
-            {
-                metaDataCollections = GetSchema();
+            var metaDataCollections = GetSchema();
 
-                foreach (DataRow row in metaDataCollections.Rows)
+            foreach (DataRow row in metaDataCollections.Rows)
+            {
+                if (!string.Equals(row["CollectionName"] as string, collectionName, StringComparison.OrdinalIgnoreCase))
                 {
-                    if(!string.Equals(row["CollectionName"] as string, collectionName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    if(restrictionValues.Length > (int)row["NumberOfRestrictions"])
-                    {
-                        throw new AseException($"More restrictions were provided than the requested schema ('{collectionName}') supports");
-                    }
+                if (restrictionValues.Length > (int)row["NumberOfRestrictions"])
+                {
+                    throw new AseException($"More restrictions were provided than the requested schema ('{collectionName}') supports");
                 }
             }
 
             switch (collectionName)
             {
                 case "MetaDataCollections":
-                    return metaDataCollections ?? GetSchema();
+                    return metaDataCollections;
 
                 case "DataSourceInformation":
                     return GetDataSourceInformationSchema();
@@ -808,7 +799,93 @@ namespace AdoNetCore.AseClient
 
         private DataTable GetForeignKeysSchema(string[] restrictionValues)
         {
-            throw new NotImplementedException();
+            Open(); // Ensure the connection is open.
+
+            using (var foreignKeysCommand = CreateCommand())
+            {
+                const string procName = "sp_oledb_fkeys";
+
+                foreignKeysCommand.NamedParameters = true;
+                foreignKeysCommand.CommandType = CommandType.Text;
+                foreignKeysCommand.CommandText = $"SELECT CASE WHEN EXISTS(SELECT 1 FROM sybsystemprocs.dbo.sysobjects WHERE name = '{procName}') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
+
+                var exists = (bool)foreignKeysCommand.ExecuteScalar();
+
+                if (!exists)
+                {
+                    throw new AseException($"Missing system stored procedure '{procName}'.");
+                }
+
+                foreignKeysCommand.CommandType = CommandType.StoredProcedure;
+                foreignKeysCommand.CommandText = procName;
+
+                if (restrictionValues.Length > 0)
+                {
+                    foreignKeysCommand.Parameters.Add("@pktable_name", AseDbType.VarChar, byte.MaxValue).Value = restrictionValues[0];
+                }
+                if (restrictionValues.Length > 1)
+                {
+                    foreignKeysCommand.Parameters.Add("@pktable_owner", AseDbType.VarChar, byte.MaxValue).Value = restrictionValues[1];
+                }
+                if (restrictionValues.Length > 2)
+                {
+                    foreignKeysCommand.Parameters.Add("@pktable_qualifier", AseDbType.VarChar, byte.MaxValue).Value = restrictionValues[2];
+                }
+                if (restrictionValues.Length > 3)
+                {
+                    foreignKeysCommand.Parameters.Add("@fktable_name", AseDbType.VarChar, byte.MaxValue).Value = restrictionValues[3];
+                }
+                if (restrictionValues.Length > 4)
+                {
+                    foreignKeysCommand.Parameters.Add("@fktable_owner", AseDbType.VarChar, byte.MaxValue).Value = restrictionValues[4];
+                }
+                if (restrictionValues.Length > 5)
+                {
+                    foreignKeysCommand.Parameters.Add("@fktable_qualifier", AseDbType.VarChar, byte.MaxValue).Value = restrictionValues[5];
+                }
+                
+                using (var reader = foreignKeysCommand.ExecuteReader())
+                {
+                    var constraintCatalogOrdinal = reader.GetOrdinal("FK_TABLE_CATALOG");
+                    var constraintSchemaOrdinal = reader.GetOrdinal("FK_TABLE_SCHEMA");
+                    var constraintNameOrdinal = reader.GetOrdinal("FK_NAME");
+                    var tableCatalogOrdinal = reader.GetOrdinal("PK_TABLE_CATALOG");
+                    var tableSchemaOrdinal = reader.GetOrdinal("PK_TABLE_SCHEMA");
+                    var tableNameOrdinal = reader.GetOrdinal("FK_TABLE_NAME");
+
+                    var result = new DataTable("ForeignKeys");
+                    result.Columns.Add("CONSTRAINT_CATALOG", typeof(string));
+                    result.Columns.Add("CONSTRAINT_SCHEMA", typeof(string));
+                    result.Columns.Add("CONSTRAINT_NAME", typeof(string));
+                    result.Columns.Add("TABLE_CATALOG", typeof(string));
+                    result.Columns.Add("TABLE_SCHEMA", typeof(string));
+                    result.Columns.Add("TABLE_NAME", typeof(string));
+                    result.Columns.Add("CONSTRAINT_TYPE", typeof(string));
+                    result.Columns.Add("IS_DEFERRABLE", typeof(string));
+                    result.Columns.Add("INITIALLY_DEFERRED", typeof(string));
+                    result.BeginLoadData();
+
+                    while (reader.Read())
+                    {
+                        result.Rows.Add(
+                            reader.GetString(constraintCatalogOrdinal),
+                            reader.GetString(constraintSchemaOrdinal),
+                            reader.GetString(constraintNameOrdinal),
+                            reader.GetString(tableCatalogOrdinal),
+                            reader.GetString(tableSchemaOrdinal),
+                            reader.GetString(tableNameOrdinal),
+                            "FOREIGN KEY",
+                            "NO",
+                            "NO");
+                    }
+
+                    result.EndLoadData();
+
+                    result.AcceptChanges();
+
+                    return result;
+                }
+            }
         }
 
         private DataTable GetProceduresSchema(string[] restrictionValues)
@@ -935,12 +1012,210 @@ ORDER BY
 
         private DataTable GetColumnsSchema(string[] restrictionValues)
         {
-            throw new NotImplementedException();
+            Open(); // Ensure the connection is open.
+
+            using (var columnsCommand = CreateCommand())
+            {
+                const string procName = "sp_oledb_columns";
+
+                columnsCommand.NamedParameters = true;
+                columnsCommand.CommandType = CommandType.Text;
+                columnsCommand.CommandText = $"SELECT CASE WHEN EXISTS(SELECT 1 FROM sybsystemprocs.dbo.sysobjects WHERE name = '{procName}') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
+
+                var exists = (bool)columnsCommand.ExecuteScalar();
+
+                if (!exists)
+                {
+                    throw new AseException($"Missing system stored procedure '{procName}'.");
+                }
+
+                columnsCommand.CommandType = CommandType.StoredProcedure;
+                columnsCommand.CommandText = procName;
+
+                if (restrictionValues.Length > 0)
+                {
+                    columnsCommand.Parameters.Add("@table_name", AseDbType.VarChar, 771).Value = restrictionValues[0];
+                }
+                if (restrictionValues.Length > 1)
+                {
+                    columnsCommand.Parameters.Add("@table_owner", AseDbType.VarChar, 32).Value = restrictionValues[1];
+                }
+                if (restrictionValues.Length > 2)
+                {
+                    columnsCommand.Parameters.Add("@table_qualifier", AseDbType.VarChar, 32).Value = restrictionValues[2];
+                }
+                if (restrictionValues.Length > 3)
+                {
+                    columnsCommand.Parameters.Add("@column_name", AseDbType.VarChar, 771).Value = restrictionValues[3];
+                }
+
+                columnsCommand.Parameters.Add("@is_ado", AseDbType.Integer).Value = 2;
+
+                using (var reader = columnsCommand.ExecuteReader())
+                {
+                    var tableCatalogOrdinal = reader.GetOrdinal("TABLE_CATALOG");
+                    var tableSchemaOrdinal = reader.GetOrdinal("TABLE_SCHEMA");
+                    var tableNameOrdinal = reader.GetOrdinal("TABLE_NAME");
+                    var columnNameOrdinal = reader.GetOrdinal("COLUMN_NAME");
+                    var columnGuidOrdinal = reader.GetOrdinal("COLUMN_GUID");
+                    var columnPropIdOrdinal = reader.GetOrdinal("COLUMN_PROPID");
+                    var ordinalPositionOrdinal = reader.GetOrdinal("ORDINAL_POSITION");
+                    var columnDefaultOrdinal = reader.GetOrdinal("COLUMN_DEFAULT");
+                    var isNullableOrdinal = reader.GetOrdinal("IS_NULLABLE"); 
+                    var typeNameOrdinal = reader.GetOrdinal("TYPE_NAME"); 
+                    var typeGuidOrdinal = reader.GetOrdinal("TYPE_GUID");
+                    var characterMaximumLengthOrdinal = reader.GetOrdinal("CHARACTER_MAXIMUM_LENGTH");
+                    var characterOctetLengthOrdinal = reader.GetOrdinal("CHARACTER_OCTET_LENGTH");
+                    var numericPrecisionOrdinal = reader.GetOrdinal("NUMERIC_PRECISION");
+                    var numericPrecisionRadixOrdinal = reader.GetOrdinal("NUMERIC_PRECISION_RADIX");
+                    var numericScaleOrdinal = reader.GetOrdinal("NUMERIC_SCALE"); 
+                    var datetimePrecisionOrdinal = reader.GetOrdinal("DATETIME_PRECISION");
+                    var characterSetCatalogOrdinal = reader.GetOrdinal("CHARACTER_SET_CATALOG");
+                    var characterSetSchemaOrdinal = reader.GetOrdinal("CHARACTER_SET_SCHEMA");
+                    var characterSetNameOrdinal = reader.GetOrdinal("CHARACTER_SET_NAME");
+                    var collationCatalogOrdinal = reader.GetOrdinal("COLLATION_CATALOG");
+                    var collationSchemaOrdinal = reader.GetOrdinal("COLLATION_SCHEMA");
+                    var collationNameOrdinal = reader.GetOrdinal("COLLATION_NAME");
+                    var domainCatalogOrdinal = reader.GetOrdinal("DOMAIN_CATALOG");
+                    var domainSchemaOrdinal = reader.GetOrdinal("DOMAIN_SCHEMA");
+                    var domainNameOrdinal = reader.GetOrdinal("DOMAIN_NAME");
+                    var descriptionOrdinal = reader.GetOrdinal("DESCRIPTION");
+
+                    var result = new DataTable("Columns");
+                    result.Columns.Add("TABLE_CATALOG", typeof(string));
+                    result.Columns.Add("TABLE_SCHEMA", typeof(string));
+                    result.Columns.Add("TABLE_NAME", typeof(string));
+                    result.Columns.Add("COLUMN_NAME", typeof(string));
+                    result.Columns.Add("COLUMN_GUID", typeof(string));
+                    result.Columns.Add("COLUMN_PROPID", typeof(int));
+                    result.Columns.Add("ORDINAL_POSITION", typeof(int));
+                    result.Columns.Add("COLUMN_DEFAULT", typeof(string));
+                    result.Columns.Add("IS_NULLABLE", typeof(string));
+                    result.Columns.Add("DATA_TYPE", typeof(string));
+                    result.Columns.Add("TYPE_GUID", typeof(string));
+                    result.Columns.Add("CHARACTER_MAXIMUM_LENGTH", typeof(int));
+                    result.Columns.Add("CHARACTER_OCTET_LENGTH", typeof(int));
+                    result.Columns.Add("NUMERIC_PRECISION", typeof(short));
+                    result.Columns.Add("NUMERIC_PRECISION_RADIX", typeof(short));
+                    result.Columns.Add("NUMERIC_SCALE", typeof(short));
+                    result.Columns.Add("DATETIME_PRECISION", typeof(int));
+                    result.Columns.Add("CHARACTER_SET_CATALOG", typeof(string));
+                    result.Columns.Add("CHARACTER_SET_SCHEMA", typeof(string));
+                    result.Columns.Add("CHARACTER_SET_NAME", typeof(string));
+                    result.Columns.Add("COLLATION_CATALOG", typeof(string));
+                    result.Columns.Add("COLLATION_SCHEMA", typeof(string));
+                    result.Columns.Add("COLLATION_NAME", typeof(string));
+                    result.Columns.Add("DOMAIN_CATALOG", typeof(string));
+                    result.Columns.Add("DOMAIN_SCHEMA", typeof(string));
+                    result.Columns.Add("DOMAIN_NAME", typeof(string));
+                    result.Columns.Add("DESCRIPTION", typeof(string));
+                    result.BeginLoadData();
+
+                    while (reader.Read())
+                    {
+                        result.Rows.Add(
+                            reader.GetString(tableCatalogOrdinal),
+                            reader.IsDBNull(tableSchemaOrdinal) ? (object)DBNull.Value : reader.GetString(tableSchemaOrdinal),
+                            reader.IsDBNull(tableNameOrdinal) ? (object)DBNull.Value : reader.GetString(tableNameOrdinal),
+                            reader.IsDBNull(columnNameOrdinal) ? (object)DBNull.Value : reader.GetString(columnNameOrdinal),
+                            reader.IsDBNull(columnGuidOrdinal) ? (object)DBNull.Value : reader.GetString(columnGuidOrdinal),
+                            reader.IsDBNull(columnPropIdOrdinal) ? (object)DBNull.Value : reader.GetInt32(columnPropIdOrdinal),
+                            reader.IsDBNull(ordinalPositionOrdinal) ? (object)DBNull.Value : reader.GetInt32(ordinalPositionOrdinal),
+                            reader.IsDBNull(columnDefaultOrdinal) ? (object)DBNull.Value : reader.GetString(columnDefaultOrdinal),
+                            reader.IsDBNull(isNullableOrdinal) || !reader.GetBoolean(isNullableOrdinal) ? "NO" : "YES",
+                            reader.IsDBNull(typeNameOrdinal) ? (object)DBNull.Value : reader.GetString(typeNameOrdinal),
+                            reader.IsDBNull(typeGuidOrdinal) ? (object)DBNull.Value : reader.GetString(typeGuidOrdinal),
+                            reader.IsDBNull(characterMaximumLengthOrdinal) ? (object)DBNull.Value : reader.GetInt32(characterMaximumLengthOrdinal),
+                            reader.IsDBNull(characterOctetLengthOrdinal) ? (object)DBNull.Value : reader.GetInt32(characterOctetLengthOrdinal),
+                            reader.IsDBNull(numericPrecisionOrdinal) ? (object)DBNull.Value : reader.GetInt16(numericPrecisionOrdinal),
+                            reader.IsDBNull(numericPrecisionRadixOrdinal) ? (object)DBNull.Value : reader.GetInt16(numericPrecisionRadixOrdinal),
+                            reader.IsDBNull(numericScaleOrdinal) ? 0 : reader.GetInt16(numericScaleOrdinal),
+                            reader.IsDBNull(datetimePrecisionOrdinal) ? (object)DBNull.Value : reader.GetInt32(datetimePrecisionOrdinal),
+                            reader.IsDBNull(characterSetCatalogOrdinal) ? (object)DBNull.Value : reader.GetString(characterSetCatalogOrdinal),
+                            reader.IsDBNull(characterSetSchemaOrdinal) ? (object)DBNull.Value : reader.GetString(characterSetSchemaOrdinal),
+                            reader.IsDBNull(characterSetNameOrdinal) ? (object)DBNull.Value : reader.GetString(characterSetNameOrdinal),
+                            reader.IsDBNull(collationCatalogOrdinal) ? (object)DBNull.Value : reader.GetString(collationCatalogOrdinal),
+                            reader.IsDBNull(collationSchemaOrdinal) ? (object)DBNull.Value : reader.GetString(collationSchemaOrdinal),
+                            reader.IsDBNull(collationNameOrdinal) ? (object)DBNull.Value : reader.GetString(collationNameOrdinal),
+                            reader.IsDBNull(domainCatalogOrdinal) ? (object)DBNull.Value : reader.GetString(domainCatalogOrdinal),
+                            reader.IsDBNull(domainSchemaOrdinal) ? (object)DBNull.Value : reader.GetString(domainSchemaOrdinal),
+                            reader.IsDBNull(domainNameOrdinal) ? (object)DBNull.Value : reader.GetString(domainNameOrdinal),
+                            reader.IsDBNull(descriptionOrdinal) ? (object)DBNull.Value : reader.GetString(descriptionOrdinal)
+                        );
+                    }
+
+                    result.EndLoadData();
+
+                    result.AcceptChanges();
+
+                    return result;
+                }
+            }
         }
 
         private DataTable GetTablesSchema(string[] restrictionValues)
         {
-            throw new NotImplementedException();
+            Open(); // Ensure the connection is open.
+
+            using (var tablesCommand = CreateCommand())
+            {
+                const string procName = "sp_oledb_tables";
+
+                tablesCommand.NamedParameters = true;
+                tablesCommand.CommandType = CommandType.Text;
+                tablesCommand.CommandText = $"SELECT CASE WHEN EXISTS(SELECT 1 FROM sybsystemprocs.dbo.sysobjects WHERE name = '{procName}') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
+
+                var exists = (bool)tablesCommand.ExecuteScalar();
+
+                if (!exists)
+                {
+                    throw new AseException($"Missing system stored procedure '{procName}'.");
+                }
+
+                tablesCommand.CommandType = CommandType.StoredProcedure;
+                tablesCommand.CommandText = procName;
+
+                if (restrictionValues.Length > 0)
+                {
+                    tablesCommand.Parameters.Add("@table_catalog", AseDbType.VarChar, 32).Value = restrictionValues[0];
+                }
+                if (restrictionValues.Length > 1)
+                {
+                    tablesCommand.Parameters.Add("@table_schema", AseDbType.VarChar, 32).Value = restrictionValues[1];
+                }
+                if (restrictionValues.Length > 2)
+                {
+                    tablesCommand.Parameters.Add("@table_name", AseDbType.VarChar, 771).Value = restrictionValues[2];
+                }
+                if (restrictionValues.Length > 3)
+                {
+                    tablesCommand.Parameters.Add("@table_type", AseDbType.VarChar, 100).Value = restrictionValues[3];
+                }
+
+                using (var reader = tablesCommand.ExecuteReader())
+                {
+                    var result = new DataTable("Tables");
+                    result.BeginLoadData();
+                    result.Load(reader);
+
+                    var tableTypeOrdinal = result.Columns["Table_Type"].Ordinal;
+
+                    foreach (DataRow row in result.Rows)
+                    {
+                        var tableType = row[tableTypeOrdinal].ToString();
+
+                        if(string.Equals(tableType, "TABLE", StringComparison.OrdinalIgnoreCase))
+                        {
+                            row[tableTypeOrdinal] = "BASE TABLE";
+                        }
+                    }
+                    result.EndLoadData();
+
+                    result.AcceptChanges();
+
+                    return result;
+                }
+            }
         }
 
         private DataTable GetDatabasesSchema(string[] restrictionValues)
@@ -1029,7 +1304,7 @@ FROM
     INNER JOIN master.dbo.syslogins l
         ON usr.suid = l.suid
 WHERE
-    user_name = @name";
+    USER_NAME(usr.uid) = @name";
 
                     userCommand.Parameters.Add("@name", restrictionValues[0]);
                 }
@@ -1069,12 +1344,12 @@ WHERE
         private static DataTable GetRestrictionsSchema()
         {
             // https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/common-schema-collections#restrictions
-            var result = new DataTable();
+            var result = new DataTable("Restrictions");
             result.Columns.Add("CollectionName", typeof(string));
             result.Columns.Add("RestrictionName", typeof(string));
             result.Columns.Add("ParameterName", typeof(string));
             result.Columns.Add("RestrictionDefault", typeof(string));
-            result.Columns.Add("RestrictionNumber", typeof(string));
+            result.Columns.Add("RestrictionNumber", typeof(int));
             result.BeginLoadData();
             result.LoadDataRow(new object[] {"Users", "User_Name", "@Name", "name", 1}, true);
             result.LoadDataRow(new object[] {"Databases", "Name", "@Name", "Name", 1}, true);
@@ -1110,12 +1385,14 @@ WHERE
             result.LoadDataRow(new object[] {"Indexes", "Owner", "@Owner", "user_name()", 2}, true);
             result.LoadDataRow(new object[] {"Indexes", "Table", "@Table", "o.name", 3}, true);
             result.LoadDataRow(new object[] {"Indexes", "Name", "@Name", "x.name", 4}, true);
-            result.LoadDataRow(new object[] {"UserDefinedTypes", "assembly_name", "@AssemblyName", "assemblies.name", 1}, true);
-            result.LoadDataRow(new object[] {"UserDefinedTypes", "udt_name", "@UDTName", "types.assembly_class", 2}, true);
+            //result.LoadDataRow(new object[] {"UserDefinedTypes", "assembly_name", "@AssemblyName", "assemblies.name", 1}, true);
+            //result.LoadDataRow(new object[] {"UserDefinedTypes", "udt_name", "@UDTName", "types.assembly_class", 2}, true);
             result.LoadDataRow(new object[] {"ForeignKeys", "Catalog", "@Catalog", "CONSTRAINT_CATALOG", 1}, true);
             result.LoadDataRow(new object[] {"ForeignKeys", "Owner", "@Owner", "CONSTRAINT_SCHEMA", 2}, true);
             result.LoadDataRow(new object[] {"ForeignKeys", "Table", "@Table", "TABLE_NAME", 3}, true);
             result.LoadDataRow(new object[] {"ForeignKeys", "Name", "@Name", "CONSTRAINT_NAME", 4}, true);
+
+            
             result.EndLoadData();
 
             result.AcceptChanges();
@@ -1149,7 +1426,7 @@ WHERE
             result.Columns.Add("IsLiteralSupported", typeof(bool));
             result.Columns.Add("LiteralPrefix", typeof(string));
             result.Columns.Add("LiteralSuffix", typeof(string));
-            //result.Columns.Add("NativeDataType", typeof(string));
+            //result.Columns.Add("NativeDataType", typeof(string)); // NativeDataType is an OLE DB specific column for exposing the OLE DB type of the data type .
 
             result.BeginLoadData();
             result.LoadDataRow(

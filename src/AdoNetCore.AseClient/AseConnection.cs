@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient
     /// Represents an open connection to an ASE Server database. This class cannot be inherited.
     /// </summary>
     public sealed class AseConnection : DbConnection
-#if ENABLE_CLONEABLE_INTERFACE
+#if CLONEABLE_INTERFACE
         , ICloneable
 #endif
     {
@@ -356,7 +356,7 @@ namespace AdoNetCore.AseClient
         }
 
 
-#if ENABLE_DB_PROVIDERFACTORY
+#if DB_PROVIDERFACTORY
         /// <summary>
         /// The DbProviderFactory available for creating child types.
         /// </summary>
@@ -554,7 +554,7 @@ namespace AdoNetCore.AseClient
             set => _namedParameters = value;
         }
 
-#if ENABLE_CLONEABLE_INTERFACE
+#if CLONEABLE_INTERFACE
         public object Clone()
         {
             return new AseConnection(_connectionString, _connectionPoolManager);
@@ -636,7 +636,7 @@ namespace AdoNetCore.AseClient
             }
         }
 
-#if ENABLE_DB_GETSCHEMA
+#if DB_GETSCHEMA
         /// <summary>
         /// Returns schema information for the data source of this <see cref="AseConnection"/>.
         /// </summary>
@@ -1429,152 +1429,54 @@ WHERE
             //result.Columns.Add("NativeDataType", typeof(string)); // NativeDataType is an OLE DB specific column for exposing the OLE DB type of the data type .
 
             result.BeginLoadData();
-            result.LoadDataRow(
-                new object[]
-                {
-                    "smallint", AseDbType.SmallInt, 5, "smallint", null, "System.Int16", true, true, false, true, true, false,
-                    true, true, false, false, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "int", AseDbType.Integer, 10, "int", null, "System.Int32", true, true, false, true, true, false, true, true,
-                    false, false, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "real", AseDbType.Real, 7, "real", null, "System.Single", false, true, false, true, false, false, true,
-                    true, false, false, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "float", AseDbType.Double, 53, "float({ 0 })", "number of bits used to store the mantissa", "System.Double",
-                    false, true, false, true, false, false, true, true, false, false, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "money", AseDbType.Money, 19, "money", null, "System.Decimal", false, false, false, true, true, false, true,
-                    true, false, false, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "smallmoney", AseDbType.SmallMoney, 10, "smallmoney", null, "System.Decimal", false, false, false, true,
-                    true, false, true, true, false, false, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "bit", AseDbType.Bit, 1, "bit", null, "System.Boolean", false, false, false, true, false, false, true, true,
-                    false, null, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "tinyint", AseDbType.TinyInt, 3, "tinyint", null, "System.SByte", true, true, false, true, true, false,
-                    true, true, false, true, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "bigint", AseDbType.BigInt, 19, "bigint", null, "System.Int64", true, true, false, true, true, false, true,
-                    true, false, false, null, null, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "timestamp", AseDbType.TimeStamp, 8, "timestamp", null, "System.Byte[]", false, false, false, true, false,
-                    false, false, true, false, null, null, null, true, null, "0x", null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "binary", AseDbType.Binary, 8000, "binary({ 0 })", "length", "System.Byte[]", false, true, false, true,
-                    false, false, true, true, false, null, null, null, false, null, "0x", null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "image", AseDbType.Image, 2147483647, "image", null, "System.Byte[]", false, true, false, false, false,
-                    true, true, false, false, null, null, null, false, null, "0x", null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "text", AseDbType.Text, 2147483647, "text", null, "System.String", false, true, false, false, false, true,
-                    true, false, true, null, null, null, false, null, "', '"
-                }, true);
-            //result.LoadDataRow(new object[] { "ntext", TODO, 1073741823, "ntext", null, "System.String", false, true, false, false, false, true, true, false, true, null, null, null, false, null, "N', '"}, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "decimal", AseDbType.Decimal, 38, "decimal ({0}, {1})", "precision,scale", "System.Decimal", true, true,
-                    false, true, false, false, true, true, false, false, 38, 0, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "numeric", AseDbType.Numeric, 38, "numeric({ 0}, {1})", "precision,scale", "System.Decimal", true, true,
-                    false, true, false, false, true, true, false, false, 38, 0, false, null, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "datetime", AseDbType.DateTime, 23, "datetime", null, "System.DateTime", false, true, false, true, false,
-                    false, true, true, true, null, null, null, false, null, "{ts ', '}"
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "smalldatetime", AseDbType.SmallDateTime, 16, "smalldatetime", null, "System.DateTime", false, true, false,
-                    true, false, false, true, true, true, null, null, null, false, null, "{ts ', '}"
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "sql_variant", 23, null, "sql_variant", null, "System.Object", false, true, false, false, false, false,
-                    true, true, false, null, null, null, false, false, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "xml", 25, 2147483647, "xml", null, "System.String", false, false, false, false, false, true, true, false,
-                    false, null, null, null, false, false, null, null
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "varchar", AseDbType.VarChar, 2147483647, "varchar({0})", "max length", "System.String", false, true, false,
-                    false, false, false, true, true, true, null, null, null, false, null, "', '"
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "char", AseDbType.Char, 2147483647, "char ({0})", "length", "System.String", false, true, false, true,
-                    false, false, true, true, true, null, null, null, false, null, "', '"
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "nchar", AseDbType.NChar, 1073741823, "nchar({0})", "length", "System.String", false, true, false, true,
-                    false, false, true, true, true, null, null, null, false, null, "N', '"
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "nvarchar", AseDbType.NVarChar, 1073741823, "nvarchar({0})", "max length", "System.String", false, true,
-                    false, false, false, false, true, true, true, null, null, null, false, null, "N', '"
-                }, true);
-            result.LoadDataRow(
-                new object[]
-                {
-                    "varbinary", AseDbType.VarBinary, 1073741823, "varbinary({0})", "max length", "System.Byte[]", false, true,
-                    false, false, false, false, true, true, false, null, null, null, false, null, "0x", null
-                }, true);
-            //result.LoadDataRow(new object[] { "uniqueidentifier", TODO, 16, "uniqueidentifier", null, "System.Guid", false, true, false, true, false, false, true, true, false, null, null, null, false, null, "', '"}, true);
+            result.LoadDataTypeRow("bigdatetime", AseDbType.BigDateTime, 30, netType: typeof(DateTime), isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("bigint", AseDbType.BigInt, 19, netType: typeof(long), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("binary", AseDbType.Binary, 8000, "binary({ 0 })", "length", typeof(byte[]), isFixedLength: true, isNullable: true, isSearchable: true, isLiteralSupported: true, literalPrefix: "0x");
+            result.LoadDataTypeRow("bit", AseDbType.Bit, 1, netType: typeof(bool), isBestMatch: true, isFixedLength: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("char", AseDbType.Char, 2147483647, "char ({0})", "length", typeof(string), isCaseSensitive: false, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("char", AseDbType.Char, 2147483647, "char ({0})", "length", typeof(char[]), isCaseSensitive: false, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("date", AseDbType.Date, 17, netType: typeof(DateTime), isBestMatch: false, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("datetime", AseDbType.DateTime, 23, netType: typeof(DateTime), isBestMatch: true, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("decimal", AseDbType.Decimal, 38, "decimal ({0}, {1})", "precision,scale", typeof(decimal), isAutoIncrementable: true, isFixedLength: true, isNullable: true, isSearchable: true, maximumScale: 38, minimumScale: 0);
+            result.LoadDataTypeRow("decimal", AseDbType.Decimal, 38, "decimal ({0}, {1})", "precision,scale", typeof(AseDecimal), true, true, isFixedLength: true, isNullable: true, isSearchable: true, maximumScale: 38, minimumScale: 0);
+            result.LoadDataTypeRow("double precision", AseDbType.Double, 53, netType: typeof(double), isFixedLength: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("float", AseDbType.Double, 53, "float({ 0 })", "number of bits used to store the mantissa", typeof(double), isBestMatch: true, isFixedLength: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("float", AseDbType.Double, 53, "float({ 0 })", "number of bits used to store the mantissa", typeof(float), isBestMatch: true, isFixedLength: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("image", AseDbType.Image, 2147483647, netType: typeof(byte[]), isLong: true, isNullable: true, isLiteralSupported: true, literalPrefix: "0x");
+            result.LoadDataTypeRow("int", AseDbType.Integer, 10, netType: typeof(int), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("money", AseDbType.Money, 19, netType: typeof(decimal), isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("nchar", AseDbType.NChar, 1073741823, "nchar({0})", "length", typeof(string), isCaseSensitive: false, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "N'", literalSuffix: "'");
+            result.LoadDataTypeRow("nchar", AseDbType.NChar, 1073741823, "nchar({0})", "length", typeof(char[]), isCaseSensitive: false, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "N'", literalSuffix: "'");
+            result.LoadDataTypeRow("numeric", AseDbType.Numeric, 38, "numeric({ 0}, {1})", "precision,scale", typeof(decimal), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isNullable: true, isSearchable: true, maximumScale: 38, minimumScale: 0);
+            result.LoadDataTypeRow("nvarchar", AseDbType.NVarChar, 1073741823, "nvarchar({0})", "max length", typeof(string), isCaseSensitive: false, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "N'", literalSuffix: "'");
+            result.LoadDataTypeRow("nvarchar", AseDbType.NVarChar, 1073741823, "nvarchar({0})", "max length", typeof(char[]), isCaseSensitive: false, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "N'", literalSuffix: "'");
+            result.LoadDataTypeRow("real", AseDbType.Real, 7, netType: typeof(float), isBestMatch: true, isFixedLength: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("smalldatetime", AseDbType.SmallDateTime, 16, netType: typeof(DateTime), isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("smallint", AseDbType.SmallInt, 5,  netType: typeof(short), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("smallint", AseDbType.SmallInt, 5,  netType: typeof(sbyte), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("smallmoney", AseDbType.SmallMoney, 10, netType: typeof(decimal), isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true);
+            result.LoadDataTypeRow("text", AseDbType.Text, 2147483647, netType: typeof(string), isLong: true, isNullable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'",literalSuffix:"'");
+            result.LoadDataTypeRow("text", AseDbType.Text, 2147483647, netType: typeof(char[]), isLong: true, isNullable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'",literalSuffix:"'");
+            result.LoadDataTypeRow("time", AseDbType.DateTime, 12, netType: typeof(TimeSpan), isBestMatch: true, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("timestamp", AseDbType.TimeStamp, 8, netType: typeof(byte[]), isFixedLength: true, isSearchable: true, isConcurrencyType: true, isLiteralSupported: true, literalPrefix: "0x");
+            result.LoadDataTypeRow("tinyint", AseDbType.TinyInt, 3, netType: typeof(byte), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true, isUnsigned: true);
+            result.LoadDataTypeRow("unichar", AseDbType.UniChar, 1073741823, "unichar({0})", "length", typeof(string), isCaseSensitive: false, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("unichar", AseDbType.UniChar, 1073741823, "unichar({0})", "length", typeof(char[]), isCaseSensitive: false, isFixedLength: true, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("uniqueidentifier", AseDbType.VarBinary, 16, "varbinary({0})", "max length", typeof(Guid), isBestMatch: true, isNullable: true, isSearchable: true, isLiteralSupported: true, literalPrefix: "0x");
+            result.LoadDataTypeRow("unitext", AseDbType.Text, 1073741823, netType: typeof(string), isLong: true, isNullable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("unitext", AseDbType.Text, 1073741823, netType: typeof(char[]), isLong: true, isNullable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("univarchar", AseDbType.NVarChar, 1073741823, "univarchar({0})", "max length", typeof(string), isCaseSensitive: false, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("univarchar", AseDbType.NVarChar, 1073741823, "univarchar({0})", "max length", typeof(char[]), isCaseSensitive: false, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("unsigned bigint", AseDbType.UnsignedBigInt, 19, netType: typeof(ulong), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true, isUnsigned: true);
+            result.LoadDataTypeRow("unsigned int", AseDbType.Integer, 10, netType: typeof(uint), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true, isUnsigned: true);
+            result.LoadDataTypeRow("unsigned smallint", AseDbType.SmallInt, 5, netType: typeof(ushort), isAutoIncrementable: true, isBestMatch: true, isFixedLength: true, isFixedPrecisionScale: true, isNullable: true, isSearchable: true, isUnsigned: true);
+            result.LoadDataTypeRow("varbinary", AseDbType.VarBinary, 1073741823, "varbinary({0})", "max length", typeof(byte[]), isBestMatch: true, isNullable: true, isSearchable: true, isLiteralSupported: true, literalPrefix: "0x");
+            result.LoadDataTypeRow("varchar", AseDbType.VarChar, 2147483647, "varchar({0})", "max length", typeof(string), isBestMatch: true, isCaseSensitive: false, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            result.LoadDataTypeRow("varchar", AseDbType.VarChar, 2147483647, "varchar({0})", "max length", typeof(char[]), isBestMatch: true, isCaseSensitive: false, isNullable: true, isSearchable: true, isSearchableWithLike: true, isLiteralSupported: true, literalPrefix: "'", literalSuffix: "'");
+            // NOTE: wchar appears to be a SQLAnywhere type.
+            // NOTE: wvarchar appears to be a SQLAnywhere type.
+            // NOTE: longchar appears to be a Sybase IQ type.
+            // NOTE: longvarchar appears to be a Sybase IQ type.
             result.EndLoadData();
 
             result.AcceptChanges();

@@ -1,4 +1,4 @@
-﻿#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+#if SYSTEM_DATA_COMMON_EXTENSIONS
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -26,22 +26,24 @@ namespace AdoNetCore.AseClient
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly IDictionary<string, AseDbType> AseDbTypeNameMap = new Dictionary<string, AseDbType>(StringComparer.OrdinalIgnoreCase)
         {
+            {"bigdatetime", AseDbType.BigDateTime },
+            {"bigint", AseDbType.BigInt },
             {"binary", AseDbType.Binary },
             {"bit", AseDbType.Bit },
             {"char", AseDbType.Char },
             {"date", AseDbType.Date },
             {"datetime", AseDbType.DateTime },
             {"decimal", AseDbType.Decimal },
+            {"double precision", AseDbType.Double },
             {"float", AseDbType.Double },
-            {"real", AseDbType.Real },
-            {"int", AseDbType.Integer },
             {"image", AseDbType.Image },
+            {"int", AseDbType.Integer },
             {"money", AseDbType.Money },
-            {"numeric", AseDbType.Numeric },
             {"nchar", AseDbType.NChar },
+            {"numeric", AseDbType.Numeric },
             {"nvarchar", AseDbType.NVarChar },
+            {"real", AseDbType.Real },
             {"smalldatetime", AseDbType.SmallDateTime },
-            {"bigdatetime", AseDbType.DateTime },
             {"smallint", AseDbType.SmallInt },
             {"smallmoney", AseDbType.SmallMoney },
             {"longvarchar", AseDbType.Text },
@@ -49,17 +51,17 @@ namespace AdoNetCore.AseClient
             {"time", AseDbType.Time },
             {"timestamp", AseDbType.TimeStamp },
             {"tinyint", AseDbType.TinyInt },
+            {"unichar", AseDbType.UniChar },
+            {"uniqueidentifier", AseDbType.VarBinary },
+            {"unitext", AseDbType.Unitext },
+            {"univarchar", AseDbType.UniVarChar },
+            {"unsigned bigint", AseDbType.UnsignedBigInt},
+            {"unsigned int", AseDbType.UnsignedInt },
+            {"unsigned smallint", AseDbType.UnsignedSmallInt },
             {"varbinary", AseDbType.VarBinary },
             {"varchar", AseDbType.VarChar },
             {"wchar", AseDbType.UniChar },
-            {"unichar", AseDbType.UniChar },
             {"wvarchar", AseDbType.UniVarChar },
-            {"univarchar", AseDbType.UniVarChar },
-            {"unitext", AseDbType.Unitext },
-            {"unsigned smallint", AseDbType.UnsignedSmallInt },
-            {"unsigned int", AseDbType.UnsignedInt },
-            {"bigint", AseDbType.BigInt },
-            {"unsigned bigint", AseDbType.UnsignedBigInt}
         };
 
         /// <summary>

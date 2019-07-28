@@ -8,7 +8,7 @@ namespace AdoNetCore.AseClient.Internal
 {
     internal sealed class ConnectionPoolManager : IConnectionPoolManager, IEnumerable<IConnectionPool>
     {
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
         private static readonly System.Buffers.ArrayPool<byte> BufferPool = System.Buffers.ArrayPool<byte>.Shared;
 #endif
 
@@ -18,7 +18,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             return Pools.GetOrAdd(connectionString, _ =>
             {
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
                 var internalConnectionFactory = new InternalConnectionFactory(parameters, BufferPool);
 #else
                 var internalConnectionFactory = new InternalConnectionFactory(parameters);

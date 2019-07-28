@@ -10,7 +10,7 @@ namespace AdoNetCore.AseClient
     /// Represents a parameter to an <see cref="AseCommand" />. This class cannot be inherited.
     /// </summary>
     public sealed class AseParameter : DbParameter
-#if ENABLE_CLONEABLE_INTERFACE
+#if CLONEABLE_INTERFACE
         , ICloneable
 #endif
     {
@@ -295,7 +295,7 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Gets or sets the <see cref="AseDbType" /> of the parameter.
         /// </summary>
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+#if SYSTEM_DATA_COMMON_EXTENSIONS
         [DbProviderSpecificTypeProperty(true)]
 #endif
         public AseDbType AseDbType
@@ -356,7 +356,7 @@ namespace AdoNetCore.AseClient
 
         public override bool SourceColumnNullMapping { get; set; }
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+#if SYSTEM_DATA_COMMON_EXTENSIONS
         public override DataRowVersion SourceVersion { get; set; }
 #else
         public DataRowVersion SourceVersion { get; set; }
@@ -449,7 +449,7 @@ namespace AdoNetCore.AseClient
             return ParameterName ?? ParameterIndex.ToString();
         }
 
-#if ENABLE_CLONEABLE_INTERFACE
+#if CLONEABLE_INTERFACE
         public object Clone()
         {
             var clone = new AseParameter

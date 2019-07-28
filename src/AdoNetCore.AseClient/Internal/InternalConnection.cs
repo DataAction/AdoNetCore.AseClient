@@ -26,7 +26,7 @@ namespace AdoNetCore.AseClient.Internal
         private readonly object _sendMutex;
         private bool _statisticsEnabled;
 
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
         /// <summary>
         /// The <see cref="System.Buffers.ArrayPool{T}"/> to use for efficient buffer allocation.
         /// </summary>
@@ -78,7 +78,7 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
         public InternalConnection(IConnectionParameters parameters, Stream networkStream, ITokenReader reader, DbEnvironment environment, System.Buffers.ArrayPool<byte> arrayPool)
 #else
         public InternalConnection(IConnectionParameters parameters, Stream networkStream, ITokenReader reader, DbEnvironment environment)
@@ -91,7 +91,7 @@ namespace AdoNetCore.AseClient.Internal
             _environment.PacketSize = parameters.PacketSize; //server might decide to change the packet size later anyway
             _environment.UseAseDecimal = parameters.UseAseDecimal;
             _sendMutex = new object();
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
             _arrayPool = arrayPool;
 #endif
         }
@@ -104,7 +104,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 lock (_sendMutex)
                 {
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
                     using (var tokenStream = new TokenSendStream(_networkStream, _environment, _arrayPool))
 #else
                     using (var tokenStream = new TokenSendStream(_networkStream, _environment))
@@ -136,7 +136,7 @@ namespace AdoNetCore.AseClient.Internal
             Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
             try
             {
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
                 using (var tokenStream = new TokenReceiveStream(_networkStream, _environment, _arrayPool))
 #else
                 using (var tokenStream = new TokenReceiveStream(_networkStream, _environment))

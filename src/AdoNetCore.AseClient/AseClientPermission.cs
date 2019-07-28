@@ -1,4 +1,4 @@
-﻿#if ENABLE_DB_DATAPERMISSION
+﻿#if DB_DATAPERMISSION
 using System;
 using System.Data;
 using System.Data.Common;

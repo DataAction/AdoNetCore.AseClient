@@ -7,9 +7,7 @@ namespace AdoNetCore.AseClient.Tests.Benchmark
 #if NET_FRAMEWORK
     [TestFixture(typeof(SapConnectionProvider))]
 #endif
-#if NET_CORE || NET_FRAMEWORK
     [TestFixture(typeof(CoreFxConnectionProvider))]
-#endif
     [Category("benchmark")]
     public partial class Benchmarks<T> where T : IConnectionProvider
     {

@@ -52,7 +52,7 @@ namespace AdoNetCore.AseClient.Internal
             {typeof(char[]), AseDbType.VarChar},
             {typeof(string), AseDbType.VarChar},
             {typeof(byte[]), AseDbType.VarBinary},
-            {typeof(Guid), AseDbType.VarBinary},
+            {typeof(Guid), AseDbType.Binary},
             {typeof(decimal), AseDbType.Numeric},
             {typeof(AseDecimal), AseDbType.Decimal},
             {typeof(float), AseDbType.Real},

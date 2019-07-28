@@ -46,7 +46,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
         }
 #endif
 
-#if ENABLE_DB_GETSCHEMA
+#if DB_GETSCHEMA
 
         [Test]
         public void AseConnection_GetSchema_ReturnsResults()

@@ -17,3 +17,6 @@ bld/
 [Ll]og/
 .vs/
 packages/
+.vscode/launch.json
+.vscode/settings.json
+.vscode/tasks.json

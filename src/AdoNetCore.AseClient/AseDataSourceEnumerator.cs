@@ -1,4 +1,4 @@
-﻿#if ENABLE_DB_PROVIDERFACTORY
+﻿#if DB_PROVIDERFACTORY
 using System;
 using System.Data;
 using System.Data.Common;

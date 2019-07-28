@@ -1,4 +1,4 @@
-﻿#if ENABLE_DB_PROVIDERFACTORY
+﻿#if DB_PROVIDERFACTORY
 using System.Data.Common;
 
 namespace AdoNetCore.AseClient
@@ -47,7 +47,7 @@ namespace AdoNetCore.AseClient
             return new AseConnectionStringBuilder();
         }
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+#if SYSTEM_DATA_COMMON_EXTENSIONS
         /// <summary>
         /// Instantiates a new <see cref="AseCommandBuilder"/>.
         /// </summary>

@@ -21,7 +21,7 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         private readonly DbEnvironment _environment;
 
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
         /// <summary>
         /// The <see cref="System.Buffers.ArrayPool{T}"/> to use for efficient buffer allocation.
         /// </summary>
@@ -79,7 +79,7 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         private readonly int _headerReadBufferLength;
 
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
         public TokenReceiveStream(Stream innerStream, DbEnvironment environment, System.Buffers.ArrayPool<byte> arrayPool)
 #else
         public TokenReceiveStream(Stream innerStream, DbEnvironment environment)
@@ -88,7 +88,7 @@ namespace AdoNetCore.AseClient.Internal
             _innerStream = innerStream;
             _environment = environment;
             _headerReadBufferLength = environment.HeaderSize;
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
             _arrayPool = arrayPool;
             _headerReadBuffer = arrayPool.Rent(_headerReadBufferLength);
             _bodyReadBuffer = arrayPool.Rent(_environment.PacketSize - _headerReadBufferLength);
@@ -263,7 +263,7 @@ namespace AdoNetCore.AseClient.Internal
                     _innerStream.Dispose();
 
                     BurnPackets(); // Considering the case where the socket lives longer than the stream, and the stream is disposed without reading all of the data.
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
                     _arrayPool.Return(_bodyReadBuffer, true);
                     _arrayPool.Return(_headerReadBuffer, true);
 #endif

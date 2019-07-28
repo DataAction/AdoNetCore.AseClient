@@ -1,4 +1,4 @@
-﻿#if ENABLE_DB_PROVIDERFACTORY
+﻿#if DB_PROVIDERFACTORY
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Unit

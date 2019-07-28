@@ -38,7 +38,7 @@ namespace AdoNetCore.AseClient.Tests.Integration.Connection
             }
         }
 
-        #if NET_CORE
+        #if !NET_FRAMEWORK
         // Test case is only relevant to .net core, where CP850 isn't provided out of the box.
         // Framework has implemented it, so case would always fail.
         [Test]

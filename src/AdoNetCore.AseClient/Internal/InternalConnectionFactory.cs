@@ -18,19 +18,19 @@ namespace AdoNetCore.AseClient.Internal
     internal class InternalConnectionFactory : IInternalConnectionFactory
     {
         private readonly IConnectionParameters _parameters;
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
         private readonly System.Buffers.ArrayPool<byte> _arrayPool;
 #endif
         private IPEndPoint _endpoint;
 
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
         public InternalConnectionFactory(IConnectionParameters parameters, System.Buffers.ArrayPool<byte> arrayPool)
 #else
         public InternalConnectionFactory(IConnectionParameters parameters)
 #endif
         {
             _parameters = parameters;
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
             _arrayPool = arrayPool;
 #endif
         }
@@ -171,7 +171,7 @@ namespace AdoNetCore.AseClient.Internal
             var environment = new DbEnvironment();
             var reader = new TokenReader();
 
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
             return new InternalConnection(_parameters, networkStream, reader, environment, _arrayPool);
 #else   
                 return new InternalConnection(_parameters, networkStream, reader, environment);

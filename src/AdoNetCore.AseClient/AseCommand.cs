@@ -13,7 +13,7 @@ namespace AdoNetCore.AseClient
     /// Represents a Transact-SQL statement or stored procedure to execute against a SAP ASE database. This class cannot be inherited.
     /// </summary>
     public sealed class AseCommand : DbCommand
-#if ENABLE_CLONEABLE_INTERFACE
+#if CLONEABLE_INTERFACE
         , ICloneable
 #endif
     {
@@ -576,7 +576,7 @@ namespace AdoNetCore.AseClient
                 }).Unwrap();
         }
 
-#if ENABLE_CLONEABLE_INTERFACE
+#if CLONEABLE_INTERFACE
         public object Clone()
         {
             var clone = new AseCommand(Connection)

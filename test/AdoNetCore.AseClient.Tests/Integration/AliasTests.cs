@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Linq;
 using AdoNetCore.AseClient.Internal;
@@ -22,6 +22,10 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = GetConnection())
             {
+                connection.Execute(@"IF EXISTS(SELECT 1 FROM sysobjects WHERE name = 'test_aliases')
+                BEGIN
+                    DROP TABLE test_aliases
+                END");
                 connection.Execute("create table [dbo].[test_aliases] (column_with_table_name int)");
                 connection.Execute("insert into [dbo].[test_aliases] (column_with_table_name) values (1)");
             }

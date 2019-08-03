@@ -64,36 +64,12 @@ namespace AdoNetCore.AseClient
 
         public override bool GetBoolean(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is bool i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Boolean");
-            }
-
-            return convertible.ToBoolean(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToBoolean(provider));
         }
 
         public override byte GetByte(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is byte i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Byte");
-            }
-
-            return convertible.ToByte(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToByte(provider));
         }
 
         public override long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferOffset, int length)
@@ -161,19 +137,7 @@ namespace AdoNetCore.AseClient
 
         public override char GetChar(int i)
         {
-            var obj = GetValue(i);
-
-            if (obj is char i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Char");
-            }
-
-            return convertible.ToChar(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToChar(provider));
         }
 
         public override long GetChars(int i, long fieldOffset, char[] buffer, int bufferOffset, int length)
@@ -292,36 +256,12 @@ namespace AdoNetCore.AseClient
 
         public override decimal GetDecimal(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is decimal i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Decimal");
-            }
-
-            return convertible.ToDecimal(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToDecimal(provider));
         }
 
         public override double GetDouble(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is double i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Double");
-            }
-
-            return convertible.ToDouble(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToDouble(provider));
         }
 
         public override Type GetFieldType(int i)
@@ -334,19 +274,7 @@ namespace AdoNetCore.AseClient
 
         public override float GetFloat(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is float i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Float");
-            }
-
-            return convertible.ToSingle(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToSingle(provider));
         }
 
         public override Guid GetGuid(int i)
@@ -376,104 +304,51 @@ namespace AdoNetCore.AseClient
 
         public override short GetInt16(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is short i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int16");
-            }
-
-            return convertible.ToInt16(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToInt16(provider));
         }
 
         public override int GetInt32(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is int i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int32");
-            }
-
-            return convertible.ToInt32(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToInt32(provider));
         }
 
         public override long GetInt64(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is long i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int64");
-            }
-
-            return convertible.ToInt64(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToInt64(provider));
         }
 
         public ushort GetUInt16(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is ushort i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt16");
-            }
-
-            return convertible.ToUInt16(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToUInt16(provider));
         }
 
         public uint GetUInt32(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is uint i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt32");
-            }
-
-            return convertible.ToUInt32(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToUInt32(provider));
         }
 
         public ulong GetUInt64(int i)
         {
+            return GetPrimitive(i, (value, provider) => value.ToUInt64(provider));
+        }
+
+        private T GetPrimitive<T>(int i, Func<IConvertible, IFormatProvider, T> convert)
+        {
             var obj = GetNonNullValue(i);
 
-            if (obj is ulong i1)
+            if (obj is T i1)
             {
                 return i1;
             }
 
-            if (!(obj is IConvertible convertible))
+            if (obj is IConvertible convertible)
             {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt64");
+                var formatProvider = System.Globalization.CultureInfo.InvariantCulture.NumberFormat;
+
+                return convert(convertible, formatProvider);
             }
 
-            return convertible.ToUInt64(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to {nameof(T)}");
         }
 
         public override string GetString(int i)

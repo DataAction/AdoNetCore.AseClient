@@ -891,7 +891,7 @@ ORDER BY
                 if (restrictionValues.Length == 0)
                 {
                     databaseCommand.CommandText =
-                        @"SELECT 
+@"SELECT 
     d.name AS database_name, 
     CONVERT(VARCHAR(254), NULL) AS description, 
     d.dbid, 
@@ -904,7 +904,7 @@ ORDER BY
                 else
                 {
                     databaseCommand.CommandText =
-                        @"SELECT 
+ @"SELECT 
     d.name AS database_name, 
     CONVERT(VARCHAR(254), NULL) AS description, 
     d.dbid, 
@@ -943,7 +943,7 @@ ORDER BY
                 if (restrictionValues.Length == 0)
                 {
                     userCommand.CommandText =
-                        @"SELECT
+@"SELECT
     usr.uid,
     USER_NAME(usr.uid) AS user_name,
     l.accdate AS createdate,
@@ -956,7 +956,7 @@ FROM
                 else
                 {
                     userCommand.CommandText =
-                        @"SELECT
+@"SELECT
     usr.uid,
     USER_NAME(usr.uid) AS user_name,
     l.accdate AS createdate,

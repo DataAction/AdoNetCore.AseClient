@@ -38,7 +38,7 @@ namespace AdoNetCore.AseClient
             result.LoadDataRow(new object[] { "ForeignKeys", 4, 3 }, true);
             result.LoadDataRow(new object[] { "IndexColumns", 5, 4 }, true);
             result.LoadDataRow(new object[] { "Indexes", 4, 3 }, true);
-            //result.LoadDataRow(new object[] { "UserDefinedTypes", 2, 1 }, true);
+            //result.LoadDataRow(new object[] { "UserDefinedTypes", 2, 1 }, true); // Inconsistent with the reference driver - why include an optional schema set that's not supported?
             result.EndLoadData();
             
             return result;
@@ -160,12 +160,443 @@ namespace AdoNetCore.AseClient
 
         private DataTable GetIndexesSchema(string[] restrictionValues)
         {
-            throw new NotImplementedException();
+            Open(); // Ensure the connection is open.
+
+            using (var indexesCommand = CreateCommand())
+            {
+                indexesCommand.NamedParameters = true;
+                indexesCommand.CommandType = CommandType.Text;
+                if (restrictionValues.Length == 0)
+                {
+                    indexesCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+ORDER BY
+    table_name,
+    index_name";
+                }
+                else if (restrictionValues.Length == 1)
+                {
+                    var qualifiedTableName = restrictionValues[0];
+                    indexesCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+ORDER BY
+    table_name,
+    index_name";
+                    indexesCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexesCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                }
+                else if (restrictionValues.Length == 2)
+                {
+                    var qualifiedTableName = string.IsNullOrWhiteSpace(restrictionValues[1]) ? restrictionValues[0] : $"{restrictionValues[1]}.{restrictionValues[0]}";
+
+                    indexesCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+    AND USER_NAME() = @tableOwner
+ORDER BY
+    table_name,
+    index_name";
+                    indexesCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexesCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                    indexesCommand.Parameters.Add("@tableOwner", restrictionValues[1]);
+                }
+                else if(restrictionValues.Length == 3)
+                {
+                    var qualifiedTableName = string.IsNullOrWhiteSpace(restrictionValues[1]) ? restrictionValues[0] : $"{restrictionValues[1]}.{restrictionValues[0]}";
+
+                    indexesCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+    AND USER_NAME() = @tableOwner
+    AND DB_NAME() = @tableQualifier
+ORDER BY
+    table_name,
+    index_name";
+                    indexesCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexesCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                    indexesCommand.Parameters.Add("@tableOwner", restrictionValues[1]);
+                    indexesCommand.Parameters.Add("@tableQualifier", restrictionValues[2]);
+                }
+                else
+                {
+                    var qualifiedTableName = string.IsNullOrWhiteSpace(restrictionValues[1]) ? restrictionValues[0] : $"{restrictionValues[1]}.{restrictionValues[0]}";
+                    
+                    indexesCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+        AND i.name = @indexName
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+    AND USER_NAME() = @tableOwner
+    AND DB_NAME() = @tableQualifier
+ORDER BY
+    table_name,
+    index_name";
+                    indexesCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexesCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                    indexesCommand.Parameters.Add("@tableOwner", restrictionValues[1]);
+                    indexesCommand.Parameters.Add("@tableQualifier", restrictionValues[2]);
+                    indexesCommand.Parameters.Add("@indexName", restrictionValues[3]);
+                }
+
+                using (var reader = indexesCommand.ExecuteReader())
+                {
+                    var result = new DataTable("Indexes");
+                    result.BeginLoadData();
+                    result.Load(reader, LoadOption.OverwriteChanges);
+                    result.EndLoadData();
+
+                    result.AcceptChanges();
+
+                    return result;
+                }
+            }
         }
 
         private DataTable GetIndexColumnsSchema(string[] restrictionValues)
         {
-            throw new NotImplementedException();
+            Open(); // Ensure the connection is open.
+
+            using (var indexColumnsCommand = CreateCommand())
+            {
+                indexColumnsCommand.NamedParameters = true;
+                indexColumnsCommand.CommandType = CommandType.Text;
+                if (restrictionValues.Length == 0)
+                {
+                    indexColumnsCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    c.name AS column_name,
+    c.colid AS ordinal_position,
+    c.type AS KeyType,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+ORDER BY
+    table_name,
+    index_name";
+                }
+                else if (restrictionValues.Length == 1)
+                {
+                    var qualifiedTableName = restrictionValues[0];
+                    indexColumnsCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    c.name AS column_name,
+    c.colid AS ordinal_position,
+    c.type AS KeyType,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+ORDER BY
+    table_name,
+    index_name";
+                    indexColumnsCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexColumnsCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                }
+                else if (restrictionValues.Length == 2)
+                {
+                    var qualifiedTableName = string.IsNullOrWhiteSpace(restrictionValues[1]) ? restrictionValues[0] : $"{restrictionValues[1]}.{restrictionValues[0]}";
+
+                    indexColumnsCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    c.name AS column_name,
+    c.colid AS ordinal_position,
+    c.type AS KeyType,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+    AND USER_NAME() = @tableOwner
+ORDER BY
+    table_name,
+    index_name";
+                    indexColumnsCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexColumnsCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                    indexColumnsCommand.Parameters.Add("@tableOwner", restrictionValues[1]);
+                }
+                else if(restrictionValues.Length == 3)
+                {
+                    var qualifiedTableName = string.IsNullOrWhiteSpace(restrictionValues[1]) ? restrictionValues[0] : $"{restrictionValues[1]}.{restrictionValues[0]}";
+
+                    indexColumnsCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    c.name AS column_name,
+    c.colid AS ordinal_position,
+    c.type AS KeyType,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+    AND USER_NAME() = @tableOwner
+    AND DB_NAME() = @tableQualifier
+ORDER BY
+    table_name,
+    index_name";
+                    indexColumnsCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexColumnsCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                    indexColumnsCommand.Parameters.Add("@tableOwner", restrictionValues[1]);
+                    indexColumnsCommand.Parameters.Add("@tableQualifier", restrictionValues[2]);
+                }
+                else if(restrictionValues.Length == 4)
+                {
+                    var qualifiedTableName = string.IsNullOrWhiteSpace(restrictionValues[1]) ? restrictionValues[0] : $"{restrictionValues[1]}.{restrictionValues[0]}";
+
+                    indexColumnsCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    c.name AS column_name,
+    c.colid AS ordinal_position,
+    c.type AS KeyType,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+        AND i.name = @indexName
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+    AND USER_NAME() = @tableOwner
+    AND DB_NAME() = @tableQualifier
+ORDER BY
+    table_name,
+    index_name";
+                    indexColumnsCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexColumnsCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                    indexColumnsCommand.Parameters.Add("@tableOwner", restrictionValues[1]);
+                    indexColumnsCommand.Parameters.Add("@tableQualifier", restrictionValues[2]);
+                    indexColumnsCommand.Parameters.Add("@indexName", restrictionValues[3]);
+                }
+                else
+                {
+                    var qualifiedTableName = string.IsNullOrWhiteSpace(restrictionValues[1]) ? restrictionValues[0] : $"{restrictionValues[1]}.{restrictionValues[0]}";
+
+                    indexColumnsCommand.CommandText =
+@"SELECT DISTINCT
+    DB_NAME() as constraint_catalog,
+    USER_NAME (o.uid) AS constraint_schema,
+    i.name AS constraint_name,
+    DB_NAME() AS table_catalog,
+    USER_NAME (o.uid) AS table_schema,
+    o.name AS table_name,
+    c.name AS column_name,
+    c.colid AS ordinal_position,
+    c.type AS KeyType,
+    i.name AS index_name
+FROM
+    sysobjects o
+    INNER JOIN sysindexes i
+        ON  i.id = o.id
+        AND i.id = OBJECT_ID(qualifiedIndexName) 
+        AND i.indid in (SELECT indid FROM sysindexes WHERE id = OBJECT_ID(qualifiedIndexName))
+        AND i.indid > 0
+        AND i.indid < 255
+        AND i.name = @indexName
+    INNER JOIN syscolumns c
+        ON  o.id = c.id
+        AND c.colid < keycnt + (i.status & 16) / 16
+WHERE    
+    o.type IN ('U')
+    AND o.name = @tableName
+    AND USER_NAME() = @tableOwner
+    AND DB_NAME() = @tableQualifier
+    AND c.name = @columnName
+ORDER BY
+    table_name,
+    index_name";
+                    indexColumnsCommand.Parameters.Add("@qualifiedIndexName", qualifiedTableName);
+                    indexColumnsCommand.Parameters.Add("@tableName", restrictionValues[0]);
+                    indexColumnsCommand.Parameters.Add("@tableOwner", restrictionValues[1]);
+                    indexColumnsCommand.Parameters.Add("@tableQualifier", restrictionValues[2]);
+                    indexColumnsCommand.Parameters.Add("@indexName", restrictionValues[3]);
+                    indexColumnsCommand.Parameters.Add("@columnName", restrictionValues[4]);
+                }
+
+                using (var reader = indexColumnsCommand.ExecuteReader())
+                {
+                    var result = new DataTable("IndexColumns");
+                    result.BeginLoadData();
+                    result.Load(reader, LoadOption.OverwriteChanges);
+                    result.EndLoadData();
+
+                    result.AcceptChanges();
+
+                    return result;
+                }
+            }
         }
 
         private DataTable GetForeignKeysSchema(string[] restrictionValues)
@@ -263,47 +694,47 @@ namespace AdoNetCore.AseClient
         {
             Open(); // Ensure the connection is open.
 
-            using (var columnsCommand = CreateCommand())
+            using (var proceduresCommand = CreateCommand())
             {
                 const string procName = "sp_oledb_stored_procedures";
 
-                columnsCommand.NamedParameters = true;
-                columnsCommand.CommandType = CommandType.Text;
-                columnsCommand.CommandText = $"SELECT CASE WHEN EXISTS(SELECT 1 FROM sybsystemprocs.dbo.sysobjects WHERE name = '{procName}') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
+                proceduresCommand.NamedParameters = true;
+                proceduresCommand.CommandType = CommandType.Text;
+                proceduresCommand.CommandText = $"SELECT CASE WHEN EXISTS(SELECT 1 FROM sybsystemprocs.dbo.sysobjects WHERE name = '{procName}') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
 
-                var exists = (bool)columnsCommand.ExecuteScalar();
+                var exists = (bool)proceduresCommand.ExecuteScalar();
 
                 if (!exists)
                 {
                     throw new AseException($"Missing system stored procedure '{procName}'.");
                 }
 
-                columnsCommand.CommandType = CommandType.StoredProcedure;
-                columnsCommand.CommandText = procName;
+                proceduresCommand.CommandType = CommandType.StoredProcedure;
+                proceduresCommand.CommandText = procName;
 
                 var typeFilter = string.Empty;
 
                 if (restrictionValues.Length > 0)
                 {
-                    columnsCommand.Parameters.Add("@sp_name", AseDbType.VarChar, 771).Value = restrictionValues[0];
+                    proceduresCommand.Parameters.Add("@sp_name", AseDbType.VarChar, 771).Value = restrictionValues[0];
                 }
                 if (restrictionValues.Length > 1)
                 {
-                    columnsCommand.Parameters.Add("@sp_owner", AseDbType.VarChar, 32).Value = restrictionValues[1];
+                    proceduresCommand.Parameters.Add("@sp_owner", AseDbType.VarChar, 32).Value = restrictionValues[1];
                 }
                 if (restrictionValues.Length > 2)
                 {
-                    columnsCommand.Parameters.Add("@sp_qualifier", AseDbType.VarChar, 32).Value = restrictionValues[2];
+                    proceduresCommand.Parameters.Add("@sp_qualifier", AseDbType.VarChar, 32).Value = restrictionValues[2];
                 }
                 if (restrictionValues.Length > 3)
                 {
-                    columnsCommand.Parameters.Add("@type", AseDbType.VarChar, 2).Value = restrictionValues[3];
+                    proceduresCommand.Parameters.Add("@type", AseDbType.VarChar, 2).Value = restrictionValues[3];
                     typeFilter = restrictionValues[3] ?? string.Empty;
                 }
 
-                columnsCommand.Parameters.Add("@is_ado", AseDbType.Integer).Value = 2;
+                proceduresCommand.Parameters.Add("@is_ado", AseDbType.Integer).Value = 2;
 
-                using(var reader = columnsCommand.ExecuteReader())
+                using(var reader = proceduresCommand.ExecuteReader())
                 {
                     var procedureTypeOrdinal = reader.GetOrdinal("PROCEDURE_TYPE");
                     var procedureCatalogOrdinal = reader.GetOrdinal("PROCEDURE_CATALOG");
@@ -375,7 +806,127 @@ namespace AdoNetCore.AseClient
 
         private DataTable GetProcedureParametersSchema(string[] restrictionValues)
         {
-            throw new NotImplementedException();
+           Open(); // Ensure the connection is open.
+
+            using (var procedureParametersCommand = CreateCommand())
+            {
+                const string procName = "sp_oledb_getprocedurecolumns";
+
+                procedureParametersCommand.NamedParameters = true;
+                procedureParametersCommand.CommandType = CommandType.Text;
+                procedureParametersCommand.CommandText = $"SELECT CASE WHEN EXISTS(SELECT 1 FROM sybsystemprocs.dbo.sysobjects WHERE name = '{procName}') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END";
+
+                var exists = (bool)procedureParametersCommand.ExecuteScalar();
+
+                if (!exists)
+                {
+                    throw new AseException($"Missing system stored procedure '{procName}'.");
+                }
+
+                procedureParametersCommand.CommandType = CommandType.StoredProcedure;
+                procedureParametersCommand.CommandText = procName;
+
+                var nameParameter = procedureParametersCommand.Parameters.Add("@procedure_name", AseDbType.VarChar, 771);
+                nameParameter.Value = restrictionValues.Length > 0 ? restrictionValues[0] : "%";
+
+                if (restrictionValues.Length > 1)
+                {
+                    procedureParametersCommand.Parameters.Add("@procedure_schema", AseDbType.VarChar, 32).Value = restrictionValues[1];
+                }
+                if (restrictionValues.Length > 2)
+                {
+                    procedureParametersCommand.Parameters.Add("@procedure_catalog", AseDbType.VarChar, 32).Value = restrictionValues[2];
+                }
+                if (restrictionValues.Length > 3)
+                {
+                    procedureParametersCommand.Parameters.Add("@parameter_name", AseDbType.VarChar, 771).Value = restrictionValues[3];
+                }
+
+                procedureParametersCommand.Parameters.Add("@is_ado", AseDbType.Integer).Value = 2;
+
+                using(var reader = procedureParametersCommand.ExecuteReader())
+                {
+                    var parameterTypeOrdinal = reader.GetOrdinal("PARAMETER_TYPE");
+                    var procedureCatalogOrdinal = reader.GetOrdinal("PROCEDURE_CATALOG");
+                    var procedureSchemaOrdinal = reader.GetOrdinal("PROCEDURE_SCHEMA");
+                    var procedureNameOrdinal = reader.GetOrdinal("PROCEDURE_NAME");
+                    var ordinalPositionOrdinal = reader.GetOrdinal("ORDINAL_POSITION");
+                    var parameterNameOrdinal = reader.GetOrdinal("PARAMETER_NAME");
+                    var typeNameOrdinal = reader.GetOrdinal("TYPE_NAME");
+                    var numericPrecisionOrdinal = reader.GetOrdinal("NUMERIC_PRECISION");
+                    var numericPrecisionRadixOrdinal = reader.GetOrdinal("NUMERIC_PRECISION_RADIX");
+                    var numericScaleOrdinal = reader.GetOrdinal("NUMERIC_SCALE");
+
+                    var result = new DataTable("ProcedureParameters");
+
+                    result.Columns.Add("SPECIFIC_CATALOG", typeof(string));
+                    result.Columns.Add("SPECIFIC_SCHEMA", typeof(string));
+                    result.Columns.Add("SPECIFIC_NAME", typeof(string));
+                    result.Columns.Add("ORDINAL_POSITION", typeof(string));
+                    result.Columns.Add("PARAMETER_MODE", typeof(string));
+                    result.Columns.Add("IS_RESULT", typeof(string));
+                    result.Columns.Add("AS_LOCATOR", typeof(string));
+                    result.Columns.Add("PARAMETER_NAME", typeof(string));
+                    result.Columns.Add("DATA_TYPE", typeof(string));
+                    result.Columns.Add("NUMERIC_PRECISION", typeof(string));
+                    result.Columns.Add("NUMERIC_PRECISION_RADIX", typeof(string));
+                    result.Columns.Add("NUMERIC_SCALE", typeof(string));
+                    result.BeginLoadData();
+
+                    while (reader.Read())
+                    {
+                        var parameterType = reader.GetInt16(parameterTypeOrdinal);
+
+                        object parameterDirection = DBNull.Value;
+
+                        switch (parameterType)
+                        {
+                            case 1:
+                                parameterDirection = "IN";
+                                break;
+                            case 2:
+                                parameterDirection = "INOUT";
+                                break;
+                            case 3:
+                                parameterDirection = "OUT";
+                                break;
+                            case 4:
+                                parameterDirection = "RETURN";
+                                break;
+                        }
+
+                        object procedureName = DBNull.Value;
+
+                        if (!reader.IsDBNull(procedureNameOrdinal))
+                        {
+                            var name = reader.GetString(procedureNameOrdinal)?.Split(';') ?? new string[]{null};
+
+                            procedureName = name[0];
+                        }
+
+                        result.Rows.Add(
+                            reader.IsDBNull(procedureCatalogOrdinal) ? (object)DBNull.Value : reader.GetString(procedureCatalogOrdinal),
+                            reader.IsDBNull(procedureSchemaOrdinal) ? (object)DBNull.Value : reader.GetString(procedureSchemaOrdinal),
+                            procedureName,
+                            reader.IsDBNull(ordinalPositionOrdinal) ? (object)DBNull.Value : reader.GetString(ordinalPositionOrdinal),
+                            parameterDirection,
+                            "NO",
+                            "NO",
+                            reader.IsDBNull(parameterNameOrdinal) ? (object)DBNull.Value : reader.GetString(parameterNameOrdinal),
+                            reader.IsDBNull(typeNameOrdinal) ? (object)DBNull.Value : reader.GetString(typeNameOrdinal),
+                            reader.IsDBNull(numericPrecisionOrdinal) ? (object)DBNull.Value : reader.GetString(numericPrecisionOrdinal),
+                            reader.IsDBNull(numericPrecisionRadixOrdinal) ? (object)DBNull.Value : reader.GetString(numericPrecisionRadixOrdinal),
+                            reader.IsDBNull(numericScaleOrdinal) ? (object)DBNull.Value : reader.GetString(numericScaleOrdinal)
+                        );
+                    }
+
+                    result.EndLoadData();
+
+                    result.AcceptChanges();
+
+                    return result;
+                }
+            }
         }
 
         private DataTable GetViewColumnsSchema(string[] restrictionValues)
@@ -1041,12 +1592,12 @@ WHERE
             result.LoadDataRow(new object[] {"IndexColumns", "Catalog", "@Catalog", "db_name()", 1}, true);
             result.LoadDataRow(new object[] {"IndexColumns", "Owner", "@Owner", "user_name()", 2}, true);
             result.LoadDataRow(new object[] {"IndexColumns", "Table", "@Table", "o.name", 3}, true);
-            result.LoadDataRow(new object[] {"IndexColumns", "ConstraintName", "@ConstraintName", "x.name", 4}, true);
+            result.LoadDataRow(new object[] {"IndexColumns", "ConstraintName", "@ConstraintName", "i.name", 4}, true);
             result.LoadDataRow(new object[] {"IndexColumns", "Column", "@Column", "c.name", 5}, true);
             result.LoadDataRow(new object[] {"Indexes", "Catalog", "@Catalog", "db_name()", 1}, true);
             result.LoadDataRow(new object[] {"Indexes", "Owner", "@Owner", "user_name()", 2}, true);
             result.LoadDataRow(new object[] {"Indexes", "Table", "@Table", "o.name", 3}, true);
-            result.LoadDataRow(new object[] {"Indexes", "Name", "@Name", "x.name", 4}, true);
+            result.LoadDataRow(new object[] {"Indexes", "Name", "@Name", "i.name", 4}, true);
             //result.LoadDataRow(new object[] {"UserDefinedTypes", "assembly_name", "@AssemblyName", "assemblies.name", 1}, true);
             //result.LoadDataRow(new object[] {"UserDefinedTypes", "udt_name", "@UDTName", "types.assembly_class", 2}, true);
             result.LoadDataRow(new object[] {"ForeignKeys", "Catalog", "@Catalog", "CONSTRAINT_CATALOG", 1}, true);

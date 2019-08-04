@@ -85,6 +85,14 @@ namespace AdoNetCore.AseClient
                 throw new AseException("Wrong CollectionName");
             }
 
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            // ReSharper disable HeuristicUnreachableCode
+            if (restrictionValues == null)
+            {
+                restrictionValues = new string[0];
+            }
+            // ReSharper restore HeuristicUnreachableCode
+
             var metaDataCollections = GetSchema();
 
             foreach (DataRow row in metaDataCollections.Rows)
@@ -1310,7 +1318,7 @@ ORDER BY
                     result.Columns.Add("CHARACTER_OCTET_LENGTH", typeof(int));
                     result.Columns.Add("NUMERIC_PRECISION", typeof(short));
                     result.Columns.Add("NUMERIC_PRECISION_RADIX", typeof(short));
-                    result.Columns.Add("NUMERIC_SCALE", typeof(short));
+                    result.Columns.Add("NUMERIC_SCALE", typeof(int));
                     result.Columns.Add("DATETIME_PRECISION", typeof(int));
                     result.Columns.Add("CHARACTER_SET_CATALOG", typeof(string));
                     result.Columns.Add("CHARACTER_SET_SCHEMA", typeof(string));
@@ -1444,7 +1452,7 @@ ORDER BY
                     databaseCommand.CommandText =
 @"SELECT 
     d.name AS database_name, 
-    CONVERT(VARCHAR(254), NULL) AS description, 
+    CONVERT(VARCHAR(254), NULL) AS DESCRIPTION, 
     d.dbid, 
     d.crdate AS create_date
 FROM
@@ -1457,7 +1465,7 @@ ORDER BY
                     databaseCommand.CommandText =
  @"SELECT 
     d.name AS database_name, 
-    CONVERT(VARCHAR(254), NULL) AS description, 
+    CONVERT(VARCHAR(254), NULL) AS DESCRIPTION, 
     d.dbid, 
     d.crdate AS create_date
 FROM
@@ -1474,6 +1482,8 @@ ORDER BY
                     result.BeginLoadData();
                     result.Load(reader, LoadOption.OverwriteChanges);
                     result.EndLoadData();
+                    
+                    result.Constraints.Clear(); // Stop the DataTable from picking up constraints automatically.
 
                     result.AcceptChanges();
 
@@ -1528,6 +1538,8 @@ WHERE
                     result.BeginLoadData();
                     result.Load(reader, LoadOption.OverwriteChanges);
                     result.EndLoadData();
+
+                    result.Constraints.Clear(); // Stop the DataTable from picking up constraints automatically.
 
                     result.AcceptChanges();
 
@@ -1623,7 +1635,7 @@ WHERE
             result.Columns.Add("CreateFormat", typeof(string));
             result.Columns.Add("CreateParameters", typeof(string));
             result.Columns.Add("DataType", typeof(string));
-            result.Columns.Add("IsAutoincrementable", typeof(bool));
+            result.Columns.Add("IsAutoIncrementable", typeof(bool));
             result.Columns.Add("IsBestMatch", typeof(bool));
             result.Columns.Add("IsCaseSensitive", typeof(bool));
             result.Columns.Add("IsFixedLength", typeof(bool));
@@ -1635,7 +1647,7 @@ WHERE
             result.Columns.Add("IsUnsigned", typeof(bool));
             result.Columns.Add("MaximumScale", typeof(short));
             result.Columns.Add("MinimumScale", typeof(short));
-            result.Columns.Add("IsConcurrencyType", typeof(string));
+            result.Columns.Add("IsConcurrencyType", typeof(bool));
             result.Columns.Add("IsLiteralSupported", typeof(bool));
             result.Columns.Add("LiteralPrefix", typeof(string));
             result.Columns.Add("LiteralSuffix", typeof(string));

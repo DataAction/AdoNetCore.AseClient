@@ -11,15 +11,21 @@ namespace AdoNetCore.AseClient.Tests.Integration
     {
         //echo an int
         private readonly string _createProc =
-@"CREATE PROCEDURE [dbo].[sp_test_message_order]
+@"CREATE PROCEDURE [dbo].[sp_test_message_order] (@runSelect char = 'Y')
 AS
 BEGIN
 
 PRINT 'Report Header'
 PRINT 'Table 1 Header'
-select 'value1'
+if @runSelect = 'Y'
+begin
+   select 'value1'
+end
 PRINT 'Table 2 Header'
-select 'value2'
+if @runSelect = 'Y'
+begin
+   select 'value2'
+end
 PRINT 'Report Trailer'
 
 END";
@@ -29,6 +35,9 @@ END";
 BEGIN
     DROP PROCEDURE [dbo].[sp_test_message_order]
 END";
+
+        private static readonly string[] _expectedResultsWithSelect = new[] { "Report Header", "Table 1 Header", "value1", "Table 2 Header", "value2", "Report Trailer" };
+        private static readonly string[] _expectedResultsWithoutSelect = new [] { "Report Header", "Table 1 Header", "Table 2 Header", "Report Trailer" };
 
         [SetUp]
         public void SetUp()
@@ -49,8 +58,98 @@ END";
             }
         }
 
+        [TestCaseSource(nameof(StoredProcTestCases))]
+        public void ExecuteReader_WithMessagesEmbeddedInResults_RetainsServerOrder(char withSelect, string[] expectedResults)
+        {
+            var results = new List<string>();
+
+            var messageEventHandler = new AseInfoMessageEventHandler((sender, eventArgs) =>
+            {
+                foreach (AseError error in eventArgs.Errors)
+                {
+                    results.Add(error.Message);
+                }
+            });
+
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
+            {
+                connection.Open();
+
+                try
+                {
+                    connection.InfoMessage += messageEventHandler;
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "[dbo].[sp_test_message_order]";
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.AseParameters.Add("@runSelect", withSelect);
+                        using (var reader = command.ExecuteReader())
+                        {
+                            do
+                            {
+                                while (reader.Read())
+                                {
+                                    results.Add(reader.GetString(0));
+                                }
+                            } while (reader.NextResult());
+                        }
+                    }
+                }
+                finally
+                {
+                    connection.InfoMessage -= messageEventHandler;
+                }
+            }
+
+            CollectionAssert.AreEqual(expectedResults, results.ToArray());
+        }
+
         [Test]
-        public void ExecuteReader_WithMessagesEmbeddedInResults_RetainsServerOrder()
+        public void ExecuteReader_WithoutSelects_RetainsServerOrder()
+        {
+            var results = new List<string>();
+
+            var messageEventHandler = new AseInfoMessageEventHandler((sender, eventArgs) =>
+            {
+                foreach (AseError error in eventArgs.Errors)
+                {
+                    results.Add(error.Message);
+                }
+            });
+
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
+            {
+                connection.Open();
+
+                try
+                {
+                    connection.InfoMessage += messageEventHandler;
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "[dbo].[sp_test_message_order]";
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.AseParameters.Add("@runSelect", 'N');
+                        using (var reader = command.ExecuteReader())
+                        {
+                            // Do not attempt to read results for this test
+                            // server output should still be sent
+                        }
+                    }
+                }
+                finally
+                {
+                    connection.InfoMessage -= messageEventHandler;
+                }
+            }
+
+            CollectionAssert.AreEqual(_expectedResultsWithoutSelect, results.ToArray());
+        }
+
+#if (NETFRAMEWORK || (NETCOREAPP && !NETCOREAPP1_0 && !NETCOREAPP1_1))
+        [TestCaseSource(nameof(StoredProcTestCases))]
+        public void ExecuteReader_WithMessagesEmbeddedInResultsAndUsingDataTable_RetainsServerOrder(char withSelect, string[] expectedResults)
         {
             var results = new List<string>();
 
@@ -77,13 +176,24 @@ END";
 
                         using (var reader = command.ExecuteReader())
                         {
-                            do
+                            int resultCount = 0;
+                            Assert.True(reader.HasRows);
+                            while (reader.HasRows)
                             {
-                                while (reader.Read())
+                                DataTable dataTable = new DataTable();
+                                dataTable.Load(reader);
+                                results.Add(dataTable.Rows[0].ItemArray[0].ToString());
+                                resultCount++;
+                                if (resultCount < 2)
                                 {
-                                    results.Add(reader.GetString(0));
+                                    Assert.True(reader.HasRows);
                                 }
-                            } while (reader.NextResult());
+                                else
+                                {
+                                    Assert.False(reader.HasRows);
+                                }
+
+                            }
                         }
                     }
                 }
@@ -93,13 +203,12 @@ END";
                 }
             }
 
-            var expected = new[] { "Report Header", "Table 1 Header", "value1", "Table 2 Header", "value2", "Report Trailer"};
-
-            CollectionAssert.AreEqual(expected, results.ToArray());
+            CollectionAssert.AreEqual(expectedResults, results.ToArray());
         }
+#endif
 
-        [Test]
-        public void ExecuteReader_WithMessagesEmbeddedInResultsAndFlushMessageOn_RetainsServerOrder()
+        [TestCaseSource(nameof(StoredProcTestCases))]
+        public void ExecuteReader_WithMessagesEmbeddedInResultsAndFlushMessageOn_RetainsServerOrder(char withSelect, string[] expectedResults)
         {
             var results = new List<string>();
 
@@ -125,6 +234,7 @@ END";
                     {
                         command.CommandText = "[dbo].[sp_test_message_order]";
                         command.CommandType = CommandType.StoredProcedure;
+                        command.AseParameters.Add("@runSelect", withSelect);
 
                         using (var reader = command.ExecuteReader())
                         {
@@ -144,9 +254,14 @@ END";
                 }
             }
 
-            var expected = new[] { "Report Header", "Table 1 Header", "value1", "Table 2 Header", "value2", "Report Trailer"};
+            CollectionAssert.AreEqual(expectedResults, results.ToArray());
+        }
 
-            CollectionAssert.AreEqual(expected, results.ToArray());
+
+        public static IEnumerable<TestCaseData> StoredProcTestCases()
+        {
+            yield return new TestCaseData('Y', _expectedResultsWithSelect);
+            yield return new TestCaseData('N', _expectedResultsWithoutSelect);
         }
     }
 }

@@ -197,12 +197,13 @@ END";
                             }
                             while (!reader.IsClosed)
                             {
-                                DataTable dataTable = new DataTable();
-                                dataTable.Load(reader);
-                                if (dataTable.Rows.Count > 0)
+                                var dataTable = new DataTable();
+                                dataTable.RowChanged += (sender, e) =>
                                 {
-                                    results.Add(dataTable.Rows[0].ItemArray[0].ToString());
-                                }
+                                    results.Add(e.Row.ItemArray[0].ToString());
+                                };
+                                dataTable.Load(reader);
+
                                 resultCount++;
                                 switch(resultCount)
                                 {

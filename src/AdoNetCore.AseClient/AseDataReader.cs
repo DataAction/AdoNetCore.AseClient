@@ -13,7 +13,7 @@ namespace AdoNetCore.AseClient
     public sealed class AseDataReader : DbDataReader
     {
         private TableResult _currentTable;
-        private readonly BlockingCollection<TableResult> _results;
+        private BlockingCollection<TableResult> _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
         private readonly CommandBehavior _behavior;
@@ -482,11 +482,30 @@ namespace AdoNetCore.AseClient
 
         public override object this[string name] => GetValue(GetOrdinal(name));
 
+        public
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
-        public override void Close() { }
-#else
-        public void Close() { }
+            override
 #endif
+            void Close()
+        {
+            if (_currentTable != null)
+            {
+                // If this is the last record to read, then process any messages.
+                if (_currentTable.Messages.Count > 0)
+                {
+                    DispatchMessages(_currentTable.Messages);
+                }
+
+                _currentTable = null;
+            }
+
+            _currentRow = -1;
+
+            while (_results != null && _results.TryTake(out _, -1))
+            {
+                _currentResult++;
+            }
+        }
 
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override DataTable GetSchemaTable()
@@ -682,6 +701,7 @@ namespace AdoNetCore.AseClient
             if (disposing)
             {
                 _results?.Dispose();
+                _results = null;
             }
 
             base.Dispose(disposing);

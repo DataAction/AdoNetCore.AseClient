@@ -36,8 +36,8 @@ BEGIN
     DROP PROCEDURE [dbo].[sp_test_message_order]
 END";
 
-        private static readonly string[] _expectedResultsWithSelect = new[] { "Report Header", "Table 1 Header", "value1", "Table 2 Header", "value2", "Report Trailer" };
-        private static readonly string[] _expectedResultsWithoutSelect = new [] { "Report Header", "Table 1 Header", "Table 2 Header", "Report Trailer" };
+        // ReSharper disable once InconsistentNaming
+        private static readonly string[] _expectedResultsWithoutSelect = { "Report Header", "Table 1 Header", "Table 2 Header", "Report Trailer" };
 
         [SetUp]
         public void SetUp()
@@ -131,6 +131,7 @@ END";
                         command.CommandText = "[dbo].[sp_test_message_order]";
                         command.CommandType = CommandType.StoredProcedure;
                         command.AseParameters.Add("@runSelect", 'N');
+                        // ReSharper disable once UnusedVariable
                         using (var reader = command.ExecuteReader())
                         {
                             // Do not attempt to read results for this test
@@ -258,9 +259,9 @@ END";
         }
 
 
-        public static IEnumerable<TestCaseData> StoredProcTestCases()
+        private static IEnumerable<TestCaseData> StoredProcTestCases()
         {
-            yield return new TestCaseData('Y', _expectedResultsWithSelect);
+            yield return new TestCaseData('Y', new[] { "Report Header", "Table 1 Header", "value1", "Table 2 Header", "value2", "Report Trailer" });
             yield return new TestCaseData('N', _expectedResultsWithoutSelect);
         }
     }

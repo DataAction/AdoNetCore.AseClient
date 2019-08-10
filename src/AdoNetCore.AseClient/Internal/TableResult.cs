@@ -6,5 +6,7 @@ namespace AdoNetCore.AseClient.Internal
     {
         public FormatItem[] Formats { get; set; }
         public List<RowResult> Rows { get; } = new List<RowResult>();
+
+        public List<MessageResult> Messages { get; } = new List<MessageResult>();
     }
 }

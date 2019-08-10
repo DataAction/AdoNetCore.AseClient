@@ -328,7 +328,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
                 var doneHandler = new DoneTokenHandler();
-                var dataReaderHandler = new StreamingDataReaderTokenHandler(readerSource, dataReader);
+                var dataReaderHandler = new StreamingDataReaderTokenHandler(readerSource, dataReader, EventNotifier);
                 var responseParameterTokenHandler = new ResponseParameterTokenHandler(command.AseParameters);
 
                 Logger.Instance?.WriteLine();

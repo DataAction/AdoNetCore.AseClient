@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Data.Common;
@@ -12,7 +13,7 @@ namespace AdoNetCore.AseClient
     public sealed class AseDataReader : DbDataReader
     {
         private TableResult _currentTable;
-        private readonly BlockingCollection<object> _results;
+        private readonly BlockingCollection<TableResult> _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
         private readonly CommandBehavior _behavior;
@@ -32,7 +33,7 @@ namespace AdoNetCore.AseClient
         // ReSharper disable once MemberCanBePrivate.Global
         internal AseDataReader(CommandBehavior behavior, IInfoMessageEventNotifier eventNotifier)
         {
-            _results = new BlockingCollection<object>();
+            _results = new BlockingCollection<TableResult>();
             _currentTable = null;
             _hasFirst = false;
 
@@ -50,11 +51,6 @@ namespace AdoNetCore.AseClient
                 NextResult();
                 _hasFirst = true;
             }
-        }
-
-        internal void AddResult(MessageResult result)
-        {
-            _results.Add(result);
         }
 
         internal void CompleteAdding()
@@ -549,19 +545,17 @@ namespace AdoNetCore.AseClient
             _currentSchemaTable = null;
 #endif
 
-            while (_results.TryTake(out var nextItem, -1))
+            if (_results.TryTake(out var nextItem, -1))
             {
-                if (nextItem is TableResult dataItem)
+                if (_currentTable != null && _currentTable.Messages.Count > 0)
                 {
-                    _currentTable = dataItem;
+                    DispatchMessages(_currentTable.Messages);
+                }
+
+                _currentTable = nextItem;
                     
-                    _currentRow = -1;
-                    return true;
-                }
-                if (nextItem is MessageResult messageItem)
-                {
-                    _eventNotifier?.NotifyInfoMessage(messageItem.Errors, messageItem.Message);
-                }
+                _currentRow = -1;
+                return true;
             }
 
             return false;
@@ -584,15 +578,14 @@ namespace AdoNetCore.AseClient
                 // Jump to the end
                 while (_results.TryTake(out var nextItem, -1))
                 {
-                    if (nextItem is TableResult dataItem)
+                    if (_currentTable?.Messages.Count > 0)
                     {
-                        _currentTable = dataItem;
-                        _currentResult++;
+                        DispatchMessages(_currentTable.Messages);
                     }
-                    if (nextItem is MessageResult messageItem)
-                    {
-                        _eventNotifier?.NotifyInfoMessage(messageItem.Errors, messageItem.Message);
-                    }
+
+                    _currentTable = nextItem;
+
+                    _currentResult++;
                 }
 
                 _currentRow = _currentTable.Rows.Count;
@@ -602,7 +595,20 @@ namespace AdoNetCore.AseClient
                 _currentRow++;
             }
 
-            return _currentTable?.Rows.Count > _currentRow;
+            if (_currentTable != null)
+            {
+                var result = _currentTable.Rows.Count > _currentRow;
+
+                // If this is the last record to read, then process any messages.
+                if (!result && _currentTable.Messages.Count > 0)
+                {
+                    DispatchMessages(_currentTable.Messages);
+                }
+
+                return result;
+            }
+
+            return false;
         }
 
         public override int Depth => 0;
@@ -651,6 +657,25 @@ namespace AdoNetCore.AseClient
         /// Get the current row, or null if there is none
         /// </summary>
         private RowResult CurrentRow => WithinRow ? _currentTable.Rows[_currentRow] : null;
+
+        /// <summary>
+        /// Send the messages to the event listener, removing them from the collection as they are sent.
+        /// </summary>
+        /// <param name="messages">The messages to dispatch.</param>
+        private void DispatchMessages(IList<MessageResult> messages)
+        {
+            while (messages.Count > 0)
+            {
+                // Grab the next message.
+                var message = messages[0];
+
+                // Send the event to any listeners.
+                _eventNotifier?.NotifyInfoMessage(message.Errors, message.Message);
+
+                // Remove the message so it can't be processed again.
+                messages.RemoveAt(0);
+            }
+        }
 
         protected override void Dispose(bool disposing)
         {

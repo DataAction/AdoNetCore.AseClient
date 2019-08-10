@@ -25,14 +25,17 @@ namespace AdoNetCore.AseClient.Internal.Handler
         private bool _foundSevereError;
         private readonly TaskCompletionSource<DbDataReader> _readerSource;
         private readonly AseDataReader _dataReader;
+        private readonly IInfoMessageEventNotifier _eventNotifier;
         private TableResult _current;
-        private bool _hasFirst;
+        private bool _hasFirstResultSet;
+        private bool _hasSentCurrent;
 
-        public StreamingDataReaderTokenHandler(TaskCompletionSource<DbDataReader> readerSource, AseDataReader dataReader)
+        public StreamingDataReaderTokenHandler(TaskCompletionSource<DbDataReader> readerSource, AseDataReader dataReader, IInfoMessageEventNotifier eventNotifier)
         {
             _readerSource = readerSource;
             _dataReader = dataReader;
-            _hasFirst = false;
+            _eventNotifier = eventNotifier;
+            _hasFirstResultSet = false;
         }
 
         public bool CanHandle(TokenType type)
@@ -50,6 +53,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     {
                         Formats = format.Formats
                     };
+                    _hasSentCurrent = false;
                     break;
                 case RowToken row:
                     _current?.Rows.Add(new RowResult
@@ -92,12 +96,15 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
                     _allErrors.Add(error);
 
-                    _dataReader.AddResult(new MessageResult {Errors = new AseErrorCollection(error), Message = error.Message});
-
-                    if (!_hasFirst)
+                    // if we have not encountered any data yet, then send messages straight out.
+                    if (_current == null)
                     {
-                        _readerSource.SetResult(_dataReader); // Return the AseDataReader once we have a single table of results.
-                        _hasFirst = true;
+                        _eventNotifier?.NotifyInfoMessage(new AseErrorCollection(error), error.Message);
+                    }
+                    // else if we have encountered any data, then add the messages to the data reader so that they are returned with data/message order preserved.
+                    else
+                    {
+                        _current.Messages.Add(new MessageResult {Errors = new AseErrorCollection(error), Message = error.Message});
                     }
 
                     var msgType = isSevere
@@ -120,18 +127,17 @@ namespace AdoNetCore.AseClient.Internal.Handler
 
         private void ReturnCurrent()
         {
-            if (_current != null)
+            if (_current != null && !_hasSentCurrent)
             {
                 _dataReader.AddResult(_current);
+                _hasSentCurrent = true;
 
-                if (!_hasFirst)
+                if (!_hasFirstResultSet)
                 {
                     _readerSource.SetResult(_dataReader); // Return the AseDataReader once we have a single table of results.
-                    _hasFirst = true;
+                    _hasFirstResultSet = true;
                 }
             }
-
-            _current = null;
         }
 
         public void AssertNoErrors()

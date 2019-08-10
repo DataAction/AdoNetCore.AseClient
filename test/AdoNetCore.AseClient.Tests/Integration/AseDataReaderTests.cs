@@ -977,6 +977,24 @@ SELECT 5";
             }
         }
 
+        [TestCase]
+        public void ExecuteReader_WithMissingStoredProc_ThrowsAseException()
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "missing_stored_proc";
+                    command.CommandType = CommandType.StoredProcedure;
+                    var exception = Assert.Throws<AseException>(() => command.ExecuteReader());
+                    Assert.AreEqual(1, exception.Errors.Count);
+                    Assert.AreEqual(2812, exception.Errors[0].MessageNumber);
+                }
+            }
+        }
+
         [TestCaseSource(nameof(GetFieldType_ReturnsNonNullableType_Cases))]
         public void GetFieldType_ReturnsNonNullableType(string query, Type expected)
         {

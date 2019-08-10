@@ -21,10 +21,15 @@ if @runSelect = 'Y'
 begin
    select 'value1'
 end
-PRINT 'Table 2 Header'
+PRINT 'Empty Table 2 Header'
 if @runSelect = 'Y'
 begin
-   select 'value2'
+   select 'value2' where 1 = 2
+end
+PRINT 'Table 3 Header'
+if @runSelect = 'Y'
+begin
+   select 'value3'
 end
 PRINT 'Report Trailer'
 
@@ -37,7 +42,7 @@ BEGIN
 END";
 
         // ReSharper disable once InconsistentNaming
-        private static readonly string[] _expectedResultsWithoutSelect = { "Report Header", "Table 1 Header", "Table 2 Header", "Report Trailer" };
+        private static readonly string[] _expectedResultsWithoutSelect = { "Report Header", "Table 1 Header", "Empty Table 2 Header", "Table 3 Header", "Report Trailer" };
 
         [SetUp]
         public void SetUp()
@@ -174,26 +179,49 @@ END";
                     {
                         command.CommandText = "[dbo].[sp_test_message_order]";
                         command.CommandType = CommandType.StoredProcedure;
+                        command.AseParameters.Add("@runSelect", withSelect);
 
                         using (var reader = command.ExecuteReader())
                         {
                             int resultCount = 0;
-                            Assert.True(reader.HasRows);
-                            while (reader.HasRows)
+                            if (withSelect == 'Y')
+                            {
+                                // Cursor 0 exists and has rows
+                                Assert.False(reader.IsClosed);
+                                Assert.True(reader.HasRows);
+                            }
+                            else
+                            {
+                                Assert.True(reader.IsClosed);
+                                Assert.False(reader.HasRows);
+                            }
+                            while (!reader.IsClosed)
                             {
                                 DataTable dataTable = new DataTable();
                                 dataTable.Load(reader);
-                                results.Add(dataTable.Rows[0].ItemArray[0].ToString());
+                                if (dataTable.Rows.Count > 0)
+                                {
+                                    results.Add(dataTable.Rows[0].ItemArray[0].ToString());
+                                }
                                 resultCount++;
-                                if (resultCount < 2)
+                                switch(resultCount)
                                 {
-                                    Assert.True(reader.HasRows);
+                                    // Cursor 1 exists and has no rows
+                                    case 1:
+                                        Assert.False(reader.IsClosed);
+                                        Assert.False(reader.HasRows);
+                                        break;
+                                    // Cursor 2 exists and has rows
+                                    case 2:
+                                        Assert.False(reader.IsClosed);
+                                        Assert.True(reader.HasRows);
+                                        break;
+                                    // Cursor 3 does not exist and so has no rows
+                                    case 3:
+                                        Assert.True(reader.IsClosed);
+                                        Assert.False(reader.HasRows);
+                                        break;
                                 }
-                                else
-                                {
-                                    Assert.False(reader.HasRows);
-                                }
-
                             }
                         }
                     }
@@ -261,7 +289,7 @@ END";
 
         private static IEnumerable<TestCaseData> StoredProcTestCases()
         {
-            yield return new TestCaseData('Y', new[] { "Report Header", "Table 1 Header", "value1", "Table 2 Header", "value2", "Report Trailer" });
+            yield return new TestCaseData('Y', new[] { "Report Header", "Table 1 Header", "value1", "Empty Table 2 Header", "Table 3 Header", "value3", "Report Trailer" });
             yield return new TestCaseData('N', _expectedResultsWithoutSelect);
         }
     }

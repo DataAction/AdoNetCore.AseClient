@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
     {
         //echo an int
         private readonly string _createProc =
-@"CREATE PROCEDURE [dbo].[sp_test_message_order] (@runSelect char = 'Y')
+@"CREATE PROCEDURE [dbo].[sp_test_message_order] (@runSelect char = 'Y', @status varchar(10) output)
 AS
 BEGIN
 
@@ -32,6 +32,8 @@ begin
    select 'value3'
 end
 PRINT 'Report Trailer'
+
+select @status = 'OK'
 
 END";
 
@@ -88,7 +90,8 @@ END";
                     {
                         command.CommandText = "[dbo].[sp_test_message_order]";
                         command.CommandType = CommandType.StoredProcedure;
-                        command.AseParameters.Add("@runSelect", withSelect);
+                        command.Parameters.Add("@runSelect", withSelect);
+                        command.Parameters.Add(new AseParameter("@status", AseDbType.VarChar) { Direction = ParameterDirection.Output });
                         using (var reader = command.ExecuteReader())
                         {
                             do
@@ -99,6 +102,7 @@ END";
                                 }
                             } while (reader.NextResult());
                         }
+                        Assert.AreEqual("OK", command.Parameters["@status"].Value.ToString());
                     }
                 }
                 finally
@@ -135,13 +139,15 @@ END";
                     {
                         command.CommandText = "[dbo].[sp_test_message_order]";
                         command.CommandType = CommandType.StoredProcedure;
-                        command.AseParameters.Add("@runSelect", 'N');
+                        command.Parameters.Add("@runSelect", 'N');
+                        command.Parameters.Add(new AseParameter("@status", AseDbType.VarChar) { Direction = ParameterDirection.Output });
                         // ReSharper disable once UnusedVariable
                         using (var reader = command.ExecuteReader())
                         {
                             // Do not attempt to read results for this test
                             // server output should still be sent
                         }
+                        Assert.AreEqual("OK", command.Parameters["@status"].Value.ToString());
                     }
                 }
                 finally
@@ -158,12 +164,13 @@ END";
         public void ExecuteReader_WithMessagesEmbeddedInResultsAndUsingDataTable_RetainsServerOrder(char withSelect, string[] expectedResults)
         {
             var results = new List<string>();
+            var output = new List<string>();
 
             var messageEventHandler = new AseInfoMessageEventHandler((sender, eventArgs) =>
             {
                 foreach (AseError error in eventArgs.Errors)
                 {
-                    results.Add(error.Message);
+                    output.Add(error.Message);
                 }
             });
 
@@ -179,10 +186,13 @@ END";
                     {
                         command.CommandText = "[dbo].[sp_test_message_order]";
                         command.CommandType = CommandType.StoredProcedure;
-                        command.AseParameters.Add("@runSelect", withSelect);
+                        command.Parameters.Add("@runSelect", withSelect);
+                        command.Parameters.Add(new AseParameter("@status", AseDbType.VarChar) { Direction = ParameterDirection.Output });
 
                         using (var reader = command.ExecuteReader())
                         {
+                            MergeOuput();
+
                             int resultCount = 0;
                             if (withSelect == 'Y')
                             {
@@ -197,12 +207,18 @@ END";
                             }
                             while (!reader.IsClosed)
                             {
+                                MergeOuput();
+
                                 var dataTable = new DataTable();
-                                dataTable.RowChanged += (sender, e) =>
-                                {
-                                    results.Add(e.Row.ItemArray[0].ToString());
-                                };
                                 dataTable.Load(reader);
+                                if (dataTable.Rows.Count > 0)
+                                {
+                                    results.Add(dataTable.Rows[0].ItemArray[0].ToString());
+                                }
+
+                                // Only add the next output after the previous results
+                                // have been inserted
+                                MergeOuput();
 
                                 resultCount++;
                                 switch(resultCount)
@@ -224,7 +240,10 @@ END";
                                         break;
                                 }
                             }
+
+                            MergeOuput();
                         }
+                        Assert.AreEqual("OK", command.Parameters["@status"].Value.ToString());
                     }
                 }
                 finally
@@ -234,6 +253,12 @@ END";
             }
 
             CollectionAssert.AreEqual(expectedResults, results.ToArray());
+
+            void MergeOuput()
+            {
+                results.AddRange(output);
+                output.Clear();
+            }
         }
 #endif
 
@@ -264,7 +289,8 @@ END";
                     {
                         command.CommandText = "[dbo].[sp_test_message_order]";
                         command.CommandType = CommandType.StoredProcedure;
-                        command.AseParameters.Add("@runSelect", withSelect);
+                        command.Parameters.Add("@runSelect", withSelect);
+                        command.Parameters.Add(new AseParameter("@status", AseDbType.VarChar) { Direction = ParameterDirection.Output });
 
                         using (var reader = command.ExecuteReader())
                         {
@@ -276,6 +302,7 @@ END";
                                 }
                             } while (reader.NextResult());
                         }
+                        Assert.AreEqual("OK", command.Parameters["@status"].Value.ToString());
                     }
                 }
                 finally

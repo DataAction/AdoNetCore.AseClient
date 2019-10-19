@@ -1,75 +1,71 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Data.Common;
-using System.Linq;
+using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
     public sealed class AseDataReader : DbDataReader
     {
-        private readonly TableResult[] _results;
+        private TableResult _currentTable;
+        private BlockingCollection<TableResult> _results;
         private int _currentResult = -1;
         private int _currentRow = -1;
         private readonly CommandBehavior _behavior;
+        private readonly IInfoMessageEventNotifier _eventNotifier;
+        private bool _hasFirst;
 
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         private readonly AseCommand _command;
         private DataTable _currentSchemaTable;
 
-        internal AseDataReader(IEnumerable<TableResult> results, AseCommand command, CommandBehavior behavior)
+        internal AseDataReader(AseCommand command, CommandBehavior behavior, IInfoMessageEventNotifier eventNotifier) : this(behavior, eventNotifier)
         {
-            _results = results.ToArray();
             _command = command;
-
-            _behavior = behavior;
-            NextResult();
         }
 #endif
 
-        internal AseDataReader(IEnumerable<TableResult> results, CommandBehavior behavior)
+        // ReSharper disable once MemberCanBePrivate.Global
+        internal AseDataReader(CommandBehavior behavior, IInfoMessageEventNotifier eventNotifier)
         {
-            _results = results.ToArray();
+            _results = new BlockingCollection<TableResult>();
+            _currentTable = null;
+            _hasFirst = false;
 
             _behavior = behavior;
-            NextResult();
+            _eventNotifier = eventNotifier;
+        }
+
+        internal void AddResult(TableResult result)
+        {
+            _results.Add(result);
+
+            // If this is the first data result back, then we should automatically point at it.
+            if (!_hasFirst)
+            {
+                NextResult();
+                _hasFirst = true;
+            }
+        }
+
+        internal void CompleteAdding()
+        {
+            _results.CompleteAdding();
         }
 
         public override bool GetBoolean(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is bool i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Boolean");
-            }
-
-            return convertible.ToBoolean(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToBoolean(provider));
         }
 
         public override byte GetByte(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is byte i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Byte");
-            }
-
-            return convertible.ToByte(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToByte(provider));
         }
 
         public override long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferOffset, int length)
@@ -137,19 +133,7 @@ namespace AdoNetCore.AseClient
 
         public override char GetChar(int i)
         {
-            var obj = GetValue(i);
-
-            if (obj is char i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Char");
-            }
-
-            return convertible.ToChar(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToChar(provider));
         }
 
         public override long GetChars(int i, long fieldOffset, char[] buffer, int bufferOffset, int length)
@@ -216,17 +200,17 @@ namespace AdoNetCore.AseClient
 
         public override string GetDataTypeName(int ordinal)
         {
-            if (CurrentResultSet == null || ordinal < 0)
+            if (_currentTable  == null || ordinal < 0)
             {
                 throw new IndexOutOfRangeException($"Column referenced by index ({ordinal}) does not exist");
             }
 
-            if (ordinal >= CurrentResultSet.Formats.Length)
+            if (ordinal >= _currentTable .Formats.Length)
             {
                 throw new AseException("The column specified does not exist.", 30118);
             }
 
-            return CurrentResultSet.Formats[ordinal].GetDataTypeName();
+            return _currentTable .Formats[ordinal].GetDataTypeName();
         }
 
         public override IEnumerator GetEnumerator()
@@ -268,36 +252,12 @@ namespace AdoNetCore.AseClient
 
         public override decimal GetDecimal(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is decimal i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Decimal");
-            }
-
-            return convertible.ToDecimal(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToDecimal(provider));
         }
 
         public override double GetDouble(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is double i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Double");
-            }
-
-            return convertible.ToDouble(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToDouble(provider));
         }
 
         public override Type GetFieldType(int i)
@@ -310,19 +270,7 @@ namespace AdoNetCore.AseClient
 
         public override float GetFloat(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is float i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Float");
-            }
-
-            return convertible.ToSingle(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToSingle(provider));
         }
 
         public override Guid GetGuid(int i)
@@ -352,104 +300,51 @@ namespace AdoNetCore.AseClient
 
         public override short GetInt16(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is short i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int16");
-            }
-
-            return convertible.ToInt16(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToInt16(provider));
         }
 
         public override int GetInt32(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is int i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int32");
-            }
-
-            return convertible.ToInt32(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToInt32(provider));
         }
 
         public override long GetInt64(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is long i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to Int64");
-            }
-
-            return convertible.ToInt64(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToInt64(provider));
         }
 
         public ushort GetUInt16(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is ushort i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt16");
-            }
-
-            return convertible.ToUInt16(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToUInt16(provider));
         }
 
         public uint GetUInt32(int i)
         {
-            var obj = GetNonNullValue(i);
-
-            if (obj is uint i1)
-            {
-                return i1;
-            }
-
-            if (!(obj is IConvertible convertible))
-            {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt32");
-            }
-
-            return convertible.ToUInt32(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            return GetPrimitive(i, (value, provider) => value.ToUInt32(provider));
         }
 
         public ulong GetUInt64(int i)
         {
+            return GetPrimitive(i, (value, provider) => value.ToUInt64(provider));
+        }
+
+        private T GetPrimitive<T>(int i, Func<IConvertible, IFormatProvider, T> convert)
+        {
             var obj = GetNonNullValue(i);
 
-            if (obj is ulong i1)
+            if (obj is T i1)
             {
                 return i1;
             }
 
-            if (!(obj is IConvertible convertible))
+            if (obj is IConvertible convertible)
             {
-                throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to UInt64");
+                var formatProvider = System.Globalization.CultureInfo.InvariantCulture.NumberFormat;
+
+                return convert(convertible, formatProvider);
             }
 
-            return convertible.ToUInt64(System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to {nameof(T)}");
         }
 
         public override string GetString(int i)
@@ -497,7 +392,7 @@ namespace AdoNetCore.AseClient
                 throw new ArgumentException();
             }
 
-            var formats = CurrentResultSet?.Formats;
+            var formats = _currentTable?.Formats;
 
             if (formats == null)
             {
@@ -506,7 +401,7 @@ namespace AdoNetCore.AseClient
 
             name = name
                 .TrimStart('[')
-                .TrimEnd(']'); // TODO - this should be unnecessary - we should store the value in canonical form.
+                .TrimEnd(']'); 
 
             for (var i = 0; i < formats.Length; i++)
             {
@@ -577,7 +472,7 @@ namespace AdoNetCore.AseClient
             return CurrentRow.Items[i] == DBNull.Value;
         }
 
-        public override int FieldCount => CurrentResultSet?.Formats?.Length ?? 0;
+        public override int FieldCount => _currentTable?.Formats?.Length ?? 0;
 
         public override int VisibleFieldCount => FieldCount;
 
@@ -587,11 +482,30 @@ namespace AdoNetCore.AseClient
 
         public override object this[string name] => GetValue(GetOrdinal(name));
 
+        public
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
-        public override void Close() { }
-#else
-        public void Close() { }
+            override
 #endif
+            void Close()
+        {
+            if (_currentTable != null)
+            {
+                // If this is the last record to read, then process any messages.
+                if (_currentTable.Messages.Count > 0)
+                {
+                    DispatchMessages(_currentTable.Messages);
+                }
+
+                _currentTable = null;
+            }
+
+            _currentRow = -1;
+
+            while (_results != null && _results.TryTake(out _, -1))
+            {
+                _currentResult++;
+            }
+        }
 
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override DataTable GetSchemaTable()
@@ -607,7 +521,7 @@ namespace AdoNetCore.AseClient
                 return;
             }
 
-            var formats = CurrentResultSet?.Formats;
+            var formats = _currentTable?.Formats;
 
             if (formats == null)
             {
@@ -650,8 +564,15 @@ namespace AdoNetCore.AseClient
             _currentSchemaTable = null;
 #endif
 
-            if (_results.Length > _currentResult)
+            if (_results.TryTake(out var nextItem, -1))
             {
+                if (_currentTable != null && _currentTable.Messages.Count > 0)
+                {
+                    DispatchMessages(_currentTable.Messages);
+                }
+
+                _currentTable = nextItem;
+                    
                 _currentRow = -1;
                 return true;
             }
@@ -665,7 +586,7 @@ namespace AdoNetCore.AseClient
         /// <returns>true if the reader is pointing at a row of data; false otherwise.</returns>
         public override bool Read()
         {
-            if (_currentResult < 0 || _currentResult >= _results.Length)
+            if (_currentTable == null)
             {
                 return false;
             }
@@ -674,22 +595,44 @@ namespace AdoNetCore.AseClient
             if ((_behavior & CommandBehavior.SingleRow) == CommandBehavior.SingleRow && _currentRow == 0)
             {
                 // Jump to the end
-                _currentResult = _results.Length - 1;
-                _currentRow = _results[_currentResult].Rows.Count;
+                while (_results.TryTake(out var nextItem, -1))
+                {
+                    if (_currentTable?.Messages.Count > 0)
+                    {
+                        DispatchMessages(_currentTable.Messages);
+                    }
+
+                    _currentTable = nextItem;
+
+                    _currentResult++;
+                }
+
+                _currentRow = _currentTable.Rows.Count;
             }
             else
             {
                 _currentRow++;
             }
 
-            return _results[_currentResult].Rows.Count > _currentRow;
+            if (_currentTable != null)
+            {
+                var result = _currentTable.Rows.Count > _currentRow;
+
+                // If this is the last record to read, then process any messages.
+                if (!result && _currentTable.Messages.Count > 0)
+                {
+                    DispatchMessages(_currentTable.Messages);
+                }
+
+                return result;
+            }
+
+            return false;
         }
 
         public override int Depth => 0;
-        public override bool IsClosed => _currentResult >= _results.Length;
-        public override int RecordsAffected => _currentResult >= 0 && _currentResult < _results.Length
-            ? _results[_currentResult].Rows.Count
-            : 0;
+        public override bool IsClosed => _currentTable == null;
+        public override int RecordsAffected => _currentTable?.Rows.Count ?? 0;
 
         public IList GetList()
         {
@@ -699,14 +642,9 @@ namespace AdoNetCore.AseClient
         public bool ContainsListCollection => false;
 
         /// <summary>
-        /// Confirm that the reader is pointing at a result set
-        /// </summary>
-        private bool WithinResultSet => _currentResult >= 0 && _currentResult < _results.Length;
-
-        /// <summary>
         /// Confirm that the reader is pointing at a row within a result set
         /// </summary>
-        private bool WithinRow => WithinResultSet && _currentRow >= 0 && _currentRow < CurrentResultSet.Rows.Count;
+        private bool WithinRow => _currentTable != null && _currentRow >= 0 && _currentRow < _currentTable.Rows.Count;
 
         /// <summary>
         /// Confirm that there is a value at the supplied index (does not confirm whether value is null or set)
@@ -723,7 +661,7 @@ namespace AdoNetCore.AseClient
         /// <returns>Returns the specified format item, or null</returns>
         private FormatItem GetFormat(int i)
         {
-            var formats = CurrentResultSet?.Formats;
+            var formats = _currentTable?.Formats;
             return formats != null && i >= 0 && i < formats.Length
                 ? formats[i]
                 : null;
@@ -732,16 +670,41 @@ namespace AdoNetCore.AseClient
         /// <summary>
         /// Get the number of rows in the current result set, or 0 if there is no result set.
         /// </summary>
-        private int CurrentRowCount => CurrentResultSet?.Rows?.Count ?? 0;
-
-        /// <summary>
-        /// Get the current result set, or null if there is none
-        /// </summary>
-        private TableResult CurrentResultSet => WithinResultSet ? _results[_currentResult] : null;
+        private int CurrentRowCount => _currentTable?.Rows?.Count ?? 0;
 
         /// <summary>
         /// Get the current row, or null if there is none
         /// </summary>
-        private RowResult CurrentRow => WithinRow ? CurrentResultSet.Rows[_currentRow] : null;
+        private RowResult CurrentRow => WithinRow ? _currentTable.Rows[_currentRow] : null;
+
+        /// <summary>
+        /// Send the messages to the event listener, removing them from the collection as they are sent.
+        /// </summary>
+        /// <param name="messages">The messages to dispatch.</param>
+        private void DispatchMessages(IList<MessageResult> messages)
+        {
+            while (messages.Count > 0)
+            {
+                // Grab the next message.
+                var message = messages[0];
+
+                // Send the event to any listeners.
+                _eventNotifier?.NotifyInfoMessage(message.Errors, message.Message);
+
+                // Remove the message so it can't be processed again.
+                messages.RemoveAt(0);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _results?.Dispose();
+                _results = null;
+            }
+
+            base.Dispose(disposing);
+        }
     }
 }

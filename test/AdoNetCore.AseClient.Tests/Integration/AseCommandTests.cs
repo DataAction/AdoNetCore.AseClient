@@ -116,20 +116,26 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
-        public static IEnumerable<TestCaseData> GetDataTypeName_ShouldWork_Cases()
+        [TestCaseSource(nameof(GetDataTypeName_ShouldWorkUtf8_Cases))]
+        public void GetDataTypeName_ShouldWorkUtf8(string input, string expectedName)
         {
-            if (CharsetUtility.IsCharset(ConnectionStrings.Pooled, "utf-8"))
+            if (!CharsetUtility.IsCharset(ConnectionStrings.Pooled, "utf-8"))
             {
-                yield return new TestCaseData("convert(char(1), 'a')", "char");
-                yield return new TestCaseData("convert(char(1), null)", "char");
-                yield return new TestCaseData("convert(nchar(2), 'À')", "char");
-                yield return new TestCaseData("convert(nchar(2), null)", "char");
-                yield return new TestCaseData("convert(varchar(1), 'a')", "varchar");
-                yield return new TestCaseData("convert(varchar(1), null)", "varchar");
-                yield return new TestCaseData("convert(nvarchar(2), 'a')", "nvarchar");
-                yield return new TestCaseData("convert(nvarchar(2), null)", "nvarchar");
+                Assert.Ignore("Not run unless the server charset is UTF8");
             }
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"select {input}";
+                    Assert.AreEqual(expectedName, command.GetDataTypeName(0));
+                }
+            }
+        }
 
+        private static IEnumerable<TestCaseData> GetDataTypeName_ShouldWork_Cases()
+        {
             yield return new TestCaseData("convert(unichar(2), 'À')", "unichar");
             yield return new TestCaseData("convert(unichar(2), null)", "unichar");
             yield return new TestCaseData("convert(univarchar(2), 'a')", "univarchar");
@@ -181,6 +187,18 @@ namespace AdoNetCore.AseClient.Tests.Integration
             yield return new TestCaseData("convert(real, null)", "real");
             yield return new TestCaseData("convert(float, 1)", "float");
             yield return new TestCaseData("convert(float, null)", "float");
+        }
+
+        private static IEnumerable<TestCaseData> GetDataTypeName_ShouldWorkUtf8_Cases()
+        {
+            yield return new TestCaseData("convert(char(1), 'a')", "char");
+            yield return new TestCaseData("convert(char(1), null)", "char");
+            yield return new TestCaseData("convert(nchar(2), 'À')", "char");
+            yield return new TestCaseData("convert(nchar(2), null)", "char");
+            yield return new TestCaseData("convert(varchar(1), 'a')", "varchar");
+            yield return new TestCaseData("convert(varchar(1), null)", "varchar");
+            yield return new TestCaseData("convert(nvarchar(2), 'a')", "nvarchar");
+            yield return new TestCaseData("convert(nvarchar(2), null)", "nvarchar");
         }
     }
 }

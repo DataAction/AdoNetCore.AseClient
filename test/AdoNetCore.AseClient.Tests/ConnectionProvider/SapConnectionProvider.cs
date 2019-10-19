@@ -1,4 +1,4 @@
-﻿#if NET_CORE
+#if NET_CORE
 using System;
 #endif
 using System.Data.Common;

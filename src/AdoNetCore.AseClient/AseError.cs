@@ -1,10 +1,12 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 
 namespace AdoNetCore.AseClient
 {
     /// <summary>
     /// Collects information relevant to a warning or error returned by the data source.
     /// </summary>
+    [DebuggerDisplay("{Message,nq}")]
     public sealed class AseError : IDisposable
     {
         /// <summary>

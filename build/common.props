@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.0;netcoreapp1.1;netcoreapp2.0;netcoreapp2.1;netcoreapp2.2;net46;netstandard2.0</TargetFrameworks>
-    <VersionPrefix>0.14.0</VersionPrefix>
+    <VersionPrefix>0.15.0</VersionPrefix>
     <AssemblyVersion>0.11.0.0</AssemblyVersion>
     <FileVersion>$(VersionPrefix)</FileVersion>
     <Authors>dataaction</Authors>
@@ -9,7 +9,7 @@
     <PackageIconUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/icon.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/DataAction/AdoNetCore.AseClient</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/DataAction/AdoNetCore.AseClient/master/LICENSE</PackageLicenseUrl>
-    <PackageReleaseNotes>Refer to GitHub - https://github.com/DataAction/AdoNetCore.AseClient/releases/tag/0.14.0</PackageReleaseNotes>
+    <PackageReleaseNotes>Refer to GitHub - https://github.com/DataAction/AdoNetCore.AseClient/releases/tag/0.15.0</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/DataAction/AdoNetCore.AseClient</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>

@@ -86,6 +86,7 @@ namespace AdoNetCore.AseClient.Internal
             { TdsDataType.TDS_VARBINARY, WriteTDS_VARBINARY },
             { TdsDataType.TDS_BINARY, WriteTDS_BINARY },
             { TdsDataType.TDS_LONGBINARY, WriteTDS_LONGBINARY },
+            { TdsDataType.TDS_BLOB, WriteTDS_BLOB },
             { TdsDataType.TDS_DECN, WriteTDS_DECN },
             { TdsDataType.TDS_NUMN, WriteTDS_NUMN },
             { TdsDataType.TDS_DATETIME, WriteTDS_DATETIME },
@@ -298,6 +299,39 @@ namespace AdoNetCore.AseClient.Internal
                         stream.WriteInt(0);
                         break;
                 }
+            }
+        }
+        private static void WriteTDS_BLOB(object value, Stream stream, FormatItem format, Encoding enc)
+        {
+            //byte serialization type
+            //short-prefixed class id
+            //n chunks of data
+            //    4-byte datalen (highest-order bit indicates if there are more chunks)
+            //    data
+            switch (value)
+            {
+                case string s:
+                    stream.WriteByte((byte)SerializationType.SER_DEFAULT);
+                    stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
+                    stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(s));
+                    break;
+                case char c:
+                    stream.WriteByte((byte)SerializationType.SER_DEFAULT);
+                    stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
+                    stream.WriteIntPrefixedByteArray(Encoding.Unicode.GetBytes(new[] { c }));
+                    break;
+                case byte[] ba:
+                    stream.WriteByte((byte)SerializationType.SER_DEFAULT);
+                    stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
+                    stream.WriteIntPrefixedByteArray(ba);
+                    break;
+                case byte b:
+                    stream.WriteByte((byte)SerializationType.SER_DEFAULT);
+                    stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
+                    stream.WriteIntPrefixedByteArray(new[] { b });
+                    break;
+                default:
+                    throw new AseException($"TDS_BLOB support for {value.GetType().Name} not yet implemented");
             }
         }
 

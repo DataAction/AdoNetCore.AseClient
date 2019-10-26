@@ -18,7 +18,13 @@ namespace AdoNetCore.AseClient.Internal
         public int UserType { get; set; }
         public TdsDataType DataType { get; set; }
         public int? Length { get; set; }
+        /// <summary>
+        /// Relates to TDS_NUMN and TDS_DECN
+        /// </summary>
         public byte? Precision { get; set; }
+        /// <summary>
+        /// Relates to TDS_NUMN and TDS_DECN
+        /// </summary>
         public byte? Scale { get; set; }
         public string LocaleInfo { get; set; }
 
@@ -46,7 +52,15 @@ namespace AdoNetCore.AseClient.Internal
         /// <summary>
         /// Relates to TDS_BLOB
         /// </summary>
-        public string ClassId { get; set; }
+        public BlobType BlobType { get; set; }
+        /// <summary>
+        /// Relates to TDS_BLOB
+        /// </summary>
+        public byte[] ClassId { get; set; }
+        /// <summary>
+        /// Relates to TDS_BLOB
+        /// </summary>
+        public SerializationType SerializationType { get; set; }
 
         public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
         {
@@ -175,6 +189,10 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_LONGBINARY:
                     format.Length = stream.ReadInt();
                     break;
+                case TdsDataType.TDS_BLOB:
+                    format.BlobType = (BlobType)stream.ReadByte();
+                    format.ClassId = stream.ReadNullableUShortLengthPrefixedByteArray();
+                    break;
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
                     format.Length = stream.ReadByte();
@@ -267,6 +285,11 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_LONGCHAR:
                 case TdsDataType.TDS_LONGBINARY:
                     stream.WriteUInt((uint)(Length ?? 0));
+                    break;
+                case TdsDataType.TDS_BLOB:
+                    //according to spec, length isn't specified as part of the format token, but as part of the params token
+                    stream.WriteByte((byte)BlobType);
+                    stream.WriteNullableUShortPrefixedByteArray(ClassId);
                     break;
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
@@ -416,6 +439,14 @@ namespace AdoNetCore.AseClient.Internal
                             return "univarchar";
                         default:
                             return "binary";
+                    }
+                case TdsDataType.TDS_BLOB:
+                    switch (BlobType)
+                    {
+                        case BlobType.BLOB_UNICHAR:
+                            return "unichar";
+                        default:
+                            return "blob";
                     }
                 default:
                     return string.Empty;

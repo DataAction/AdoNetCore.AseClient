@@ -109,6 +109,18 @@ namespace AdoNetCore.AseClient.Internal
             stream.WriteByte(len);
             stream.Write(value, 0, len);
         }
+        public static void WriteNullableUShortPrefixedByteArray(this Stream stream, byte[] value)
+        {
+            var len = (ushort)(value?.Length ?? 0);
+            stream.WriteUShort(len);
+
+            if (len == 0)
+            {
+                return;
+            }
+
+            stream.Write(value, 0, len);
+        }
 
         public static void WriteIntPrefixedByteArray(this Stream stream, byte[] value)
         {

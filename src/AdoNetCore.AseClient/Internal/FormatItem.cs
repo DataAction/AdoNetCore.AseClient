@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -18,7 +19,13 @@ namespace AdoNetCore.AseClient.Internal
         public int UserType { get; set; }
         public TdsDataType DataType { get; set; }
         public int? Length { get; set; }
+        /// <summary>
+        /// Relates to TDS_NUMN and TDS_DECN
+        /// </summary>
         public byte? Precision { get; set; }
+        /// <summary>
+        /// Relates to TDS_NUMN and TDS_DECN
+        /// </summary>
         public byte? Scale { get; set; }
         public string LocaleInfo { get; set; }
 
@@ -46,7 +53,15 @@ namespace AdoNetCore.AseClient.Internal
         /// <summary>
         /// Relates to TDS_BLOB
         /// </summary>
-        public string ClassId { get; set; }
+        public BlobType BlobType { get; set; }
+        /// <summary>
+        /// Relates to TDS_BLOB
+        /// </summary>
+        public byte[] ClassId { get; set; }
+        /// <summary>
+        /// Relates to TDS_BLOB
+        /// </summary>
+        public SerializationType SerializationType { get; set; }
 
         public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
         {
@@ -61,9 +76,23 @@ namespace AdoNetCore.AseClient.Internal
                 IsNullable = parameter.IsNullable,
                 Length = length,
                 DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
-                UserType = TypeMap.GetTdsUserType(dbType),
+                UserType = TypeMap.GetTdsUserType(dbType)
             };
 
+            //fixup the FormatItem's BlobType for strings and byte arrays
+            if (format.DataType == TdsDataType.TDS_BLOB)
+            {
+                switch (parameter.DbType)
+                {
+                    case DbType.String:
+                        format.BlobType = BlobType.BLOB_UNICHAR;
+                        break;
+                    case DbType.Binary:
+                        format.BlobType = BlobType.BLOB_LONGBINARY;
+                        break;
+                }
+            }
+            
             //fixup the FormatItem's length,scale,precision for decimals
             if (format.IsDecimalType)
             {
@@ -175,6 +204,10 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_LONGBINARY:
                     format.Length = stream.ReadInt();
                     break;
+                case TdsDataType.TDS_BLOB:
+                    format.BlobType = (BlobType)stream.ReadByte();
+                    format.ClassId = stream.ReadNullableUShortLengthPrefixedByteArray();
+                    break;
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
                     format.Length = stream.ReadByte();
@@ -267,6 +300,11 @@ namespace AdoNetCore.AseClient.Internal
                 case TdsDataType.TDS_LONGCHAR:
                 case TdsDataType.TDS_LONGBINARY:
                     stream.WriteUInt((uint)(Length ?? 0));
+                    break;
+                case TdsDataType.TDS_BLOB:
+                    //according to spec, length isn't specified as part of the format token, but as part of the params token
+                    stream.WriteByte((byte)BlobType);
+                    stream.WriteNullableUShortPrefixedByteArray(ClassId);
                     break;
                 case TdsDataType.TDS_DECN:
                 case TdsDataType.TDS_NUMN:
@@ -416,6 +454,14 @@ namespace AdoNetCore.AseClient.Internal
                             return "univarchar";
                         default:
                             return "binary";
+                    }
+                case TdsDataType.TDS_BLOB:
+                    switch (BlobType)
+                    {
+                        case BlobType.BLOB_UNICHAR:
+                            return "unichar";
+                        default:
+                            return "blob";
                     }
                 default:
                     return string.Empty;

@@ -122,6 +122,14 @@ namespace AdoNetCore.AseClient.Internal
             stream.Write(value, 0, len);
         }
 
+        public static void WriteBlobSpecificIntPrefixedByteArray(this Stream stream, byte[] value)
+        {
+            var len = value.Length;
+            var endOfBlobLen = (uint) len | 0x80000000; //highest-order bit set means end of blob data
+            stream.WriteUInt(endOfBlobLen);
+            stream.Write(value, 0, len);
+        }
+
         public static void WriteIntPrefixedByteArray(this Stream stream, byte[] value)
         {
             var len = value.Length;

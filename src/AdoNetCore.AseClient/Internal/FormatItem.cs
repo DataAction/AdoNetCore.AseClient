@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -75,9 +76,21 @@ namespace AdoNetCore.AseClient.Internal
                 IsNullable = parameter.IsNullable,
                 Length = length,
                 DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
-                UserType = TypeMap.GetTdsUserType(dbType),
+                UserType = TypeMap.GetTdsUserType(dbType)
             };
 
+            //fixup the FormatItem's BlobType for strings
+            if (format.DataType == TdsDataType.TDS_BLOB)
+            {
+                switch (parameter.DbType)
+                {
+                    case DbType.String:
+                        format.BlobType = BlobType.BLOB_UNICHAR;
+                        break;
+                    //todo: consider adding support for DbType.Binary
+                }
+            }
+            
             //fixup the FormatItem's length,scale,precision for decimals
             if (format.IsDecimalType)
             {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using AdoNetCore.AseClient.Internal;
 using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using Dapper;
 using NUnit.Framework;
@@ -29,6 +30,8 @@ END";
         [SetUp]
         public void Setup()
         {
+            Logger.Enable();
+
             using (var connection = GetConnection())
             {
                 connection.Execute(CleanUpSql);
@@ -47,32 +50,32 @@ END";
 
         public static IEnumerable<TestCaseData> Insert_Parameter_Cases()
         {
-            yield return new TestCaseData(null);
-            yield return new TestCaseData(new string('1', 1));
-            yield return new TestCaseData(new string('1', 10));
-            yield return new TestCaseData(new string('1', 100));
-            yield return new TestCaseData(new string('1', 127));
-            yield return new TestCaseData(new string('1', 1000));
-            yield return new TestCaseData(new string('1', 8192));
-            yield return new TestCaseData(new string('1', 8193));
-            yield return new TestCaseData(new string('1', 10000));
-            yield return new TestCaseData(new string('1', 16384));
-            yield return new TestCaseData(new string('1', 16385));
-            yield return new TestCaseData(new string('1', 100000));
-            
+            yield return new TestCaseData(1);
+            yield return new TestCaseData(10);
+            yield return new TestCaseData(100);
+            yield return new TestCaseData(127);
+            yield return new TestCaseData(1000);
+            yield return new TestCaseData(8192);
+            yield return new TestCaseData(8193);
+            yield return new TestCaseData(10000);
+            yield return new TestCaseData(16384);
+            yield return new TestCaseData(16385);
+            yield return new TestCaseData(100000);
+            yield return new TestCaseData(1000000);
         }
 
         [TestCaseSource(nameof(Insert_Parameter_Cases))]
-        public void Insert_Parameter_Dapper(string value)
+        public void Insert_Parameter_Dapper(int count)
         {
+            var value = new string('1', count);
             using (var connection = GetConnection())
             {
                 connection.Execute("set textsize 1000000");
                 var p = new DynamicParameters();
                 p.Add("@text_field", value, DbType.String);
                 connection.Execute("insert into [dbo].[insert_text_tests] (text_field) values (@text_field)", p);
-                var insertedLength = connection.QuerySingle<int?>("select top 1 len(text_field) from [dbo].[insert_text_tests]");
-                Assert.AreEqual(value?.Length ?? 0, insertedLength ?? 0);
+                var insertedLength = connection.QuerySingle<int>("select top 1 len(text_field) from [dbo].[insert_text_tests]");
+                Assert.AreEqual(value.Length, insertedLength);
             }
 
             Insert_Parameter_VerifyResult(GetConnection, "insert_text_tests", "text_field", value);

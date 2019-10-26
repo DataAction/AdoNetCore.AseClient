@@ -137,6 +137,18 @@ namespace AdoNetCore.AseClient.Internal
             return stream.ReadByteArray(length);
         }
 
+        public static byte[] ReadNullableUShortLengthPrefixedByteArray(this Stream stream)
+        {
+            var length = stream.ReadUShort();
+
+            if (length == 0)
+            {
+                return null;
+            }
+
+            return stream.ReadByteArray(length);
+        }
+
         public static byte[] ReadNullableIntLengthPrefixedByteArray(this Stream stream)
         {
             var length = stream.ReadInt();

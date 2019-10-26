@@ -79,7 +79,7 @@ namespace AdoNetCore.AseClient.Internal
                 UserType = TypeMap.GetTdsUserType(dbType)
             };
 
-            //fixup the FormatItem's BlobType for strings
+            //fixup the FormatItem's BlobType for strings and byte arrays
             if (format.DataType == TdsDataType.TDS_BLOB)
             {
                 switch (parameter.DbType)
@@ -87,7 +87,9 @@ namespace AdoNetCore.AseClient.Internal
                     case DbType.String:
                         format.BlobType = BlobType.BLOB_UNICHAR;
                         break;
-                    //todo: consider adding support for DbType.Binary
+                    case DbType.Binary:
+                        format.BlobType = BlobType.BLOB_LONGBINARY;
+                        break;
                 }
             }
             

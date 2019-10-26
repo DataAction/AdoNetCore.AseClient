@@ -11,6 +11,7 @@ namespace AdoNetCore.AseClient.Internal
         private const int VarLongBoundary = 255;
         //Above this length, send strings as TDS_BLOBs
         private const int StringAsBlobBoundary = 8192;
+        private const int BinaryAsBlobBoundary = 16384;
 
         private static readonly Dictionary<DbType, Func<object, int, TdsDataType>> DbToTdsMap = new Dictionary<DbType, Func<object, int, TdsDataType>>
         {
@@ -27,7 +28,12 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.StringFixedLength, (value, length) => TdsDataType.TDS_LONGBINARY},
             {DbType.AnsiString, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
             {DbType.AnsiStringFixedLength, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
-            {DbType.Binary, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_BINARY : TdsDataType.TDS_LONGBINARY},
+            {DbType.Binary, (value, length) =>
+                length <= BinaryAsBlobBoundary
+                    ? length <= VarLongBoundary
+                        ? TdsDataType.TDS_BINARY
+                        : TdsDataType.TDS_LONGBINARY
+                    : TdsDataType.TDS_BLOB},
             {DbType.Guid, (value, length) => TdsDataType.TDS_BINARY},
             {DbType.Decimal, (value, length) => TdsDataType.TDS_NUMN},
             {DbType.Currency, (value, length) => TdsDataType.TDS_MONEYN},

@@ -315,6 +315,11 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
                     stream.WriteBlobSpecificIntPrefixedByteArray(Encoding.Unicode.GetBytes(s));
                     break;
+                case byte[] ba:
+                    stream.WriteByte((byte)SerializationType.SER_DEFAULT);
+                    stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
+                    stream.WriteBlobSpecificIntPrefixedByteArray(ba);
+                    break;
                 default:
                     throw new AseException($"TDS_BLOB support for {value.GetType().Name} not yet implemented");
             }

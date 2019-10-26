@@ -23,10 +23,12 @@ namespace AdoNetCore.AseClient.Enum
         BLOB_LONGCHAR = 0x03,
         /// <summary>
         ///  This is long binary data and has no ClassID associated with it.
+        /// Appears in ribo as BLOB_VARBINARY
         /// </summary>
         BLOB_LONGBINARY = 0x04,
         /// <summary>
         /// This is unichar data with no ClassID associated with it.
+        /// Appears in ribo as BLOB_UTF16
         /// </summary>
         BLOB_UNICHAR = 0x05
     }

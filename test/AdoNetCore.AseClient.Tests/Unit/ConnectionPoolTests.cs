@@ -47,6 +47,24 @@ namespace AdoNetCore.AseClient.Tests.Unit
         }
 
         [Test]
+        public void WhenChangeDatabaseThrows_PoolDoesNotLeak()
+        {
+            var parameters = new TestConnectionParameters
+            {
+                MaxPoolSize = 5,
+                LoginTimeout = 1
+            };
+
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(changeDatabaseThrows: true));
+
+            for (int i=0; i<5; i++)
+            {
+                Assert.Throws<AseException>(() => pool.Reserve(null));
+            }
+            Assert.AreEqual(0, pool.PoolSize);
+        }
+
+        [Test]
         public void NewOpenCall_TimesOut_ShouldThrow()
         {
             var parameters = new TestConnectionParameters
@@ -155,9 +173,15 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class ImmediateConnectionFactory : IInternalConnectionFactory
         {
+            private readonly bool _changeDatabaseThrows;
+
+            public ImmediateConnectionFactory(bool changeDatabaseThrows = false)
+            {
+                _changeDatabaseThrows = changeDatabaseThrows;
+            }
             public async Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
             {
-                return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection());
+                return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection(_changeDatabaseThrows));
             }
         }
 
@@ -165,6 +189,11 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [SuppressMessage("ReSharper", "UnusedMember.Local")]
         private class DoNothingInternalConnection : IInternalConnection
         {
+            private readonly bool _changeDatabaseThrows;
+            public DoNothingInternalConnection(bool changeDatabaseThrows = false)
+            {
+                _changeDatabaseThrows = changeDatabaseThrows;
+            }
             public void Dispose() { }
             public DateTime Created { get; }
             public DateTime LastActive { get; }
@@ -174,7 +203,10 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 return true;
             }
 
-            public void ChangeDatabase(string databaseName) { }
+            public void ChangeDatabase(string databaseName)
+            {
+                if (_changeDatabaseThrows) throw new AseException("ChangeDatabase exception");
+            }
             public string Database { get; }
             public string DataSource { get; }
             public string ServerVersion { get; }

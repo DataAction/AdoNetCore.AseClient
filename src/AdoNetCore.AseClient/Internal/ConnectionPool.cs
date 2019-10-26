@@ -64,13 +64,28 @@ namespace AdoNetCore.AseClient.Internal
                         throw new OperationCanceledException();
                     }
 
-                    connection.ChangeDatabase(_parameters.Database);
-                    connection.SetTextSize(_parameters.TextSize);
-                    connection.NamedParameters = _parameters.NamedParameters;
-
-                    if (_parameters.AnsiNull)
+                    try
                     {
-                        connection.SetAnsiNull(_parameters.AnsiNull);
+                        connection.ChangeDatabase(_parameters.Database);
+                        connection.SetTextSize(_parameters.TextSize);
+                        connection.NamedParameters = _parameters.NamedParameters;
+
+                        if (_parameters.AnsiNull)
+                        {
+                            connection.SetAnsiNull(_parameters.AnsiNull);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        if(_parameters.Pooling)
+                        {
+                            RemoveConnection(connection);
+                        }
+                        else
+                        {
+                            connection?.Dispose();
+                        }
+                        throw;
                     }
 
                     return connection;

@@ -1,13 +1,15 @@
-﻿using System;
+using System;
 using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Benchmark
 {
 #if NET_FRAMEWORK
-    [TestFixture(typeof(SapConnectionProvider))]
+    [TestFixture(typeof(SapConnectionProvider), Explicit = true)]
 #endif
-    [TestFixture(typeof(CoreFxConnectionProvider))]
+#if NET_CORE || NET_FRAMEWORK
+    [TestFixture(typeof(CoreFxConnectionProvider), Explicit = true)]
+#endif
     [Category("benchmark")]
     public partial class Benchmarks<T> where T : IConnectionProvider
     {

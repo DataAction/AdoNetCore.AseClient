@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -43,6 +44,24 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Task.Delay(1000).Wait();
 
             Assert.AreEqual(10, pool.PoolSize);
+        }
+
+        [Test]
+        public void WhenChangeDatabaseThrows_PoolDoesNotLeak()
+        {
+            var parameters = new TestConnectionParameters
+            {
+                MaxPoolSize = 5,
+                LoginTimeout = 1
+            };
+
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(changeDatabaseThrows: true));
+
+            for (int i=0; i<5; i++)
+            {
+                Assert.Throws<AseException>(() => pool.Reserve(null));
+            }
+            Assert.AreEqual(0, pool.PoolSize);
         }
 
         [Test]
@@ -105,7 +124,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 }
                 catch (AggregateException ae)
                 {
-                    ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                    ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                     throw;
                 }
                 
@@ -154,14 +173,27 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         private class ImmediateConnectionFactory : IInternalConnectionFactory
         {
+            private readonly bool _changeDatabaseThrows;
+
+            public ImmediateConnectionFactory(bool changeDatabaseThrows = false)
+            {
+                _changeDatabaseThrows = changeDatabaseThrows;
+            }
             public async Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
             {
-                return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection());
+                return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection(_changeDatabaseThrows));
             }
         }
 
+        [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty")]
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
         private class DoNothingInternalConnection : IInternalConnection
         {
+            private readonly bool _changeDatabaseThrows;
+            public DoNothingInternalConnection(bool changeDatabaseThrows = false)
+            {
+                _changeDatabaseThrows = changeDatabaseThrows;
+            }
             public void Dispose() { }
             public DateTime Created { get; }
             public DateTime LastActive { get; }
@@ -171,7 +203,10 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 return true;
             }
 
-            public void ChangeDatabase(string databaseName) { }
+            public void ChangeDatabase(string databaseName)
+            {
+                if (_changeDatabaseThrows) throw new AseException("ChangeDatabase exception");
+            }
             public string Database { get; }
             public string DataSource { get; }
             public string ServerVersion { get; }
@@ -226,10 +261,11 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
             {
                 token.WaitHandle.WaitOne();
-                throw new TimeoutException($"Timed out attempting to create new connection");
+                throw new TimeoutException("Timed out attempting to create new connection");
             }
         }
 
+        [SuppressMessage("ReSharper", "UnassignedGetOnlyAutoProperty")]
         private class TestConnectionParameters : IConnectionParameters
         {
             public string Server { get; }

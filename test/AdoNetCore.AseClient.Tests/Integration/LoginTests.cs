@@ -91,7 +91,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
             catch (AggregateException ae)
             {
-                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                 throw;
             }
 

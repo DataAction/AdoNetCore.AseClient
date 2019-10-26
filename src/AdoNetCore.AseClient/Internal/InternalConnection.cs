@@ -317,23 +317,61 @@ namespace AdoNetCore.AseClient.Internal
         private void InternalExecuteQueryAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<DbDataReader> readerSource, CommandBehavior behavior)
         {
             AssertExecutionStart();
-
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+            var dataReader = new AseDataReader(command, behavior, EventNotifier);
+#else
+            var dataReader = new AseDataReader(behavior, EventNotifier);
+#endif
             try
             {
                 SendPacket(new NormalPacket(BuildCommandTokens(command, behavior)));
 
                 var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
                 var doneHandler = new DoneTokenHandler();
-                var messageHandler = new MessageTokenHandler(EventNotifier);
-                var dataReaderHandler = new DataReaderTokenHandler();
+                var dataReaderHandler = new StreamingDataReaderTokenHandler(readerSource, dataReader, EventNotifier);
                 var responseParameterTokenHandler = new ResponseParameterTokenHandler(command.AseParameters);
 
-                ReceiveTokens(
-                    envChangeTokenHandler,
-                    doneHandler,
-                    messageHandler,
-                    dataReaderHandler,
-                    responseParameterTokenHandler);
+                Logger.Instance?.WriteLine();
+                Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
+                try
+                {
+#if ENABLE_ARRAY_POOL
+                using (var tokenStream = new TokenReceiveStream(_networkStream, _environment, _arrayPool))
+#else
+                    using (var tokenStream = new TokenReceiveStream(_networkStream, _environment))
+#endif
+                    {
+                        foreach (var receivedToken in _reader.Read(tokenStream, _environment))
+                        {
+                            if (envChangeTokenHandler.CanHandle(receivedToken.Type))
+                            {
+                                envChangeTokenHandler.Handle(receivedToken);
+                            }
+
+                            if (doneHandler.CanHandle(receivedToken.Type))
+                            {
+                                doneHandler.Handle(receivedToken);
+                            }
+
+                            if (dataReaderHandler.CanHandle(receivedToken.Type))
+                            {
+                                dataReaderHandler.Handle(receivedToken);
+                            }
+
+                            if (responseParameterTokenHandler.CanHandle(receivedToken.Type))
+                            {
+                                responseParameterTokenHandler.Handle(receivedToken);
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    LastActive = DateTime.UtcNow;
+                }
+
+                // This tells the data reader to stop waiting for more results.
+                dataReader.CompleteAdding();
                 
                 AssertExecutionCompletion(doneHandler);
 
@@ -342,7 +380,7 @@ namespace AdoNetCore.AseClient.Internal
                     transaction.MarkAborted();
                 }
 
-                messageHandler.AssertNoErrors();
+                dataReaderHandler.AssertNoErrors();
 
                 if (doneHandler.Canceled)
                 {
@@ -350,7 +388,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
                 else
                 {
-                    readerSource.TrySetResult(new AseDataReader(dataReaderHandler.Results(), command, behavior));
+                    readerSource.TrySetResult(dataReader); // Catchall - covers cases where no data is returned by the server.
                 }
             }
             catch (Exception ex)
@@ -412,7 +450,7 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (AggregateException ae)
             {
-                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                 throw;
             }
         }
@@ -434,7 +472,7 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (AggregateException ae)
             {
-                ExceptionDispatchInfo.Capture(ae.InnerException).Throw();
+                ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                 throw;
             }
         }

@@ -82,8 +82,8 @@ END
             }
         }
 
-        [TestCase(1000,     TestName = "4MB data")]
-        [TestCase(10000,   TestName = "40MB data")]
+        [TestCase(1000,     TestName = "4MB data", Explicit = true)]
+        [TestCase(10000,   TestName = "40MB data", Explicit = true)]
         [TestCase(100000, TestName = "400MB data", Explicit = true)]
         [TestCase(500000,   TestName = "2GB data", Explicit = true)]
         public void ExecuteReader_WithLargeResultSet_Success(int numRecords)

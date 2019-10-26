@@ -155,7 +155,7 @@ namespace AdoNetCore.AseClient
             }
 
             LogExecution(nameof(ExecuteNonQuery));
-            return _connection.InternalConnection.ExecuteNonQuery(this, (AseTransaction)Transaction);
+            return _connection.InternalConnection.ExecuteNonQuery(this, Transaction);
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace AdoNetCore.AseClient
             }
 
             LogExecution(nameof(ExecuteReader));
-            return (AseDataReader)_connection.InternalConnection.ExecuteReader(behavior, this, (AseTransaction)Transaction);
+            return (AseDataReader)_connection.InternalConnection.ExecuteReader(behavior, this, Transaction);
         }
 
         /// <summary>		
@@ -217,7 +217,7 @@ namespace AdoNetCore.AseClient
             }
 
             LogExecution(nameof(ExecuteScalar));
-            return _connection.InternalConnection.ExecuteScalar(this, (AseTransaction)Transaction);
+            return _connection.InternalConnection.ExecuteScalar(this, Transaction);
         }
 
         private void LogExecution(string methodName)
@@ -530,7 +530,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
-            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteNonQueryTaskRunnable(this, (AseTransaction)Transaction), cancellationToken);
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteNonQueryTaskRunnable(this, Transaction), cancellationToken);
         }
 
         protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
@@ -540,7 +540,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
-            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteReaderTaskRunnable(behavior, this, (AseTransaction)Transaction), cancellationToken);
+            return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteReaderTaskRunnable(behavior, this, Transaction), cancellationToken);
         }
 
         public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken)

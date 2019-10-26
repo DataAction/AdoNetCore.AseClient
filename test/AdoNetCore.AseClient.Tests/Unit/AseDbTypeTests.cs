@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Unit
@@ -11,7 +9,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [TestCaseSource(nameof(Cases))]
         public void AseDbType_Exists_Sap(string aseDbType, int _)
         {
-            System.Enum.Parse(typeof(Sybase.Data.AseClient.AseDbType), aseDbType);
+            Assert.IsTrue(System.Enum.TryParse<Sybase.Data.AseClient.AseDbType>(aseDbType, out var _));
         }
 
         [TestCaseSource(nameof(Cases))]
@@ -24,7 +22,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [TestCaseSource(nameof(Cases))]
         public void AseDbType_Exists(string aseDbType, int _)
         {
-            System.Enum.Parse(typeof(AseDbType), aseDbType);
+            Assert.IsTrue(System.Enum.TryParse<AseDbType>(aseDbType, out var _));
         }
 
         [TestCaseSource(nameof(Cases))]
@@ -33,7 +31,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.AreEqual(value, (int)System.Enum.Parse(typeof(AseDbType), aseDbType));
         }
 
-        public static IEnumerable<TestCaseData> Cases()
+        private static IEnumerable<TestCaseData> Cases()
         {
             yield return new TestCaseData("BigDateTime", 93);
             yield return new TestCaseData("BigInt", -5);

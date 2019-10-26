@@ -1,4 +1,3 @@
-using System.Data;
 // ReSharper disable UnusedMember.Global
 
 namespace AdoNetCore.AseClient

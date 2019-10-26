@@ -1,6 +1,3 @@
-﻿#if !NET_FRAMEWORK
-using System;
-#endif
 using System.Data.Common;
 
 namespace AdoNetCore.AseClient.Tests.ConnectionProvider
@@ -12,7 +9,7 @@ namespace AdoNetCore.AseClient.Tests.ConnectionProvider
 #if NET_FRAMEWORK
             return new Sybase.Data.AseClient.AseConnection(connectionString);
 #else
-            throw new NotSupportedException("The SAP AseClient only supports .NET 4+");
+            throw new System.NotSupportedException("The SAP AseClient only supports .NET 4+");
 #endif
         }
     }

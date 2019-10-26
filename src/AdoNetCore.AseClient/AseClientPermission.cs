@@ -1,4 +1,4 @@
-﻿#if DB_DATAPERMISSION
+﻿﻿#if DB_DATAPERMISSION
 using System;
 using System.Data;
 using System.Data.Common;
@@ -23,7 +23,7 @@ namespace AdoNetCore.AseClient
         public AseClientPermission(PermissionState state) : base(default(PermissionState)) { }
         public AseClientPermission(PermissionState state, bool allowBlankPassword) : base(default(PermissionState)) { }
         public override void Add(string connectionString, string restrictions, KeyRestrictionBehavior behavior) { }
-        public override System.Security.IPermission Copy() { return null; }
+        public override System.Security.IPermission Copy() { return new AseClientPermission(); }
     }
 }
 #endif

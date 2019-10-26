@@ -1,4 +1,3 @@
-using System;
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Integration
@@ -21,7 +20,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
                     var cConfigValue = result.GetOrdinal("Config Value");
                     var configValue = result.GetInt32(cConfigValue);
 
-                    Assert.GreaterOrEqual(100, configValue, "The database should be configured to allow for more connections. Run the following: `exec sp_configure 'number of user connections', 100`");
+                    Assert.GreaterOrEqual(configValue, 100, "The database should be configured to allow for more connections. Run the following: `exec sp_configure 'number of user connections', 100`");
                 }
             }
         }

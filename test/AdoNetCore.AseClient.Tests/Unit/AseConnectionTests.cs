@@ -57,9 +57,13 @@ namespace AdoNetCore.AseClient.Tests.Unit
         [Test]
         public void ConstructConnection_ConnectionString_NamedParametersCanBeModified()
         {
-            var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;");
+            var connection =
+                new AseConnection(
+                    "Data Source=myASEserver;Port=5000;Database=myDataBase;Uid=myUsername;Pwd=myPassword;")
+                {
+                    NamedParameters = false
+                };
 
-            connection.NamedParameters = false;
 
             Assert.AreEqual(false, connection.NamedParameters);
         }
@@ -198,13 +202,14 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
         [TestCase(true)]
         [TestCase(false)]
-        public void CreateCommand_WithNamedParameters_Propogates(bool namedParameters)
+        public void CreateCommand_WithNamedParameters_Propagates(bool namedParameters)
         {
             // Arrange
             var mockConnectionPoolManager = InitMockConnectionPoolManager();
 
-            var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=foo;Uid=myUsername;Pwd=myPassword;", mockConnectionPoolManager);
-            connection.NamedParameters = namedParameters;
+            var connection =
+                new AseConnection("Data Source=myASEserver;Port=5000;Database=foo;Uid=myUsername;Pwd=myPassword;",
+                    mockConnectionPoolManager) {NamedParameters = namedParameters};
 
             // Act
             connection.Open();
@@ -212,7 +217,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             // Assert
             Assert.IsNotNull(command);
-            Assert.AreEqual(namedParameters, ((AseCommand)command).NamedParameters);
+            Assert.AreEqual(namedParameters, command.NamedParameters);
         }
 
         [Test]

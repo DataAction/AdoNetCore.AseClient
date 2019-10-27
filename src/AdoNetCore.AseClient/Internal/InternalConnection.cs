@@ -317,7 +317,7 @@ namespace AdoNetCore.AseClient.Internal
         private void InternalExecuteQueryAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<DbDataReader> readerSource, CommandBehavior behavior)
         {
             AssertExecutionStart();
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
+#if DB_GETSCHEMA
             var dataReader = new AseDataReader(command, behavior, EventNotifier);
 #else
             var dataReader = new AseDataReader(behavior, EventNotifier);
@@ -335,7 +335,7 @@ namespace AdoNetCore.AseClient.Internal
                 Logger.Instance?.WriteLine("---------- Receive Tokens ----------");
                 try
                 {
-#if ENABLE_ARRAY_POOL
+#if ARRAY_POOL
                 using (var tokenStream = new TokenReceiveStream(_networkStream, _environment, _arrayPool))
 #else
                     using (var tokenStream = new TokenReceiveStream(_networkStream, _environment))

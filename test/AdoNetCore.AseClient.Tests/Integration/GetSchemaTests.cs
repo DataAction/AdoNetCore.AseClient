@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using NUnit.Framework;
 
@@ -186,17 +187,6 @@ namespace AdoNetCore.AseClient.Tests.Integration
         [TestCase("DataTypes")]
         [TestCase("Restrictions")]
         [TestCase("ReservedWords")]
-        [TestCase("Users")]
-        [TestCase("Databases")]
-        [TestCase("Tables")]
-        [TestCase("Columns")]
-        [TestCase("Views")]
-        [TestCase("ViewColumns")]
-        [TestCase("ProcedureParameters")]
-        [TestCase("Procedures")]
-        [TestCase("ForeignKeys")]
-        [TestCase("IndexColumns")]
-        [TestCase("Indexes")]
         //[TestCase("UserDefinedTypes")]
         public void AseConnection_GetSchemaForCollection_ReturnsResults(string collectionName)
         {
@@ -207,37 +197,296 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 Assert.IsNotNull(schema);
                 Assert.AreEqual(collectionName, schema.TableName);
                 Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert MetaDataCollections, DataSourceInformation, DataTypes, Restrictions, and ReservedWords schema matches reference driver.
             }
         }
 
-        [TestCase("Users", "dbo")]
-        [TestCase("Databases", "master")]
-        //[TestCase("Tables")]
-        //[TestCase("Columns")]
-        //[TestCase("ViewColumns")]
-        //[TestCase("ProcedureParameters")]
-        //[TestCase("Procedures")]
-        //[TestCase("ForeignKeys")]
-        //[TestCase("IndexColumns")]
-        //[TestCase("Indexes")]
-        public void AseConnection_GetSchemaForCollection_ReturnsResults(string collectionName, string restriction1)
+        // TODO - generate test data.
+        [TestCase("Indexes")]
+        [TestCase("Indexes", "tableName", "tableOwner", "tableQualifier", "indexName")]
+        public void AseConnection_GetSchemaForIndexesCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
             {
-                var schema = connection.GetSchema(collectionName, new []{restriction1});
+                connection.Open();
 
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    var dbIndex = Array.IndexOf(restrictionValues,  "[current-database]");
+
+                    if (dbIndex >= 0)
+                    {
+                        restrictionValues[dbIndex] = connection.Database;
+                    }
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
                 Assert.IsNotNull(schema);
                 Assert.AreEqual(collectionName, schema.TableName);
                 Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert Indexes schema matches reference driver.
+            }
+        }
+
+        // TODO - generate test data.
+        [TestCase("IndexColumns")]
+        [TestCase("IndexColumns", "tableName", "tableOwner", "tableQualifier", "indexName", "columnName")]
+        public void AseConnection_GetSchemaForIndexColumnsCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    var dbIndex = Array.IndexOf(restrictionValues,  "[current-database]");
+
+                    if (dbIndex >= 0)
+                    {
+                        restrictionValues[dbIndex] = connection.Database;
+                    }
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert IndexColumns schema matches reference driver.
+            }
+        }
+
+        // TODO - generate test data.
+        [TestCase("ForeignKeys")]
+        [TestCase("ForeignKeys", "pktable_name", "pktable_owner", "pktable_qualifier", "fktable_name", "fktable_owner", "fktable_qualifier")]
+        public void AseConnection_GetSchemaForForeignKeysCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    var dbIndex = Array.IndexOf(restrictionValues,  "[current-database]");
+
+                    if (dbIndex >= 0)
+                    {
+                        restrictionValues[dbIndex] = connection.Database;
+                    }
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert ForeignKeys schema matches reference driver.
+            }
+        }
+        [TestCase("Procedures")]
+        [TestCase("Procedures", "EchoParameter")]
+        [TestCase("Procedures", "EchoParameter", "dbo")]
+        [TestCase("Procedures", "EchoParameter", "dbo", "[current-database]")]
+        [TestCase("Procedures", "EchoParameter", "dbo", "[current-database]", "P")]
+        public void AseConnection_GetSchemaForProceduresCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    var dbIndex = Array.IndexOf(restrictionValues,  "[current-database]");
+
+                    if (dbIndex >= 0)
+                    {
+                        restrictionValues[dbIndex] = connection.Database;
+                    }
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert Procedures schema matches reference driver.
+            }
+        }
+
+        [TestCase("ProcedureParameters")]
+        [TestCase("ProcedureParameters", "EchoParameter")]
+        [TestCase("ProcedureParameters", "EchoParameter", "dbo")]
+        [TestCase("ProcedureParameters", "EchoParameter", "dbo", "[current-database]")]
+        [TestCase("ProcedureParameters", "EchoParameter", "dbo", "[current-database]", "@parameter1")]
+        public void AseConnection_GetSchemaForProcedureParametersCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    var dbIndex = Array.IndexOf(restrictionValues,  "[current-database]");
+
+                    if (dbIndex >= 0)
+                    {
+                        restrictionValues[dbIndex] = connection.Database;
+                    }
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert ProcedureParameters schema matches reference driver.
+            }
+        }
+
+        [TestCase("ViewColumns")]
+        [TestCase("ViewColumns", "[current-database]")]
+        [TestCase("ViewColumns", "[current-database]", "dbo")]
+        [TestCase("ViewColumns", "[current-database]", "dbo", "sysquerymetrics")]
+        public void AseConnection_GetSchemaForViewColumnsCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    var dbIndex = Array.IndexOf(restrictionValues,  "[current-database]");
+
+                    if (dbIndex >= 0)
+                    {
+                        restrictionValues[dbIndex] = connection.Database;
+                    }
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert ViewColumns schema matches reference driver.
+            }
+        }
+
+        [TestCase("Columns")]
+        [TestCase("Columns", "syscomments")]
+        [TestCase("Columns", "syscomments", "dbo")]
+        [TestCase("Columns", "syscomments", "dbo", "[current-database]")]
+        [TestCase("Columns", "syscomments", "dbo", "[current-database]", "id")]
+        public void AseConnection_GetSchemaForColumnsCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    var dbIndex = Array.IndexOf(restrictionValues,  "[current-database]");
+
+                    if (dbIndex >= 0)
+                    {
+                        restrictionValues[dbIndex] = connection.Database;
+                    }
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert Columns schema matches reference driver.
+            }
+        }
+
+        [TestCase("Tables")]
+        [TestCase("Tables", "[current-database]")]
+        [TestCase("Tables", "[current-database]", "dbo")]
+        [TestCase("Tables", "[current-database]", "dbo", "syscomments")]
+        [TestCase("Tables", "[current-database]", "dbo", "syscomments", "SYSTEM TABLE")]
+        public void AseConnection_GetSchemaForTablesCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    restrictionValues[Array.IndexOf(restrictionValues,  "[current-database]")] = connection.Database;
+                }
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert Tables schema matches reference driver.
+            }
+        }
+
+        [TestCase("Databases")]
+        [TestCase("Databases", "master")]
+        public void AseConnection_GetSchemaForDatabasesCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert Databases schema matches reference driver.
+            }
+        }
+
+        [TestCase("Users")]
+        [TestCase("Users", "dbo")]
+        public void AseConnection_GetSchemaForUsersCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                var schema = connection.GetSchema(collectionName, restrictionValues);
+                
+                Assert.IsNotNull(schema);
+                Assert.AreEqual(collectionName, schema.TableName);
+                Assert.IsNotEmpty(schema.Rows);
+
+                // TODO - assert Users schema matches reference driver.
             }
         }
 
         [TestCase("Views")]
-        public void AseConnection_GetSchemaForViewsCollection_ReturnsResults(string collectionName)
+        [TestCase("Views", "[current-database]")]
+        [TestCase("Views", "[current-database]", "dbo")]
+        [TestCase("Views", "[current-database]", "dbo", "sysquerymetrics")]
+        public void AseConnection_GetSchemaForViewsCollection_ReturnsResults(string collectionName, params string[] restrictionValues)
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
             {
                 connection.Open();
+
+                if(restrictionValues != null && restrictionValues.Length > 0)
+                {
+                    restrictionValues[Array.IndexOf(restrictionValues,  "[current-database]")] = connection.Database;
+                }
 
                 var restriction1 = connection.Database;
                 var schema = connection.GetSchema(collectionName, new []{restriction1});
@@ -245,38 +494,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 Assert.IsNotNull(schema);
                 Assert.AreEqual(collectionName, schema.TableName);
                 Assert.IsNotEmpty(schema.Rows);
-            }
-        }
 
-        [TestCase("Views", "dbo")]
-        public void AseConnection_GetSchemaForViewsCollection_ReturnsResults(string collectionName, string restriction2)
-        {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
-            {
-                connection.Open();
-
-                var restriction1 = connection.Database;
-                var schema = connection.GetSchema(collectionName, new[] { restriction1, restriction2 });
-
-                Assert.IsNotNull(schema);
-                Assert.AreEqual(collectionName, schema.TableName);
-                Assert.IsNotEmpty(schema.Rows);
-            }
-        }
-
-        [TestCase("Views", "dbo", "sysquerymetrics")]
-        public void AseConnection_GetSchemaForViewsCollection_ReturnsResults(string collectionName, string restriction2, string restriction3)
-        {
-            using (var connection = new AseConnection(ConnectionStrings.Default))
-            {
-                connection.Open();
-
-                var restriction1 = connection.Database;
-                var schema = connection.GetSchema(collectionName, new[] { restriction1, restriction2, restriction3 });
-
-                Assert.IsNotNull(schema);
-                Assert.AreEqual(collectionName, schema.TableName);
-                Assert.IsNotEmpty(schema.Rows);
+                // TODO - assert Views schema matches reference driver.
             }
         }
 
@@ -289,6 +508,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
             {
+                connection.Open();
+
                 Assert.Throws<AseException>(() => connection.GetSchema(collectionName, new[] {restriction1}));
             }
         }
@@ -298,6 +519,8 @@ namespace AdoNetCore.AseClient.Tests.Integration
         {
             using (var connection = new AseConnection(ConnectionStrings.Default))
             {
+                connection.Open();
+
                 Assert.Throws<AseException>(() => connection.GetSchema("an invalid collection"));
             }
         }

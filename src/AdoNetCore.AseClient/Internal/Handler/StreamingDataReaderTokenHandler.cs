@@ -61,7 +61,6 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     _current?.Rows.Add(new RowResult
                     {
                         Items = row.Values
-
                     });
                     break;
                 case DoneToken t:

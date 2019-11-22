@@ -1,13 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
+using AdoNetCore.AseClient.Tests.ConnectionProvider;
 using NUnit.Framework;
+using Dapper;
 
 namespace AdoNetCore.AseClient.Tests.Integration
 {
-    [TestFixture]
     [Category("extra")]
-    public class AseDataReaderTests
+#if NET_FRAMEWORK
+    [TestFixture(typeof(SapConnectionProvider), Explicit = true, Reason = "SAP AseClient tests are run for compatibility purposes.")]
+#endif
+    [TestFixture(typeof(CoreFxConnectionProvider))]
+    public class AseDataReaderTests<T> where T : IConnectionProvider
     {
         private const string AllTypesQuery =
 @"SELECT 
@@ -76,6 +82,37 @@ namespace AdoNetCore.AseClient.Tests.Integration
     CAST('23:59:59:997' AS TIME) AS [TIME],
     CAST(NULL AS TIME) AS [NULL_TIME]
 ";
+
+        private DbConnection GetConnection()
+        {
+            return Activator.CreateInstance<T>().GetConnection(ConnectionStrings.Pooled);
+        }
+
+        private const string CleanUpSql = @"IF EXISTS(SELECT 1 FROM sysobjects WHERE name = 'insert_records_tests')
+BEGIN
+    drop table [dbo].[insert_records_tests]
+END";
+        [SetUp]
+        public void Setup()
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Execute(CleanUpSql);
+                connection.Execute("create table [dbo].[insert_records_tests] (data_field int null)");
+                connection.Execute("insert into insert_records_tests (data_field) values (1)");
+                connection.Execute("insert into insert_records_tests (data_field) values (2)");
+                connection.Execute("insert into insert_records_tests (data_field) values (3)");
+            }
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Execute(CleanUpSql);
+            }
+        }
 
         [TestCase("INT")]
         [TestCase("BIGINT")]
@@ -1043,6 +1080,34 @@ SELECT 5";
             yield return new TestCaseData("select convert(unsigned tinyint, null)", typeof(byte));
             yield return new TestCaseData("select convert(varbinary, null)", typeof(byte[]));
             yield return new TestCaseData("select convert(varchar, null)", typeof(string));
+        }
+
+        [TestCaseSource(nameof(ExecuteReader_ReturnsCorrectRecordsAffected_Cases))]
+        public void ExecuteReader_ReturnsCorrectRecordsAffected(string query, int expected)
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = query;
+                    var reader = command.ExecuteReader();
+                    reader.Read();
+                    Assert.AreEqual(expected, reader.RecordsAffected);
+                }
+            }
+        }
+
+        public static IEnumerable<TestCaseData> ExecuteReader_ReturnsCorrectRecordsAffected_Cases()
+        {
+            yield return new TestCaseData("insert into insert_records_tests (data_field) values (1)", 1);
+            yield return new TestCaseData("insert into insert_records_tests (data_field) values (2)", 1);
+            yield return new TestCaseData("insert into insert_records_tests (data_field) values (3)", 1);
+            yield return new TestCaseData("select data_field from insert_records_tests where data_field = 1", -1);
+            yield return new TestCaseData("select top 1 data_field from insert_records_tests", -1);
+            yield return new TestCaseData("update insert_records_tests set data_field = 0 where data_field = 1", 1);
+            yield return new TestCaseData("update insert_records_tests set data_field = 0 where data_field > 1", 2);
+            yield return new TestCaseData("update insert_records_tests set data_field = 0", 3);
         }
     }
 }

@@ -632,7 +632,15 @@ namespace AdoNetCore.AseClient
 
         public override int Depth => 0;
         public override bool IsClosed => _currentTable == null;
-        public override int RecordsAffected => _currentTable?.Rows.Count ?? 0;
+        public override int RecordsAffected
+        {
+            get
+            {
+                if (_currentTable == null)
+                    return 0;
+                return _currentTable.Rows.Count > 0 ? -1 : _currentTable.RecordsAffected;
+            }
+        }
 
         public IList GetList()
         {

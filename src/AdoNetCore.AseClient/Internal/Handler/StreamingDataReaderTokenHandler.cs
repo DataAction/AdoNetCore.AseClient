@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Text;
@@ -51,7 +52,8 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     ReturnCurrent();
                     _current = new TableResult
                     {
-                        Formats = format.Formats
+                        Formats = format.Formats,
+                        RecordsAffected = -1
                     };
                     _hasSentCurrent = false;
                     break;
@@ -59,11 +61,19 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     _current?.Rows.Add(new RowResult
                     {
                         Items = row.Values
+
                     });
                     break;
-                case DoneToken _:
-                case DoneInProcToken _:
-                case DoneProcToken _:
+                case DoneToken t:
+                    EnsureResultExists(t.Count);
+                    ReturnCurrent();
+                    break;
+                case DoneInProcToken t:
+                    EnsureResultExists(t.Count);
+                    ReturnCurrent();
+                    break;
+                case DoneProcToken t:
+                    EnsureResultExists(t.Count);
                     ReturnCurrent();
                     break;
                 case EedToken t:
@@ -122,6 +132,17 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         Logger.Instance?.WriteLine(formatted);
                     }
                     break;
+            }
+        }
+
+        private void EnsureResultExists(int affectedCount)
+        {
+            if (_current == null)
+            {
+                _current = new TableResult()
+                {
+                    RecordsAffected = affectedCount
+                };
             }
         }
 

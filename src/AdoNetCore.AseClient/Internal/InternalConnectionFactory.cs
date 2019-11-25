@@ -206,9 +206,15 @@ namespace AdoNetCore.AseClient.Internal
                 }
             }
 
+            if (!(certificateChainPolicyErrors || untrustedRootChainStatusFlags))
+            {
+                //No chain Errors, we will trust the server certificate.
+                return true;
+            }
+
             // The TrustedFile is a file containing the public keys, in PEM format of the trusted
             // root certificates that this client is willing to accept TLS connections from.
-            if ((certificateChainPolicyErrors || untrustedRootChainStatusFlags) && !string.IsNullOrWhiteSpace(_parameters.TrustedFile) && File.Exists(_parameters.TrustedFile))
+            if (!string.IsNullOrWhiteSpace(_parameters.TrustedFile) && File.Exists(_parameters.TrustedFile))
             {
                 try
                 {

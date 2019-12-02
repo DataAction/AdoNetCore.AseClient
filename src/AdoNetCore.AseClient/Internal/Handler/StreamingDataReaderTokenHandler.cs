@@ -30,6 +30,8 @@ namespace AdoNetCore.AseClient.Internal.Handler
         private TableResult _current;
         private bool _hasFirstResultSet;
         private bool _hasSentCurrent;
+        private bool _hasFormatted;
+        private int _runningTotalRecordsAffected;
 
         public StreamingDataReaderTokenHandler(TaskCompletionSource<DbDataReader> readerSource, AseDataReader dataReader, IInfoMessageEventNotifier eventNotifier)
         {
@@ -49,6 +51,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
             switch (token)
             {
                 case IFormatToken format:
+
                     ReturnCurrent();
                     _current = new TableResult
                     {
@@ -56,6 +59,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         RecordsAffected = -1
                     };
                     _hasSentCurrent = false;
+                    _hasFormatted = true;
                     break;
                 case RowToken row:
                     _current?.Rows.Add(new RowResult
@@ -64,15 +68,27 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     });
                     break;
                 case DoneToken t:
-                    EnsureResultExists(t.Count);
-                    ReturnCurrent();
+                    if (_hasFormatted)
+                    {
+                        ReturnCurrent();
+                        _hasFormatted = false;
+                    }
+                    else if ((t.Status & DoneToken.DoneStatus.TDS_DONE_COUNT) == DoneToken.DoneStatus.TDS_DONE_COUNT)
+                    {
+                        if (_current != null)
+                        {
+
+                        }
+                        _runningTotalRecordsAffected += t.Count;
+                        _dataReader.SetRecordsAffected(_runningTotalRecordsAffected);
+                    }
+                    if ((t.Status & DoneToken.DoneStatus.TDS_DONE_MORE) == DoneToken.DoneStatus.TDS_DONE_FINAL)
+                    {
+                        ReturnCurrent();
+                    }
                     break;
-                case DoneInProcToken t:
-                    EnsureResultExists(t.Count);
-                    ReturnCurrent();
-                    break;
-                case DoneProcToken t:
-                    EnsureResultExists(t.Count);
+                case DoneInProcToken _:
+                case DoneProcToken _:
                     ReturnCurrent();
                     break;
                 case EedToken t:
@@ -131,17 +147,6 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         Logger.Instance?.WriteLine(formatted);
                     }
                     break;
-            }
-        }
-
-        private void EnsureResultExists(int affectedCount)
-        {
-            if (_current == null)
-            {
-                _current = new TableResult()
-                {
-                    RecordsAffected = affectedCount
-                };
             }
         }
 

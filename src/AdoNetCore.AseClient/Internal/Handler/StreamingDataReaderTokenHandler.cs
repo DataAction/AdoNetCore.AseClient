@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Text;
@@ -29,6 +30,8 @@ namespace AdoNetCore.AseClient.Internal.Handler
         private TableResult _current;
         private bool _hasFirstResultSet;
         private bool _hasSentCurrent;
+        private bool _hasFormatted;
+        private int _runningTotalRecordsAffected;
 
         public StreamingDataReaderTokenHandler(TaskCompletionSource<DbDataReader> readerSource, AseDataReader dataReader, IInfoMessageEventNotifier eventNotifier)
         {
@@ -48,12 +51,15 @@ namespace AdoNetCore.AseClient.Internal.Handler
             switch (token)
             {
                 case IFormatToken format:
+
                     ReturnCurrent();
                     _current = new TableResult
                     {
-                        Formats = format.Formats
+                        Formats = format.Formats,
+                        RecordsAffected = -1
                     };
                     _hasSentCurrent = false;
+                    _hasFormatted = true;
                     break;
                 case RowToken row:
                     _current?.Rows.Add(new RowResult
@@ -61,67 +67,91 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         Items = row.Values
                     });
                     break;
-                case DoneToken _:
+                case DoneToken t:
+                    HandleDoneToken(t);
+                    break;
                 case DoneInProcToken _:
                 case DoneProcToken _:
                     ReturnCurrent();
                     break;
                 case EedToken t:
-
-                    var isSevere = t.Severity > 10;
-
-                    if (isSevere)
-                    {
-                        _foundSevereError = true;
-                    }
-
-                    var error = new AseError
-                    {
-                        IsError = isSevere,
-                        IsFromServer = true,
-                        Message = t.Message,
-                        MessageNumber = t.MessageNumber,
-                        ProcName = t.ProcedureName,
-                        State = t.State,
-                        TranState = (int)t.TransactionStatus,
-                        Status = (int)t.Status,
-                        Severity = t.Severity,
-                        ServerName = t.ServerName,
-                        SqlState = Encoding.ASCII.GetString(t.SqlState),
-                        IsFromClient = false,
-                        IsInformation = !isSevere,
-                        IsWarning = false,
-                        LineNum = t.LineNumber
-                    };
-
-                    _allErrors.Add(error);
-
-                    // if we have not encountered any data yet, then send messages straight out.
-                    if (_current == null)
-                    {
-                        _eventNotifier?.NotifyInfoMessage(new AseErrorCollection(error), error.Message);
-                    }
-                    // else if we have encountered any data, then add the messages to the data reader so that they are returned with data/message order preserved.
-                    else
-                    {
-                        _current.Messages.Add(new MessageResult {Errors = new AseErrorCollection(error), Message = error.Message});
-                    }
-
-                    var msgType = isSevere
-                        ? "ERROR"
-                        : "INFO ";
-
-                    var formatted = $"{msgType} [{t.Severity}] [L:{t.LineNumber}]: {t.Message}";
-
-                    if (formatted.EndsWith("\n"))
-                    {
-                        Logger.Instance?.Write(formatted);
-                    }
-                    else
-                    {
-                        Logger.Instance?.WriteLine(formatted);
-                    }
+                    HandleEedToken(t);
                     break;
+            }
+        }
+
+        private void HandleDoneToken(DoneToken token)
+        {
+            if (_hasFormatted)
+            {
+                ReturnCurrent();
+                _hasFormatted = false;
+            }
+            else if ((token.Status & DoneToken.DoneStatus.TDS_DONE_COUNT) == DoneToken.DoneStatus.TDS_DONE_COUNT)
+            {
+                _runningTotalRecordsAffected += token.Count;
+                _dataReader.SetRecordsAffected(_runningTotalRecordsAffected);
+            }
+            if ((token.Status & DoneToken.DoneStatus.TDS_DONE_MORE) == DoneToken.DoneStatus.TDS_DONE_FINAL)
+            {
+                ReturnCurrent();
+            }
+        }
+
+        private void HandleEedToken(EedToken token)
+        {
+            var isSevere = token.Severity > 10;
+
+            if (isSevere)
+            {
+                _foundSevereError = true;
+            }
+
+            var error = new AseError
+            {
+                IsError = isSevere,
+                IsFromServer = true,
+                Message = token.Message,
+                MessageNumber = token.MessageNumber,
+                ProcName = token.ProcedureName,
+                State = token.State,
+                TranState = (int)token.TransactionStatus,
+                Status = (int)token.Status,
+                Severity = token.Severity,
+                ServerName = token.ServerName,
+                SqlState = Encoding.ASCII.GetString(token.SqlState),
+                IsFromClient = false,
+                IsInformation = !isSevere,
+                IsWarning = false,
+                LineNum = token.LineNumber
+            };
+
+            _allErrors.Add(error);
+
+            // if we have not encountered any data yet, then send messages straight out.
+            if (_current == null)
+            {
+                _eventNotifier?.NotifyInfoMessage(new AseErrorCollection(error), error.Message);
+            }
+            // else if we have encountered any data, then add the messages to the data reader so that they are returned with data/message order preserved.
+            else
+            {
+                _current.Messages.Add(new MessageResult { Errors = new AseErrorCollection(error), Message = error.Message });
+            }
+
+            var msgType = isSevere
+                ? "ERROR"
+                : "INFO ";
+
+            var formatted = $"{msgType} [{token.Severity}] [L:{token.LineNumber}]: {token.Message}";
+
+            if (formatted.EndsWith("\n"))
+            {
+                Logger.Instance?.Write(formatted);
+            }
+            else
+            {
+                Logger.Instance?.WriteLine(formatted);
             }
         }
 

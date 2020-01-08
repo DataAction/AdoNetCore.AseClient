@@ -8,5 +8,7 @@ namespace AdoNetCore.AseClient.Internal
         public List<RowResult> Rows { get; } = new List<RowResult>();
 
         public List<MessageResult> Messages { get; } = new List<MessageResult>();
+
+        public int RecordsAffected { get; set; } = 0;
     }
 }

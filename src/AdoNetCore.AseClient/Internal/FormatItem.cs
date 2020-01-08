@@ -123,18 +123,30 @@ namespace AdoNetCore.AseClient.Internal
 
         public static FormatItem ReadForRow(Stream stream, Encoding enc, TokenType srcTokenType)
         {
-            var format = new FormatItem
+            FormatItem format;
+            switch (srcTokenType)
             {
-                ColumnLabel = stream.ReadByteLengthPrefixedString(enc),
-                CatalogName = stream.ReadByteLengthPrefixedString(enc),
-                SchemaName = stream.ReadByteLengthPrefixedString(enc),
-                TableName = stream.ReadByteLengthPrefixedString(enc),
-                ColumnName = stream.ReadByteLengthPrefixedString(enc),
-                RowStatus = (RowFormatItemStatus)(srcTokenType == TokenType.TDS_ROWFMT
-                    ? (uint)stream.ReadByte()
-                    : stream.ReadUInt())
-            };
-
+                case TokenType.TDS_ROWFMT:
+                    format = new FormatItem
+                    {
+                        ColumnName = stream.ReadByteLengthPrefixedString(enc),
+                        RowStatus = (RowFormatItemStatus)stream.ReadByte()
+                    };
+                    break;
+                case TokenType.TDS_ROWFMT2:
+                    format = new FormatItem
+                    {
+                        ColumnLabel = stream.ReadByteLengthPrefixedString(enc),
+                        CatalogName = stream.ReadByteLengthPrefixedString(enc),
+                        SchemaName = stream.ReadByteLengthPrefixedString(enc),
+                        TableName = stream.ReadByteLengthPrefixedString(enc),
+                        ColumnName = stream.ReadByteLengthPrefixedString(enc),
+                        RowStatus = (RowFormatItemStatus)stream.ReadUInt()
+                    };
+                    break;
+                default:
+                    throw new ArgumentException($"Unexpected token type: {srcTokenType}.", nameof(srcTokenType));
+            }
             ReadTypeInfo(format, stream, enc);
 
             Logger.Instance?.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo}) format names available: ColumnLabel [{format.ColumnLabel}], ColumnName [{format.ColumnName}], CatalogName [{format.CatalogName}], ParameterName [{format.ParameterName}], SchemaName [{format.SchemaName}], TableName [{format.TableName}]");

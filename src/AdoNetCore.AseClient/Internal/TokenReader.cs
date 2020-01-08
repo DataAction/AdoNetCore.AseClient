@@ -62,6 +62,7 @@ namespace AdoNetCore.AseClient.Internal
             {TokenType.TDS_RETURNSTATUS, ReturnStatusToken.Create },
             {TokenType.TDS_DONEINPROC, DoneInProcToken.Create },
             {TokenType.TDS_DONEPROC, DoneProcToken.Create },
+            {TokenType.TDS_ROWFMT, RowFormatToken.Create },
             {TokenType.TDS_ROWFMT2, RowFormat2Token.Create },
             {TokenType.TDS_CONTROL, ControlToken.Create },
             {TokenType.TDS_ROW, RowToken.Create },

@@ -46,24 +46,24 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     break;
                 case DoneProcToken t:
                     Logger.Instance?.WriteLine($"{t.Type}: {t.Status}");
-                    if (t.Status.HasFlag(DoneProcCommonToken.DoneProcStatus.TDS_DONE_INXACT))
+                    if (t.Status.HasFlag(DoneToken.DoneStatus.TDS_DONE_INXACT))
                     {
                         Logger.Instance?.WriteLine($"  {t.TransactionState}");
                         TransactionState = t.TransactionState;
                     }
-                    if (t.Status.HasFlag(DoneProcCommonToken.DoneProcStatus.TDS_DONE_COUNT))
+                    if (t.Status.HasFlag(DoneToken.DoneStatus.TDS_DONE_COUNT))
                     {
                         RowsAffected += t.Count;
                     }
                     break;
                 case DoneInProcToken t:
                     Logger.Instance?.WriteLine($"{t.Type}: {t.Status}");
-                    if (t.Status.HasFlag(DoneProcCommonToken.DoneProcStatus.TDS_DONE_INXACT))
+                    if (t.Status.HasFlag(DoneToken.DoneStatus.TDS_DONE_INXACT))
                     {
                         Logger.Instance?.WriteLine($"  {t.TransactionState}");
                         TransactionState = t.TransactionState;
                     }
-                    if (t.Status.HasFlag(DoneProcCommonToken.DoneProcStatus.TDS_DONE_COUNT))
+                    if (t.Status.HasFlag(DoneToken.DoneStatus.TDS_DONE_COUNT))
                     {
                         RowsAffected += t.Count;
                     }

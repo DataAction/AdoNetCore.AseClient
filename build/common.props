@@ -55,7 +55,6 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <!-- https://github.com/kdcllc/Bet.AspNetCore/issues/103 -->
     <DebugType>Embedded</DebugType>
     <EmbedAllSources>True</EmbedAllSources>
   </PropertyGroup>

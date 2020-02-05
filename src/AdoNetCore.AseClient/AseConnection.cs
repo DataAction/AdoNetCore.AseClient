@@ -270,11 +270,19 @@ namespace AdoNetCore.AseClient
 
             InternalState = ConnectionState.Connecting;
 
-            var parameters = ConnectionParameters.Parse(_connectionString);
+            try
+            {
+                var parameters = ConnectionParameters.Parse(_connectionString);
 
-            _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier);
+                _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier);
 
-            InternalConnectionTimeout = parameters.LoginTimeout;
+                InternalConnectionTimeout = parameters.LoginTimeout;
+            }
+            catch (Exception)
+            {
+                InternalState = ConnectionState.Closed;
+                throw;
+            }
 
             InternalState = ConnectionState.Open;
         }

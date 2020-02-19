@@ -9,8 +9,8 @@ namespace AdoNetCore.AseClient.Internal
     internal static class TypeMap
     {
         private const int VarLongBoundary = 255;
-        //Above this length, send strings as TDS_BLOBs
-        private const int StringAsBlobBoundary = 8192;
+        //Above this length in bytes, send strings as TDS_BLOBs
+        private const int StringAsBlobBoundary = 16384;
         private const int BinaryAsBlobBoundary = 16384;
 
         private static readonly Dictionary<DbType, Func<object, int, TdsDataType>> DbToTdsMap = new Dictionary<DbType, Func<object, int, TdsDataType>>

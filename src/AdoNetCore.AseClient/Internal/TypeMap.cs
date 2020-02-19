@@ -10,6 +10,7 @@ namespace AdoNetCore.AseClient.Internal
     {
         private const int VarLongBoundary = 255;
         //Above this length in bytes, send strings as TDS_BLOBs
+        private const int AnsiStringAsBlobBoundary = 16384;
         private const int StringAsBlobBoundary = 16384;
         private const int BinaryAsBlobBoundary = 16384;
 
@@ -26,7 +27,12 @@ namespace AdoNetCore.AseClient.Internal
             {DbType.UInt64, (value, length) => value == DBNull.Value ? TdsDataType.TDS_UINTN : TdsDataType.TDS_UINT8},
             {DbType.String, (value, length) => length <= StringAsBlobBoundary ? TdsDataType.TDS_LONGBINARY : TdsDataType.TDS_BLOB},
             {DbType.StringFixedLength, (value, length) => TdsDataType.TDS_LONGBINARY},
-            {DbType.AnsiString, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
+            {DbType.AnsiString, (value, length) =>
+                length <= AnsiStringAsBlobBoundary
+                    ? length <= VarLongBoundary
+                        ? TdsDataType.TDS_VARCHAR
+                        : TdsDataType.TDS_LONGCHAR
+                    : TdsDataType.TDS_BLOB},
             {DbType.AnsiStringFixedLength, (value, length) => length <= VarLongBoundary ? TdsDataType.TDS_VARCHAR : TdsDataType.TDS_LONGCHAR},
             {DbType.Binary, (value, length) =>
                 length <= BinaryAsBlobBoundary

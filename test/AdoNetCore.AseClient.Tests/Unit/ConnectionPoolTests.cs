@@ -44,6 +44,68 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Task.Delay(1000).Wait();
 
             Assert.AreEqual(10, pool.PoolSize);
+            Assert.AreEqual(10, pool.Available);
+        }
+
+        [Test]
+        public void WhenMinPoolSizeIsSet_ButThereIsChanceOfFailure_PoolSizeMatchesAvailableCount()
+        {
+            var parameters = new TestConnectionParameters
+            {
+                MinPoolSize = 10
+            };
+            var pool = new ConnectionPool(parameters, new SequenceSuccessImmediateConnectionFactory(true, false));
+
+            Task.Delay(1000).Wait();
+
+            Assert.AreEqual(10, pool.PoolSize);
+            Assert.AreEqual(10, pool.Available);
+        }
+
+        [Test]
+        public void RemoveAndReplace_ReplacesToMin()
+        {
+            var parameters = new TestConnectionParameters
+            {
+                MinPoolSize = 10
+            };
+            var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory());
+
+            Task.Delay(1000).Wait();
+
+            Assert.AreEqual(10, pool.PoolSize);
+            Assert.AreEqual(10, pool.Available);
+
+            var c = pool.Reserve(null);
+            c.IsDoomed = true;
+            pool.Release(c);
+            Task.Delay(1000).Wait();
+
+            Assert.AreEqual(10, pool.PoolSize);
+            Assert.AreEqual(10, pool.Available);
+        }
+
+        [Test]
+        public void RemoveAndReplace_ButThereIsReplacementFailure_DoesNotReplace()
+        {
+            var parameters = new TestConnectionParameters
+            {
+                MinPoolSize = 2
+            };
+            var pool = new ConnectionPool(parameters, new SequenceSuccessImmediateConnectionFactory(true, true, false));
+
+            Task.Delay(1000).Wait();
+
+            Assert.AreEqual(2, pool.PoolSize);
+            Assert.AreEqual(2, pool.Available);
+
+            var c = pool.Reserve(null);
+            c.IsDoomed = true;
+            pool.Release(c);
+            Task.Delay(1000).Wait();
+
+            Assert.AreEqual(1, pool.PoolSize);
+            Assert.AreEqual(1, pool.Available);
         }
 
         [Test]
@@ -57,11 +119,12 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             var pool = new ConnectionPool(parameters, new ImmediateConnectionFactory(changeDatabaseThrows: true));
 
-            for (int i=0; i<5; i++)
+            for (int i = 0; i < 5; i++)
             {
                 Assert.Throws<AseException>(() => pool.Reserve(null));
             }
             Assert.AreEqual(0, pool.PoolSize);
+            Assert.AreEqual(0, pool.Available);
         }
 
         [Test]
@@ -78,7 +141,10 @@ namespace AdoNetCore.AseClient.Tests.Unit
             Assert.Throws<AseException>(() => pool.Reserve(null));
 
             Assert.AreEqual(1, pool.PoolSize);
+            Assert.AreEqual(0, pool.Available);
             pool.Release(c1);
+            Assert.AreEqual(1, pool.PoolSize);
+            Assert.AreEqual(1, pool.Available);
         }
 
         /// <summary>
@@ -127,7 +193,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                     ExceptionDispatchInfo.Capture(ae.InnerException ?? ae).Throw();
                     throw;
                 }
-                
+
                 connections = reserveTask.Result;
             }
 
@@ -182,6 +248,35 @@ namespace AdoNetCore.AseClient.Tests.Unit
             public async Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
             {
                 return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection(_changeDatabaseThrows));
+            }
+        }
+
+        private class SequenceSuccessImmediateConnectionFactory : IInternalConnectionFactory
+        {
+            private int _idxNext;
+            private readonly bool[] _sequence;
+
+            public SequenceSuccessImmediateConnectionFactory(params bool[] sequence)
+            {
+                _idxNext = 0;
+                _sequence = sequence ?? new[] { true, false };
+            }
+
+            private bool IsSuccessful()
+            {
+                var next = _sequence[_idxNext];
+                _idxNext = (_idxNext + 1) % _sequence.Length;
+                return next;
+            }
+
+            public async Task<IInternalConnection> GetNewConnection(CancellationToken token, IInfoMessageEventNotifier eventNotifier)
+            {
+                if (IsSuccessful())
+                {
+                    return await Task.FromResult<IInternalConnection>(new DoNothingInternalConnection());
+                }
+
+                throw new Exception();
             }
         }
 

@@ -212,7 +212,6 @@ namespace AdoNetCore.AseClient.Internal
                 catch(Exception ex)
                 {
                     Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} exception: {ex}");
-                    RemoveConnection();
                 }
             }
             Logger.Instance?.WriteLine($"{nameof(TryFillPoolToMinSize)} end");
@@ -231,7 +230,6 @@ namespace AdoNetCore.AseClient.Internal
                 catch (Exception ex)
                 {
                     Logger.Instance?.WriteLine($"{nameof(TryReplaceConnection)} exception: {ex}");
-                    RemoveConnection();
                 }
             }
         }

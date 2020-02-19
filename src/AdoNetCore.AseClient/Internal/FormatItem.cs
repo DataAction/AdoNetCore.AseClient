@@ -84,6 +84,9 @@ namespace AdoNetCore.AseClient.Internal
             {
                 switch (parameter.DbType)
                 {
+                    case DbType.AnsiString:
+                        format.BlobType = BlobType.BLOB_LONGCHAR;
+                        break;
                     case DbType.String:
                         format.BlobType = BlobType.BLOB_UNICHAR;
                         break;

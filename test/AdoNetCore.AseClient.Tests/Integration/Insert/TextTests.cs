@@ -57,33 +57,41 @@ END";
             }
         }
 
-        public static IEnumerable<TestCaseData> Insert_Parameter_Cases()
+        public static IEnumerable<DbType> Insert_Parameter_Types()
         {
-            yield return new TestCaseData(1);
-            yield return new TestCaseData(10);
-            yield return new TestCaseData(100);
-            yield return new TestCaseData(127);
-            yield return new TestCaseData(1000);
-            yield return new TestCaseData(4096);
-            yield return new TestCaseData(4097);
-            yield return new TestCaseData(8192);
-            yield return new TestCaseData(8193);
-            yield return new TestCaseData(10000);
-            yield return new TestCaseData(16384);
-            yield return new TestCaseData(16385);
-            yield return new TestCaseData(100000);
-            yield return new TestCaseData(1000000);
+            yield return DbType.AnsiString;
+            yield return DbType.String;
         }
 
-        [TestCaseSource(nameof(Insert_Parameter_Cases))]
-        public void Insert_Parameter_Dapper(int count)
+        public static IEnumerable<int> Insert_Parameter_Counts()
+        {
+            yield return 1;
+            yield return 10;
+            yield return 100;
+            yield return 127;
+            yield return 1000;
+            yield return 4096;
+            yield return 4097;
+            yield return 8192;
+            yield return 8193;
+            yield return 10000;
+            yield return 16384;
+            yield return 16385;
+            yield return 100000;
+            yield return 1000000;
+        }
+
+        [Test]
+        public void Insert_Parameter_Dapper(
+            [ValueSource(nameof(Insert_Parameter_Types))] DbType dbType,
+            [ValueSource(nameof(Insert_Parameter_Counts))] int count)
         {
             var value = new string('1', count);
             using (var connection = GetConnection())
             {
                 connection.Execute("set textsize 1000000");
                 var p = new DynamicParameters();
-                p.Add("@text_field", value, DbType.String);
+                p.Add("@text_field", value, dbType);
                 connection.Execute("insert into [dbo].[insert_text_tests] (text_field) values (@text_field)", p);
                 var insertedLength = connection.QuerySingle<int>("select top 1 len(text_field) from [dbo].[insert_text_tests]");
                 Assert.AreEqual(value.Length, insertedLength);
@@ -92,8 +100,10 @@ END";
             Insert_Parameter_VerifyResult(GetConnection, "insert_text_tests", "text_field", value);
         }
 
-        [TestCaseSource(nameof(Insert_Parameter_Cases))]
-        public void Insert_Parameter_With_Date_Dapper(int count)
+        [Test]
+        public void Insert_Parameter_With_Date_Dapper(
+            [ValueSource(nameof(Insert_Parameter_Types))] DbType dbType,
+            [ValueSource(nameof(Insert_Parameter_Counts))] int count)
         {
             var value = new string('1', count);
             var date = new DateTime(2001, 2, 3, 4, 5, 6);
@@ -102,7 +112,7 @@ END";
             {
                 connection.Execute("set textsize 1000000");
                 var p = new DynamicParameters();
-                p.Add("@text_field", value, DbType.String);
+                p.Add("@text_field", value, dbType);
                 p.Add("@date_field", date, DbType.DateTime);
                 connection.Execute("insert into [dbo].[insert_text_date_tests] (text_field, date_field) values (@text_field, @date_field)", p);
                 var insertedLength = connection.QuerySingle<int>("select top 1 len(text_field) from [dbo].[insert_text_date_tests]");

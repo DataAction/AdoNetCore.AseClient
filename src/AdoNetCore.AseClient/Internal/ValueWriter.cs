@@ -313,7 +313,14 @@ namespace AdoNetCore.AseClient.Internal
                 case string s:
                     stream.WriteByte((byte)SerializationType.SER_DEFAULT);
                     stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
-                    stream.WriteBlobSpecificIntPrefixedByteArray(Encoding.Unicode.GetBytes(s));
+                    if (format.BlobType == BlobType.BLOB_UNICHAR)
+                    {
+                        stream.WriteBlobSpecificIntPrefixedByteArray(Encoding.Unicode.GetBytes(s));
+                    }
+                    else
+                    {
+                        stream.WriteBlobSpecificIntPrefixedByteArray(Cast<byte[]>(value, format, enc));
+                    }
                     stream.WriteBlobSpecificTerminator();
                     break;
                 case byte[] ba:

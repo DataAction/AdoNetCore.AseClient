@@ -159,7 +159,6 @@ END";
             CollectionAssert.AreEqual(_expectedResultsWithoutSelect, results.ToArray());
         }
 
-#if (NETFRAMEWORK || (NETCOREAPP && !NETCOREAPP1_0 && !NETCOREAPP1_1))
         [TestCaseSource(nameof(StoredProcTestCases))]
         public void ExecuteReader_WithMessagesEmbeddedInResultsAndUsingDataTable_RetainsServerOrder(char withSelect, string[] expectedResults)
         {
@@ -260,7 +259,6 @@ END";
                 output.Clear();
             }
         }
-#endif
 
         [TestCaseSource(nameof(StoredProcTestCases))]
         public void ExecuteReader_WithMessagesEmbeddedInResultsAndFlushMessageOn_RetainsServerOrder(char withSelect, string[] expectedResults)

@@ -21,7 +21,6 @@ namespace AdoNetCore.AseClient
         private bool _hasFirst;
         private int _totalResults;
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         private readonly AseCommand _command;
         private DataTable _currentSchemaTable;
 
@@ -29,7 +28,6 @@ namespace AdoNetCore.AseClient
         {
             _command = command;
         }
-#endif
 
         // ReSharper disable once MemberCanBePrivate.Global
         internal AseDataReader(CommandBehavior behavior, IInfoMessageEventNotifier eventNotifier)
@@ -117,19 +115,7 @@ namespace AdoNetCore.AseClient
                 bytesToRead = byteArrayLength - fieldOffset; // Shrink the bytes requested.
             }
 
-#if LONG_ARRAY_COPY_UNAVAILABLE
-            var cIndex = fieldOffset;
-            var bIndex = (long)bufferOffset;
-
-            for (long index3 = 0; index3 < bytesToRead; ++index3)
-            {
-                buffer[bIndex] = byteArray[cIndex];
-                ++bIndex;
-                ++cIndex;
-            }
-#else
             Array.Copy(byteArray, fieldOffset, buffer, bufferOffset, bytesToRead);
-#endif
 
             return bytesToRead;
         }
@@ -185,19 +171,8 @@ namespace AdoNetCore.AseClient
                 charsToRead = charArrayLength - fieldOffset; // Shrink the bytes requested.
             }
 
-#if NETCOREAPP1_0 || NETCOREAPP1_1
-            var cIndex = fieldOffset;
-            var bIndex = (long)bufferOffset;
-
-            for (long index3 = 0; index3 < charsToRead; ++index3)
-            {
-                buffer[bIndex] = charArray[cIndex];
-                ++bIndex;
-                ++cIndex;
-            }
-#else
             Array.Copy(charArray, fieldOffset, buffer, bufferOffset, charsToRead);
-#endif
+
             return charsToRead;
         }
 
@@ -485,11 +460,7 @@ namespace AdoNetCore.AseClient
 
         public override object this[string name] => GetValue(GetOrdinal(name));
 
-        public
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
-            override
-#endif
-            void Close()
+        public override  void Close()
         {
             if (_currentTable != null)
             {
@@ -510,7 +481,6 @@ namespace AdoNetCore.AseClient
             }
         }
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override DataTable GetSchemaTable()
         {
             EnsureSchemaTable();
@@ -534,13 +504,6 @@ namespace AdoNetCore.AseClient
             _currentSchemaTable = new SchemaTableBuilder(_command?.Connection, formats).BuildSchemaTable();
         }
 
-#else
-        public DataTable GetSchemaTable()
-        {
-            return null;
-        }
-#endif
-
         /// <summary>
         /// Advances the reader to the next result set.
         /// </summary>
@@ -563,9 +526,7 @@ namespace AdoNetCore.AseClient
 
             _currentResult++;
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             _currentSchemaTable = null;
-#endif
 
             if (_results.TryTake(out var nextItem, -1))
             {

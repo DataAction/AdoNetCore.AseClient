@@ -48,28 +48,16 @@ namespace AdoNetCore.AseClient
             }
         }
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override bool IsFixedSize => ((IList)_parameters).IsFixedSize;
-#else
-        public bool IsFixedSize => ((IList)_parameters).IsFixedSize;
-#endif
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override bool IsReadOnly => ((IList)_parameters).IsReadOnly;
-#else
-        public bool IsReadOnly => ((IList)_parameters).IsReadOnly;
-#endif
 
         /// <summary>
         /// Represents the number of <see cref="AseParameter" /> objects in the collection.
         /// </summary>
         public override int Count => _parameters.Count;
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         public override bool IsSynchronized => ((IList)_parameters).IsSynchronized;
-#else
-        public bool IsSynchronized => ((IList)_parameters).IsSynchronized;
-#endif
 
         public override object SyncRoot => ((IList)_parameters).SyncRoot;
 

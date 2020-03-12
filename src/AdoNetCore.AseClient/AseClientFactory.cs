@@ -1,4 +1,3 @@
-﻿#if ENABLE_DB_PROVIDERFACTORY
 using System.Data.Common;
 
 namespace AdoNetCore.AseClient
@@ -47,7 +46,6 @@ namespace AdoNetCore.AseClient
             return new AseConnectionStringBuilder();
         }
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         /// <summary>
         /// Instantiates a new <see cref="AseCommandBuilder"/>.
         /// </summary>
@@ -64,7 +62,7 @@ namespace AdoNetCore.AseClient
         {
             return new AseDataAdapter();
         }
-#endif
+
         /// <summary>
         /// Instantiates a new <see cref="AseParameter"/>.
         /// </summary>
@@ -89,4 +87,3 @@ namespace AdoNetCore.AseClient
         public override bool CanCreateDataSourceEnumerator => false;
     }
 }
-#endif

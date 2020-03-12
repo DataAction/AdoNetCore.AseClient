@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp1.0;netcoreapp1.1;netcoreapp2.0;netcoreapp2.1;netcoreapp2.2;net46;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net46;netstandard2.0</TargetFrameworks>
     <VersionPrefix>0.17.0</VersionPrefix>
     <AssemblyVersion>0.11.0.0</AssemblyVersion>
     <FileVersion>$(VersionPrefix)</FileVersion>
@@ -16,30 +16,20 @@
   <PropertyGroup Condition="'$(TargetFramework)' == 'net46'">
     <DefineConstants>$(DefineConstants);NET_FRAMEWORK</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.2' Or '$(TargetFramework)' == 'netcoreapp2.1' Or '$(TargetFramework)' == 'netcoreapp2.0' Or '$(TargetFramework)' == 'net46' Or '$(TargetFramework)' == 'netstandard2.0'">
-    <DefineConstants>$(DefineConstants);ENABLE_DB_PROVIDERFACTORY</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.2' Or '$(TargetFramework)' == 'netcoreapp2.1' Or '$(TargetFramework)' == 'netcoreapp2.0' Or '$(TargetFramework)' == 'net46'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' Or '$(TargetFramework)' == 'netcoreapp3.1' Or '$(TargetFramework)' == 'net46'">
     <DefineConstants>$(DefineConstants);ENABLE_DB_DATAPERMISSION</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.2' Or '$(TargetFramework)' == 'netcoreapp2.1' Or '$(TargetFramework)' == 'netcoreapp2.0' Or '$(TargetFramework)' == 'net46' Or '$(TargetFramework)' == 'netstandard2.0'">
-    <DefineConstants>$(DefineConstants);ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS;ENABLE_CLONEABLE_INTERFACE;ENABLE_SYSTEMEXCEPTION</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' Or '$(TargetFramework)' == 'netcoreapp2.0' Or '$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp1.1'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' Or '$(TargetFramework)' == 'netcoreapp3.1'">
     <DefineConstants>$(DefineConstants);ENABLE_ARRAY_POOL</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0' Or '$(TargetFramework)' == 'netcoreapp1.1'">
-    <DefineConstants>$(DefineConstants);LONG_ARRAY_COPY_UNAVAILABLE</DefineConstants>
-  </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <PackageReference Include="System.Data.Common" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
-    <PackageReference Include="System.Data.Common" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.2' Or '$(TargetFramework)' == 'netcoreapp2.1' Or '$(TargetFramework)' == 'netcoreapp2.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
     <PackageReference Include="System.Security.Permissions">
       <Version>4.5.0</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <PackageReference Include="System.Security.Permissions">
+      <Version>4..0</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,3 @@
-﻿#if ENABLE_DB_PROVIDERFACTORY
 using System;
 using System.Data;
 using System.Data.Common;
@@ -16,4 +15,3 @@ namespace AdoNetCore.AseClient
         }
     }
 }
-#endif

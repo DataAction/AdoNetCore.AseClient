@@ -317,11 +317,8 @@ namespace AdoNetCore.AseClient.Internal
         private void InternalExecuteQueryAsync(AseCommand command, AseTransaction transaction, TaskCompletionSource<DbDataReader> readerSource, CommandBehavior behavior)
         {
             AssertExecutionStart();
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
             var dataReader = new AseDataReader(command, behavior, EventNotifier);
-#else
-            var dataReader = new AseDataReader(behavior, EventNotifier);
-#endif
+
             try
             {
                 SendPacket(new NormalPacket(BuildCommandTokens(command, behavior)));

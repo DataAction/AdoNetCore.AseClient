@@ -10,10 +10,7 @@ namespace AdoNetCore.AseClient
     /// <summary>
     /// Represents an open connection to an ASE Server database. This class cannot be inherited.
     /// </summary>
-    public sealed class AseConnection : DbConnection
-#if ENABLE_CLONEABLE_INTERFACE
-        , ICloneable
-#endif
+    public sealed class AseConnection : DbConnection, ICloneable
     {
         private static Func<IConnectionPoolManager> MakeConnectionPoolManager => () => new ConnectionPoolManager();
 
@@ -342,12 +339,10 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public override string ServerVersion => _internal?.ServerVersion;
 
-#if ENABLE_DB_PROVIDERFACTORY
         /// <summary>
         /// The DbProviderFactory available for creating child types.
         /// </summary>
         protected override DbProviderFactory DbProviderFactory => AseClientFactory.Instance;
-#endif
 
         /// <summary>
         /// Indicates the state of the <see cref="AseConnection" /> during the most recent network operation 
@@ -540,12 +535,10 @@ namespace AdoNetCore.AseClient
             set => _namedParameters = value;
         }
 
-#if ENABLE_CLONEABLE_INTERFACE
         public object Clone()
         {
             return new AseConnection(_connectionString, _connectionPoolManager);
         }
-#endif
 
         public void ClearPool()
         {

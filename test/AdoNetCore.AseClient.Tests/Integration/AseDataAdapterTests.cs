@@ -1,4 +1,3 @@
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 using System.Collections.Generic;
 using System.Data;
 using System.Text.RegularExpressions;
@@ -295,4 +294,3 @@ END";
         }
     }
 }
-#endif

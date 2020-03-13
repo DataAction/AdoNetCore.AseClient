@@ -30,7 +30,7 @@ set @TotalValue = 2819.0444";
             {
                 connection.Open();
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "sp_test_175";
+                cmd.CommandText = "sp_test_173";
                 cmd.CommandType = CommandType.StoredProcedure;
                 var total = new AseParameter()
                 {

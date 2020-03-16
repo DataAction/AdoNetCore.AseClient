@@ -95,11 +95,17 @@ namespace AdoNetCore.AseClient.Internal
                         break;
                 }
             }
-            
+
             //fixup the FormatItem's length,scale,precision for decimals
             if (format.IsDecimalType)
             {
-                if (parameter.SendableValue == DBNull.Value)
+                if (parameter.IsOutput)
+                {
+                    format.Precision = parameter.Precision;
+                    format.Scale = parameter.Scale;
+                    format.Length = 1;
+                }
+                else if (parameter.SendableValue == DBNull.Value)
                 {
                     format.Precision = 1;
                     format.Scale = 0;

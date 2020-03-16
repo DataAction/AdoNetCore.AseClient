@@ -1,4 +1,3 @@
-﻿#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 namespace AdoNetCore.AseClient
 {
     /// <summary>
@@ -8,4 +7,3 @@ namespace AdoNetCore.AseClient
     /// <param name="e">The change.</param>
     public delegate void AseRowUpdatingEventHandler(object sender, AseRowUpdatingEventArgs e);
 }
-#endif

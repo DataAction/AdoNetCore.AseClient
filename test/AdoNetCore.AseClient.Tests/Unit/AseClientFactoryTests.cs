@@ -1,4 +1,3 @@
-﻿#if ENABLE_DB_PROVIDERFACTORY
 using NUnit.Framework;
 
 namespace AdoNetCore.AseClient.Tests.Unit
@@ -62,4 +61,3 @@ namespace AdoNetCore.AseClient.Tests.Unit
         }
     }
 }
-#endif

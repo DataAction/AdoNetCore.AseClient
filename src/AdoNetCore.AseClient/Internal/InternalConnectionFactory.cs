@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -190,20 +191,45 @@ namespace AdoNetCore.AseClient.Internal
                 return false;
             }
 
-            var untrustedRootChainStatusFlags = false;
-            var otherChainStatusFlags = false;
-
-            // We're not concerned with UntrustedRoot errors as we verify that below.
+            var mergedStatusFlags = X509ChainStatusFlags.NoError;
             foreach (var status in chain.ChainStatus)
             {
-                untrustedRootChainStatusFlags |= (status.Status & X509ChainStatusFlags.UntrustedRoot) == X509ChainStatusFlags.UntrustedRoot;
-                otherChainStatusFlags |= (status.Status & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError;
+                mergedStatusFlags |= status.Status;
+            }
 
-                if (otherChainStatusFlags)
+            var trustedCerts = LoadTrustedFile(_parameters.TrustedFile);
+            if (trustedCerts == null)
+            {
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to missing TrustedFile parameter.");
+                return false;
+            }
+
+#if !(NETCOREAPP1_0 || NETCOREAPP1_1) // these frameworks do not have the following X509Certificate2 constructor...
+            // sometimes the chain policy is only a partial chain because it doesn't include a self signed root?
+            if ((mergedStatusFlags & X509ChainStatusFlags.PartialChain) == X509ChainStatusFlags.PartialChain)
+            {
+                // attempt to resolve a partial root by rebuilding the cert chain including the certs from the trusted file
+                chain.ChainPolicy.ExtraStore.AddRange(trustedCerts);
+                if (chain.Build(new X509Certificate2(serverCertificate)))
                 {
-                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to chain status: {status.Status}");
-                    return false;
+                    // Chain validated with extra roots added; accept it
+                    return true;
                 }
+                mergedStatusFlags = X509ChainStatusFlags.NoError;
+                foreach (var status in chain.ChainStatus)
+                {
+                    mergedStatusFlags |= status.Status;
+                }
+            }
+#endif
+
+            var untrustedRootChainStatusFlags = (mergedStatusFlags & X509ChainStatusFlags.UntrustedRoot) == X509ChainStatusFlags.UntrustedRoot;
+            var otherChainStatusFlags = (mergedStatusFlags & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError;
+
+            if (otherChainStatusFlags)
+            {
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to chain status: {mergedStatusFlags}");
+                return false;
             }
 
             if (!(certificateChainPolicyErrors || untrustedRootChainStatusFlags))
@@ -212,35 +238,42 @@ namespace AdoNetCore.AseClient.Internal
                 return true;
             }
 
+            // If any certificates in the chain are trusted, then we will trust the server certificate.
+            // To do this fairly quickly we can check if thumbprints exist in the set of trusted roots.
+            var set = new HashSet<string>(trustedCerts.Select(c => c.Thumbprint));
+
+            // the chain is in an array from leaf at 0 to root at [count - 1]
+            // looping from end to start should find cases generated according to sybase documentation on the first attempt
+            // but it is possible that someone puts an intermediate or even the leaf cert in their trusted file
+            for (int i = chain.ChainElements.Count - 1; i >= 0; i--)
+            {
+                var potentialTrusted = chain.ChainElements[i].Certificate.Thumbprint;
+                if (set.Contains(potentialTrusted))
+                {
+                    return true;
+                }
+            }
+
+            Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to missing root or intermediate certificate in the certificate store, or the TrustedFile.");
+
+            return false;
+        }
+
+        private static X509Certificate2[] LoadTrustedFile(string trustedFile)
+        {
             // The TrustedFile is a file containing the public keys, in PEM format of the trusted
             // root certificates that this client is willing to accept TLS connections from.
-            if (!string.IsNullOrWhiteSpace(_parameters.TrustedFile) && File.Exists(_parameters.TrustedFile))
+            if (!string.IsNullOrWhiteSpace(trustedFile) && File.Exists(trustedFile))
             {
                 try
                 {
-                    var trustedRootCertificatesPem = File.ReadAllText(_parameters.TrustedFile, Encoding.ASCII);
+                    var trustedRootCertificatesPem = File.ReadAllText(trustedFile, Encoding.ASCII);
 
                     var parser = new PemParser();
                     var rootCertificates =
-                        parser.ParseCertificates(trustedRootCertificatesPem)
-                            .ToDictionary(GetCertificateKey);
+                        parser.ParseCertificates(trustedRootCertificatesPem).ToArray();
 
-                    // If the server certificate itself is the root, weird, but ok.
-                    if (rootCertificates.ContainsKey(GetCertificateKey(serverCertificate)))
-                    {
-                        return true;
-                    }
-
-                    // If any certificates in the chain are trusted, then we will trust the server certificate.
-                    foreach (var chainElement in chain.ChainElements)
-                    {
-                        var key = GetCertificateKey(chainElement.Certificate);
-
-                        if (rootCertificates.ContainsKey(key))
-                        {
-                            return true;
-                        }
-                    }
+                    return rootCertificates;
                 }
                 catch (CryptographicException e)
                 {
@@ -252,14 +285,7 @@ namespace AdoNetCore.AseClient.Internal
                 }
             }
 
-            Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to missing root or intermediate certificate in the certificate store, or the TrustedFile.");
-
-            return false;
-        }
-
-        private static string GetCertificateKey(X509Certificate certificate)
-        {
-            return $"{certificate.Issuer}|{Convert.ToBase64String(certificate.GetSerialNumber())}";
+            return null;
         }
 
         private static IPEndPoint CreateEndpoint(string server, int port, CancellationToken token)

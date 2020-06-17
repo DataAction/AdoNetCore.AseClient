@@ -11,7 +11,7 @@ namespace AdoNetCore.AseClient.Internal
             "(?<certificate>(-----BEGIN CERTIFICATE-----)(.|\r\n|\r|\n)+?(-----END CERTIFICATE-----))",
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Multiline);
 
-        public IEnumerable<X509Certificate> ParseCertificates(string data)
+        public IEnumerable<X509Certificate2> ParseCertificates(string data)
         {
             var matches = CertificateRegex.Matches(data);
 
@@ -24,9 +24,9 @@ namespace AdoNetCore.AseClient.Internal
                 }
             }
         }
-        public X509Certificate ParseCertificate(string data)
+        public X509Certificate2 ParseCertificate(string data)
         {
-            return new X509Certificate(Encoding.ASCII.GetBytes(data));
+            return new X509Certificate2(Encoding.ASCII.GetBytes(data));
         }
     }
 }

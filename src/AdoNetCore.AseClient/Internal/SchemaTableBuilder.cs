@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Internal
@@ -33,7 +34,10 @@ namespace AdoNetCore.AseClient.Internal
             var table = new DataTable("SchemaTable");
             InitTableStructure(table);
             var fillResults = FillTableFromFormats(table);
-            TryLoadKeyInfo(table, fillResults.BaseTableNameValue, fillResults.BaseSchemaNameValue, fillResults.BaseCatalogNameValue);
+
+            if (!string.IsNullOrWhiteSpace(fillResults.BaseTableNameValue) && !string.IsNullOrWhiteSpace(fillResults.BaseCatalogNameValue))
+                TryLoadKeyInfo(table, fillResults.BaseTableNameValue, fillResults.BaseSchemaNameValue, fillResults.BaseCatalogNameValue);
+
             return table;
         }
 
@@ -92,8 +96,8 @@ namespace AdoNetCore.AseClient.Internal
                 row[SchemaTableColumn.ColumnSize] = column.Length ?? -1;
                 row[SchemaTableColumn.NumericPrecision] = column.Precision ?? -1;
                 row[SchemaTableColumn.NumericScale] = column.Scale ?? -1;
-                row[SchemaTableColumn.IsUnique] = false; // This gets set below.
-                row[SchemaTableColumn.IsKey] = false; // This gets set below - no idea why TDS_ROW_KEY is never set.
+                row[SchemaTableColumn.IsUnique] = column.IsUnique(); // This gets set below.
+                row[SchemaTableColumn.IsKey] = column.IsKey();       // This gets set below - no idea why TDS_ROW_KEY is never set.
                 row[SchemaTableOptionalColumn.BaseServerName] = string.Empty;
                 row[SchemaTableOptionalColumn.BaseCatalogName] = column.CatalogName;
                 row[SchemaTableColumn.BaseColumnName] = column.ColumnName;
@@ -133,6 +137,7 @@ namespace AdoNetCore.AseClient.Internal
             {
                 throw new InvalidOperationException("Invalid AseCommand.Connection");
             }
+
             if (_connection.State != ConnectionState.Open)
             {
                 throw new InvalidOperationException("Invalid AseCommand.Connection.ConnectionState");
@@ -163,28 +168,41 @@ namespace AdoNetCore.AseClient.Internal
 
                 try
                 {
+                    var columnMetadata = new List<ColumnMetadata>();
                     using (var keyInfoDataReader = command.ExecuteReader())
                     {
                         while (keyInfoDataReader.Read())
                         {
-                            var keyColumnName = keyInfoDataReader["COLUMN_NAME"].ToString();
-                            var keySchemaName = keyInfoDataReader["TABLE_SCHEMA"].ToString();
-                            var keyCatalogName = keyInfoDataReader["TABLE_CATALOG"].ToString();
-
-                            foreach (DataRow row in table.Rows)
+                            columnMetadata.Add(new ColumnMetadata
                             {
-                                // Use the base column name in case the column is aliased.
-                                if (
-                                    string.Equals(keyColumnName, row[SchemaTableColumn.BaseColumnName].ToString(),
-                                        StringComparison.OrdinalIgnoreCase) &&
-                                    string.Equals(keySchemaName, row[SchemaTableColumn.BaseSchemaName].ToString(),
-                                        StringComparison.OrdinalIgnoreCase) &&
-                                    string.Equals(keyCatalogName, row[SchemaTableOptionalColumn.BaseCatalogName].ToString(),
-                                        StringComparison.OrdinalIgnoreCase))
-                                {
-                                    row[SchemaTableColumn.IsKey] = (bool) keyInfoDataReader["PRIMARY_KEY"];
-                                    row[SchemaTableColumn.IsUnique] = (bool) keyInfoDataReader["UNIQUE"];
-                                }
+                                Name = keyInfoDataReader["COLUMN_NAME"].ToString(),
+                                Schema = keyInfoDataReader["TABLE_SCHEMA"].ToString(),
+                                Catalog = keyInfoDataReader["TABLE_CATALOG"].ToString(),
+                                IsKey = (bool) keyInfoDataReader["PRIMARY_KEY"],
+                                IsUnique = (bool) keyInfoDataReader["UNIQUE"]
+                            });
+                        }
+                    }
+
+                    // Check for duplicate name and if we found any then give it a miss
+                    if (!columnMetadata.Any() || columnMetadata.GroupBy(c => c.Name)
+                        .Any(g => g.Count() > 1)) return;
+
+                    foreach (var metadata in columnMetadata)
+                    {
+                        foreach (var row in table.Rows.OfType<DataRow>()
+                            .Where(r =>
+                                string.Equals(metadata.Name, r[SchemaTableColumn.BaseColumnName].ToString(),
+                                    StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(metadata.Schema, r[SchemaTableColumn.BaseSchemaName].ToString(),
+                                    StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(metadata.Catalog, r[SchemaTableOptionalColumn.BaseCatalogName].ToString(),
+                                    StringComparison.OrdinalIgnoreCase)))
+                        {
+                            // Use the base column name in case the column is aliased.
+                            {
+                                row[SchemaTableColumn.IsKey] = metadata.IsKey;
+                                row[SchemaTableColumn.IsUnique] = metadata.IsUnique;
                             }
                         }
                     }
@@ -194,6 +212,15 @@ namespace AdoNetCore.AseClient.Internal
                     // ignored
                 }
             }
+        }
+
+        private class ColumnMetadata
+        {
+            public string Name { get; set; }
+            public string Schema { get; set; }
+            public string Catalog { get; set; }
+            public bool IsKey { get; set; }
+            public bool IsUnique { get; set; }
         }
 
         private class FillTableResults

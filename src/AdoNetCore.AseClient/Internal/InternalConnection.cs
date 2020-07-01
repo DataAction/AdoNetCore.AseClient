@@ -393,7 +393,8 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (Exception ex)
             {
-                readerSource.TrySetException(ex); // If we have already begun returning data, then this will get lost.
+                // If we have already begun returning data, then this will get lost.
+                if (!readerSource.TrySetException(ex)) throw;
             }
         }
 

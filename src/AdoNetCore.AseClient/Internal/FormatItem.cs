@@ -156,6 +156,7 @@ namespace AdoNetCore.AseClient.Internal
                 default:
                     throw new ArgumentException($"Unexpected token type: {srcTokenType}.", nameof(srcTokenType));
             }
+
             ReadTypeInfo(format, stream, enc);
 
             Logger.Instance?.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo}) format names available: ColumnLabel [{format.ColumnLabel}], ColumnName [{format.ColumnName}], CatalogName [{format.CatalogName}], ParameterName [{format.ParameterName}], SchemaName [{format.SchemaName}], TableName [{format.TableName}]");
@@ -488,5 +489,15 @@ namespace AdoNetCore.AseClient.Internal
                     return string.Empty;
             }
         }
+
+        public bool IsKey() => (RowStatus & RowFormatItemStatus.TDS_ROW_KEY) == RowFormatItemStatus.TDS_ROW_KEY;
+
+        public bool IsIdentity() => (RowStatus & RowFormatItemStatus.TDS_ROW_IDENTITY) == RowFormatItemStatus.TDS_ROW_IDENTITY;
+
+        public bool IsUnique()
+        {
+            return (DataType == TdsDataType.TDS_VARBINARY || DataType == TdsDataType.TDS_BINARY) && UserType == 80 || IsIdentity();
+        }
+
     }
 }

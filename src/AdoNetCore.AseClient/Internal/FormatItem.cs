@@ -63,12 +63,15 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         public SerializationType SerializationType { get; set; }
 
-        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
+        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env, CommandType commandType = CommandType.StoredProcedure)
         {
             parameter.AseDbType = TypeMap.InferType(parameter);
 
             var dbType = parameter.DbType;
+
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
+            Logger.Instance?.WriteLine($"TypeMap.GetFormatLength =>  {length}");
+
             var format = new FormatItem
             {
                 ParameterName = parameter.ParameterName,
@@ -76,7 +79,9 @@ namespace AdoNetCore.AseClient.Internal
                 IsNullable = parameter.IsNullable,
                 Length = length,
                 DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
-                UserType = TypeMap.GetTdsUserType(dbType)
+                //UserType = parameter.OverrideUserType ?? TypeMap.GetTdsUserType(dbType) // TypeMap.GetUserType(dbType, parameter.SendableValue, length)
+                UserType = parameter.OverrideUserType ?? TypeMap.GetUserType(dbType, parameter.SendableValue, length)
+                //UserType = TypeMap.GetUserType(dbType, parameter.SendableValue, length)
             };
 
             //fixup the FormatItem's BlobType for strings and byte arrays
@@ -89,6 +94,8 @@ namespace AdoNetCore.AseClient.Internal
                         break;
                     case DbType.String:
                         format.BlobType = BlobType.BLOB_UNICHAR;
+                        if (commandType != CommandType.StoredProcedure)
+                            format.UserType = 0;
                         break;
                     case DbType.Binary:
                         format.BlobType = BlobType.BLOB_LONGBINARY;
@@ -489,15 +496,5 @@ namespace AdoNetCore.AseClient.Internal
                     return string.Empty;
             }
         }
-
-        public bool IsKey() => (RowStatus & RowFormatItemStatus.TDS_ROW_KEY) == RowFormatItemStatus.TDS_ROW_KEY;
-
-        public bool IsIdentity() => (RowStatus & RowFormatItemStatus.TDS_ROW_IDENTITY) == RowFormatItemStatus.TDS_ROW_IDENTITY;
-
-        public bool IsUnique()
-        {
-            return (DataType == TdsDataType.TDS_VARBINARY || DataType == TdsDataType.TDS_BINARY) && UserType == 80 || IsIdentity();
-        }
-
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.IO;
@@ -27,6 +28,7 @@ namespace AdoNetCore.AseClient
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
         private bool? _namedParameters;
+        internal readonly IDictionary<string, FormatItem> FormatItems;
 
         /// <summary>
         /// Constructor function for an <see cref="AseCommand"/> instance.
@@ -35,6 +37,7 @@ namespace AdoNetCore.AseClient
         public AseCommand()
         {
             AseParameters = new AseParameterCollection();
+            FormatItems = new Dictionary<string, FormatItem>();
         }
 
         /// <summary>
@@ -42,10 +45,8 @@ namespace AdoNetCore.AseClient
         /// Note: the instance will not be initialised with an AseConnection; before use this must be supplied.
         /// </summary>
         /// <param name="commandText">The command text to execute</param>
-        public AseCommand(string commandText)
+        public AseCommand(string commandText) : this()
         {
-            AseParameters = new AseParameterCollection();
-
             CommandText = commandText;
         }
 
@@ -54,14 +55,10 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="commandText">The command text to execute</param>
         /// <param name="connection">The connection upon which to execute</param>
-        public AseCommand(string commandText, AseConnection connection)
+        public AseCommand(string commandText, AseConnection connection) : this(commandText)
         {
             _connection = connection;
             _transaction = connection.Transaction;
-
-            AseParameters = new AseParameterCollection();
-
-            CommandText = commandText;
         }
 
         /// <summary>
@@ -70,23 +67,13 @@ namespace AdoNetCore.AseClient
         /// <param name="commandText">The command text to execute</param>
         /// <param name="connection">The connection upon which to execute</param>
         /// <param name="transaction">The transaction within which to execute</param>
-        public AseCommand(string commandText, AseConnection connection, AseTransaction transaction)
+        public AseCommand(string commandText, AseConnection connection, AseTransaction transaction) : this (commandText, connection)
         {
-            _connection = connection;
             _transaction = transaction;
-
-            AseParameters = new AseParameterCollection();
-
-            CommandText = commandText;
         }
 
-        internal AseCommand(AseConnection connection)
-        {
-            _connection = connection;
-            _transaction = connection.Transaction;
-
-            AseParameters = new AseParameterCollection();
-        }
+        internal AseCommand(AseConnection connection) : this (string.Empty, connection, connection.Transaction)
+        { }
 
         /// <summary>
         /// Tries to cancel the execution of a <see cref="AseCommand" />.
@@ -126,9 +113,32 @@ namespace AdoNetCore.AseClient
             return new AseParameter();
         }
 
+        public AseParameter CreateParameter(string name, object value, DbType dbType, int? overrideUserType)
+        {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseCommand));
+            }
+            return new AseParameter(name, value, dbType, overrideUserType);
+        }
+
         protected override DbParameter CreateDbParameter()
         {
             return CreateParameter();
+        }
+
+        //command.SetParameter("@psComment", comment, DbType.String, 36);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parameterName"></param>
+        /// <param name="parameterValue"></param>
+        /// <param name="dbType"></param>
+        /// <param name="overrideUserType"></param>
+        /// <returns></returns>
+        public AseParameter CreateParameter(string parameterName, string parameterValue, DbType dbType, int? overrideUserType)
+        {
+            return new AseParameter(parameterName, parameterValue, dbType, overrideUserType);
         }
 
         /// <summary>

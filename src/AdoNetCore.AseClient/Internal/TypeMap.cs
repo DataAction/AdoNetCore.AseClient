@@ -136,7 +136,8 @@ namespace AdoNetCore.AseClient.Internal
             switch (value)
             {
                 case string s:
-                    return Encoding.Unicode.GetByteCount(s);
+                    var count = Encoding.Unicode.GetByteCount(s);
+                    return count;
                 case char c:
                     return Encoding.Unicode.GetByteCount(new[] { c });
                 default:
@@ -206,6 +207,35 @@ namespace AdoNetCore.AseClient.Internal
 
             throw new NotSupportedException($"Unsupported data type {dbType} for parameter '{parameterName}'.");
         }
+
+        public static int GetUserType(DbType dbType, object value, int? length)
+        {
+            switch (dbType)
+            {
+                case DbType.StringFixedLength:
+                    return 34;
+                case DbType.String:
+                    if (DbToTdsMap.TryGetValue(dbType, out var result))
+                    {
+                        var tdsType = result(value, length ?? 0);
+                        switch (tdsType)
+                        {
+                            case TdsDataType.TDS_VARCHAR:
+                            case TdsDataType.TDS_LONGCHAR:
+                                return 34;
+                            case TdsDataType.TDS_LONGBINARY:
+                                return 35;
+                            case TdsDataType.TDS_BLOB:
+                                return 36;
+                        }
+                    }
+                    return 35;
+                default:
+                    return 0;
+            }
+        }
+
+        
 
         public static int GetTdsUserType(DbType dbType)
         {

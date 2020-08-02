@@ -277,6 +277,12 @@ namespace AdoNetCore.AseClient
             Value = value;
         }
 
+        public AseParameter(string parameterName, object value, DbType dbType, int? overrideUserType) : this(parameterName, value)
+        {
+            DbType = dbType;
+            OverrideUserType = overrideUserType;
+        }
+
         public override void ResetDbType()
         {
             DbType = default(DbType);
@@ -470,5 +476,6 @@ namespace AdoNetCore.AseClient
         }
 #endif
         internal object SendableValue => Value.AsSendableValue(_type);
+        internal int? OverrideUserType { get; set; }
     }
 }

@@ -297,13 +297,11 @@ namespace AdoNetCore.AseClient.Internal
                 HasParameters = false,
                 CommandText = $"USE {databaseName}"
             }));
-
+            
             var messageHandler = new MessageTokenHandler(EventNotifier);
             var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
 
-            ReceiveTokens(
-                envChangeTokenHandler,
-                messageHandler);
+            ReceiveTokens(envChangeTokenHandler, messageHandler);
 
             AssertExecutionCompletion();
 
@@ -437,7 +435,7 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (Exception ex)
             {
-                rowsAffectedSource.TrySetException(ex);
+                if (!rowsAffectedSource.TrySetException(ex)) throw;
             }
         }
 
@@ -611,11 +609,16 @@ namespace AdoNetCore.AseClient.Internal
             yield return command.CommandType == CommandType.StoredProcedure
                 ? BuildRpcToken(command, behavior)
                 : BuildLanguageToken(command, behavior);
-
-            foreach (var token in BuildParameterTokens(command.AseParameters))
+            //BuildParameterTokens
+            //foreach (var token in BuildParameterTokens(command.AseParameters, command.CommandType == CommandType.StoredProcedure))
+            //{
+            //    yield return token;
+            //}
+            foreach (var token in BuildParameterTokens(command))
             {
                 yield return token;
             }
+
         }
 
         private IToken BuildLanguageToken(AseCommand command, CommandBehavior behavior)
@@ -663,14 +666,20 @@ SET FMTONLY OFF";
             return result;
         }
 
-        private IToken[] BuildParameterTokens(AseParameterCollection parameters)
+        private IToken[] BuildParameterTokens(AseCommand command)
         {
             var formatItems = new List<FormatItem>();
             var parameterItems = new List<ParametersToken.Parameter>();
 
-            foreach (var parameter in parameters.SendableParameters)
+            foreach (var parameter in command.Parameters.SendableParameters)
             {
-                var formatItem = FormatItem.CreateForParameter(parameter, _environment);
+                var parameterName = parameter.ParameterName ?? command.Parameters.IndexOf(parameter).ToString();
+                if (!command.FormatItems.TryGetValue(parameterName, out FormatItem formatItem))
+                {
+                    formatItem = FormatItem.CreateForParameter(parameter, _environment, command.CommandType);
+                    command.FormatItems.Add(parameterName, formatItem);
+                }
+
                 formatItems.Add(formatItem);
                 parameterItems.Add(new ParametersToken.Parameter
                 {
@@ -696,6 +705,45 @@ SET FMTONLY OFF";
                 }
             };
         }
+
+        //private IToken[] BuildParameterTokens(AseParameterCollection parameters, bool includeUserType = true)
+        //{
+        //    var formatItems = new List<FormatItem>();
+        //    var parameterItems = new List<ParametersToken.Parameter>();
+
+        //    foreach (var parameter in parameters.SendableParameters)
+        //    {
+
+        //        var formatItem = FormatItem.CreateForParameter(parameter, _environment);
+
+        //        //if (!includeUserType)
+        //        //    formatItem.UserType = 0;
+
+        //        formatItems.Add(formatItem);
+        //        parameterItems.Add(new ParametersToken.Parameter
+        //        {
+        //            Format = formatItem,
+        //            Value = parameter.SendableValue
+        //        });
+        //    }
+
+        //    if (formatItems.Count == 0)
+        //    {
+        //        return new IToken[0];
+        //    }
+
+        //    return new IToken[]
+        //    {
+        //        new ParameterFormat2Token
+        //        {
+        //            Formats = formatItems.ToArray()
+        //        },
+        //        new ParametersToken
+        //        {
+        //            Parameters = parameterItems.ToArray()
+        //        }
+        //    };
+        //}
 
         public void Dispose()
         {

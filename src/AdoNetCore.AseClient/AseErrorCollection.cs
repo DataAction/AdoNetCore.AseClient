@@ -64,8 +64,8 @@ namespace AdoNetCore.AseClient
             var result = 0;
             for (var i = 1; i < errors.Length; i++)
             {
-                // The '=' in '<=' means that for equal severity, we take the last error in the list. 
-                if (errors[result].Severity <= errors[i].Severity)
+                // We will respect the order if they're the same and already sorted and only care for the different ones
+                if (errors[result].Severity < errors[i].Severity)
                 {
                     result = i;
                 }

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using AdoNetCore.AseClient.Enum;
 
 namespace AdoNetCore.AseClient.Internal
@@ -34,10 +33,7 @@ namespace AdoNetCore.AseClient.Internal
             var table = new DataTable("SchemaTable");
             InitTableStructure(table);
             var fillResults = FillTableFromFormats(table);
-
-            if (!string.IsNullOrWhiteSpace(fillResults.BaseTableNameValue) && !string.IsNullOrWhiteSpace(fillResults.BaseCatalogNameValue))
-                TryLoadKeyInfo(table, fillResults.BaseTableNameValue, fillResults.BaseSchemaNameValue, fillResults.BaseCatalogNameValue);
-
+            TryLoadKeyInfo(table, fillResults.BaseTableNameValue, fillResults.BaseSchemaNameValue, fillResults.BaseCatalogNameValue);
             return table;
         }
 
@@ -96,8 +92,8 @@ namespace AdoNetCore.AseClient.Internal
                 row[SchemaTableColumn.ColumnSize] = column.Length ?? -1;
                 row[SchemaTableColumn.NumericPrecision] = column.Precision ?? -1;
                 row[SchemaTableColumn.NumericScale] = column.Scale ?? -1;
-                row[SchemaTableColumn.IsUnique] = column.IsUnique(); // This gets set below.
-                row[SchemaTableColumn.IsKey] = column.IsKey();       // This gets set below - no idea why TDS_ROW_KEY is never set.
+                row[SchemaTableColumn.IsUnique] = false; // This gets set below.
+                row[SchemaTableColumn.IsKey] = false;    // This gets set below - no idea why TDS_ROW_KEY is never set.
                 row[SchemaTableOptionalColumn.BaseServerName] = string.Empty;
                 row[SchemaTableOptionalColumn.BaseCatalogName] = column.CatalogName;
                 row[SchemaTableColumn.BaseColumnName] = column.ColumnName;
@@ -143,6 +139,10 @@ namespace AdoNetCore.AseClient.Internal
                 throw new InvalidOperationException("Invalid AseCommand.Connection.ConnectionState");
             }
 
+            if (!string.IsNullOrWhiteSpace(baseTableNameValue) &&
+                !string.IsNullOrWhiteSpace(baseCatalogNameValue))
+                return;
+
             using (var command = _connection.CreateCommand())
             {
                 command.CommandText = $"{baseCatalogNameValue}..sp_oledb_getindexinfo";
@@ -168,14 +168,23 @@ namespace AdoNetCore.AseClient.Internal
 
                 try
                 {
-                    var columnMetadata = new List<ColumnMetadata>();
+                    var columnMetadata = new Dictionary<string, ColumnMetadata>();
                     using (var keyInfoDataReader = command.ExecuteReader())
                     {
                         while (keyInfoDataReader.Read())
                         {
-                            columnMetadata.Add(new ColumnMetadata
+                            var key = keyInfoDataReader["COLUMN_NAME"].ToString();
+
+                            // Check for duplicate name and if we found any then give it a miss
+                            if (columnMetadata.ContainsKey(key))
                             {
-                                Name = keyInfoDataReader["COLUMN_NAME"].ToString(),
+                                keyInfoDataReader.Close();
+                                return;
+                            }
+
+                            columnMetadata.Add(key, new ColumnMetadata
+                            {
+                                Name = key,
                                 Schema = keyInfoDataReader["TABLE_SCHEMA"].ToString(),
                                 Catalog = keyInfoDataReader["TABLE_CATALOG"].ToString(),
                                 IsKey = (bool) keyInfoDataReader["PRIMARY_KEY"],
@@ -184,20 +193,15 @@ namespace AdoNetCore.AseClient.Internal
                         }
                     }
 
-                    // Check for duplicate name and if we found any then give it a miss
-                    if (!columnMetadata.Any() || columnMetadata.GroupBy(c => c.Name)
-                        .Any(g => g.Count() > 1)) return;
-
-                    foreach (var metadata in columnMetadata)
+                    foreach (var metadata in columnMetadata.Values)
                     {
-                        foreach (var row in table.Rows.OfType<DataRow>()
-                            .Where(r =>
-                                string.Equals(metadata.Name, r[SchemaTableColumn.BaseColumnName].ToString(),
+                        foreach (DataRow row in table.Rows)
+                            if (string.Equals(metadata.Name, row[SchemaTableColumn.BaseColumnName].ToString(),
                                     StringComparison.OrdinalIgnoreCase) &&
-                                string.Equals(metadata.Schema, r[SchemaTableColumn.BaseSchemaName].ToString(),
+                                string.Equals(metadata.Schema, row[SchemaTableColumn.BaseSchemaName].ToString(),
                                     StringComparison.OrdinalIgnoreCase) &&
-                                string.Equals(metadata.Catalog, r[SchemaTableOptionalColumn.BaseCatalogName].ToString(),
-                                    StringComparison.OrdinalIgnoreCase)))
+                                string.Equals(metadata.Catalog, row[SchemaTableOptionalColumn.BaseCatalogName].ToString(),
+                                    StringComparison.OrdinalIgnoreCase))
                         {
                             // Use the base column name in case the column is aliased.
                             {

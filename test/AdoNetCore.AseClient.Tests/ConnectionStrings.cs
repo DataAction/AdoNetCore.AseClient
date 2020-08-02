@@ -17,6 +17,7 @@ namespace AdoNetCore.AseClient.Tests
         public static string Pooled100 => $"{Prefix}; Pooling=true; LoginTimeOut=1; Max Pool Size=100;";
         public static string PooledUtf8 => Pooled;
         public static string Cp850 => $"{PrefixNoCharSet}; charset=cp850;";
+        public static string Iso1 => $"{PrefixNoCharSet}; charset=iso_1;";
         public static string BigPacketSize => $"{Prefix}; Pooling=true; LoginTimeOut=1; PacketSize=2048;";
         public static string BigTextSize => $"{Prefix}; Pooling=true; LoginTimeOut=1; TextSize=131072;";
         public static string AseDecimalOn => $"{Prefix}; Pooling=true; LoginTimeOut=1; UseAseDecimal=1;";

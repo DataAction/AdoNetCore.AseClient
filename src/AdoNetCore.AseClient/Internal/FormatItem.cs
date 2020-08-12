@@ -79,9 +79,7 @@ namespace AdoNetCore.AseClient.Internal
                 IsNullable = parameter.IsNullable,
                 Length = length,
                 DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
-                //UserType = parameter.OverrideUserType ?? TypeMap.GetTdsUserType(dbType) // TypeMap.GetUserType(dbType, parameter.SendableValue, length)
-                UserType = parameter.OverrideUserType ?? TypeMap.GetUserType(dbType, parameter.SendableValue, length)
-                //UserType = TypeMap.GetUserType(dbType, parameter.SendableValue, length)
+                UserType = TypeMap.GetUserType(dbType, parameter.SendableValue, length)
             };
 
             //fixup the FormatItem's BlobType for strings and byte arrays

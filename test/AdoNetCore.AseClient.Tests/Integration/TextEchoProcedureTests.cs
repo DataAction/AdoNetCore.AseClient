@@ -86,19 +86,11 @@ end";
             Logger.Enable();
         }
 
-        //[OneTimeSetUp]
-        [SetUp]
+        [OneTimeSetUp]
         public void Setup()
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
-                //connection.Execute(_dropEchoTextProc);
-                //connection.Execute(_dropTextTable);
-                //connection.Execute(_dropEchoTextLocatorProc);
-                //connection.Execute(_dropTrueEchoTextLocatorProc);
-                //connection.Execute(_dropTextTypeColumnProc);
-                //connection.Execute(_dropJustTextProc);
-
                 connection.Execute(_createEchoTextProc);
                 connection.Execute(_createTextTable);
                 connection.Execute(_createEchoTextLocatorProc);
@@ -108,8 +100,7 @@ end";
             }
         }
 
-        //[OneTimeTearDown]
-        [TearDown]
+        [OneTimeTearDown]
         public void Teardown()
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))
@@ -141,14 +132,12 @@ end";
                     p.ParameterName = "@input";
                     p.Value = expected;
                     p.DbType = DbType.String;
-                    p.OverrideUserType = 36;
                     command.Parameters.Add(p);
 
                     var pOut = command.CreateParameter();
                     pOut.ParameterName = "@output";
                     pOut.Value = DBNull.Value;
                     pOut.DbType = DbType.String;
-                    pOut.OverrideUserType = 36;
                     pOut.Direction = ParameterDirection.Output;
                     command.Parameters.Add(pOut);
 
@@ -170,16 +159,12 @@ end";
                     command.CommandText = "sp_test_echo_text_locator";
                     command.CommandType = CommandType.StoredProcedure;
 
-                    //var expected = Enumerable.Repeat(new byte[] {0xde, 0xad, 0xbe, 0xef}, 64).SelectMany(x => x).Take(536386).ToArray();
-                    //var expected = new string('x', 16384);
-                    //var expected = new string('x', 1063840);
                     var expected = $"Shawn test long comment {new string('A',1063840)}";
 
                     var p = command.CreateParameter();
                     p.ParameterName = "@input";
                     p.Value = expected;
                     p.DbType = DbType.String;
-                    p.OverrideUserType = 36;
                     command.Parameters.Add(p);
 
                     var pOut = command.CreateParameter();
@@ -191,7 +176,6 @@ end";
 
                     command.ExecuteNonQuery();
 
-                    //Assert.AreEqual(expected, pOut.Value);
                 }
             }
         }
@@ -215,14 +199,14 @@ end";
                     p.ParameterName = "@text_locator_input";
                     p.Value = text_locator;
                     p.DbType = DbType.String;
-                    p.OverrideUserType = 36; //19;
+                    //p.OverrideUserType = 36; //19;
                     command.Parameters.Add(p);
 
                     p = command.CreateParameter();
                     p.ParameterName = "@text_input";
                     p.Value = just_text;
                     p.DbType = DbType.String;
-                    p.OverrideUserType = 36;
+                    //p.OverrideUserType = 36;
                     command.Parameters.Add(p);
 
                     var pOut = command.CreateParameter();
@@ -259,14 +243,12 @@ end";
                     p.ParameterName = "@text_locator_input";
                     p.Value = text_locator;
                     p.DbType = DbType.String;
-                    //p.OverrideUserType = 0;//36; //19;
                     command.Parameters.Add(p);
 
                     p = command.CreateParameter();
                     p.ParameterName = "@text_input";
                     p.Value = just_text;
                     p.DbType = DbType.String;
-                    //p.OverrideUserType = 0;
                     command.Parameters.Add(p);
 
                     var pOut = command.CreateParameter();

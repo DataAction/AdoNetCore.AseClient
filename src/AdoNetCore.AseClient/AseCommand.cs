@@ -113,33 +113,11 @@ namespace AdoNetCore.AseClient
             return new AseParameter();
         }
 
-        public AseParameter CreateParameter(string name, object value, DbType dbType, int? overrideUserType)
-        {
-            if (_isDisposed)
-            {
-                throw new ObjectDisposedException(nameof(AseCommand));
-            }
-            return new AseParameter(name, value, dbType, overrideUserType);
-        }
-
         protected override DbParameter CreateDbParameter()
         {
             return CreateParameter();
         }
 
-        //command.SetParameter("@psComment", comment, DbType.String, 36);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="parameterName"></param>
-        /// <param name="parameterValue"></param>
-        /// <param name="dbType"></param>
-        /// <param name="overrideUserType"></param>
-        /// <returns></returns>
-        public AseParameter CreateParameter(string parameterName, string parameterValue, DbType dbType, int? overrideUserType)
-        {
-            return new AseParameter(parameterName, parameterValue, dbType, overrideUserType);
-        }
 
         /// <summary>
         /// Executes a Transact-SQL statement against the connection and returns the number of rows affected.

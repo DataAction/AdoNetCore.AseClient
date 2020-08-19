@@ -40,7 +40,7 @@ namespace AdoNetCore.AseClient
         /// <param name="value">An object that is the value of the parameter.</param>
         public AseParameter(string parameterName, object value) : this()
         {
-            Value = value ?? throw new ArgumentNullException();
+            Value = value ?? throw new ArgumentNullException($"Value for parameter '{parameterName}' cannot be null! If you meant to insert NULL, use DbNull.Value instead.");
             ParameterName = parameterName;
         }
 

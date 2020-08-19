@@ -64,19 +64,16 @@ namespace AdoNetCore.AseClient
             _results.CompleteAdding();
         }
 
-        /// <inheritdoc />
         public override bool GetBoolean(int i)
         {
             return GetPrimitive(i, (value, provider) => value.ToBoolean(provider));
         }
 
-        /// <inheritdoc />
         public override byte GetByte(int i)
         {
             return GetPrimitive(i, (value, provider) => value.ToByte(provider));
         }
 
-        /// <inheritdoc />
         public override long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferOffset, int length)
         {
             if (IsDBNull(i))
@@ -140,13 +137,11 @@ namespace AdoNetCore.AseClient
             return bytesToRead;
         }
 
-        /// <inheritdoc />
         public override char GetChar(int i)
         {
             return GetPrimitive(i, (value, provider) => value.ToChar(provider));
         }
 
-        /// <inheritdoc />
         public override long GetChars(int i, long fieldOffset, char[] buffer, int bufferOffset, int length)
         {
             if (IsDBNull(i))
@@ -209,7 +204,6 @@ namespace AdoNetCore.AseClient
             return charsToRead;
         }
 
-        /// <inheritdoc />
         public override string GetDataTypeName(int ordinal)
         {
             if (_currentTable  == null || ordinal < 0)
@@ -225,13 +219,11 @@ namespace AdoNetCore.AseClient
             return _currentTable .Formats[ordinal].GetDataTypeName();
         }
 
-        /// <inheritdoc />
         public override IEnumerator GetEnumerator()
         {
             return new AseDataReaderEnumerator(this);
         }
 
-        /// <inheritdoc />
         public override DateTime GetDateTime(int i)
         {
             var obj = GetNonNullValue(i);
@@ -264,19 +256,16 @@ namespace AdoNetCore.AseClient
             }
         }
 
-        /// <inheritdoc />
         public override decimal GetDecimal(int i)
         {
             return GetPrimitive(i, (value, provider) => value.ToDecimal(provider));
         }
 
-        /// <inheritdoc />
         public override double GetDouble(int i)
         {
             return GetPrimitive(i, (value, provider) => value.ToDouble(provider));
         }
 
-        /// <inheritdoc />
         public override Type GetFieldType(int i)
         {
             var format = GetFormat(i);
@@ -285,13 +274,11 @@ namespace AdoNetCore.AseClient
                 : TypeMap.GetNetType(format, true);
         }
 
-        /// <inheritdoc />
         public override float GetFloat(int i)
         {
             return GetPrimitive(i, (value, provider) => value.ToSingle(provider));
         }
 
-        /// <inheritdoc />
         public override Guid GetGuid(int i)
         {
             if (IsDBNull(i))
@@ -366,7 +353,6 @@ namespace AdoNetCore.AseClient
             throw new InvalidCastException($"Cannot convert from {GetFieldType(i)} to {nameof(T)}");
         }
 
-        /// <inheritdoc />
         public override string GetString(int i)
         {
             var obj = GetNonNullValue(i);
@@ -394,7 +380,6 @@ namespace AdoNetCore.AseClient
         //    throw new NotImplementedException();
         //}
 
-        /// <inheritdoc />
         public override string GetName(int i)
         {
             var format = GetFormat(i);
@@ -406,7 +391,6 @@ namespace AdoNetCore.AseClient
             return format.DisplayColumnName;
         }
 
-        /// <inheritdoc />
         public override int GetOrdinal(string name)
         {
             if (string.IsNullOrEmpty(name))
@@ -436,7 +420,6 @@ namespace AdoNetCore.AseClient
             throw new ArgumentException();
         }
 
-        /// <inheritdoc />
         public override object GetValue(int i)
         {
             if (!ValueExists(i))
@@ -461,7 +444,6 @@ namespace AdoNetCore.AseClient
             return obj;
         }
 
-        /// <inheritdoc />
         public override int GetValues(object[] values)
         {
             var num = values.Length;
@@ -486,7 +468,6 @@ namespace AdoNetCore.AseClient
             return num;
         }
 
-        /// <inheritdoc />
         public override bool IsDBNull(int i)
         {
             if (!ValueExists(i))
@@ -497,19 +478,14 @@ namespace AdoNetCore.AseClient
             return CurrentRow.Items[i] == DBNull.Value;
         }
 
-        /// <inheritdoc />
         public override int FieldCount => _currentTable?.Formats?.Length ?? 0;
 
-        /// <inheritdoc />
         public override int VisibleFieldCount => FieldCount;
 
-        /// <inheritdoc />
         public override bool HasRows => CurrentRowCount > 0;
 
-        /// <inheritdoc />
         public override object this[int ordinal] => GetValue(ordinal);
 
-        /// <inheritdoc />
         public override object this[string name] => GetValue(GetOrdinal(name));
 
         public
@@ -538,7 +514,6 @@ namespace AdoNetCore.AseClient
         }
 
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
-        /// <inheritdoc />
         public override DataTable GetSchemaTable()
         {
             EnsureSchemaTable();
@@ -661,14 +636,11 @@ namespace AdoNetCore.AseClient
             return false;
         }
 
-        /// <inheritdoc />
         public override int Depth => 0;
 
-        /// <inheritdoc />
         public override bool IsClosed => _currentTable == null;
         private int _finalRecordsAffected = -1;
 
-        /// <inheritdoc />
         public override int RecordsAffected => _currentTable != null && _currentResult < _totalResults ? _currentTable.RecordsAffected : _finalRecordsAffected;
 
         public void SetRecordsAffected(int value)

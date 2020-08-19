@@ -70,7 +70,6 @@ namespace AdoNetCore.AseClient.Internal
             var dbType = parameter.DbType;
 
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
-            Logger.Instance?.WriteLine($"TypeMap.GetFormatLength =>  {length}");
 
             var format = new FormatItem
             {

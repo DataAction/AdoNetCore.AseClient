@@ -706,45 +706,6 @@ SET FMTONLY OFF";
             };
         }
 
-        //private IToken[] BuildParameterTokens(AseParameterCollection parameters, bool includeUserType = true)
-        //{
-        //    var formatItems = new List<FormatItem>();
-        //    var parameterItems = new List<ParametersToken.Parameter>();
-
-        //    foreach (var parameter in parameters.SendableParameters)
-        //    {
-
-        //        var formatItem = FormatItem.CreateForParameter(parameter, _environment);
-
-        //        //if (!includeUserType)
-        //        //    formatItem.UserType = 0;
-
-        //        formatItems.Add(formatItem);
-        //        parameterItems.Add(new ParametersToken.Parameter
-        //        {
-        //            Format = formatItem,
-        //            Value = parameter.SendableValue
-        //        });
-        //    }
-
-        //    if (formatItems.Count == 0)
-        //    {
-        //        return new IToken[0];
-        //    }
-
-        //    return new IToken[]
-        //    {
-        //        new ParameterFormat2Token
-        //        {
-        //            Formats = formatItems.ToArray()
-        //        },
-        //        new ParametersToken
-        //        {
-        //            Parameters = parameterItems.ToArray()
-        //        }
-        //    };
-        //}
-
         public void Dispose()
         {
             if (IsDisposed)

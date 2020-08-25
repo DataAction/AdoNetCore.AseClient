@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Token;
@@ -31,9 +30,10 @@ namespace AdoNetCore.AseClient.Internal.Handler
             switch (token)
             {
                 case ReturnStatusToken t:
-                    foreach (var parameter in _parameters.OfType<AseParameter>().Where(p => p.Direction == ParameterDirection.ReturnValue))
+                    foreach (AseParameter parameter in _parameters)
                     {
-                        parameter.Value = t.Status;
+                        if (parameter.Direction == ParameterDirection.ReturnValue)
+                            parameter.Value = t.Status;
                     }
                     break;
 
@@ -45,9 +45,10 @@ namespace AdoNetCore.AseClient.Internal.Handler
                         dict[p.Format.ParameterName] = p;
                     }
 
-                    foreach (var parameter in _parameters.OfType<AseParameter>().Where(p => p.IsOutput && dict.ContainsKey(p.ParameterName)))
+                    foreach (AseParameter parameter in _parameters)
                     {
-                        parameter.Value = dict[parameter.ParameterName].Value;
+                        if (parameter.IsOutput && dict.ContainsKey(parameter.ParameterName))
+                            parameter.Value = dict[parameter.ParameterName].Value;
                     }
                     break;
                 default:

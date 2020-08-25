@@ -332,7 +332,6 @@ namespace AdoNetCore.AseClient.Internal
                 default:
                     stream.WriteByte((byte)SerializationType.SER_DEFAULT);
                     stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
-                    //stream.WriteBlobSpecificIntPrefixedByteArray(Encoding.Unicode.GetBytes(value as string));
                     stream.WriteBlobSpecificTerminator();
                     break;
                     

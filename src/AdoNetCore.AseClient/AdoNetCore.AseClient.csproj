@@ -6,7 +6,4 @@
 <PropertyGroup>
    <LangVersion>7</LangVersion>
 </PropertyGroup>
-<ItemGroup>
-  <Compile Remove="Internal\UserTypeMetadata.cs" />
-</ItemGroup>  
 </Project>

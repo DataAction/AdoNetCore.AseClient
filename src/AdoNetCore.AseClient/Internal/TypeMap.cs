@@ -136,8 +136,7 @@ namespace AdoNetCore.AseClient.Internal
             switch (value)
             {
                 case string s:
-                    var count = Encoding.Unicode.GetByteCount(s);
-                    return count;
+                    return Encoding.Unicode.GetByteCount(s);
                 case char c:
                     return Encoding.Unicode.GetByteCount(new[] { c });
                 default:
@@ -230,21 +229,6 @@ namespace AdoNetCore.AseClient.Internal
                         }
                     }
                     return 35;
-                default:
-                    return 0;
-            }
-        }
-
-        
-
-        public static int GetTdsUserType(DbType dbType)
-        {
-            switch (dbType)
-            {
-                case DbType.String:
-                    return 35;
-                case DbType.StringFixedLength:
-                    return 34;
                 default:
                     return 0;
             }

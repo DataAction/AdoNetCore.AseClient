@@ -469,6 +469,5 @@ namespace AdoNetCore.AseClient
         }
 #endif
         internal object SendableValue => Value.AsSendableValue(_type);
-        //internal int? OverrideUserType { get; set; }
     }
 }

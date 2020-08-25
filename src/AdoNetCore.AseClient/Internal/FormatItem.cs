@@ -63,7 +63,7 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         public SerializationType SerializationType { get; set; }
 
-        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env, CommandType commandType = CommandType.StoredProcedure)
+        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env, CommandType commandType)
         {
             parameter.AseDbType = TypeMap.InferType(parameter);
 
@@ -93,6 +93,7 @@ namespace AdoNetCore.AseClient.Internal
                         format.BlobType = BlobType.BLOB_UNICHAR;
                         if (commandType != CommandType.StoredProcedure)
                             format.UserType = 0;
+
                         break;
                     case DbType.Binary:
                         format.BlobType = BlobType.BLOB_LONGBINARY;

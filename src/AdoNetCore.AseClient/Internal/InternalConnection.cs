@@ -609,11 +609,7 @@ namespace AdoNetCore.AseClient.Internal
             yield return command.CommandType == CommandType.StoredProcedure
                 ? BuildRpcToken(command, behavior)
                 : BuildLanguageToken(command, behavior);
-            //BuildParameterTokens
-            //foreach (var token in BuildParameterTokens(command.AseParameters, command.CommandType == CommandType.StoredProcedure))
-            //{
-            //    yield return token;
-            //}
+
             foreach (var token in BuildParameterTokens(command))
             {
                 yield return token;

@@ -236,7 +236,7 @@ end";
                     command.CommandType = CommandType.StoredProcedure;
 
                     //var expected = Enumerable.Repeat(new byte[] {0xde, 0xad, 0xbe, 0xef}, 64).SelectMany(x => x).Take(536386).ToArray();
-                    var text_locator = new string('x', 16384);
+                    var text_locator = new string('x', 106384);
                     var just_text = new string('y', 1024);
 
                     var p = command.CreateParameter();
@@ -259,8 +259,6 @@ end";
                     command.Parameters.Add(pOut);
 
                     command.ExecuteNonQuery();
-
-                    //Assert.AreEqual(expected, pOut.Value);
                 }
             }
         }
@@ -282,17 +280,11 @@ end";
                     var just_text = new string('y', length);
 
                     var p = command.CreateParameter();
-                    //p.ParameterName = "@text_locator_input";
-                    //p.Value = text_locator;
-                    //p.DbType = DbType.String;
-                    ////p.OverrideUserType = 0;//36; //19;
-                    //command.Parameters.Add(p);
 
                     p = command.CreateParameter();
                     p.ParameterName = "@input";
                     p.Value = just_text;
                     p.DbType = DbType.String;
-                    //p.OverrideUserType = 36;
                     command.Parameters.Add(p);
 
                     var pOut = command.CreateParameter();
@@ -303,8 +295,6 @@ end";
                     command.Parameters.Add(pOut);
 
                     command.ExecuteNonQuery();
-
-                    //Assert.AreEqual(expected, pOut.Value);
                 }
             }
         }
@@ -317,7 +307,7 @@ end";
         }
 
         [TestCaseSource(nameof(Insert_Text_Length))]
-        public void TextColumn_With_Data_Length_LessThan_16384_ReturnError(int length)
+        public void TextColumn_With_Data_Length_MoreThan_16384_ReturnSuccess(int length)
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
@@ -334,7 +324,6 @@ end";
                         p.ParameterName = @"@fragment";
                         p.Value = fragment;
                         p.DbType = DbType.String;
-                        //p.OverrideUserType = 35;
                         p.Direction = ParameterDirection.Input;
 
                         fragmentCommand.Parameters.Add(p);
@@ -352,7 +341,6 @@ end";
         [TestCase(24000)]
         [TestCase(26000)]
         [TestCase(28000)]
-        //[TestCase(20000500)]
         [TestCase(20001000)]
         [TestCase(20001500)]
         [TestCase(20002000)]
@@ -381,7 +369,6 @@ end";
                         p.ParameterName = @"@fragment";
                         p.Value = fragment;
                         p.DbType = DbType.String;
-                        //p.OverrideUserType = 36;
                         p.Direction = ParameterDirection.Input;
 
                         fragmentCommand.Parameters.Add(p);

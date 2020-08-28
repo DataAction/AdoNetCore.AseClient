@@ -80,7 +80,20 @@ begin
   set @output = 10
 end";
         private readonly string _dropJustTextProc = @"drop procedure [dbo].[sp_just_test_echo_text]";
-        
+
+
+        private readonly string _createInsertTextProc = @"
+create procedure [dbo].[sp_insert_test_echo_text]
+  @input text,
+  @output int output
+as
+begin
+  insert into [dbo].[test_text_table] (Fragment) VALUES (@input)
+  set @output = 10
+end";
+
+        private readonly string _dropInsertTextProc = @"drop procedure [dbo].[sp_insert_test_echo_text]";
+
         public TextEchoProcedureTests()
         {
             Logger.Enable();
@@ -97,6 +110,7 @@ end";
                 connection.Execute(_createTrueEchoTextLocatorProc);
                 connection.Execute(_createTextTypeColumnProc);
                 connection.Execute(_createJustTextProc);
+                connection.Execute(_createInsertTextProc);
             }
         }
 
@@ -105,6 +119,7 @@ end";
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))
             {
+                connection.Execute(_dropInsertTextProc);
                 connection.Execute(_dropEchoTextProc);
                 connection.Execute(_dropTextTable);
                 connection.Execute(_dropEchoTextLocatorProc);
@@ -115,7 +130,7 @@ end";
         }
 
 
-        [Test]
+        [Test, Ignore("Output text type")]
         public void EchoText_Procedure_ShouldExecute()
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))
@@ -276,7 +291,7 @@ end";
                     command.CommandType = CommandType.StoredProcedure;
 
                     //var expected = Enumerable.Repeat(new byte[] {0xde, 0xad, 0xbe, 0xef}, 64).SelectMany(x => x).Take(536386).ToArray();
-                    var text_locator = new string('x', 16383);
+                    //var text_locator = new string('x', 16383);
                     var just_text = new string('y', length);
 
                     var p = command.CreateParameter();
@@ -338,20 +353,22 @@ end";
         //[TestCaseSource(nameof(Insert_Text_Length_GreaterThan_10000000))]
         //sp_configure 'procedure cache size', 24000
         [TestCase(2000)]
+        [TestCase(4000)]
         [TestCase(24000)]
         [TestCase(26000)]
         [TestCase(28000)]
-        [TestCase(20001000)]
-        [TestCase(20001500)]
-        [TestCase(20002000)]
-        [TestCase(20002500)]
-        [TestCase(20003000)]
-        [TestCase(20003500)]
-        [TestCase(20004000)]
-        [TestCase(20004500)]
-        [TestCase(20005000)]
-        [TestCase(20005500)]
-        [TestCase(20006000)]
+        [TestCase(30000)]
+        //[TestCase(20001000)]
+        //[TestCase(20001500)]
+        //[TestCase(20002000)]
+        //[TestCase(20002500)]
+        //[TestCase(20003000)]
+        //[TestCase(20003500)]
+        //[TestCase(20004000)]
+        //[TestCase(20004500)]
+        //[TestCase(20005000)]
+        //[TestCase(20005500)]
+        //[TestCase(20006000)]
         public void TextColumn_Length_gt_10000000_ReturnError(int length)
         {
             using (var connection = new AseConnection(ConnectionStrings.Pooled))
@@ -380,6 +397,43 @@ end";
             }
         }
 
+
+        [TestCaseSource(nameof(Insert_Text_Length))]
+        public void TextType_Column_Should_Insert_Via_StoredProc_Ok(int length)
+        {
+            //AdoNetCore.AseClient.AseException : The token datastream length was not correct. This is an internal protocol error.
+            using (var connection = new AseConnection(ConnectionStrings.Pooled))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "sp_insert_test_echo_text";
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    //var expected = Enumerable.Repeat(new byte[] {0xde, 0xad, 0xbe, 0xef}, 64).SelectMany(x => x).Take(536386).ToArray();
+                    //var text_locator = new string('x', 16383);
+                    var just_text = new string('y', length);
+
+                    var p = command.CreateParameter();
+
+                    p = command.CreateParameter();
+                    p.ParameterName = "@input";
+                    p.Value = just_text;
+                    p.DbType = DbType.String;
+                    command.Parameters.Add(p);
+
+                    var pOut = command.CreateParameter();
+                    pOut.ParameterName = "@output";
+                    pOut.Value = DBNull.Value;
+                    pOut.DbType = DbType.Int32;
+                    pOut.Direction = ParameterDirection.Output;
+                    command.Parameters.Add(pOut);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
         [Test]
         public void Insert_Text_ShouldBeValid()
         {
@@ -393,10 +447,10 @@ end";
                         fragmentCommand.CommandType = CommandType.Text;
                         fragmentCommand.Transaction = transaction;
 
-                        var bytesSegmentSize = 16382;
-                        //var bytesSegmentSize = 2048;
-                        //var data = Enumerable.Repeat((byte) 0x65, 16384).ToArray();
-                        var data = Enumerable.Repeat((byte) 0x65, 6380).ToArray();
+                        //var bytesSegmentSize = 16382;
+                        var bytesSegmentSize = 2048;
+                        var data = Enumerable.Repeat((byte) 0x65, 16384).ToArray();
+                        //var data = Enumerable.Repeat((byte) 0x65, 6380).ToArray();
                         var totalSegment = GetTotalSegments(data.Length, bytesSegmentSize );
 
                         var pos = 0;

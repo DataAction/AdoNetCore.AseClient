@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.IO;
@@ -28,7 +27,7 @@ namespace AdoNetCore.AseClient
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
         private bool? _namedParameters;
-        internal readonly IDictionary<string, FormatItem> FormatItems;
+        internal FormatItem FormatItem { get; set; }
 
         /// <summary>
         /// Constructor function for an <see cref="AseCommand"/> instance.
@@ -37,7 +36,6 @@ namespace AdoNetCore.AseClient
         public AseCommand()
         {
             AseParameters = new AseParameterCollection();
-            FormatItems = new Dictionary<string, FormatItem>();
         }
 
         /// <summary>

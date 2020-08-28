@@ -670,16 +670,15 @@ SET FMTONLY OFF";
             foreach (var parameter in command.Parameters.SendableParameters)
             {
                 var parameterName = parameter.ParameterName ?? command.Parameters.IndexOf(parameter).ToString();
-                if (!command.FormatItems.TryGetValue(parameterName, out FormatItem formatItem))
+                if (command.FormatItem == null || command.FormatItem.ParameterName != parameterName)
                 {
-                    formatItem = FormatItem.CreateForParameter(parameter, _environment, command.CommandType);
-                    command.FormatItems.Add(parameterName, formatItem);
+                    command.FormatItem = FormatItem.CreateForParameter(parameter, _environment, command.CommandType);
                 }
 
-                formatItems.Add(formatItem);
+                formatItems.Add(command.FormatItem);
                 parameterItems.Add(new ParametersToken.Parameter
                 {
-                    Format = formatItem,
+                    Format = command.FormatItem,
                     Value = parameter.SendableValue
                 });
             }

@@ -91,6 +91,12 @@ namespace AdoNetCore.AseClient.Internal
                         break;
                     case DbType.String:
                         format.BlobType = BlobType.BLOB_UNICHAR;
+                        // This is far less than ideal but at the time of addressing this issue whereby if the
+                        // BlobType is a BLOB_UNICHAR then the UserType would need to be 36 when it
+                        // is a stored proc otherwise it would need to be zero (0).
+                        //
+                        // In the future, we'd need to overhaul how TDS_BLOB is structured especially
+                        // around BLOB_UNICHAR and the UserType that it should return in a more consistent way
                         if (commandType != CommandType.StoredProcedure)
                             format.UserType = 0;
 

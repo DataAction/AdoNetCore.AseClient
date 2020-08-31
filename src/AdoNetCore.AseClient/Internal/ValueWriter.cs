@@ -334,8 +334,6 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteNullableUShortPrefixedByteArray(format.ClassId);
                     stream.WriteBlobSpecificTerminator();
                     break;
-                    
-                    //throw new AseException($"TDS_BLOB support for {value.GetType().Name} not yet implemented");
             }
         }
 

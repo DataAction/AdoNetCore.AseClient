@@ -477,7 +477,6 @@ end";
                         }
 
                         var count = connection.Execute("Select Fragment from test_text_table");
-                        //Assert.AreEqual(256, count);
                         transaction.Rollback();
                     }
                 }

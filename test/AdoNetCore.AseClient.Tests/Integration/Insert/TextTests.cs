@@ -82,6 +82,9 @@ END";
         }
 
         [Test]
+        // Might have to increase the heap size with the command below
+        // exec sp_configure 'heap memory per user',228352
+        // http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.infocenter.dc31644.1570/html/sag2/sag258.htm
         public void Insert_Parameter_Dapper(
             [ValueSource(nameof(Insert_Parameter_Types))] DbType dbType,
             [ValueSource(nameof(Insert_Parameter_Counts))] int count)
@@ -101,6 +104,9 @@ END";
         }
 
         [Test]
+        // Might have to increase the heap size with the command below
+        // exec sp_configure 'heap memory per user',228352
+        // http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.infocenter.dc31644.1570/html/sag2/sag258.htm
         public void Insert_Parameter_With_Date_Dapper(
             [ValueSource(nameof(Insert_Parameter_Types))] DbType dbType,
             [ValueSource(nameof(Insert_Parameter_Counts))] int count)

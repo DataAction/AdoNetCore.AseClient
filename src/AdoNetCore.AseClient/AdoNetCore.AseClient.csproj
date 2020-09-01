@@ -3,4 +3,7 @@
   <PropertyGroup>
     <Description>.NET Core data provider for Sybase ASE</Description>
   </PropertyGroup>
+<PropertyGroup>
+   <LangVersion>7</LangVersion>
+</PropertyGroup>
 </Project>

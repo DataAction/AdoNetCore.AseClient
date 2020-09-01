@@ -27,6 +27,7 @@ namespace AdoNetCore.AseClient
         private string _commandText;
         private UpdateRowSource _updatedRowSource;
         private bool? _namedParameters;
+        internal FormatItem FormatItem { get; set; }
 
         /// <summary>
         /// Constructor function for an <see cref="AseCommand"/> instance.
@@ -42,10 +43,8 @@ namespace AdoNetCore.AseClient
         /// Note: the instance will not be initialised with an AseConnection; before use this must be supplied.
         /// </summary>
         /// <param name="commandText">The command text to execute</param>
-        public AseCommand(string commandText)
+        public AseCommand(string commandText) : this()
         {
-            AseParameters = new AseParameterCollection();
-
             CommandText = commandText;
         }
 
@@ -54,14 +53,10 @@ namespace AdoNetCore.AseClient
         /// </summary>
         /// <param name="commandText">The command text to execute</param>
         /// <param name="connection">The connection upon which to execute</param>
-        public AseCommand(string commandText, AseConnection connection)
+        public AseCommand(string commandText, AseConnection connection) : this(commandText)
         {
             _connection = connection;
             _transaction = connection.Transaction;
-
-            AseParameters = new AseParameterCollection();
-
-            CommandText = commandText;
         }
 
         /// <summary>
@@ -70,23 +65,13 @@ namespace AdoNetCore.AseClient
         /// <param name="commandText">The command text to execute</param>
         /// <param name="connection">The connection upon which to execute</param>
         /// <param name="transaction">The transaction within which to execute</param>
-        public AseCommand(string commandText, AseConnection connection, AseTransaction transaction)
+        public AseCommand(string commandText, AseConnection connection, AseTransaction transaction) : this (commandText, connection)
         {
-            _connection = connection;
             _transaction = transaction;
-
-            AseParameters = new AseParameterCollection();
-
-            CommandText = commandText;
         }
 
-        internal AseCommand(AseConnection connection)
-        {
-            _connection = connection;
-            _transaction = connection.Transaction;
-
-            AseParameters = new AseParameterCollection();
-        }
+        internal AseCommand(AseConnection connection) : this (string.Empty, connection, connection.Transaction)
+        { }
 
         /// <summary>
         /// Tries to cancel the execution of a <see cref="AseCommand" />.
@@ -130,6 +115,7 @@ namespace AdoNetCore.AseClient
         {
             return CreateParameter();
         }
+
 
         /// <summary>
         /// Executes a Transact-SQL statement against the connection and returns the number of rows affected.

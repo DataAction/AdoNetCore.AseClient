@@ -276,7 +276,6 @@ namespace AdoNetCore.AseClient
             SourceVersion = sourceVersion;
             Value = value;
         }
-
         public override void ResetDbType()
         {
             DbType = default(DbType);

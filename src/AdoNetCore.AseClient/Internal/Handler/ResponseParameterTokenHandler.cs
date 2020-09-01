@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
@@ -33,11 +33,10 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     foreach (AseParameter parameter in _parameters)
                     {
                         if (parameter.Direction == ParameterDirection.ReturnValue)
-                        {
                             parameter.Value = t.Status;
-                        }
                     }
                     break;
+
                 case ParametersToken t:
                     var dict = new Dictionary<string, ParametersToken.Parameter>();
 
@@ -49,9 +48,7 @@ namespace AdoNetCore.AseClient.Internal.Handler
                     foreach (AseParameter parameter in _parameters)
                     {
                         if (parameter.IsOutput && dict.ContainsKey(parameter.ParameterName))
-                        {
                             parameter.Value = dict[parameter.ParameterName].Value;
-                        }
                     }
                     break;
                 default:

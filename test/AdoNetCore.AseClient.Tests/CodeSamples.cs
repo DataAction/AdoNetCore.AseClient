@@ -389,6 +389,27 @@ END";
             }
         }
 
+        [Test]
+        public void ExecuteScalar_Error_should_be_captured()
+        {
+            using (var connection = new AseConnection(ConnectionStrings.Default))
+            {
+                connection.Open();
+
+                var exception = Assert.Throws<AdoNetCore.AseClient.AseException>(() =>
+                {
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "SELECT 1/0 As Error";
+
+                        var result = command.ExecuteScalar();
+                    }
+                });
+
+                Assert.That(exception.Message == "Divide by zero occurred.\n");
+            }
+        }
+
         private sealed class Customer
         {
             public string FirstName { get; set; }

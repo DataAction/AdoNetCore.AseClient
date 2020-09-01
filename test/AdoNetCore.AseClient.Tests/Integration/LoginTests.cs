@@ -75,8 +75,9 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
             try
             {
+                var source = Enumerable.Repeat(1, threads);
                 result = Parallel.ForEach(
-                    Enumerable.Repeat(1, threads),
+                    source,
                     new ParallelOptions
                     {
                         MaxDegreeOfParallelism = parallelism
@@ -100,7 +101,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
 
         public static IEnumerable<TestCaseData> Login_Blitz_Cases()
         {
-            yield return new TestCaseData(10, 100, ConnectionStrings.Pooled10);
+            yield return new TestCaseData(10, 100, ConnectionStrings.Pooled100);
             yield return new TestCaseData(100, 1000, ConnectionStrings.Pooled100);
             yield return new TestCaseData(100, 10000, ConnectionStrings.Pooled100);
         }

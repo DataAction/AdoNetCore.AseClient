@@ -297,13 +297,11 @@ namespace AdoNetCore.AseClient.Internal
                 HasParameters = false,
                 CommandText = $"USE {databaseName}"
             }));
-
+            
             var messageHandler = new MessageTokenHandler(EventNotifier);
             var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
 
-            ReceiveTokens(
-                envChangeTokenHandler,
-                messageHandler);
+            ReceiveTokens(envChangeTokenHandler, messageHandler);
 
             AssertExecutionCompletion();
 
@@ -393,7 +391,8 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (Exception ex)
             {
-                readerSource.TrySetException(ex); // If we have already begun returning data, then this will get lost.
+                // If we have already begun returning data, then this will get lost.
+                if (!readerSource.TrySetException(ex)) throw;
             }
         }
 
@@ -436,7 +435,7 @@ namespace AdoNetCore.AseClient.Internal
             }
             catch (Exception ex)
             {
-                rowsAffectedSource.TrySetException(ex);
+                if (!rowsAffectedSource.TrySetException(ex)) throw;
             }
         }
 
@@ -611,10 +610,11 @@ namespace AdoNetCore.AseClient.Internal
                 ? BuildRpcToken(command, behavior)
                 : BuildLanguageToken(command, behavior);
 
-            foreach (var token in BuildParameterTokens(command.AseParameters))
+            foreach (var token in BuildParameterTokens(command))
             {
                 yield return token;
             }
+
         }
 
         private IToken BuildLanguageToken(AseCommand command, CommandBehavior behavior)
@@ -662,18 +662,23 @@ SET FMTONLY OFF";
             return result;
         }
 
-        private IToken[] BuildParameterTokens(AseParameterCollection parameters)
+        private IToken[] BuildParameterTokens(AseCommand command)
         {
             var formatItems = new List<FormatItem>();
             var parameterItems = new List<ParametersToken.Parameter>();
 
-            foreach (var parameter in parameters.SendableParameters)
+            foreach (var parameter in command.Parameters.SendableParameters)
             {
-                var formatItem = FormatItem.CreateForParameter(parameter, _environment);
-                formatItems.Add(formatItem);
+                var parameterName = parameter.ParameterName ?? command.Parameters.IndexOf(parameter).ToString();
+                if (command.FormatItem == null || command.FormatItem.ParameterName != parameterName)
+                {
+                    command.FormatItem = FormatItem.CreateForParameter(parameter, _environment, command.CommandType);
+                }
+
+                formatItems.Add(command.FormatItem);
                 parameterItems.Add(new ParametersToken.Parameter
                 {
-                    Format = formatItem,
+                    Format = command.FormatItem,
                     Value = parameter.SendableValue
                 });
             }

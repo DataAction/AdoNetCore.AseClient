@@ -10,6 +10,9 @@ using AdoNetCore.AseClient.Internal;
 
 namespace AdoNetCore.AseClient
 {
+    /// <summary>
+    /// ASE implementation of <see cref="IDataReader"/>
+    /// </summary>
     public sealed class AseDataReader : DbDataReader
     {
         private TableResult _currentTable;
@@ -634,15 +637,11 @@ namespace AdoNetCore.AseClient
         }
 
         public override int Depth => 0;
+
         public override bool IsClosed => _currentTable == null;
         private int _finalRecordsAffected = -1;
-        public override int RecordsAffected
-        {
-            get
-            {
-                return _currentTable != null && _currentResult < _totalResults ? _currentTable.RecordsAffected : _finalRecordsAffected;
-            }
-        }
+
+        public override int RecordsAffected => _currentTable != null && _currentResult < _totalResults ? _currentTable.RecordsAffected : _finalRecordsAffected;
 
         public void SetRecordsAffected(int value)
         {

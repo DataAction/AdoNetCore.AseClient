@@ -63,12 +63,14 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         public SerializationType SerializationType { get; set; }
 
-        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env)
+        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env, CommandType commandType)
         {
             parameter.AseDbType = TypeMap.InferType(parameter);
 
             var dbType = parameter.DbType;
+
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
+
             var format = new FormatItem
             {
                 ParameterName = parameter.ParameterName,
@@ -76,7 +78,7 @@ namespace AdoNetCore.AseClient.Internal
                 IsNullable = parameter.IsNullable,
                 Length = length,
                 DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
-                UserType = TypeMap.GetTdsUserType(dbType)
+                UserType = TypeMap.GetUserType(dbType, parameter.SendableValue, length)
             };
 
             //fixup the FormatItem's BlobType for strings and byte arrays
@@ -89,6 +91,15 @@ namespace AdoNetCore.AseClient.Internal
                         break;
                     case DbType.String:
                         format.BlobType = BlobType.BLOB_UNICHAR;
+                        // This is far less than ideal but at the time of addressing this issue whereby if the
+                        // BlobType is a BLOB_UNICHAR then the UserType would need to be 36 when it
+                        // is a stored proc otherwise it would need to be zero (0).
+                        //
+                        // In the future, we'd need to overhaul how TDS_BLOB is structured especially
+                        // around BLOB_UNICHAR and the UserType that it should return in a more consistent way
+                        if (commandType != CommandType.StoredProcedure)
+                            format.UserType = 0;
+
                         break;
                     case DbType.Binary:
                         format.BlobType = BlobType.BLOB_LONGBINARY;
@@ -156,6 +167,7 @@ namespace AdoNetCore.AseClient.Internal
                 default:
                     throw new ArgumentException($"Unexpected token type: {srcTokenType}.", nameof(srcTokenType));
             }
+
             ReadTypeInfo(format, stream, enc);
 
             Logger.Instance?.WriteLine($"  <- {format.ColumnName}: {format.DataType} (len: {format.Length}) (ut:{format.UserType}) (status:{format.RowStatus}) (loc:{format.LocaleInfo}) format names available: ColumnLabel [{format.ColumnLabel}], ColumnName [{format.ColumnName}], CatalogName [{format.CatalogName}], ParameterName [{format.ParameterName}], SchemaName [{format.SchemaName}], TableName [{format.TableName}]");

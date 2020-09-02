@@ -134,6 +134,50 @@ namespace AdoNetCore.AseClient.Tests.Integration
             }
         }
 
+        [Test]
+        public void Command_Reuse_ShouldWork()
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var cmd = connection.CreateCommand())
+                {
+                    {
+                        var sql = @"SELECT TOP 1 Convert(Decimal(29,10), @value)";
+                        var p = cmd.CreateParameter();
+                        p.ParameterName = "@value";
+                        p.DbType = System.Data.DbType.Decimal;
+                        p.Value = 6579.64648m;
+                        cmd.CommandText = sql;
+                        cmd.Parameters.Add(p);
+
+                        // 6579.64648m sent to server
+                        using (var rd = cmd.ExecuteReader(System.Data.CommandBehavior.Default))
+                        {
+                            rd.Read();
+                            var result = rd.GetDecimal(0);
+                            Assert.AreEqual(6579.64648M, result);
+                        }
+
+                        p = cmd.CreateParameter();
+                        p.ParameterName = "@value";
+                        p.DbType = System.Data.DbType.Single;
+                        p.Value = 6579.64648f;
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.Add(p);
+
+                        // decimal formatter applied to 6579.64648f and returned value is 65.79....
+                        using (var rd = cmd.ExecuteReader(System.Data.CommandBehavior.Default))
+                        {
+                            rd.Read();
+                            var result = rd.GetDecimal(0);
+                            Assert.AreEqual(6579.646484375M, result);
+                        }
+                    }
+                }
+            }
+        }
+
         private static IEnumerable<TestCaseData> GetDataTypeName_ShouldWork_Cases()
         {
             yield return new TestCaseData("convert(unichar(2), 'À')", "unichar");

@@ -50,6 +50,7 @@ namespace AdoNetCore.AseClient.Internal
         public bool IsDecimalType => DataType == TdsDataType.TDS_DECN ||
                                      DataType == TdsDataType.TDS_NUMN;
 
+        public AseDbType AseDbType { get; set; }
         /// <summary>
         /// Relates to TDS_BLOB
         /// </summary>
@@ -73,6 +74,7 @@ namespace AdoNetCore.AseClient.Internal
 
             var format = new FormatItem
             {
+                AseDbType = parameter.AseDbType,
                 ParameterName = parameter.ParameterName,
                 IsOutput = parameter.IsOutput,
                 IsNullable = parameter.IsNullable,

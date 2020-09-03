@@ -447,8 +447,8 @@ end";
                         fragmentCommand.CommandType = CommandType.Text;
                         fragmentCommand.Transaction = transaction;
 
-                        //var bytesSegmentSize = 16382;
-                        var bytesSegmentSize = 2048;
+                        var bytesSegmentSize = 16382;
+                        //var bytesSegmentSize = 2048;
                         var data = Enumerable.Repeat((byte) 0x65, 16384).ToArray();
                         //var data = Enumerable.Repeat((byte) 0x65, 6380).ToArray();
                         var totalSegment = GetTotalSegments(data.Length, bytesSegmentSize );

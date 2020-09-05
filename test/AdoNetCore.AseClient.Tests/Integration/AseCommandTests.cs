@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Xml;
 using AdoNetCore.AseClient.Internal;
 using AdoNetCore.AseClient.Tests.Util;
@@ -236,28 +237,45 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 }
             }
         }
+
+        [Test]
+        public void Command_Duplicate_Parameter_Name_Should_Throws_ArgumentException()
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                var sql = "select @p1, @p2";
+                var aseCommand = connection.CreateCommand();
+                aseCommand.CommandText = sql;
+                aseCommand.CommandType = CommandType.Text;
+                aseCommand.Parameters.Add("@p1", "test");
+                aseCommand.Parameters.Add("@p2", "test2");
+                Assert.Throws<ArgumentException>(() => aseCommand.Parameters.Add("@p1", "test3"));
+            }
+        }
+
         private static IEnumerable<TestCaseData> ReUseCommandTypeData()
         {
-            yield return new TestCaseData(System.Data.DbType.Boolean, typeof(bool), false);
-            yield return new TestCaseData(System.Data.DbType.Byte, typeof(byte), 12);
-            yield return new TestCaseData(System.Data.DbType.SByte, typeof(sbyte), 2);
-            yield return new TestCaseData(System.Data.DbType.Int16, typeof(short), 3);
-            yield return new TestCaseData(System.Data.DbType.UInt16, typeof(ushort), 4);
-            yield return new TestCaseData(System.Data.DbType.Int32, typeof(int), 23);
-            yield return new TestCaseData(System.Data.DbType.UInt32, typeof(uint), 45);
-            yield return new TestCaseData(System.Data.DbType.Int64, typeof(long), 76434755);
-            yield return new TestCaseData(System.Data.DbType.UInt64, typeof(ulong), 1223);
-            yield return new TestCaseData(System.Data.DbType.String, typeof(string), "If it could only be like this always—always summer, always alone, the fruit always ripe");
-            yield return new TestCaseData(System.Data.DbType.AnsiString, typeof(string), "Doubt thou the stars are fire; Doubt that the sun doth move; Doubt truth to be a liar; But never doubt I love");
-            yield return new TestCaseData(System.Data.DbType.AnsiStringFixedLength, typeof(string), "For never was a story of more woe than this of Juliet and her Romeo.");
-            yield return new TestCaseData(System.Data.DbType.Guid, typeof(string), "e2207b47-3fce-4187-808f-e206398a9133");
-            yield return new TestCaseData(System.Data.DbType.Decimal, typeof(decimal), 342.23);
-            yield return new TestCaseData(System.Data.DbType.Currency, typeof(decimal), 1233.3);
-            yield return new TestCaseData(System.Data.DbType.Single, typeof(float), 20.34f);
-            yield return new TestCaseData(System.Data.DbType.Double, typeof(double), 3423.234d);
-            yield return new TestCaseData(System.Data.DbType.DateTime, typeof(DateTime), "2019-03-13 03:20:35.23 AM");
-            yield return new TestCaseData(System.Data.DbType.Date, typeof(DateTime), "2018-07-04 23:20:35.23 PM");
-            yield return new TestCaseData(System.Data.DbType.Time, typeof(DateTime), "2014-09-10 23:20:35");
+            yield return new TestCaseData(DbType.Boolean, typeof(bool), false);
+            yield return new TestCaseData(DbType.Byte, typeof(byte), 12);
+            yield return new TestCaseData(DbType.SByte, typeof(sbyte), 2);
+            yield return new TestCaseData(DbType.Int16, typeof(short), 3);
+            yield return new TestCaseData(DbType.UInt16, typeof(ushort), 4);
+            yield return new TestCaseData(DbType.Int32, typeof(int), 23);
+            yield return new TestCaseData(DbType.UInt32, typeof(uint), 45);
+            yield return new TestCaseData(DbType.Int64, typeof(long), 76434755);
+            yield return new TestCaseData(DbType.UInt64, typeof(ulong), 1223);
+            yield return new TestCaseData(DbType.String, typeof(string), "If it could only be like this always—always summer, always alone, the fruit always ripe");
+            yield return new TestCaseData(DbType.AnsiString, typeof(string), "Doubt thou the stars are fire; Doubt that the sun doth move; Doubt truth to be a liar; But never doubt I love");
+            yield return new TestCaseData(DbType.AnsiStringFixedLength, typeof(string), "For never was a story of more woe than this of Juliet and her Romeo.");
+            yield return new TestCaseData(DbType.Guid, typeof(string), "e2207b47-3fce-4187-808f-e206398a9133");
+            yield return new TestCaseData(DbType.Decimal, typeof(decimal), 342.23);
+            yield return new TestCaseData(DbType.Currency, typeof(decimal), 1233.3);
+            yield return new TestCaseData(DbType.Single, typeof(float), 20.34f);
+            yield return new TestCaseData(DbType.Double, typeof(double), 3423.234d);
+            yield return new TestCaseData(DbType.DateTime, typeof(DateTime), "2019-03-13 03:20:35.23 AM");
+            yield return new TestCaseData(DbType.Date, typeof(DateTime), "2018-07-04 23:20:35.23 PM");
+            yield return new TestCaseData(DbType.Time, typeof(DateTime), "2014-09-10 23:20:35");
 
         }
 

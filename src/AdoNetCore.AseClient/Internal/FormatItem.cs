@@ -66,10 +66,10 @@ namespace AdoNetCore.AseClient.Internal
 
         public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env, AseCommand command)
         {
+            parameter.AseDbType = TypeMap.InferType(parameter);
+
             var dbType = parameter.DbType;
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
-
-            parameter.AseDbType = TypeMap.InferType(parameter);
 
             var format = command.FormatItem;
             var parameterName = parameter.ParameterName ?? command.Parameters.IndexOf(parameter).ToString();

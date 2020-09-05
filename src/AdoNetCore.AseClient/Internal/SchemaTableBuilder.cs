@@ -130,17 +130,12 @@ namespace AdoNetCore.AseClient.Internal
         private void TryLoadKeyInfo(DataTable table, string baseTableNameValue, string baseSchemaNameValue, string baseCatalogNameValue)
         {
             if (_connection == null)
-            {
                 throw new InvalidOperationException("Invalid AseCommand.Connection");
-            }
 
             if (_connection.State != ConnectionState.Open)
-            {
                 throw new InvalidOperationException("Invalid AseCommand.Connection.ConnectionState");
-            }
 
-            if (!string.IsNullOrWhiteSpace(baseTableNameValue) &&
-                !string.IsNullOrWhiteSpace(baseCatalogNameValue))
+            if (string.IsNullOrWhiteSpace(baseTableNameValue))
                 return;
 
             using (var command = _connection.CreateCommand())

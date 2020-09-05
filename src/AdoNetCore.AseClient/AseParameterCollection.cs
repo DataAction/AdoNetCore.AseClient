@@ -263,10 +263,10 @@ namespace AdoNetCore.AseClient
         /// <returns>A new <see cref="AseParameter" /> object.</returns>
         public AseParameter Add(AseParameter parameter)
         {
-            if (parameter != null)
-            {
-                _parameters.Add(parameter);
-            }
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+            if (Contains(parameter)) throw new ArgumentException($"parameter name '{parameter.ParameterName}' is already in the collection");
+
+            _parameters.Add(parameter);
             return parameter;
         }
 
@@ -379,6 +379,7 @@ namespace AdoNetCore.AseClient
         {
             if (value is AseParameter p)
             {
+                if (Contains(p)) throw new ArgumentException($"Parameter name: '{p.ParameterName}' is already registered", nameof(value));
                 return ((IList)_parameters).Add(p);
             }
             return -1;
@@ -438,11 +439,19 @@ namespace AdoNetCore.AseClient
         /// Returns -1 when the object does not exist in the <see cref="AseParameterCollection" />.</returns>
         public int IndexOf(AseParameter value)
         {
-            if (value != null)
+            if (value == null) return -1;
+            for (var i = 0; i < _parameters.Count; i++)
             {
-                for (var i = 0; i < _parameters.Count; i++)
+                if (string.IsNullOrWhiteSpace(value.ParameterName))
                 {
                     if (value == _parameters[i])
+                    {
+                        return i;
+                    }
+                }
+                else
+                {
+                    if (value == _parameters[i] || value.ParameterName == _parameters[i].ParameterName)
                     {
                         return i;
                     }
@@ -459,6 +468,7 @@ namespace AdoNetCore.AseClient
         /// <param name="parameter">The <see cref="AseParameter" /> object to add to the collection.</param>
         public override void Insert(int index, object parameter)
         {
+            if (Contains(parameter)) throw new ArgumentException($"parameter name '{parameter}' is already in the collection");
             ((IList)_parameters).Insert(index, parameter);
         }
 
@@ -469,6 +479,7 @@ namespace AdoNetCore.AseClient
         /// <param name="parameter">The <see cref="AseParameter" /> object to add to the collection.</param>
         public void Insert(int index, AseParameter parameter)
         {
+            if (Contains(parameter)) throw new ArgumentException($"parameter name '{parameter.ParameterName}' is already in the collection");
             ((IList)_parameters).Insert(index, parameter);
         }
 
@@ -521,10 +532,7 @@ namespace AdoNetCore.AseClient
         /// <param name="index">The starting index of the array.</param>
         public override void CopyTo(Array array, int index)
         {
-            if (array != null)
-            {
-                ((IList)_parameters).CopyTo(array, index);
-            }
+            ((IList)_parameters).CopyTo(array, index);
         }
 
         /// <summary>

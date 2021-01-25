@@ -166,13 +166,14 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var mockConnectionPoolManager = new Mock<IConnectionPoolManager>();
 
             mockConnectionPoolManager
-                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>()))
+                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>(),It.IsAny<RemoteCertificateValidationCallback>()))
                 .Returns(mockConnection.Object);
 
             mockConnection.Setup(x => x.ChangeDatabase(It.IsAny<string>()));
 
             var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=foo;Uid=myUsername;Pwd=myPassword;", mockConnectionPoolManager.Object);
 
+            //connection.UserCertificateValidationCallback = (sender, certificate, chain, errors) => true;
             // Act
             connection.Open();
             connection.ChangeDatabase("bar");
@@ -188,7 +189,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var mockConnectionPoolManager = new Mock<IConnectionPoolManager>();
 
             mockConnectionPoolManager
-                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>()))
+                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>(),It.IsAny<RemoteCertificateValidationCallback>()))
                 .Returns(mockConnection.Object);
 
             mockConnection.Setup(x => x.ChangeDatabase(It.IsAny<string>()));
@@ -272,7 +273,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var mockConnectionPoolManager = new Mock<IConnectionPoolManager>();
 
             mockConnectionPoolManager
-                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>()))
+                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>(),It.IsAny<RemoteCertificateValidationCallback>()))
                 .Returns(mockConnection.Object);
 
             return mockConnectionPoolManager.Object;

@@ -14,14 +14,14 @@ namespace AdoNetCore.AseClient.Internal
 
         private static readonly ConcurrentDictionary<string, IConnectionPool> Pools = new ConcurrentDictionary<string, IConnectionPool>(StringComparer.OrdinalIgnoreCase);
 
-        public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters, IInfoMessageEventNotifier eventNotifier)
+        public IInternalConnection Reserve(string connectionString, IConnectionParameters parameters, IInfoMessageEventNotifier eventNotifier, RemoteCertificateValidationCallback userCertificateValidationCallback = null)
         {
             return Pools.GetOrAdd(connectionString, _ =>
             {
 #if ENABLE_ARRAY_POOL
-                var internalConnectionFactory = new InternalConnectionFactory(parameters, BufferPool);
+                var internalConnectionFactory = new InternalConnectionFactory(parameters, BufferPool, userCertificateValidationCallback);
 #else
-                var internalConnectionFactory = new InternalConnectionFactory(parameters);
+                var internalConnectionFactory = new InternalConnectionFactory(parameters, userCertificateValidationCallback);
 #endif
 
                 return new ConnectionPool(parameters, internalConnectionFactory);

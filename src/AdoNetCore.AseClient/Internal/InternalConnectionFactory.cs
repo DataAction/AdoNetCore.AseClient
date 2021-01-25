@@ -19,18 +19,25 @@ namespace AdoNetCore.AseClient.Internal
     internal class InternalConnectionFactory : IInternalConnectionFactory
     {
         private readonly IConnectionParameters _parameters;
+        private readonly RemoteCertificateValidationCallback _userCertificateValidationCallback;
+
 #if ENABLE_ARRAY_POOL
         private readonly System.Buffers.ArrayPool<byte> _arrayPool;
 #endif
         private IPEndPoint _endpoint;
 
 #if ENABLE_ARRAY_POOL
-        public InternalConnectionFactory(IConnectionParameters parameters, System.Buffers.ArrayPool<byte> arrayPool)
+        public InternalConnectionFactory(IConnectionParameters parameters, System.Buffers.ArrayPool<byte> arrayPool, RemoteCertificateValidationCallback userCertificateValidationCallback)
 #else
-        public InternalConnectionFactory(IConnectionParameters parameters)
+        public InternalConnectionFactory(IConnectionParameters parameters, RemoteCertificateValidationCallback userCertificateValidationCallback)
 #endif
         {
             _parameters = parameters;
+            if (userCertificateValidationCallback == null)
+                userCertificateValidationCallback = GetDefaultUserCertificateValidationCallback();
+
+            _userCertificateValidationCallback = userCertificateValidationCallback;
+
 #if ENABLE_ARRAY_POOL
             _arrayPool = arrayPool;
 #endif
@@ -109,7 +116,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (_parameters.Encryption)
                 {
-                    sslStream = new SslStream(networkStream, false, UserCertificateValidationCallback);
+                    sslStream = new SslStream(networkStream, false, _userCertificateValidationCallback.Invoke);
 
                     var authenticate = sslStream.AuthenticateAsClientAsync(_parameters.Server);
 
@@ -175,34 +182,37 @@ namespace AdoNetCore.AseClient.Internal
 #if ENABLE_ARRAY_POOL
             return new InternalConnection(_parameters, networkStream, reader, environment, _arrayPool);
 #else   
-                return new InternalConnection(_parameters, networkStream, reader, environment);
+            return new InternalConnection(_parameters, networkStream, reader, environment);
 #endif
         }
 
-        private bool UserCertificateValidationCallback(object sender, X509Certificate serverCertificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+
+        private RemoteCertificateValidationCallback GetDefaultUserCertificateValidationCallback()
         {
-            var certificateChainPolicyErrors = (sslPolicyErrors & SslPolicyErrors.RemoteCertificateChainErrors) == SslPolicyErrors.RemoteCertificateChainErrors;
-            var otherPolicyErrors = (sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != SslPolicyErrors.None;
+            //object sender, X509Certificate serverCertificate, X509Chain chain, SslPolicyErrors sslPolicyErrors
+            return (sender, serverCertificate, chain, sslPolicyErrors) => {
+                var certificateChainPolicyErrors = (sslPolicyErrors & SslPolicyErrors.RemoteCertificateChainErrors) == SslPolicyErrors.RemoteCertificateChainErrors;
+                var otherPolicyErrors = (sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors) != SslPolicyErrors.None;
 
-            // We're not concerned with chain errors as we verify the chain below.
-            if (otherPolicyErrors)
-            {
-                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to policy errors: {sslPolicyErrors}");
-                return false;
-            }
+                // We're not concerned with chain errors as we verify the chain below.
+                if (otherPolicyErrors)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetDefaultUserCertificateValidationCallback)} secure connection failed due to policy errors: {sslPolicyErrors}");
+                    return false;
+                }
 
-            var mergedStatusFlags = X509ChainStatusFlags.NoError;
-            foreach (var status in chain.ChainStatus)
-            {
-                mergedStatusFlags |= status.Status;
-            }
+                var mergedStatusFlags = X509ChainStatusFlags.NoError;
+                foreach (var status in chain.ChainStatus)
+                {
+                    mergedStatusFlags |= status.Status;
+                }
 
-            var trustedCerts = LoadTrustedFile(_parameters.TrustedFile);
-            if (trustedCerts == null)
-            {
-                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to missing TrustedFile parameter.");
-                return false;
-            }
+                var trustedCerts = LoadTrustedFile(_parameters.TrustedFile);
+                if (trustedCerts == null)
+                {
+                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetDefaultUserCertificateValidationCallback)} secure connection failed due to missing TrustedFile parameter.");
+                    return false;
+                }
 
 #if !(NETCOREAPP1_0 || NETCOREAPP1_1) // these frameworks do not have the following X509Certificate2 constructor...
             // sometimes the chain policy is only a partial chain because it doesn't include a self signed root?
@@ -223,40 +233,41 @@ namespace AdoNetCore.AseClient.Internal
             }
 #endif
 
-            var untrustedRootChainStatusFlags = (mergedStatusFlags & X509ChainStatusFlags.UntrustedRoot) == X509ChainStatusFlags.UntrustedRoot;
-            var otherChainStatusFlags = (mergedStatusFlags & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError;
+                var untrustedRootChainStatusFlags = (mergedStatusFlags & X509ChainStatusFlags.UntrustedRoot) == X509ChainStatusFlags.UntrustedRoot;
+                var otherChainStatusFlags = (mergedStatusFlags & ~X509ChainStatusFlags.UntrustedRoot) != X509ChainStatusFlags.NoError;
 
-            if (otherChainStatusFlags)
-            {
-                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to chain status: {mergedStatusFlags}");
-                return false;
-            }
-
-            if (!(certificateChainPolicyErrors || untrustedRootChainStatusFlags))
-            {
-                //No chain Errors, we will trust the server certificate.
-                return true;
-            }
-
-            // If any certificates in the chain are trusted, then we will trust the server certificate.
-            // To do this fairly quickly we can check if thumbprints exist in the set of trusted roots.
-            var set = new HashSet<string>(trustedCerts.Select(c => c.Thumbprint));
-
-            // the chain is in an array from leaf at 0 to root at [count - 1]
-            // looping from end to start should find cases generated according to sybase documentation on the first attempt
-            // but it is possible that someone puts an intermediate or even the leaf cert in their trusted file
-            for (int i = chain.ChainElements.Count - 1; i >= 0; i--)
-            {
-                var potentialTrusted = chain.ChainElements[i].Certificate.Thumbprint;
-                if (set.Contains(potentialTrusted))
+                if (otherChainStatusFlags)
                 {
+                    Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetDefaultUserCertificateValidationCallback)} secure connection failed due to chain status: {mergedStatusFlags}");
+                    return false;
+                }
+
+                if (!(certificateChainPolicyErrors || untrustedRootChainStatusFlags))
+                {
+                    //No chain Errors, we will trust the server certificate.
                     return true;
                 }
-            }
 
-            Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(UserCertificateValidationCallback)} secure connection failed due to missing root or intermediate certificate in the certificate store, or the TrustedFile.");
+                // If any certificates in the chain are trusted, then we will trust the server certificate.
+                // To do this fairly quickly we can check if thumbprints exist in the set of trusted roots.
+                var set = new HashSet<string>(trustedCerts.Select(c => c.Thumbprint));
 
-            return false;
+                // the chain is in an array from leaf at 0 to root at [count - 1]
+                // looping from end to start should find cases generated according to sybase documentation on the first attempt
+                // but it is possible that someone puts an intermediate or even the leaf cert in their trusted file
+                for (int i = chain.ChainElements.Count - 1; i >= 0; i--)
+                {
+                    var potentialTrusted = chain.ChainElements[i].Certificate.Thumbprint;
+                    if (set.Contains(potentialTrusted))
+                    {
+                        return true;
+                    }
+                }
+
+                Logger.Instance?.WriteLine($"{nameof(InternalConnectionFactory)}.{nameof(GetDefaultUserCertificateValidationCallback)} secure connection failed due to missing root or intermediate certificate in the certificate store, or the TrustedFile.");
+
+                return false;
+            };
         }
 
         private static X509Certificate2[] LoadTrustedFile(string trustedFile)

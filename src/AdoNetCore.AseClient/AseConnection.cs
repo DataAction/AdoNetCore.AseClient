@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
@@ -274,7 +276,7 @@ namespace AdoNetCore.AseClient
             {
                 var parameters = ConnectionParameters.Parse(_connectionString);
 
-                _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier);
+                _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier, UserCertificateValidationCallback);
 
                 InternalConnectionTimeout = parameters.LoginTimeout;
             }
@@ -543,7 +545,10 @@ namespace AdoNetCore.AseClient
 #if ENABLE_CLONEABLE_INTERFACE
         public object Clone()
         {
-            return new AseConnection(_connectionString, _connectionPoolManager);
+            return new AseConnection(_connectionString, _connectionPoolManager)
+            {
+                UserCertificateValidationCallback = UserCertificateValidationCallback,
+            };
         }
 #endif
 
@@ -621,6 +626,9 @@ namespace AdoNetCore.AseClient
                 return _transaction;
             }
         }
+
+        public RemoteCertificateValidationCallback UserCertificateValidationCallback { get; set; }
+
     }
 
     /// <summary>
@@ -665,4 +673,26 @@ namespace AdoNetCore.AseClient
     /// the TraceEnter and TraceExit events.</para>
     /// </remarks>
     public delegate void TraceExitEventHandler(AseConnection connection, object source, string method, object returnValue);
+
+    //
+    // Summary:
+    //     Verifies the remote Secure Sockets Layer (SSL) certificate used for authentication.
+    //
+    // Parameters:
+    //   sender:
+    //     An object that contains state information for this validation.
+    //
+    //   certificate:
+    //     The certificate used to authenticate the remote party.
+    //
+    //   chain:
+    //     The chain of certificate authorities associated with the remote certificate.
+    //
+    //   sslPolicyErrors:
+    //     One or more errors associated with the remote certificate.
+    //
+    // Returns:
+    //     A System.Boolean value that determines whether the specified certificate is accepted
+    //     for authentication.
+    public delegate bool RemoteCertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
 }

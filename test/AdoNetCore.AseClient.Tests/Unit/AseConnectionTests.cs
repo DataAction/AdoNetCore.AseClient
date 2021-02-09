@@ -173,14 +173,13 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=foo;Uid=myUsername;Pwd=myPassword;", mockConnectionPoolManager.Object);
 
-            //connection.UserCertificateValidationCallback = (sender, certificate, chain, errors) => true;
             // Act
             connection.Open();
             connection.ChangeDatabase("bar");
-
             // Assert
             // No error...
         }
+
         [Test]
         public void ChangeDatabase_WhenNotOpen_Succeeds()
         {

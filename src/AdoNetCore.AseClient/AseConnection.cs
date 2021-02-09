@@ -627,6 +627,9 @@ namespace AdoNetCore.AseClient
             }
         }
 
+        /// <summary>
+        /// Allow consumer to override the default certificate validation
+        /// </summary>
         public RemoteCertificateValidationCallback UserCertificateValidationCallback { get; set; }
 
     }
@@ -674,25 +677,13 @@ namespace AdoNetCore.AseClient
     /// </remarks>
     public delegate void TraceExitEventHandler(AseConnection connection, object source, string method, object returnValue);
 
-    //
-    // Summary:
-    //     Verifies the remote Secure Sockets Layer (SSL) certificate used for authentication.
-    //
-    // Parameters:
-    //   sender:
-    //     An object that contains state information for this validation.
-    //
-    //   certificate:
-    //     The certificate used to authenticate the remote party.
-    //
-    //   chain:
-    //     The chain of certificate authorities associated with the remote certificate.
-    //
-    //   sslPolicyErrors:
-    //     One or more errors associated with the remote certificate.
-    //
-    // Returns:
-    //     A System.Boolean value that determines whether the specified certificate is accepted
-    //     for authentication.
+    /// <summary>
+    /// Verifies the remote Secure Sockets Layer (SSL) certificate used for authentication.
+    /// </summary>
+    /// <param name="sender">An object that contains state information for this validation.</param>
+    /// <param name="certificate">The certificate used to authenticate the remote party.</param>
+    /// <param name="chain">The chain of certificate authorities associated with the remote certificate.</param>
+    /// <param name="sslPolicyErrors">One or more errors associated with the remote certificate.</param>
+    /// <returns>A System.Boolean value that determines whether the specified certificate is accepted for authentication.</returns>
     public delegate bool RemoteCertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
 }

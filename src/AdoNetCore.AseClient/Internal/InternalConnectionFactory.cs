@@ -176,6 +176,8 @@ namespace AdoNetCore.AseClient.Internal
         {
             var environment = new DbEnvironment();
             var reader = new TokenReader();
+            // Setting the stream read timeout in milliseconds
+            networkStream.ReadTimeout = _parameters.LoginTimeout * 1000;
 
 #if ENABLE_ARRAY_POOL
             return new InternalConnection(_parameters, networkStream, reader, environment, _arrayPool);

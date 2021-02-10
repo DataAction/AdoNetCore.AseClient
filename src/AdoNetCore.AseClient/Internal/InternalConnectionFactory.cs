@@ -19,7 +19,7 @@ namespace AdoNetCore.AseClient.Internal
     internal class InternalConnectionFactory : IInternalConnectionFactory
     {
         private readonly IConnectionParameters _parameters;
-        private readonly System.Net.Security.RemoteCertificateValidationCallback _userCertificateValidationCallback;
+        private readonly RemoteCertificateValidationCallback _userCertificateValidationCallback;
 
 
 #if ENABLE_ARRAY_POOL
@@ -34,7 +34,7 @@ namespace AdoNetCore.AseClient.Internal
 #endif
         {
             _parameters = parameters;
-            _userCertificateValidationCallback = userCertificateValidationCallback == null ? UserCertificateValidationCallback : new System.Net.Security.RemoteCertificateValidationCallback(userCertificateValidationCallback);
+            _userCertificateValidationCallback = userCertificateValidationCallback ?? UserCertificateValidationCallback;
 
 #if ENABLE_ARRAY_POOL
             _arrayPool = arrayPool;

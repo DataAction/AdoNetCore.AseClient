@@ -1,3 +1,5 @@
+using System.Net.Security;
+
 namespace AdoNetCore.AseClient.Interface
 {
     internal interface IConnectionPoolManager

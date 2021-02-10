@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Net.Security;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 using Moq;

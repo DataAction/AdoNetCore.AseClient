@@ -3,7 +3,6 @@ using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
@@ -676,14 +675,4 @@ namespace AdoNetCore.AseClient
     /// the TraceEnter and TraceExit events.</para>
     /// </remarks>
     public delegate void TraceExitEventHandler(AseConnection connection, object source, string method, object returnValue);
-
-    /// <summary>
-    /// Verifies the remote Secure Sockets Layer (SSL) certificate used for authentication.
-    /// </summary>
-    /// <param name="sender">An object that contains state information for this validation.</param>
-    /// <param name="certificate">The certificate used to authenticate the remote party.</param>
-    /// <param name="chain">The chain of certificate authorities associated with the remote certificate.</param>
-    /// <param name="sslPolicyErrors">One or more errors associated with the remote certificate.</param>
-    /// <returns>A System.Boolean value that determines whether the specified certificate is accepted for authentication.</returns>
-    public delegate bool RemoteCertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
 }

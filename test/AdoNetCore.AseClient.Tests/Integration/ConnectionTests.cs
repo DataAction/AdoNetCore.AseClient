@@ -43,5 +43,21 @@ namespace AdoNetCore.AseClient.Tests.Integration
                 Assert.AreEqual(30294, ex.Errors[0].MessageNumber);
             }
         }
+
+        [Test]
+        //Note: for this to work, we would need a sybase SSL setup with a separate SSL port
+        //for this test, no certificate on the consuming side
+        public void UserCertificateValidationCallback_ShouldWork()
+        {
+            var isDelegateCalled = false;
+
+            using (var connection = new AseConnection(ConnectionStrings.Tls))
+            {
+                connection.UserCertificateValidationCallback = (o, cert, chain, pol) => { isDelegateCalled = true; return true; };
+
+                connection.Open();
+                Assert.True(isDelegateCalled);
+            }
+        }
     }
 }

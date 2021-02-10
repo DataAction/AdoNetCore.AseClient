@@ -19,18 +19,23 @@ namespace AdoNetCore.AseClient.Internal
     internal class InternalConnectionFactory : IInternalConnectionFactory
     {
         private readonly IConnectionParameters _parameters;
+        private readonly RemoteCertificateValidationCallback _userCertificateValidationCallback;
+
+
 #if ENABLE_ARRAY_POOL
         private readonly System.Buffers.ArrayPool<byte> _arrayPool;
 #endif
         private IPEndPoint _endpoint;
 
 #if ENABLE_ARRAY_POOL
-        public InternalConnectionFactory(IConnectionParameters parameters, System.Buffers.ArrayPool<byte> arrayPool)
+        public InternalConnectionFactory(IConnectionParameters parameters, System.Buffers.ArrayPool<byte> arrayPool, RemoteCertificateValidationCallback userCertificateValidationCallback)
 #else
-        public InternalConnectionFactory(IConnectionParameters parameters)
+        public InternalConnectionFactory(IConnectionParameters parameters, RemoteCertificateValidationCallback userCertificateValidationCallback)
 #endif
         {
             _parameters = parameters;
+            _userCertificateValidationCallback = userCertificateValidationCallback ?? UserCertificateValidationCallback;
+
 #if ENABLE_ARRAY_POOL
             _arrayPool = arrayPool;
 #endif
@@ -109,7 +114,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (_parameters.Encryption)
                 {
-                    sslStream = new SslStream(networkStream, false, UserCertificateValidationCallback);
+                    sslStream = new SslStream(networkStream, false, _userCertificateValidationCallback);
 
                     var authenticate = sslStream.AuthenticateAsClientAsync(_parameters.Server);
 
@@ -175,9 +180,10 @@ namespace AdoNetCore.AseClient.Internal
 #if ENABLE_ARRAY_POOL
             return new InternalConnection(_parameters, networkStream, reader, environment, _arrayPool);
 #else   
-                return new InternalConnection(_parameters, networkStream, reader, environment);
+            return new InternalConnection(_parameters, networkStream, reader, environment);
 #endif
         }
+
 
         private bool UserCertificateValidationCallback(object sender, X509Certificate serverCertificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {

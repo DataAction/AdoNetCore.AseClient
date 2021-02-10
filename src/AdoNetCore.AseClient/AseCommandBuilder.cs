@@ -224,12 +224,15 @@ namespace AdoNetCore.AseClient
                     if (dataTable != null)
                     {
                         // If there is no primary key on the table, then throw MissingPrimaryKeyException.
-                        var isKeyColumn = dataTable.Columns["IsKey"];
+                        var isKeyColumn = dataTable.Columns[SchemaTableColumn.IsKey];
+                        var isUniqueColumn = dataTable.Columns[SchemaTableColumn.IsUnique];
+
                         var hasKey = false;
 
                         foreach (DataRow columnDescriptorRow in dataTable.Rows)
                         {
-                            hasKey |= (bool)columnDescriptorRow[isKeyColumn];
+                            hasKey |= (bool)columnDescriptorRow[isKeyColumn] ||
+                                      (bool)columnDescriptorRow[isUniqueColumn];
 
                             if (hasKey)
                             {

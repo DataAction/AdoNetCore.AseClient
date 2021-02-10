@@ -64,49 +64,59 @@ namespace AdoNetCore.AseClient.Internal
         /// </summary>
         public SerializationType SerializationType { get; set; }
 
-        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env, CommandType commandType)
+        public static FormatItem CreateForParameter(AseParameter parameter, DbEnvironment env, AseCommand command)
         {
             parameter.AseDbType = TypeMap.InferType(parameter);
 
             var dbType = parameter.DbType;
-
             var length = TypeMap.GetFormatLength(dbType, parameter, env.Encoding);
 
-            var format = new FormatItem
+            var format = command.FormatItem;
+            var parameterName = parameter.ParameterName ?? command.Parameters.IndexOf(parameter).ToString();
+            if (!(command.FormatItem != null && command.FormatItem.ParameterName == parameterName &&
+                  command.FormatItem.AseDbType == parameter.AseDbType))
             {
-                AseDbType = parameter.AseDbType,
-                ParameterName = parameter.ParameterName,
-                IsOutput = parameter.IsOutput,
-                IsNullable = parameter.IsNullable,
-                Length = length,
-                DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
-                UserType = TypeMap.GetUserType(dbType, parameter.SendableValue, length)
-            };
-
-            //fixup the FormatItem's BlobType for strings and byte arrays
-            if (format.DataType == TdsDataType.TDS_BLOB)
-            {
-                switch (parameter.DbType)
+                format = new FormatItem
                 {
-                    case DbType.AnsiString:
-                        format.BlobType = BlobType.BLOB_LONGCHAR;
-                        break;
-                    case DbType.String:
-                        format.BlobType = BlobType.BLOB_UNICHAR;
-                        // This is far less than ideal but at the time of addressing this issue whereby if the
-                        // BlobType is a BLOB_UNICHAR then the UserType would need to be 36 when it
-                        // is a stored proc otherwise it would need to be zero (0).
-                        //
-                        // In the future, we'd need to overhaul how TDS_BLOB is structured especially
-                        // around BLOB_UNICHAR and the UserType that it should return in a more consistent way
-                        if (commandType != CommandType.StoredProcedure)
-                            format.UserType = 0;
+                    AseDbType = parameter.AseDbType,
+                    ParameterName = parameter.ParameterName,
+                    IsOutput = parameter.IsOutput,
+                    IsNullable = parameter.IsNullable,
+                    Length = length,
+                    DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName),
+                    UserType = TypeMap.GetUserType(dbType, parameter.SendableValue, length)
+                };
 
-                        break;
-                    case DbType.Binary:
-                        format.BlobType = BlobType.BLOB_LONGBINARY;
-                        break;
+                //fixup the FormatItem's BlobType for strings and byte arrays
+                if (format.DataType == TdsDataType.TDS_BLOB)
+                {
+                    switch (parameter.DbType)
+                    {
+                        case DbType.AnsiString:
+                            format.BlobType = BlobType.BLOB_LONGCHAR;
+                            break;
+                        case DbType.String:
+                            format.BlobType = BlobType.BLOB_UNICHAR;
+                            // This is far less than ideal but at the time of addressing this issue whereby if the
+                            // BlobType is a BLOB_UNICHAR then the UserType would need to be 36 when it
+                            // is a stored proc otherwise it would need to be zero (0).
+                            //
+                            // In the future, we'd need to overhaul how TDS_BLOB is structured especially
+                            // around BLOB_UNICHAR and the UserType that it should return in a more consistent way
+                            if (command.CommandType != CommandType.StoredProcedure)
+                                format.UserType = 0;
+
+                            break;
+                        case DbType.Binary:
+                            format.BlobType = BlobType.BLOB_LONGBINARY;
+                            break;
+                    }
                 }
+            }
+            else
+            {
+                format.DataType = TypeMap.GetTdsDataType(dbType, parameter.SendableValue, length, parameter.ParameterName);
+                format.UserType = TypeMap.GetUserType(dbType, parameter.SendableValue, length);
             }
 
             //fixup the FormatItem's length,scale,precision for decimals

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
+using System.Net.Security;
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
@@ -274,7 +275,7 @@ namespace AdoNetCore.AseClient
             {
                 var parameters = ConnectionParameters.Parse(_connectionString);
 
-                _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier);
+                _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier, UserCertificateValidationCallback);
 
                 InternalConnectionTimeout = parameters.LoginTimeout;
             }
@@ -543,7 +544,10 @@ namespace AdoNetCore.AseClient
 #if ENABLE_CLONEABLE_INTERFACE
         public object Clone()
         {
-            return new AseConnection(_connectionString, _connectionPoolManager);
+            return new AseConnection(_connectionString, _connectionPoolManager)
+            {
+                UserCertificateValidationCallback = UserCertificateValidationCallback,
+            };
         }
 #endif
 
@@ -621,6 +625,12 @@ namespace AdoNetCore.AseClient
                 return _transaction;
             }
         }
+
+        /// <summary>
+        /// Allow consumer to override the default certificate validation
+        /// </summary>
+        public RemoteCertificateValidationCallback UserCertificateValidationCallback { get; set; }
+
     }
 
     /// <summary>

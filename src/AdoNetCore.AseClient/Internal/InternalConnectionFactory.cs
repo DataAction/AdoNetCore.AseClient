@@ -160,7 +160,7 @@ namespace AdoNetCore.AseClient.Internal
 
                 if (ex is SocketException || ex is TimeoutException)
                 {
-                    throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294);
+                    throw new AseException($"There is no server listening at {_parameters.Server}:{_parameters.Port}.", 30294, ex);
                 }
 
                 if (ex is AuthenticationException)

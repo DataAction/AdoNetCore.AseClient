@@ -184,10 +184,10 @@ namespace AdoNetCore.AseClient.Internal
         {
             var usSinceYearZero = stream.ReadLong();
             var usSinceEpoch = usSinceYearZero - Constants.Sql.BigDateTime.EpochMicroSeconds;
-            var msSinceEpoch = usSinceEpoch / 1000;
-            var timeSinceEpoch = TimeSpan.FromMilliseconds(msSinceEpoch);
+            const long ticksPerMicrosecond = TimeSpan.TicksPerMillisecond / 1000;
+            var ticksSinceEpoch = usSinceEpoch * ticksPerMicrosecond;
 
-            return Constants.Sql.BigDateTime.Epoch + timeSinceEpoch;
+            return Constants.Sql.BigDateTime.Epoch.AddTicks(ticksSinceEpoch);
         }
 
         public static DateTime ReadShortPartDateTime(this Stream stream)
@@ -222,9 +222,9 @@ namespace AdoNetCore.AseClient.Internal
             var buf = new byte[length];
 
             stream.Read(buf, 1, remainingLength);
-            
+
             Array.Reverse(buf);
-            
+
             return new AseDecimal(precision, scale, isPositive, buf);
         }
 

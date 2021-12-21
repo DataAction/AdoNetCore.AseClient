@@ -165,7 +165,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseTransaction));
             }
 
-            if (_complete)
+            if (_complete || _connection.State == ConnectionState.Closed || _connection.State == ConnectionState.Broken)
             {
                 return;
             }

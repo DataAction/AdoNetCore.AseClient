@@ -273,8 +273,8 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var connection = mockConnection.Object;
             var transaction = connection.BeginTransaction(isolationLevel);
 
-
-            transaction.Dispose(); // Implicit rollback
+            Assert.DoesNotThrow(() => { transaction.Dispose(); });
+                 // Implicit rollback
         }
 
 
@@ -290,6 +290,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
             var mockCommandIsolationLevel = new Mock<IDbCommand>();
             var mockCommandBeginTransaction = new Mock<IDbCommand>();
             var mockCommandRollbackTransaction = new Mock<IDbCommand>();
+           
 
             mockCommandIsolationLevel
                 .SetupAllProperties()
@@ -305,6 +306,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 .SetupAllProperties()
                 .Setup(x => x.ExecuteNonQuery())
                 .Returns(0);
+
             mockConnection
                 .Setup(x => x.BeginTransaction(isolationLevel))
                 .Returns(() =>
@@ -328,6 +330,16 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             transaction.Dispose(); // Implicit rollback
             transaction.Dispose(); // Should do nothing
+            
+            mockConnection.Verify(t => t.Dispose(), Times.Once, "we called multiple time the dispose on the master");
+
+            //mockAseTransaction.Object.
+            //we tried to make this work but cannot work it as long as the class is sealed and it's sealed for performance constraint.
+            //if you want to verify it still, use  var mockAseTransaction = new Mock<AseTransaction>(MockBehavior.Loose,mockConnection.Object, isolationLevel) { CallBase = true }
+            //mockAseTransaction.Verify(t => t.Rollback(), Times.Once, "we should have only called once the rollback");
+
+
+
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Data;
+using System;
+using System.Data;
 using Moq;
 using NUnit.Framework;
 
@@ -125,7 +126,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                     t.Begin();
                     return t;
                 });
-
+            mockConnection.Setup(x => x.State).Returns(() => { return ConnectionState.Open; });
             mockConnection
                 .SetupSequence(x => x.CreateCommand())
                 .Returns(mockCommandIsolationLevel.Object)
@@ -193,6 +194,7 @@ namespace AdoNetCore.AseClient.Tests.Unit
                     return t;
                 });
 
+            mockConnection.Setup(x => x.State).Returns(() => { return ConnectionState.Open; });
             mockConnection
                 .SetupSequence(x => x.CreateCommand())
                 .Returns(mockCommandIsolationLevel.Object)
@@ -223,15 +225,72 @@ namespace AdoNetCore.AseClient.Tests.Unit
         }
 
         [Test]
-        public void RepeatedDisposal_DoesNotThrow()
+        public void ImplicitRollback_WithBrokenConnection_DoesNotThrowExceptionDuringDispose()
         {
-            // Arrange
+                        // Arrange
             var mockConnection = new Mock<IDbConnection>();
             var isolationLevel = IsolationLevel.Serializable;
 
             var mockCommandIsolationLevel = new Mock<IDbCommand>();
             var mockCommandBeginTransaction = new Mock<IDbCommand>();
             var mockCommandRollbackTransaction = new Mock<IDbCommand>();
+
+            mockCommandIsolationLevel
+                .SetupAllProperties()
+                .Setup(x => x.ExecuteNonQuery())
+                .Returns(0);
+
+            mockCommandBeginTransaction
+                .SetupAllProperties()
+                .Setup(x => x.ExecuteNonQuery())
+                .Returns(0);
+
+            mockCommandRollbackTransaction
+                .SetupAllProperties()
+                .Setup(x => x.ExecuteNonQuery())
+                .Throws( new InvalidOperationException("Cannot execute on a connection which is not open"));
+
+
+            mockConnection.Setup(x => x.State).Returns(() => { return ConnectionState.Broken; });
+            mockConnection
+                .Setup(x => x.BeginTransaction(isolationLevel))
+                .Returns(() =>
+                {
+                    // Simulate what AseConnection.BeginTransaction() does.
+                    var t = new AseTransaction(mockConnection.Object, isolationLevel);
+                    t.Begin();
+                    return t;
+                });
+
+            mockConnection
+                .SetupSequence(x => x.CreateCommand())
+                .Returns(mockCommandIsolationLevel.Object)
+                .Returns(mockCommandBeginTransaction.Object)
+                .Returns(mockCommandRollbackTransaction.Object);
+
+
+            // Act
+            var connection = mockConnection.Object;
+            var transaction = connection.BeginTransaction(isolationLevel);
+
+            Assert.DoesNotThrow(() => { transaction.Dispose(); });
+                 // Implicit rollback
+        }
+
+
+
+        [Test]
+        public void RepeatedDisposal_DoesNotThrow()
+        {
+            // Arrange
+            var mockConnection = new Mock<IDbConnection>();
+            
+            var isolationLevel = IsolationLevel.Serializable;
+
+            var mockCommandIsolationLevel = new Mock<IDbCommand>();
+            var mockCommandBeginTransaction = new Mock<IDbCommand>();
+            var mockCommandRollbackTransaction = new Mock<IDbCommand>();
+           
 
             mockCommandIsolationLevel
                 .SetupAllProperties()
@@ -271,6 +330,16 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             transaction.Dispose(); // Implicit rollback
             transaction.Dispose(); // Should do nothing
+            
+            mockConnection.Verify(t => t.Dispose(), Times.Once, "we called multiple time the dispose on the master");
+
+            //mockAseTransaction.Object.
+            //we tried to make this work but cannot work it as long as the class is sealed and it's sealed for performance constraint.
+            //if you want to verify it still, use  var mockAseTransaction = new Mock<AseTransaction>(MockBehavior.Loose,mockConnection.Object, isolationLevel) { CallBase = true }
+            //mockAseTransaction.Verify(t => t.Rollback(), Times.Once, "we should have only called once the rollback");
+
+
+
         }
     }
 }

@@ -1,5 +1,6 @@
 #if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -22,10 +23,23 @@ namespace AdoNetCore.AseClient.Internal
         private readonly AseConnection _connection;
         private readonly FormatItem[] _formats;
 
+        private static readonly ConcurrentDictionary<string, CachedSchemaInfo> SchemaCache = new ConcurrentDictionary<string, CachedSchemaInfo>();
+        private static decimal CacheExpirationMinutes = 10; // Adjust as needed
+
         public SchemaTableBuilder(AseConnection connection, FormatItem[] formats)
         {
             _connection = connection;
             _formats = formats;
+        }
+
+        public static void SetCacheExpiration(decimal expireInMinutes )
+        {
+            CacheExpirationMinutes = expireInMinutes;
+        }
+
+        public static decimal GetCacheExpiration()
+        {
+            return CacheExpirationMinutes;
         }
 
         public DataTable BuildSchemaTable()
@@ -35,6 +49,18 @@ namespace AdoNetCore.AseClient.Internal
             var fillResults = FillTableFromFormats(table);
             TryLoadKeyInfo(table, fillResults.BaseTableNameValue, fillResults.BaseSchemaNameValue, fillResults.BaseCatalogNameValue);
             return table;
+        }
+
+        public static CachedSchemaInfo GetSchemaCache(string key)
+        {
+            if (SchemaCache.TryGetValue(key, out CachedSchemaInfo res))
+                return res;
+            return null;
+        }
+
+        public static ConcurrentDictionary<string, CachedSchemaInfo> GetSchemaCache()
+        {
+            return SchemaCache;
         }
 
         private void InitTableStructure(DataTable table)
@@ -138,6 +164,32 @@ namespace AdoNetCore.AseClient.Internal
             if (string.IsNullOrWhiteSpace(baseTableNameValue))
                 return;
 
+            var cacheKey = $"{baseCatalogNameValue}:{baseSchemaNameValue}:{baseTableNameValue}";
+            var columnMetadata = GetCachedOrLoadKeyInfo(cacheKey, baseTableNameValue, baseSchemaNameValue, baseCatalogNameValue);
+
+            UpdateTableWithMetadata(table, columnMetadata);
+        }
+
+        private Dictionary<string, ColumnMetadata> GetCachedOrLoadKeyInfo(string cacheKey, string baseTableNameValue, string baseSchemaNameValue, string baseCatalogNameValue)
+        {
+            if (!SchemaCache.ContainsKey(cacheKey) || SchemaCache[cacheKey].IsExpired)
+            {
+                var schemaInfo = new CachedSchemaInfo
+                {
+                    ColumnMetadataDic =
+                        LoadKeyInfoFromDatabase(baseTableNameValue, baseSchemaNameValue, baseCatalogNameValue),
+                    CacheTime = DateTime.UtcNow
+                };
+
+                SchemaCache.AddOrUpdate(cacheKey, _=> schemaInfo, (_,_) => schemaInfo);
+            }
+            return SchemaCache[cacheKey].ColumnMetadataDic;
+        }
+
+
+        private Dictionary<string, ColumnMetadata> LoadKeyInfoFromDatabase(string baseTableNameValue, string baseSchemaNameValue, string baseCatalogNameValue)
+        {
+            var columnMetadata = new Dictionary<string, ColumnMetadata>();
             using (var command = _connection.CreateCommand())
             {
                 command.CommandText = $"{baseCatalogNameValue}..sp_oledb_getindexinfo";
@@ -163,66 +215,89 @@ namespace AdoNetCore.AseClient.Internal
 
                 try
                 {
-                    var columnMetadata = new Dictionary<string, ColumnMetadata>();
                     using (var keyInfoDataReader = command.ExecuteReader())
                     {
                         while (keyInfoDataReader.Read())
                         {
                             var key = keyInfoDataReader["COLUMN_NAME"].ToString();
-
-                            // Check for duplicate name and if we found any then give it a miss
-                            if (columnMetadata.ContainsKey(key))
+                            if (!columnMetadata.ContainsKey(key))
                             {
-                                keyInfoDataReader.Close();
-                                return;
-                            }
-
-                            columnMetadata.Add(key, new ColumnMetadata
-                            {
-                                Name = key,
-                                Schema = keyInfoDataReader["TABLE_SCHEMA"].ToString(),
-                                Catalog = keyInfoDataReader["TABLE_CATALOG"].ToString(),
-                                IsKey = (bool) keyInfoDataReader["PRIMARY_KEY"],
-                                IsUnique = (bool) keyInfoDataReader["UNIQUE"]
-                            });
-                        }
-                    }
-
-                    foreach (var metadata in columnMetadata.Values)
-                    {
-                        foreach (DataRow row in table.Rows)
-                            if (string.Equals(metadata.Name, row[SchemaTableColumn.BaseColumnName].ToString(),
-                                    StringComparison.OrdinalIgnoreCase) &&
-                                string.Equals(metadata.Schema, row[SchemaTableColumn.BaseSchemaName].ToString(),
-                                    StringComparison.OrdinalIgnoreCase) &&
-                                string.Equals(metadata.Catalog, row[SchemaTableOptionalColumn.BaseCatalogName].ToString(),
-                                    StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Use the base column name in case the column is aliased.
-                            {
-                                row[SchemaTableColumn.IsKey] = metadata.IsKey;
-                                row[SchemaTableColumn.IsUnique] = metadata.IsUnique;
+                                columnMetadata.Add(key, new ColumnMetadata
+                                {
+                                    Name = key,
+                                    Schema = keyInfoDataReader["TABLE_SCHEMA"].ToString(),
+                                    Catalog = keyInfoDataReader["TABLE_CATALOG"].ToString(),
+                                    IsKey = (bool)keyInfoDataReader["PRIMARY_KEY"],
+                                    IsUnique = (bool)keyInfoDataReader["UNIQUE"]
+                                });
                             }
                         }
                     }
                 }
                 catch
                 {
-                    // ignored
+                    // Log error or handle as appropriate for driver
+                }
+            }
+            return columnMetadata;
+        }
+
+        private void UpdateTableWithMetadata(DataTable table, Dictionary<string, ColumnMetadata> columnMetadata)
+        {
+            foreach (DataRow row in table.Rows)
+            {
+                var baseColumnName = row[SchemaTableColumn.BaseColumnName].ToString();
+                var baseSchemaName = row[SchemaTableColumn.BaseSchemaName].ToString();
+                var baseCatalogName = row[SchemaTableOptionalColumn.BaseCatalogName].ToString();
+
+                if (columnMetadata.TryGetValue(baseColumnName, out var metadata) &&
+                    string.Equals(metadata.Schema, baseSchemaName, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(metadata.Catalog, baseCatalogName, StringComparison.OrdinalIgnoreCase))
+                {
+                    row[SchemaTableColumn.IsKey] = metadata.IsKey;
+                    row[SchemaTableColumn.IsUnique] = metadata.IsUnique;
                 }
             }
         }
 
-        private class ColumnMetadata
+        public class CachedSchemaInfo
+        {
+            public Dictionary<string, ColumnMetadata> ColumnMetadataDic { get; set; }
+            public DateTime CacheTime { get; set; }
+            public bool IsExpired => (DateTime.UtcNow - CacheTime).TotalMinutes > (double)CacheExpirationMinutes;
+
+        }
+
+        public class ColumnMetadata
         {
             public string Name { get; set; }
             public string Schema { get; set; }
             public string Catalog { get; set; }
             public bool IsKey { get; set; }
             public bool IsUnique { get; set; }
+
+            public override bool Equals(object obj)
+            {
+                var item = obj as ColumnMetadata;
+                if (item == null)
+                    return false;
+
+                return string.Equals(Name,item.Name) && string.Equals(Schema,item.Schema) && string.Equals(Catalog, item.Catalog)
+                       && IsKey == item.IsKey && IsUnique == item.IsUnique;
+            }
+
+            public override int GetHashCode()
+            {
+                var hashCode = (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Schema != null ? Schema.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Catalog != null ? Catalog.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ IsKey.GetHashCode();
+                hashCode = (hashCode * 397) ^ IsUnique.GetHashCode();
+                return hashCode;
+            }
         }
 
-        private class FillTableResults
+        public class FillTableResults
         {
             public string BaseCatalogNameValue { get; set; }
             public string BaseSchemaNameValue { get; set; }

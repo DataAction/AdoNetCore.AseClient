@@ -38,7 +38,7 @@ namespace AdoNetCore.AseClient.Tests
         private static string TlsPort => LoginDetails["TlsPort"];
         public static string TlsHostname => LoginDetails["TlsHostname"];
         public static string TlsTrustedText => LoginDetails["TlsTrustedText"];
-        private static string Database => LoginDetails["Database"];
+        public static string Database => LoginDetails["Database"];
         private static string User => LoginDetails["User"];
         private static string Pass => LoginDetails["Pass"];
         private static string Charset => LoginDetails.ContainsKey("Charset") ? LoginDetails["Charset"] : "utf8";

@@ -141,16 +141,29 @@ namespace AdoNetCore.AseClient
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            base.Dispose(disposing);
-
-            if (_isDisposed)
-            {
+            if (_isDisposed) {
                 return;
             }
-
-            Rollback();
-
-            _isDisposed = true;
+            try {
+                if (!(_complete || _connection.State == ConnectionState.Closed || _connection.State == ConnectionState.Broken)) {
+                    ExecuteRollback();
+                }
+            }
+            catch (Exception) {
+                if (disposing) {
+                    throw;
+                }
+                else {
+                    // I don't know what if anything we could do here.
+                }
+            }
+            finally {
+                _isDisposed = true;
+                if (disposing) {
+                    _connection?.Dispose();
+                }
+                base.Dispose(disposing);
+            }
         }
 
         internal bool IsDisposed => _isDisposed;
@@ -170,8 +183,10 @@ namespace AdoNetCore.AseClient
                 return;
             }
 
-            using (var command = _connection.CreateCommand())
-            {
+            ExecuteRollback();
+        }
+        private void ExecuteRollback() {
+            using (var command = _connection.CreateCommand()) {
                 command.CommandText = "ROLLBACK TRANSACTION";
                 command.CommandType = CommandType.Text;
                 command.Transaction = this;

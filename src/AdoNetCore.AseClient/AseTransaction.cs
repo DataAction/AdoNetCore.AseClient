@@ -145,7 +145,11 @@ namespace AdoNetCore.AseClient
                 return;
             }
             try {
-                if (!(_complete || _connection.State == ConnectionState.Closed || _connection.State == ConnectionState.Broken)) {
+                // Only rollback if the transaction is still open and the connection is open. For sure do not want to
+                // attempt to rollback a transaction on a closed or broken connection. The only other state in the
+                // ConnectionState that's currently used is Connecting and it doesn't seem appropriate to attempt a
+                // rollback from the Connecting state.
+                if (!_complete && _connection.State == ConnectionState.Open) {
                     ExecuteRollback();
                 }
             }

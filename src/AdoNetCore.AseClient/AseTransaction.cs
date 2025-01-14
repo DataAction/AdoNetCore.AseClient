@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 
 namespace AdoNetCore.AseClient
 {
@@ -141,32 +142,30 @@ namespace AdoNetCore.AseClient
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (_isDisposed) {
+            if (_isDisposed)
+            {
                 return;
             }
-            try {
+            try
+            {
                 // Only rollback if the transaction is still open and the connection is open. For sure do not want to
                 // attempt to rollback a transaction on a closed or broken connection. The only other state in the
                 // ConnectionState that's currently used is Connecting and it doesn't seem appropriate to attempt a
                 // rollback from the Connecting state.
-                if (!_complete && _connection.State == ConnectionState.Open) {
+                if (!_complete && _connection.State == ConnectionState.Open)
+                {
                     ExecuteRollback();
                 }
             }
-            catch (Exception) {
-                if (disposing) {
-                    throw;
-                }
-                else {
-                    // I don't know what if anything we could do here.
-                }
+            catch
+            {
+                Debug.Assert(false, "Failed to rollback transaction during dispose");
+                Debug.WriteLine("Failed to rollback transaction during dispose");
             }
-            finally {
-                _isDisposed = true;
-                if (disposing) {
-                    _connection?.Dispose();
-                }
+            finally
+            {
                 base.Dispose(disposing);
+                _isDisposed = true;
             }
         }
 

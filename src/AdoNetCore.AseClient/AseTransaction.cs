@@ -157,10 +157,12 @@ namespace AdoNetCore.AseClient
                     ExecuteRollback();
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 Debug.Assert(false, "Failed to rollback transaction during dispose");
-                Debug.WriteLine("Failed to rollback transaction during dispose");
+#if NETFRAMEWORK || NETSTANDARD2_0
+                Trace.TraceError(ex.ToString());
+#endif
             }
             finally
             {

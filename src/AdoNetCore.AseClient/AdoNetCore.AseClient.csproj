@@ -5,5 +5,7 @@
   </PropertyGroup>
 <PropertyGroup>
    <LangVersion>7</LangVersion>
+   <IncludeSymbols>True</IncludeSymbols>
+   <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 </PropertyGroup>
 </Project>

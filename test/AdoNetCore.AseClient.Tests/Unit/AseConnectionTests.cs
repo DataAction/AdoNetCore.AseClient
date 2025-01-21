@@ -278,5 +278,23 @@ namespace AdoNetCore.AseClient.Tests.Unit
 
             return mockConnectionPoolManager.Object;
         }
+        [Test]
+        public void DoomedReturnsBroken()
+        {
+            var mockConnection = new Mock<IInternalConnection>();
+            var mockConnectionPoolManager = new Mock<IConnectionPoolManager>();
+
+            mockConnectionPoolManager
+                .Setup(x => x.Reserve(It.IsAny<string>(), It.IsAny<ConnectionParameters>(), It.IsAny<IInfoMessageEventNotifier>(), It.IsAny<RemoteCertificateValidationCallback>()))
+                .Returns(mockConnection.Object);
+
+            mockConnection.SetupGet(x => x.IsDoomed).Returns(true);
+
+            using (var connection = new AseConnection("Data Source=myASEserver;Port=5000;Database=foo;Uid=myUsername;Pwd=myPassword;", mockConnectionPoolManager.Object))
+            {
+                connection.Open();
+                Assert.AreEqual(ConnectionState.Broken, connection.State);
+            }
+        }
     }
 }

@@ -361,7 +361,7 @@ namespace AdoNetCore.AseClient
         public override ConnectionState State => InternalState;
         private ConnectionState InternalState
         {
-            get => _state;
+            get => _internal != null && _internal.IsDoomed ? ConnectionState.Broken : _state;
             set
             {
                 if (_isDisposed)

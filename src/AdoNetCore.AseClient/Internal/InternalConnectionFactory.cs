@@ -73,10 +73,7 @@ namespace AdoNetCore.AseClient.Internal
         {
             try
             {
-                if (_endpoint == null)
-                {
-                    _endpoint = CreateEndpoint(_parameters.Server, _parameters.Port, token);
-                }
+                _endpoint = CreateEndpoint(_parameters.Server, _parameters.Port, token);
 
                 return new Socket(_endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
             }

@@ -61,6 +61,15 @@ namespace AdoNetCore.AseClient.Internal
         {
             if (ReadMap.ContainsKey(format.DataType))
             {
+                // If the TDS_DATA_COLUMNSTATUS request capability is enabled, then all datatype representations begin with a status byte
+                if (format.RowStatus.HasFlag(RowFormatItemStatus.TDS_ROW_COLUMNSTATUS))
+                {
+                    var columnStatus = (TdsDataColumnStatus)stream.ReadByte();
+                    if (columnStatus.HasFlag(TdsDataColumnStatus.TDS_DATA_COLUMNSTATUS_NO_DATA))
+                    {
+                        return DBNull.Value;
+                    }
+                }
                 return ReadMap[format.DataType](stream, format, env) ?? DBNull.Value;
             }
 

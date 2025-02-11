@@ -184,8 +184,8 @@ namespace AdoNetCore.AseClient.Internal
         public static void WriteBigDateTime(this Stream stream, DateTime value)
         {
             var timeSinceEpoch = value - Constants.Sql.BigDateTime.Epoch;
-            var msSinceEpoch = timeSinceEpoch.Ticks / TimeSpan.TicksPerMillisecond;
-            var usSinceEpoch = msSinceEpoch * 1000;
+            const long ticksPerMicrosecond = TimeSpan.TicksPerMillisecond / 1000;
+            var usSinceEpoch = timeSinceEpoch.Ticks / ticksPerMicrosecond;
             var usSinceYearZero = usSinceEpoch + Constants.Sql.BigDateTime.EpochMicroSeconds;
 
             stream.WriteByte(8); // length

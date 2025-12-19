@@ -28,5 +28,6 @@ namespace AdoNetCore.AseClient.Interface
         bool AnsiNull { get; }
         bool EnableServerPacketSize { get; }
         bool NamedParameters { get; }
+        bool Enlist { get; }
     }
 }

@@ -62,6 +62,7 @@ namespace AdoNetCore.AseClient.Internal
             {"AnsiNull", ParseAnsiNull},
             {"EnableServerPacketSize", ParseEnableServerPacketSize},
             {"NamedParameters", ParseNamedParameters},
+            {"Enlist", ParseEnlist},
         };
 
         public static ConnectionParameters Parse(string connectionString)
@@ -309,6 +310,18 @@ namespace AdoNetCore.AseClient.Internal
             }
         }
 
+        private static void ParseEnlist(ConnectionStringItem item, ConnectionParameters result)
+        {
+            if (int.TryParse(item.PropertyValue?.Trim(), out var intValue))
+            {
+                result.Enlist = intValue != 0;
+            }
+            else if (bool.TryParse(item.PropertyValue?.Trim(), out var boolValue))
+            {
+                result.Enlist = boolValue;
+            }
+        }
+
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         private static void ValidateConnectionParameters(ConnectionParameters result)
         {
@@ -391,5 +404,11 @@ namespace AdoNetCore.AseClient.Internal
         public bool EnableServerPacketSize { get; private set; } = true;
 
         public bool NamedParameters { get; private set; } = true;
+
+        /// <summary>
+        /// Gets a value indicating whether to automatically enlist in ambient System.Transactions transactions.
+        /// Default is true.
+        /// </summary>
+        public bool Enlist { get; private set; } = true;
     }
 }

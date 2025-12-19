@@ -3,6 +3,10 @@ using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Net.Security;
+#if ENABLE_SYSTEM_TRANSACTIONS
+using System.Transactions;
+using IsolationLevel = System.Data.IsolationLevel;
+#endif
 using AdoNetCore.AseClient.Interface;
 using AdoNetCore.AseClient.Internal;
 
@@ -26,6 +30,9 @@ namespace AdoNetCore.AseClient
         private AseTransaction _transaction;
         private readonly IEventNotifier _eventNotifier;
         private bool? _namedParameters;
+#if ENABLE_SYSTEM_TRANSACTIONS
+        private AseEnlistedTransaction _enlistedTransaction;
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AseConnection" /> class.
@@ -271,9 +278,10 @@ namespace AdoNetCore.AseClient
 
             InternalState = ConnectionState.Connecting;
 
+            IConnectionParameters parameters = null;
             try
             {
-                var parameters = ConnectionParameters.Parse(_connectionString);
+                parameters = ConnectionParameters.Parse(_connectionString);
 
                 _internal = _connectionPoolManager.Reserve(_connectionString, parameters, _eventNotifier, UserCertificateValidationCallback);
 
@@ -286,6 +294,14 @@ namespace AdoNetCore.AseClient
             }
 
             InternalState = ConnectionState.Open;
+
+#if ENABLE_SYSTEM_TRANSACTIONS
+            // Auto-enlist in ambient transaction if Enlist=true (default)
+            if (parameters.Enlist && System.Transactions.Transaction.Current != null)
+            {
+                EnlistTransaction(System.Transactions.Transaction.Current);
+            }
+#endif
         }
 
         /// <summary>
@@ -631,6 +647,57 @@ namespace AdoNetCore.AseClient
         /// </summary>
         public RemoteCertificateValidationCallback UserCertificateValidationCallback { get; set; }
 
+
+#if ENABLE_SYSTEM_TRANSACTIONS
+        /// <summary>
+        /// Enlists in the specified transaction as a volatile resource manager.
+        /// </summary>
+        /// <param name="transaction">The transaction to enlist in, or null to unenlist.</param>
+        /// <remarks>
+        /// This method allows the connection to participate in a System.Transactions transaction.
+        /// If the connection is already enlisted in a different transaction, an exception is thrown.
+        /// </remarks>
+        public override void EnlistTransaction(System.Transactions.Transaction transaction)
+        {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(AseConnection));
+            }
+
+            if (transaction == null)
+            {
+                // Unenlist from current transaction
+                _enlistedTransaction = null;
+                return;
+            }
+
+            if (_enlistedTransaction != null)
+            {
+                if (_enlistedTransaction.SystemTransaction == transaction)
+                {
+                    // Already enlisted in this transaction
+                    return;
+                }
+                throw new InvalidOperationException("Connection is already enlisted in a transaction. Complete the current transaction before enlisting in another.");
+            }
+
+            if (State != ConnectionState.Open)
+            {
+                throw new InvalidOperationException("Cannot enlist in a transaction when the connection is not open.");
+            }
+
+            _enlistedTransaction = new AseEnlistedTransaction(this, transaction);
+            _enlistedTransaction.Begin();
+        }
+
+        /// <summary>
+        /// Called by AseEnlistedTransaction when the transaction completes.
+        /// </summary>
+        internal void OnEnlistedTransactionCompleted()
+        {
+            _enlistedTransaction = null;
+        }
+#endif
     }
 
     /// <summary>

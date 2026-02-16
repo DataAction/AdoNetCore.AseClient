@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AdoNetCore.AseClient.Enum;
 using AdoNetCore.AseClient.Interface;
+using AdoNetCore.AseClient.Internal.BulkCopy;
 using AdoNetCore.AseClient.Internal.Handler;
 using AdoNetCore.AseClient.Packet;
 using AdoNetCore.AseClient.Token;
@@ -479,7 +480,19 @@ namespace AdoNetCore.AseClient.Internal
         public Task<DbDataReader> ExecuteReaderTaskRunnable(CommandBehavior behavior, AseCommand command, AseTransaction transaction)
         {
             var readerSource = new TaskCompletionSource<DbDataReader>();
-            InternalExecuteQueryAsync(command, transaction, readerSource, behavior);
+
+            // If SequentialAccess is requested, run on background thread for streaming support.
+            // This allows the reader to be returned as soon as first data arrives, while
+            // background thread continues receiving remaining data into the BlockingCollection.
+            if ((behavior & CommandBehavior.SequentialAccess) == CommandBehavior.SequentialAccess)
+            {
+                Task.Run(() => InternalExecuteQueryAsync(command, transaction, readerSource, behavior));
+            }
+            else
+            {
+                InternalExecuteQueryAsync(command, transaction, readerSource, behavior);
+            }
+
             return readerSource.Task;
         }
 
@@ -695,6 +708,265 @@ SET FMTONLY OFF";
                     Parameters = parameterItems.ToArray()
                 }
             };
+        }
+
+        public void ExecuteBulkCopy(
+            string destinationTableName,
+            IDataReader reader,
+            AseBulkCopyColumnMappingCollection columnMappings,
+            int batchSize,
+            int notifyAfter,
+            Func<long, bool> onNotify,
+            AseTransaction transaction)
+        {
+            AssertExecutionStart();
+
+            try
+            {
+                // Step 1: Check if table uses datarows locking (affects row format padding)
+                var isDatarowsLocked = CheckDatarowsLocking(destinationTableName);
+
+                // Step 2: Send "insert bulk <tablename>" via normal language token
+                SendPacket(new NormalPacket(new LanguageToken
+                {
+                    HasParameters = false,
+                    CommandText = "insert bulk " + destinationTableName
+                }));
+
+                // Step 3: Receive response - server sends column metadata as a result set
+                var envChangeTokenHandler = new EnvChangeTokenHandler(_environment, _parameters.Charset);
+                var messageHandler = new MessageTokenHandler(EventNotifier);
+                var dataReaderHandler = new DataReaderTokenHandler();
+                var doneHandler = new DoneTokenHandler();
+
+                ReceiveTokens(
+                    envChangeTokenHandler,
+                    messageHandler,
+                    dataReaderHandler,
+                    doneHandler);
+
+                messageHandler.AssertNoErrors();
+
+                // Step 4: Parse column metadata from the response
+                var serverColumns = ParseBulkColumnMetadata(dataReaderHandler);
+
+                if (serverColumns.Length == 0)
+                {
+                    throw new AseException("Server returned no column metadata for bulk insert.");
+                }
+
+                // Step 5: Resolve column mappings
+                var sourceOrdinals = BcpRowFormatter.ResolveColumnMappings(serverColumns, reader, columnMappings);
+
+                // Step 6: Create row formatter for native BCP format
+                var formatter = new BcpRowFormatter(serverColumns, isDatarowsLocked, _environment.Encoding, sourceOrdinals);
+
+                // Step 7: Send rows in bulk mode
+                // TDS 5.0 BCP wire format (from FreeTDS): [2-byte row_size LE] [native row data]
+                // No TDS_ROW token prefix for TDS 5.0 BCP.
+                long totalRowsCopied = 0;
+                var currentBatchRows = 0;
+                var effectiveBatchSize = batchSize > 0 ? batchSize : int.MaxValue;
+
+                lock (_sendMutex)
+                {
+#if ENABLE_ARRAY_POOL
+                    using (var tokenStream = new TokenSendStream(_networkStream, _environment, _arrayPool))
+#else
+                    using (var tokenStream = new TokenSendStream(_networkStream, _environment))
+#endif
+                    {
+                        tokenStream.SetBufferType(BufferType.TDS_BUF_BULK, BufferStatus.TDS_BUFSTAT_NONE);
+
+                        while (reader.Read())
+                        {
+                            var rowBytes = formatter.FormatRow(reader);
+
+                            // Write 2-byte row length prefix (LE) then native row data
+                            var rowLenBytes = BitConverter.GetBytes((short)rowBytes.Length);
+                            tokenStream.Write(rowLenBytes, 0, 2);
+                            tokenStream.Write(rowBytes, 0, rowBytes.Length);
+
+                            currentBatchRows++;
+                            totalRowsCopied++;
+
+                            // Check for batch completion
+                            if (currentBatchRows >= effectiveBatchSize)
+                            {
+                                // Flush current batch
+                                tokenStream.Flush();
+
+                                // Receive DONE token for this batch
+                                var batchDoneHandler = new DoneTokenHandler();
+                                var batchMsgHandler = new MessageTokenHandler(EventNotifier);
+                                ReceiveTokens(batchMsgHandler, batchDoneHandler);
+                                batchMsgHandler.AssertNoErrors();
+
+                                if (transaction != null && batchDoneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
+                                {
+                                    transaction.MarkAborted();
+                                    throw new AseException("Transaction was aborted during bulk copy.");
+                                }
+
+                                currentBatchRows = 0;
+
+                                // Start new bulk stream for next batch
+                                tokenStream.SetBufferType(BufferType.TDS_BUF_BULK, BufferStatus.TDS_BUFSTAT_NONE);
+                            }
+
+                            // Fire notification
+                            if (notifyAfter > 0 && totalRowsCopied % notifyAfter == 0)
+                            {
+                                if (onNotify != null && onNotify(totalRowsCopied))
+                                {
+                                    // User requested abort
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Flush to send all data (EOM flag in TDS packet signals end of bulk data)
+                        tokenStream.Flush();
+                    }
+                }
+
+                // Receive final DONE token
+                var finalDoneHandler = new DoneTokenHandler();
+                var finalMsgHandler = new MessageTokenHandler(EventNotifier);
+                ReceiveTokens(finalMsgHandler, finalDoneHandler);
+                finalMsgHandler.AssertNoErrors();
+
+                if (transaction != null && finalDoneHandler.TransactionState == TranState.TDS_TRAN_ABORT)
+                {
+                    transaction.MarkAborted();
+                }
+
+                AssertExecutionCompletion(finalDoneHandler);
+            }
+            catch (AseException)
+            {
+                IsDoomed = true;
+                AssertExecutionCompletion();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                IsDoomed = true;
+                AssertExecutionCompletion();
+                throw new AseException("Bulk copy failed: " + ex.Message, ex);
+            }
+        }
+
+        /// <summary>
+        /// Checks if the target table uses datarows locking (DOL) by querying sysstat2 from sysobjects.
+        /// DOL-locked tables require 4-byte padding at the start of each BCP row.
+        /// </summary>
+        private bool CheckDatarowsLocking(string tableName)
+        {
+            // Temporarily release execution state to execute the probe query
+            TrySetState(InternalConnectionState.Ready, s => s == InternalConnectionState.Active);
+
+            try
+            {
+                AssertExecutionStart();
+
+                // Query sysobjects to check the locking scheme via sysstat2 bit 0x1000
+                // sysstat2 & 0x1000 != 0 means DOL (datarows-locked)
+                var probeSql = $"SELECT sysstat2 FROM sysobjects WHERE name = '{tableName.Replace("'", "''")}'";
+
+                SendPacket(new NormalPacket(new LanguageToken
+                {
+                    HasParameters = false,
+                    CommandText = probeSql
+                }));
+
+                var envChange = new EnvChangeTokenHandler(_environment, _parameters.Charset);
+                var msgHandler = new MessageTokenHandler(EventNotifier);
+                var readerHandler = new DataReaderTokenHandler();
+                var done = new DoneTokenHandler();
+
+                ReceiveTokens(envChange, msgHandler, readerHandler, done);
+
+                // Don't throw on error - just default to false (allpages locking)
+                foreach (var result in readerHandler.Results())
+                {
+                    if (result.Rows.Count > 0 && result.Rows[0].Items.Length > 0)
+                    {
+                        var sysstat2 = Convert.ToInt32(result.Rows[0].Items[0]);
+                        return (sysstat2 & 0x1000) != 0;
+                    }
+                }
+
+                return false;
+            }
+            catch
+            {
+                // If we can't determine locking, default to allpages (no DOL padding)
+                return false;
+            }
+            finally
+            {
+                // Restore Active state for the bulk copy operation
+                TrySetState(InternalConnectionState.Ready, s => s == InternalConnectionState.Active);
+                AssertExecutionStart();
+            }
+        }
+
+        /// <summary>
+        /// Parses column metadata from the server's INSERT BULK response.
+        /// The server returns a result set where each ROW describes one table column:
+        ///   [0] minlen (INT2), [1] maxlen (INT2), [2] colcnt (INT2),
+        ///   [3] name (VARCHAR), [4] colid (INT2), [5] type (INT1),
+        ///   [6] length (INT4), [7] status (INT1), [8] offset (INT2),
+        ///   [9] dflt (INT1), [10] prec (INT1), [11] scale (INT1)
+        /// </summary>
+        private static BcpColumnMetadata[] ParseBulkColumnMetadata(DataReaderTokenHandler readerHandler)
+        {
+            var columns = new List<BcpColumnMetadata>();
+
+            foreach (var result in readerHandler.Results())
+            {
+                for (var i = 0; i < result.Rows.Count; i++)
+                {
+                    var row = result.Rows[i].Items;
+
+                    var name = Convert.ToString(row[3])?.Trim() ?? string.Empty;
+                    var tdsType = (TdsDataType)Convert.ToByte(row[5]);
+                    var length = Convert.ToInt32(row[6]);
+                    var status = Convert.ToByte(row[7]);
+                    var offset = Convert.ToInt16(row[8]);
+                    var prec = Convert.ToByte(row[10]);
+                    var scale = Convert.ToByte(row[11]);
+
+                    // Map status bits to RowFormatItemStatus
+                    // In the INSERT BULK metadata:
+                    //   0x08 = nullable
+                    //   0x10 = fixed-offset column (NOT identity)
+                    var rowStatus = RowFormatItemStatus.TDS_ROW_UPDATABLE;
+                    if ((status & 0x08) != 0)
+                    {
+                        rowStatus |= RowFormatItemStatus.TDS_ROW_NULLALLOWED;
+                    }
+
+                    // Positive offset = fixed position in row; negative = variable column
+                    var isFixed = offset >= 0;
+
+                    columns.Add(new BcpColumnMetadata
+                    {
+                        Ordinal = i,
+                        Name = name,
+                        DataType = tdsType,
+                        Length = length,
+                        IsFixedLength = isFixed,
+                        Precision = prec,
+                        Scale = scale,
+                        UserType = 0,
+                        RowStatus = rowStatus
+                    });
+                }
+            }
+
+            return columns.ToArray();
         }
 
         public void Dispose()

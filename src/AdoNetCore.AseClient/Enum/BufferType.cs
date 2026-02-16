@@ -45,9 +45,8 @@ namespace AdoNetCore.AseClient.Enum
         /// </summary>
         TDS_BUF_ATTN = 6,
         /// <summary>
-        /// The buffer contains bulk binary data.
+        /// The buffer contains bulk binary data. Used for BCP (Bulk Copy Protocol) operations.
         /// </summary>
-        [Obsolete]
         TDS_BUF_BULK = 7,
         /// <summary>
         /// A protocol request to setup another logical channel. This buffer is a header only and does not contain any data.

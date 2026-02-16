@@ -3,6 +3,7 @@ using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
+using AdoNetCore.AseClient.Internal.BulkCopy;
 
 namespace AdoNetCore.AseClient.Interface
 {
@@ -128,5 +129,17 @@ namespace AdoNetCore.AseClient.Interface
         /// The 'caller event' notifier for the connection
         /// </summary>
         IInfoMessageEventNotifier EventNotifier { get; set; }
+
+        /// <summary>
+        /// Execute a bulk copy operation, sending rows from the reader to the specified destination table.
+        /// </summary>
+        void ExecuteBulkCopy(
+            string destinationTableName,
+            IDataReader reader,
+            AseBulkCopyColumnMappingCollection columnMappings,
+            int batchSize,
+            int notifyAfter,
+            Func<long, bool> onNotify,
+            AseTransaction transaction);
     }
 }

@@ -33,7 +33,7 @@ namespace AdoNetCore.AseClient.Token
                 ((byte)(Request10.DATA_DATETIMEN | Request10.DATA_INTN | Request10.DATA_LBIN | Request10.DATA_LCHAR | Request10.DATA_DEC | Request10.DATA_IMAGE | Request10.DATA_TEXT | Request10.DATA_NUM)),
                 ((byte)(Request11.DATA_FLT8 | Request11.DATA_FLT4 | Request11.DATA_DATE4 | Request11.DATA_DATE8 | Request11.DATA_MNY4 | Request11.DATA_MNY8 | Request11.DATA_VBIN | Request11.DATA_BIN)),
                 ((byte)(Request12.DATA_VCHAR | Request12.DATA_CHAR | Request12.DATA_BIT | Request12.DATA_INT4 | Request12.DATA_INT2 | Request12.DATA_INT1 | Request12.REQ_PARAM | Request12.REQ_MSG)),
-                ((byte)(Request13.REQ_DYNF /*| Request13.REQ_CURSOR | Request13.REQ_BCP*/ | Request13.REQ_MSTMT/* | Request13.REQ_EVT*/ | Request13.REQ_RPC | Request13.REQ_LANG/* | Request13.NONE*/)),
+                ((byte)(Request13.REQ_DYNF /*| Request13.REQ_CURSOR*/ | Request13.REQ_BCP | Request13.REQ_MSTMT/* | Request13.REQ_EVT*/ | Request13.REQ_RPC | Request13.REQ_LANG/* | Request13.NONE*/)),
 
                 //cap response
                 ((byte)TDS_CAPABILITY_TYPE.TDS_CAP_RESPONSE),

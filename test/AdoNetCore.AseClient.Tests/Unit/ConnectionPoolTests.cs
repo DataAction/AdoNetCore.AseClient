@@ -349,6 +349,15 @@ namespace AdoNetCore.AseClient.Tests.Unit
                 return new Dictionary<string, long>();
             }
             public IInfoMessageEventNotifier EventNotifier { get; set; }
+
+            public void ExecuteBulkCopy(
+                string destinationTableName,
+                IDataReader reader,
+                AseBulkCopyColumnMappingCollection columnMappings,
+                int batchSize,
+                int notifyAfter,
+                Func<long, bool> onNotify,
+                AseTransaction transaction) { }
         }
 
         private class SlowConnectionFactory : IInternalConnectionFactory

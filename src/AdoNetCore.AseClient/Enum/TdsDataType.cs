@@ -214,6 +214,10 @@ namespace AdoNetCore.AseClient.Enum
         /// Note: As far as I can tell, this uses the same encoding mechanism as DATETIME still 8 bytes...
         /// </summary>
         TDS_BIGDATETIMEN = 0xBB,
-        //TDS_BIGTIME = 0xBC,
+        /// <summary>
+        /// Fixed Nullable Converted Description
+        /// No Yes Yes Time of day, microseconds since midnight in 8 bytes (BIGTIME)
+        /// </summary>
+        TDS_BIGTIMEN = 0xBC,
     }
 }

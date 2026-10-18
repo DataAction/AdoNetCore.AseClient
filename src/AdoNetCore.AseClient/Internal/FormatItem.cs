@@ -270,6 +270,7 @@ namespace AdoNetCore.AseClient.Internal
                         break;
                     }
                 case TdsDataType.TDS_BIGDATETIMEN:
+                case TdsDataType.TDS_BIGTIMEN:
                     format.Length = stream.ReadByte();
                     // don't know what this represents, but when sending/receiving a big datetime we need to send/receive a byte
                     // maybe it represents the resolution to which the number represents (e.g. 6 = microseconds, 3 = milliseconds?)
@@ -358,6 +359,7 @@ namespace AdoNetCore.AseClient.Internal
                     stream.WriteByte(Scale ?? 0);
                     break;
                 case TdsDataType.TDS_BIGDATETIMEN:
+                case TdsDataType.TDS_BIGTIMEN:
                     stream.WriteByte((byte)(Length ?? 8));
                     // don't know what this represents, but when sending/receiving a big datetime we need to send/receive a byte
                     // maybe it represents the resolution to which the number represents (e.g. 6 = microseconds, 3 = milliseconds?)
@@ -467,6 +469,7 @@ namespace AdoNetCore.AseClient.Internal
                     }
                 case TdsDataType.TDS_TIME:
                 case TdsDataType.TDS_TIMEN:
+                case TdsDataType.TDS_BIGTIMEN:
                     return "time";
                 case TdsDataType.TDS_CHAR:
                     return "char";

@@ -47,6 +47,7 @@ namespace AdoNetCore.AseClient.Internal
             {TdsDataType.TDS_SHORTDATE, ReadTDS_SHORTDATE},
             {TdsDataType.TDS_DATETIMEN, ReadTDS_DATETIMEN},
             {TdsDataType.TDS_BIGDATETIMEN, ReadTDS_BIGDATETIMEN},
+            {TdsDataType.TDS_BIGTIMEN, ReadTDS_BIGTIMEN},
             {TdsDataType.TDS_DATE, ReadTDS_DATE},
             {TdsDataType.TDS_DATEN, ReadTDS_DATEN},
             {TdsDataType.TDS_TIME, ReadTDS_TIME},
@@ -289,6 +290,16 @@ namespace AdoNetCore.AseClient.Internal
             switch (stream.ReadByte())
             {
                 case 8: return stream.ReadBigDateTime();
+            }
+
+            return DBNull.Value;
+        }
+
+        private static object ReadTDS_BIGTIMEN(Stream stream, FormatItem format, DbEnvironment env)
+        {
+            switch (stream.ReadByte())
+            {
+                case 8: return stream.ReadBigTime();
             }
 
             return DBNull.Value;

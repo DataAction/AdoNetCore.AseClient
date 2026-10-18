@@ -190,6 +190,17 @@ namespace AdoNetCore.AseClient.Internal
             return Constants.Sql.BigDateTime.Epoch + timeSinceEpoch;
         }
 
+        /// <summary>
+        /// BIGTIME: microseconds since midnight in 8 bytes. Returned on the same date as TIME values (1900-01-01), at the
+        /// full 1/10 microsecond resolution of a <see cref="DateTime"/>.
+        /// </summary>
+        public static DateTime ReadBigTime(this Stream stream)
+        {
+            const long ticksPerMicrosecond = TimeSpan.TicksPerMillisecond / 1000;
+            var usSinceMidnight = stream.ReadLong();
+            return Constants.Sql.RegularDateTime.Epoch.AddTicks(usSinceMidnight * ticksPerMicrosecond);
+        }
+
         public static DateTime ReadShortPartDateTime(this Stream stream)
         {
             var p1 = stream.ReadUShort();

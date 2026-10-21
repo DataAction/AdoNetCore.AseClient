@@ -22,7 +22,7 @@ namespace AdoNetCore.AseClient
         private AseTransaction _transaction;
         private bool _isDisposed;
         internal readonly AseParameterCollection AseParameters;
-        private CommandType _commandType;
+        private CommandType _commandType = CommandType.Text;
         private int _commandTimeout = DefaultCommandTimeout;
         private string _commandText;
         private UpdateRowSource _updatedRowSource;

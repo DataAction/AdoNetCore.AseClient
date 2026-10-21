@@ -15,7 +15,7 @@ namespace AdoNetCore.AseClient
 #endif
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string _parameterName;
+        private string _parameterName = string.Empty;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private int _parameterIndex;
@@ -336,7 +336,8 @@ namespace AdoNetCore.AseClient
         public override string ParameterName
         {
             get => _parameterName;
-            set => _parameterName = value == null || value.StartsWith("@") ? value : $"@{value}";
+            // DbParameter.ParameterName: "The default is an empty string ("")."
+            set => _parameterName = string.IsNullOrEmpty(value) ? string.Empty : value.StartsWith("@") ? value : $"@{value}";
         }
 
         /// <summary>

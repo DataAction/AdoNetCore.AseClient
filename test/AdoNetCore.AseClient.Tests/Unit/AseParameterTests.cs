@@ -7,6 +7,15 @@ namespace AdoNetCore.AseClient.Tests.Unit
     [Category("quick")]
     public class AseParameterTests
     {
+        // DbParameter.ParameterName: "The default is an empty string ("")."
+        [Test]
+        public void ParameterName_DefaultsToEmptyString()
+        {
+            Assert.AreEqual(string.Empty, new AseParameter().ParameterName);
+            Assert.AreEqual(string.Empty, new AseCommand().CreateParameter().ParameterName);
+            Assert.AreEqual(string.Empty, new AseParameter { ParameterName = null }.ParameterName);
+        }
+
         [Test]
         public void ConstructParameter_WithNoArgs_NoErrors()
         {

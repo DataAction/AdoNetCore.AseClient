@@ -25,6 +25,34 @@ namespace AdoNetCore.AseClient.Tests.Integration
   </book>
 </catalog>";
 
+        // DbCommand.ExecuteNonQuery: "For UPDATE, INSERT, and DELETE statements, the return value is the number of rows
+        // affected by the command. For all other types of statements, the return value is -1."
+        [Test]
+        public void ExecuteNonQuery_ReturnsMinusOneForStatementsThatAreNotInsertUpdateOrDelete()
+        {
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "select 1";
+                    Assert.AreEqual(-1, command.ExecuteNonQuery());
+
+                    command.CommandText = "create table #non_query_counts (id int)";
+                    Assert.AreEqual(-1, command.ExecuteNonQuery());
+
+                    command.CommandText = "insert into #non_query_counts (id) select 1 union all select 2";
+                    Assert.AreEqual(2, command.ExecuteNonQuery());
+
+                    command.CommandText = "select id from #non_query_counts update #non_query_counts set id = 3 where id = 1";
+                    Assert.AreEqual(1, command.ExecuteNonQuery(), "only the update is counted, not the rows the select returned");
+
+                    command.CommandText = "delete from #non_query_counts where id = 99";
+                    Assert.AreEqual(0, command.ExecuteNonQuery());
+                }
+            }
+        }
+
         [Test]
         public void ExecuteXmlReader_ShouldWork()
         {

@@ -24,15 +24,15 @@ namespace AdoNetCore.AseClient
         private bool _hasFirst;
         private int _totalResults;
 
-#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         private readonly AseCommand _command;
+#if ENABLE_SYSTEM_DATA_COMMON_EXTENSIONS
         private DataTable _currentSchemaTable;
+#endif
 
         internal AseDataReader(AseCommand command, CommandBehavior behavior, IInfoMessageEventNotifier eventNotifier) : this(behavior, eventNotifier)
         {
             _command = command;
         }
-#endif
 
         // ReSharper disable once MemberCanBePrivate.Global
         internal AseDataReader(CommandBehavior behavior, IInfoMessageEventNotifier eventNotifier)
@@ -510,6 +510,13 @@ namespace AdoNetCore.AseClient
             while (_results != null && _results.TryTake(out _, -1))
             {
                 _currentResult++;
+            }
+
+            // CommandBehavior.CloseConnection: "When the command is executed, the associated Connection object is closed when
+            // the associated DataReader object is closed."
+            if ((_behavior & CommandBehavior.CloseConnection) == CommandBehavior.CloseConnection)
+            {
+                _command?.Connection?.Close();
             }
         }
 

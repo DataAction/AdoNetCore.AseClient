@@ -13,7 +13,7 @@ namespace AdoNetCore.AseClient.Tests.Integration
     [TestFixture(typeof(SapConnectionProvider), Explicit = true, Reason = "SAP AseClient tests are run for compatibility purposes.")]
 #endif
     [TestFixture(typeof(CoreFxConnectionProvider))]
-    public class AseDataReaderTests<T> where T : IConnectionProvider
+    public partial class AseDataReaderTests<T> where T : IConnectionProvider
     {
         private const string AllTypesQuery =
 @"SELECT 

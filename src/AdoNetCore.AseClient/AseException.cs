@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 #if ENABLE_SYSTEMEXCEPTION
 using System.Runtime.Serialization;
 #endif
@@ -11,12 +12,7 @@ namespace AdoNetCore.AseClient
 #if ENABLE_SYSTEMEXCEPTION
     [Serializable]
 #endif
-    public sealed class AseException :
-#if ENABLE_SYSTEMEXCEPTION
-    SystemException
-#else
-    Exception
-#endif
+    public sealed class AseException : DbException
     {
         /// <summary>
         /// The error code identifying the error.

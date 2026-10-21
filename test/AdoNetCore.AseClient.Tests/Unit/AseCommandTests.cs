@@ -2,7 +2,7 @@
 
 namespace AdoNetCore.AseClient.Tests.Unit
 {
-    public class AseCommandTests
+    public partial class AseCommandTests
     {
         [Test]
         public void RepeatedDisposal_DoesNotThrow()

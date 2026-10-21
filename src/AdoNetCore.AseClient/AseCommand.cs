@@ -140,6 +140,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
+            EnsureOpenConnection(nameof(ExecuteNonQuery));
             LogExecution(nameof(ExecuteNonQuery));
             return _connection.InternalConnection.ExecuteNonQuery(this, Transaction);
         }
@@ -161,6 +162,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
+            EnsureOpenConnection(nameof(ExecuteReader));
             LogExecution(nameof(ExecuteReader));
             return (AseDataReader)_connection.InternalConnection.ExecuteReader(behavior, this, Transaction);
         }
@@ -202,8 +204,26 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
+            EnsureOpenConnection(nameof(ExecuteScalar));
             LogExecution(nameof(ExecuteScalar));
             return _connection.InternalConnection.ExecuteScalar(this, Transaction);
+        }
+
+        /// <summary>
+        /// IDbCommand.ExecuteNonQuery documents InvalidOperationException when "The connection does not exist. -or- The
+        /// connection is not open."; the other Execute methods check the same, instead of failing with a NullReferenceException.
+        /// </summary>
+        private void EnsureOpenConnection(string methodName)
+        {
+            if (_connection == null)
+            {
+                throw new InvalidOperationException($"{methodName}: Connection property has not been initialized.");
+            }
+
+            if (_connection.State != ConnectionState.Open)
+            {
+                throw new InvalidOperationException($"{methodName} requires an open and available Connection. The connection's current state is {_connection.State}.");
+            }
         }
 
         private void LogExecution(string methodName)
@@ -516,6 +536,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
+            EnsureOpenConnection(nameof(ExecuteNonQueryAsync));
             return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteNonQueryTaskRunnable(this, Transaction), cancellationToken);
         }
 
@@ -526,6 +547,7 @@ namespace AdoNetCore.AseClient
                 throw new ObjectDisposedException(nameof(AseCommand));
             }
 
+            EnsureOpenConnection(nameof(ExecuteReaderAsync));
             return InternalExecuteAsync(() => _connection.InternalConnection.ExecuteReaderTaskRunnable(behavior, this, Transaction), cancellationToken);
         }
 

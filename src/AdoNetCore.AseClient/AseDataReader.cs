@@ -400,9 +400,10 @@ namespace AdoNetCore.AseClient
 
             var formats = _currentTable?.Formats;
 
+            // IDataRecord.GetOrdinal: "If the index of the named field is not found, an IndexOutOfRangeException is thrown."
             if (formats == null)
             {
-                throw new ArgumentException();
+                throw new IndexOutOfRangeException($"There is no column named {name}.");
             }
 
             name = name
@@ -417,7 +418,7 @@ namespace AdoNetCore.AseClient
                 }
             }
 
-            throw new ArgumentException();
+            throw new IndexOutOfRangeException($"There is no column named {name}.");
         }
 
         public override object GetValue(int i)
